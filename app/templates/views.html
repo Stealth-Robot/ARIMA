@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Views{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Data Integrity Views</h1>
+
+    {% set sections = [
+        ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs')),
+        ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs')),
+        ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums')),
+        ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
+        ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
+        ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
+        ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
+        ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
+    ] %}
+
+    {% for title, count, url in sections %}
+    <div class="mb-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold p-4 cursor-pointer" style="margin: 0;"
+            onclick="toggleView(this)"
+            data-url="{{ url }}"
+            data-index="{{ loop.index0 }}"
+            data-loaded="false">
+            <span class="view-arrow" style="display: inline-block; transition: transform 0.2s; margin-right: 6px;">&#9654;</span>
+            {{ title }}
+            <span class="text-sm font-normal" style="color: var(--text-secondary);">— {{ count }}</span>
+        </h2>
+        <div class="view-content" style="display: none; padding: 0 16px 12px;"></div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function _getOpenViews() {
+    try { return JSON.parse(sessionStorage.getItem('openViews') || '[]'); } catch(e) { return []; }
+}
+function _saveOpenViews() {
+    var open = [];
+    document.querySelectorAll('h2[data-index]').forEach(function(h) {
+        if (h.nextElementSibling.style.display !== 'none') open.push(parseInt(h.dataset.index));
+    });
+    sessionStorage.setItem('openViews', JSON.stringify(open));
+}
+
+function openView(header) {
+    var content = header.nextElementSibling;
+    var arrow = header.querySelector('.view-arrow');
+    content.style.display = 'block';
+    arrow.style.transform = 'rotate(90deg)';
+    // Always re-fetch content to reflect current edit mode state
+    content.innerHTML = '<p class="text-sm" style="color: var(--text-secondary);">Loading...</p>';
+    fetch(header.dataset.url).then(function(r) {
+        return r.text();
+    }).then(function(html) {
+        content.innerHTML = html;
+        header.dataset.loaded = 'true';
+    });
+}
+
+function toggleView(header) {
+    var content = header.nextElementSibling;
+    var arrow = header.querySelector('.view-arrow');
+    var isOpen = content.style.display !== 'none';
+    if (isOpen) {
+        content.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        openView(header);
+    }
+    _saveOpenViews();
+}
+
+// Restore open sections on page load (and on bfcache restore)
+function _restoreViews() {
+    var open = _getOpenViews();
+    if (open.length) {
+        open.forEach(function(idx) {
+            var h = document.querySelector('h2[data-index="' + idx + '"]');
+            if (h) openView(h);
+        });
+    }
+}
+_restoreViews();
+
+// Intercept edit mode toggle — submit via fetch, then reload to get fresh state
+(function() {
+    var form = document.getElementById('edit-mode-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var csrf = form.querySelector('[name=csrf_token]');
+        fetch(form.action, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrf ? csrf.value : ''),
+            redirect: 'manual',
+        }).then(function() {
+            window.location.reload();
+        });
+    });
+})();
+</script>
+{% endblock %}

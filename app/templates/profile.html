@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Profile</h1>
+
+    <!-- Profile Image -->
+    {% if not current_user.is_system_or_guest %}
+    <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Profile Image</h2>
+        <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt="Profile"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+             class="w-24 h-24 rounded-full mb-3 object-cover">
+        <div class="flex gap-2">
+            <form method="POST" action="{{ url_for('profile.update_image') }}" class="flex gap-2 flex-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="profile_image"
+                       value="{{ current_user.profile_image or '' }}"
+                       placeholder="Image URL"
+                       class="flex-1 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                        style="background-color: var(--button-primary);">Save</button>
+            </form>
+            {% if current_user.profile_image %}
+            <form method="POST" action="{{ url_for('profile.update_image') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="profile_image" value="">
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background-color: var(--delete-button); color: var(--button-text);">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Settings -->
+    <form method="POST" action="{{ url_for('profile.update_settings') }}"
+          class="p-4 border rounded" style="border-color: var(--border);">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 class="font-semibold mb-3">Settings</h2>
+
+        <!-- Theme -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Theme</label>
+            <div class="flex gap-2">
+                <select name="theme" class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border);">
+                    {% for t in themes %}
+                    <option value="{{ t.id }}" {% if t.id == settings.theme %}selected{% endif %}>
+                        {{ t.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <a href="{{ url_for('themes.themes_list') }}" class="px-3 py-2 rounded text-sm"
+                   style="background-color: var(--button-primary); color: white; text-decoration: none; white-space: nowrap;">
+                    Browse Themes
+                </a>
+            </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="mb-4">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="include_featured"
+                       {% if settings.include_featured %}checked{% endif %}>
+                Show featured songs on artist pages and in stats
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="include_remixes"
+                       {% if settings.include_remixes %}checked{% endif %}>
+                Show remix tracks on artist pages and in stats
+            </label>
+        </div>
+
+        <!-- Album Sort Order -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Album Sort Order</label>
+            <select name="album_sort_order" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                <option value="desc" {% if settings.album_sort_order == 'desc' %}selected{% endif %}>Newest first</option>
+                <option value="asc" {% if settings.album_sort_order == 'asc' %}selected{% endif %}>Oldest first</option>
+            </select>
+        </div>
+
+        <!-- Song Button Size -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Song Button Text Size</label>
+            <input type="number" name="song_button_size" min="6" max="30"
+                   value="{{ settings.song_button_size }}"
+                   class="w-20 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <span class="text-xs" style="color: var(--text-secondary);">px (6–30)</span>
+        </div>
+
+        <button type="submit" class="px-6 py-2 rounded text-white"
+                style="background-color: var(--button-primary);">
+            Save Settings
+        </button>
+    </form>
+
+    <!-- Reset Password -->
+    {% if not current_user.is_system_or_guest %}
+    <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Reset Password</h2>
+        {% if session.get('pw_error') %}
+        <p class="text-sm mb-3" style="color: var(--delete-button);">{{ session.pop('pw_error') }}</p>
+        {% elif session.get('pw_success') %}
+        <p class="text-sm mb-3" style="color: var(--edit-on-button);">{{ session.pop('pw_success') }}</p>
+        {% endif %}
+        <form method="POST" action="{{ url_for('profile.reset_password') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1">New Password</label>
+                <input type="password" name="new_password" required autocomplete="new-password"
+                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1">Confirm Password</label>
+                <input type="password" name="confirm_password" required autocomplete="new-password"
+                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            </div>
+            <button type="submit" class="px-6 py-2 rounded text-white"
+                    style="background-color: var(--button-primary);">
+                Reset Password
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <p class="mt-4 text-xs" style="color: var(--text-secondary);">
+        Logged in as <strong>{{ current_user.username }}</strong>
+        ({{ current_user.role.role }})
+    </p>
+</div>
+{% endblock %}

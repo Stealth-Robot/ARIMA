@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Updates Timeline{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Updates</h1>
+
+    <div class="flex gap-2 mb-6 flex-wrap items-center" id="updates-filters">
+        <div style="position: relative; display: inline-block;">
+            <button type="button" id="type-filter-toggle"
+                    onclick="toggleTypeDropdown()"
+                    class="px-3 py-2 border rounded text-xs" style="border-color: var(--border); background: var(--bg-secondary); cursor: pointer; white-space: nowrap;">
+                Type{% if include %} ({{ include|length }}){% endif %} &#9662;
+            </button>
+            <div id="type-filter-dropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; margin-top: 2px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                {% for t in all_types %}
+                <label style="display: block; padding: 2px 0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" class="type-filter-cb" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}
+                           style="margin-right: 4px;">
+                    {{ t.type }} — {{ t.description }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="{{ url_for('updates.updates_page', **request.args) }}"
+           style="margin-left: auto; font-size: 12px; color: var(--link); text-decoration: none;">
+            &larr; See as table
+        </a>
+    </div>
+
+    {% if not updates %}
+    <p style="color: var(--text-secondary);">No updates yet.</p>
+    {% else %}
+
+    <!-- Stats banner -->
+    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1;">{{ total }}</div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.3;">
+                update{{ 's' if total != 1 else '' }} shipped
+            </div>
+            <div style="display: flex; gap: 12px; margin-left: auto; flex-wrap: wrap;">
+                {% for t in all_types %}
+                {% set count = type_counts.get(t.type, 0) %}
+                {% if count > 0 %}
+                <div style="text-align: center;">
+                    <div style="font-size: 20px; font-weight: 700; color: var(--update-type-{{ t.type | lower | replace('.', '') }});">{{ count }}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ t.type }}</div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Bar chart -->
+        {% if total > 0 %}
+        <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 12px; gap: 2px;">
+            {% for t in all_types %}
+            {% set count = type_counts.get(t.type, 0) %}
+            {% if count > 0 %}
+            <div style="flex: {{ count }}; background: var(--update-type-{{ t.type | lower | replace('.', '') }}); border-radius: 3px;" title="{{ t.type }}: {{ count }}"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Daily bar chart (built by JS using local dates) -->
+        <div id="daily-chart-bars" style="display: flex; align-items: flex-end; gap: 3px; height: 80px; margin-top: 16px;"></div>
+        <div id="daily-chart-labels" style="display: flex; gap: 3px; margin-top: 4px;"></div>
+    </div>
+
+    <!-- Cards rendered flat, JS regroups by local date -->
+    <div id="timeline-cards" style="display: none;">
+        {% for u in updates %}
+        <div class="tl-card" data-utc="{{ u.date }}" data-type="{{ u.type.type | lower | replace('.', '') if u.type else '' }}"
+             style="flex: 0 0 280px; scroll-snap-align: start; border-radius: 8px; overflow: hidden;
+                    border: 1px solid var(--border); background: var(--bg-secondary);
+                    border-top: 3px solid var(--update-type-{{ u.type.type | lower | replace('.', '') if u.type else 'feature' }});">
+            <div style="padding: 14px 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    {% if u.type %}
+                    <span style="font-size: 16px;">
+                        {% if u.type.type == 'Feature' %}&#10024;{% elif u.type.type == 'Bugfix' %}&#128295;{% elif u.type.type == 'Style' %}&#127912;{% elif u.type.type == 'Perf.' %}&#128640;{% endif %}
+                    </span>
+                    <span style="display: inline-block; padding: 1px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;
+                                 background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
+                        {{ u.type.type }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 14px; line-height: 1.5; color: var(--text-primary);">{{ u.description }}</div>
+                <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; font-family: monospace; color: var(--text-secondary);">{{ u.commit_id[:7] }}</span>
+                    <span class="update-date" data-utc="{{ u.date }}"
+                          style="font-size: 11px; font-family: monospace; color: var(--text-secondary);"></span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="timeline-grouped"></div>
+
+    {% endif %}
+</div>
+
+<script>
+var pad = function(n) { return n < 10 ? '0' + n : n; };
+var today = new Date();
+var yesterday = new Date();
+yesterday.setDate(today.getDate() - 1);
+var sameDay = function(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
+
+function localDateKey(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function friendlyDate(d) {
+    if (sameDay(d, today)) return 'Today';
+    if (sameDay(d, yesterday)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+function formatTime(d) {
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
+}
+
+// Custom tooltip for daily bar chart
+var chartTip = (function() {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:12px; min-width:140px;';
+    document.body.appendChild(el);
+    return {
+        show: function(html, colRect, barRect) {
+            el.innerHTML = html;
+            el.style.opacity = '1';
+            var x = colRect.left + colRect.width/2 - el.offsetWidth/2;
+            var y = barRect.top - el.offsetHeight - 8;
+            if (y < 4) y = barRect.bottom + 8;
+            if (x < 4) x = 4;
+            if (x + el.offsetWidth > window.innerWidth - 4) x = window.innerWidth - el.offsetWidth - 4;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+        },
+        hide: function() { el.style.opacity = '0'; }
+    };
+})();
+
+// Build daily bar chart grouped by local date (must run BEFORE grouping moves cards)
+(function() {
+    var typeOrder = [{% for t in all_types %}'{{ t.type | lower | replace('.', '') }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    var typeLabels = { {% for t in all_types %}'{{ t.type | lower | replace('.', '') }}': '{{ t.type }}'{% if not loop.last %}, {% endif %}{% endfor %} };
+    var cards = document.querySelectorAll('#timeline-cards .tl-card');
+    var daily = {};
+    var dayOrder = [];
+    cards.forEach(function(card) {
+        var utc = card.dataset.utc;
+        var typ = card.dataset.type || 'other';
+        if (!utc) return;
+        var d = new Date(utc.replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return;
+        var key = localDateKey(d);
+        if (!daily[key]) { daily[key] = {}; dayOrder.push(key); }
+        daily[key][typ] = (daily[key][typ] || 0) + 1;
+    });
+    // Sort oldest first
+    dayOrder.sort();
+    var maxDay = 0;
+    dayOrder.forEach(function(k) {
+        var total = 0;
+        for (var t in daily[k]) total += daily[k][t];
+        if (total > maxDay) maxDay = total;
+    });
+    if (maxDay === 0) return;
+    var barsEl = document.getElementById('daily-chart-bars');
+    var labelsEl = document.getElementById('daily-chart-labels');
+    dayOrder.forEach(function(key) {
+        var counts = daily[key];
+        var total = 0;
+        for (var t in counts) total += counts[t];
+        var bar = document.createElement('div');
+        bar.style.cssText = 'height:' + Math.round(total/maxDay*100) + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
+        var tipDate = friendlyDate(new Date(key + 'T12:00:00'));
+        var tipRows = '';
+        typeOrder.forEach(function(typ) {
+            var c = counts[typ] || 0;
+            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;">'
+                + '<span style="width:8px; height:8px; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
+                + '<span style="flex:1; color:var(--text-secondary);">' + typeLabels[typ] + '</span>'
+                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:24px; text-align:right;">' + c + '</span>'
+                + '</div>';
+        });
+        var tipHtml = '<div style="font-weight:700; margin-bottom:6px; color:var(--text-primary);">' + tipDate + '</div>'
+            + '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
+            + tipRows;
+        typeOrder.forEach(function(typ) {
+            var c = counts[typ] || 0;
+            if (c > 0) {
+                var seg = document.createElement('div');
+                seg.style.cssText = 'flex:' + c + '; background:var(--update-type-' + typ + ');';
+                bar.appendChild(seg);
+            }
+        });
+        var col = document.createElement('div');
+        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:8px; height:100%;';
+        col.appendChild(bar);
+        (function(html, colEl, barEl) {
+            colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
+            colEl.addEventListener('mouseleave', function() { chartTip.hide(); });
+        })(tipHtml, col, bar);
+        barsEl.appendChild(col);
+        var label = document.createElement('div');
+        label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        var d = new Date(key + 'T12:00:00');
+        label.textContent = isNaN(d) ? key : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        labelsEl.appendChild(label);
+    });
+})();
+
+// Group cards by local date and build day sections (runs after chart so cards are still in #timeline-cards)
+(function() {
+    var cards = document.querySelectorAll('#timeline-cards .tl-card');
+    var groups = {};
+    var order = [];
+    cards.forEach(function(card) {
+        var utc = card.dataset.utc;
+        if (!utc) return;
+        var d = new Date(utc.replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return;
+        var key = localDateKey(d);
+        if (!groups[key]) { groups[key] = { date: d, cards: [] }; order.push(key); }
+        groups[key].cards.push(card);
+        var timeEl = card.querySelector('.update-date');
+        if (timeEl) timeEl.textContent = friendlyDate(d) + ' ' + formatTime(d);
+    });
+    var container = document.getElementById('timeline-grouped');
+    order.forEach(function(key) {
+        var g = groups[key];
+        var section = document.createElement('div');
+        section.style.cssText = 'margin-bottom: 24px;';
+        var header = document.createElement('div');
+        header.style.cssText = 'font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;';
+        header.textContent = friendlyDate(g.date) + '  (' + g.cards.length + ')';
+        section.appendChild(header);
+        var row = document.createElement('div');
+        row.style.cssText = 'display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory;';
+        g.cards.forEach(function(card) { row.appendChild(card); });
+        section.appendChild(row);
+        container.appendChild(section);
+    });
+})();
+
+function toggleTypeDropdown() {
+    var dd = document.getElementById('type-filter-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('type-filter-dropdown');
+    if (!dd) return;
+    if (!e.target.closest('#type-filter-dropdown') && e.target.id !== 'type-filter-toggle') {
+        dd.style.display = 'none';
+    }
+});
+document.querySelectorAll('.type-filter-cb').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        var checked = [];
+        document.querySelectorAll('.type-filter-cb:checked').forEach(function(c) { checked.push(c.value); });
+        var params = new URLSearchParams();
+        checked.forEach(function(v) { params.append('include', v); });
+        window.location.href = '{{ url_for("updates.updates_timeline") }}' + (checked.length ? '?' + params.toString() : '');
+    });
+});
+</script>
+{% endblock %}

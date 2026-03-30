@@ -1,0 +1,22 @@
+{% if albums %}
+<ul class="text-sm space-y-1">
+    {% for a in albums %}
+    <li id="{{ id_prefix }}-album-{{ a.id }}" style="line-height: 26px; min-height: 26px;">
+        "{{ a.name }}"
+        {% if show_year %}<span style="color: var(--text-secondary);">({{ a.release_date[:4] }})</span>{% endif %}
+        {% if album_artists.get(a.id) %}
+        <span style="color: var(--text-secondary);">— {{ album_artists[a.id] | join(', ') }}</span>
+        {% endif %}
+        {% if edit_mode %}
+        <input type="text" data-date-format style="font-size: 12px; padding: 0 4px; border: 1px solid var(--border); border-radius: 3px; margin-left: 6px; vertical-align: middle; height: 22px; box-sizing: border-box; width: 90px; font-family: monospace;"
+               onchange="if(this.value && /^\d{4}-\d{2}-\d{2}$/.test(this.value)){
+                   var csrf=document.querySelector('meta[name=csrf-token]');
+                   fetch('/edit/album/{{ a.id }}/release-date',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':csrf?csrf.content:''},body:'value='+this.value}).then(function(r){if(r.ok)document.getElementById('{{ id_prefix }}-album-{{ a.id }}').remove();});
+               }">
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm" style="color: var(--text-secondary);">None found.</p>
+{% endif %}
