@@ -8,6 +8,13 @@ table.text-xs {
     border-spacing: 0;
 }
 
+/* Thin grid lines — dark colour, half-pixel width */
+table.text-xs,
+table.text-xs td,
+table.text-xs th {
+    border-width: 0.5px;
+}
+
 table.text-xs td,
 table.text-xs th {
     padding: 2px 4px;
