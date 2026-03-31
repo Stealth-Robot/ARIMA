@@ -97,4 +97,11 @@ def create_app():
         seed(db)
         click.echo('Database seeded.')
 
+    @flask_app.cli.command('import-data')
+    @click.argument('json_file')
+    def import_data_command(json_file):
+        """Import data from exported JSON file."""
+        from scripts.import_data import import_data
+        import_data(json_file)
+
     return flask_app
