@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — A.R.I.M.A.{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Profile</h1>
+
+    <!-- Profile Image -->
+    {% if not current_user.is_system_or_guest %}
+    <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Profile Image</h2>
+        {% if current_user.profile_image %}
+        <img src="{{ current_user.profile_image }}" alt="Profile" class="w-24 h-24 rounded-full mb-3 object-cover">
+        {% endif %}
+        <form method="POST" action="{{ url_for('profile.update_image') }}" class="flex gap-2">
+            <input type="text" name="profile_image"
+                   value="{{ current_user.profile_image or '' }}"
+                   placeholder="Image URL"
+                   class="flex-1 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                    style="background-color: var(--button-primary);">Save</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Settings -->
+    <form method="POST" action="{{ url_for('profile.update_settings') }}"
+          class="p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Settings</h2>
+
+        <!-- Theme -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Theme</label>
+            <select name="theme" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                {% for t in themes %}
+                <option value="{{ t.id }}" {% if t.id == settings.theme %}selected{% endif %}>
+                    {{ t.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Toggles -->
+        <div class="mb-4">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="include_featured"
+                       {% if settings.include_featured %}checked{% endif %}>
+                Include featured songs in stats
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="include_remixes"
+                       {% if settings.include_remixes %}checked{% endif %}>
+                Include remix tracks in stats
+            </label>
+        </div>
+
+        <button type="submit" class="px-6 py-2 rounded text-white"
+                style="background-color: var(--button-primary);">
+            Save Settings
+        </button>
+    </form>
+
+    <p class="mt-4 text-xs" style="color: var(--text-secondary);">
+        Logged in as <strong>{{ current_user.username }}</strong>
+        ({{ current_user.role.role }})
+    </p>
+</div>
+{% endblock %}
