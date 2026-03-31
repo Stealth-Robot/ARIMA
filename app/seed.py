@@ -11,8 +11,9 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-# Classic theme — all columns populated, no NULLs
+# Classic theme — all 36 columns populated, no NULLs
 CLASSIC_THEME = {
+    # UI chrome (17)
     'bg_primary': '#FFFFFF',
     'bg_secondary': '#F5F5F5',
     'text_primary': '#1A1A1A',
@@ -30,10 +31,35 @@ CLASSIC_THEME = {
     'button_primary': '#2563EB',
     'button_secondary': '#6B7280',
     'border': '#D1D5DB',
+    # Rating cell backgrounds (6)
+    'rating_5_bg': '#FF0016',
+    'rating_4_bg': '#FF8E1E',
+    'rating_3_bg': '#FEFF2A',
+    'rating_2_bg': '#9EFFA4',
+    'rating_1_bg': '#8AB5FC',
+    'rating_0_bg': '#9200FC',
+    # Rating text (2)
+    'rating_text_light': '#FFFFFF',
+    'rating_text_dark': '#000000',
+    # Heat map anchors (3)
+    'heatmap_high': '#FFB7FE',
+    'heatmap_mid': '#FF8E1E',
+    'heatmap_low': '#8AB5FC',
+    # Completion heat map (3)
+    'pct_high': '#FFB7FE',
+    'pct_mid': '#FCA644',
+    'pct_low': '#8AB5FC',
+    # Structural (5)
+    'album_header_bg': '#E6EBF4',
+    'row_alternate': '#F7F9FD',
+    'grid_line': '#C0C0C0',
+    'key_bg_standard': '#FF8E1E',
+    'key_bg_stealth': '#FEFF2A',
 }
 
-# Dark theme — all columns populated, no NULLs
+# Dark theme — all 36 columns populated, no NULLs
 DARK_THEME = {
+    # UI chrome (17)
     'bg_primary': '#1A1A2E',
     'bg_secondary': '#16213E',
     'text_primary': '#E5E7EB',
@@ -51,6 +77,30 @@ DARK_THEME = {
     'button_primary': '#3B82F6',
     'button_secondary': '#4B5563',
     'border': '#374151',
+    # Rating cell backgrounds (6) — same as Classic (data semantics)
+    'rating_5_bg': '#FF0016',
+    'rating_4_bg': '#FF8E1E',
+    'rating_3_bg': '#FEFF2A',
+    'rating_2_bg': '#9EFFA4',
+    'rating_1_bg': '#8AB5FC',
+    'rating_0_bg': '#9200FC',
+    # Rating text (2)
+    'rating_text_light': '#FFFFFF',
+    'rating_text_dark': '#000000',
+    # Heat map anchors (3)
+    'heatmap_high': '#FFB7FE',
+    'heatmap_mid': '#FF8E1E',
+    'heatmap_low': '#8AB5FC',
+    # Completion heat map (3)
+    'pct_high': '#FFB7FE',
+    'pct_mid': '#FCA644',
+    'pct_low': '#8AB5FC',
+    # Structural (5) — dark variants
+    'album_header_bg': '#1E3A5F',
+    'row_alternate': '#16213E',
+    'grid_line': '#374151',
+    'key_bg_standard': '#FF8E1E',
+    'key_bg_stealth': '#FEFF2A',
 }
 
 
