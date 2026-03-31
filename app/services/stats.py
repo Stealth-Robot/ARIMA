@@ -10,7 +10,7 @@ SCORED_GROUP_THRESHOLD = 0.80
 
 def get_display_users():
     """Users shown in stats columns (exclude system/guest, sorted by sort_order)."""
-    return User.query.filter(User.email.isnot(None)).order_by(User.sort_order).all()
+    return User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
 
 
 def get_user_song_set(user, include_featured=False, include_remixes=False):
