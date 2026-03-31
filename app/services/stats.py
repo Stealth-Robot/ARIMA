@@ -91,6 +91,66 @@ def get_artist_stats(artist_id, users, include_featured=False, include_remixes=F
     }
 
 
+def get_artist_score_stats(artist_id, users, include_featured=False, include_remixes=False):
+    """Calculate average score stats for the Global Stats page.
+
+    Returns dict with:
+        - song_count: total songs
+        - per_user: {user_id: avg_score} (None if user has no ratings)
+        - global_avg: average score across users who rated at least one song
+    """
+    song_ids = get_songs_for_artist(artist_id, include_subunit_songs=True)
+
+    if not include_remixes:
+        remix_ids = {s.id for s in Song.query.filter(Song.id.in_(song_ids), Song.is_remix == True).all()}
+        song_ids -= remix_ids
+
+    if not include_featured:
+        main_ids = {row.song_id for row in ArtistSong.query.filter(
+            ArtistSong.artist_id == artist_id, ArtistSong.artist_is_main == True
+        ).all()}
+        subunits, _ = get_children(artist_id)
+        for sub in subunits:
+            sub_main = {row.song_id for row in ArtistSong.query.filter(
+                ArtistSong.artist_id == sub.id, ArtistSong.artist_is_main == True
+            ).all()}
+            main_ids |= sub_main
+        song_ids &= main_ids
+
+    if not song_ids:
+        return {
+            'song_count': 0,
+            'per_user': {u.id: None for u in users},
+            'global_avg': None,
+        }
+
+    ratings = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
+    user_scores = {}  # {user_id: [scores]}
+    for r in ratings:
+        if r.user_id not in user_scores:
+            user_scores[r.user_id] = []
+        user_scores[r.user_id].append(r.rating)
+
+    per_user = {}
+    user_avgs = []
+    for u in users:
+        scores = user_scores.get(u.id, [])
+        if scores:
+            avg = round(sum(scores) / len(scores), 2)
+            per_user[u.id] = avg
+            user_avgs.append(avg)
+        else:
+            per_user[u.id] = None
+
+    global_avg = round(sum(user_avgs) / len(user_avgs), 2) if user_avgs else None
+
+    return {
+        'song_count': len(song_ids),
+        'per_user': per_user,
+        'global_avg': global_avg,
+    }
+
+
 def get_summary_stats(users, include_featured=False, include_remixes=False):
     """Calculate top-table summary stats for all users.
 
