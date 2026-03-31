@@ -47,6 +47,22 @@ function showRatingInput(event, songId) {
         } else if (e.key === 'Escape') {
             e.preventDefault();
             cancelRating(cell);
+        } else if (e.key === 'ArrowDown' || e.key === 's') {
+            e.preventDefault();
+            cancelRating(cell);
+            navigateToCell(cell, 'down');
+        } else if (e.key === 'ArrowUp' || e.key === 'w') {
+            e.preventDefault();
+            cancelRating(cell);
+            navigateToCell(cell, 'up');
+        } else if (e.key === 'ArrowRight' || e.key === 'd') {
+            e.preventDefault();
+            cancelRating(cell);
+            navigateToCell(cell, 'right');
+        } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+            e.preventDefault();
+            cancelRating(cell);
+            navigateToCell(cell, 'left');
         } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
             // Block non-0-5 characters
             e.preventDefault();
@@ -112,5 +128,32 @@ function cancelRating(cell) {
 function closeRatingInput() {
     if (activeInput) {
         cancelRating(activeInput.cell);
+    }
+}
+
+function navigateToCell(cell, direction) {
+    const row = cell.parentElement;
+    const colIndex = Array.from(row.children).indexOf(cell);
+
+    if (direction === 'up' || direction === 'down') {
+        let targetRow = direction === 'down' ? row.nextElementSibling : row.previousElementSibling;
+        while (targetRow) {
+            const targetCell = targetRow.children[colIndex];
+            if (targetCell && targetCell.getAttribute('onclick')) {
+                targetCell.click();
+                return;
+            }
+            targetRow = direction === 'down' ? targetRow.nextElementSibling : targetRow.previousElementSibling;
+        }
+    } else {
+        // left/right — find adjacent clickable td in same row
+        let sibling = direction === 'right' ? cell.nextElementSibling : cell.previousElementSibling;
+        while (sibling) {
+            if (sibling.getAttribute('onclick')) {
+                sibling.click();
+                return;
+            }
+            sibling = direction === 'right' ? sibling.nextElementSibling : sibling.previousElementSibling;
+        }
     }
 }
