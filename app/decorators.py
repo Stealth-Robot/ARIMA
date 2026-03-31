@@ -20,7 +20,7 @@ def role_required(allowed_role_ids):
         @wraps(f)
         def decorated(*args, **kwargs):
             if current_user.role_id not in allowed_role_ids:
-                return redirect(url_for('home'))
+                return redirect(url_for('home.home'))
             return f(*args, **kwargs)
         return decorated
     return decorator

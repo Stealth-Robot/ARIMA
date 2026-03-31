@@ -1,3 +1,8 @@
 def register_routes(flask_app):
     from app.routes.health import health_bp
+    from app.routes.auth import auth_bp
+    from app.routes.home import home_bp
+
     flask_app.register_blueprint(health_bp)
+    flask_app.register_blueprint(auth_bp)
+    flask_app.register_blueprint(home_bp)
