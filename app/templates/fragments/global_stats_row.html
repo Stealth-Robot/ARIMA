@@ -1,17 +1,22 @@
 {% for row in rows %}
-<tr style="border-bottom: 1px solid var(--border); background-color: var(--bg-secondary);">
-    <td class="px-2 py-1 text-center">
-        {% if row.scores.global_avg is not none %}{{ row.scores.global_avg }}{% else %}-{% endif %}
+<tr style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
+    <td class="px-2 py-1 text-center"
+        style="border: 1px solid var(--grid-line);
+               {% if row.scores.global_avg is not none and row.scores.global_avg > 0 %}background-color: {{ score_to_colour(row.scores.global_avg) }};{% endif %}">
+        {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% else %}0{% endif %}
     </td>
     <td class="px-2 py-1 pl-8"
-        style="color: var({{ gender_css[row.artist.gender_id] }});">
+        style="border: 1px solid var(--grid-line); color: var({{ gender_css[row.artist.gender_id] }});">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
     {% for u in users %}
-    <td class="px-2 py-1 text-center">
-        {% if row.scores.per_user[u.id] is not none %}{{ row.scores.per_user[u.id] }}{% else %}-{% endif %}
+    {% set user_score = row.scores.per_user[u.id] %}
+    <td class="px-1 py-1 text-center"
+        style="border: 1px solid var(--grid-line);
+               {% if user_score is not none and user_score > 0 %}background-color: {{ score_to_colour(user_score) }};{% endif %}">
+        {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% else %}0{% endif %}
     </td>
     {% endfor %}
-    <td class="px-2 py-1 text-center text-xs" style="color: var(--text-secondary);">0-5</td>
+    <td class="px-1 py-1 text-center text-xs" style="border: 1px solid var(--grid-line);">&nbsp;</td>
 </tr>
 {% endfor %}

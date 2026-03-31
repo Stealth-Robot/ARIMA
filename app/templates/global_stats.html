@@ -4,46 +4,79 @@
 
 {% block content %}
 <div class="overflow-x-auto">
-<table class="w-full text-sm border-collapse">
+<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 0; z-index: 10; background-color: var(--header-row);">
-            <th class="px-2 py-1 text-left">Global Average</th>
-            <th class="px-2 py-1 text-left">Artist</th>
+            <th class="px-2 py-1 text-left" style="border: 1px solid var(--grid-line);">Global</th>
+            <th class="px-2 py-1 text-left" style="border: 1px solid var(--grid-line);">Group</th>
             {% for u in users %}
-            <th class="px-2 py-1">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="width: 65px; border: 1px solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-2 py-1">Key</th>
+            <th class="px-1 py-1 text-center" style="width: 140px; border: 1px solid var(--grid-line);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
+        {% set key_cycle = [0] %}
+        {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
+        {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
+
         {% for row in artist_rows %}
         {% set a = row.artist %}
         {% set scores = row.scores %}
-        <tr style="border-bottom: 1px solid var(--border);"
+
+        {# Key column position #}
+        {% set key_pos = key_cycle[0] % 7 %}
+        {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
+        {% set current_key = key_labels[key_set_idx] %}
+
+        <tr style="border: 1px solid var(--grid-line);
+                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}"
             {% if row.has_subunits %}
             class="cursor-pointer"
             hx-get="{{ url_for('stats.expand_subunit_scores', artist_id=a.id) }}"
             hx-swap="afterend"
             hx-trigger="click once"
             {% endif %}>
-            <td class="px-2 py-1 text-center">
-                {% if scores.global_avg is not none %}{{ scores.global_avg }}{% else %}-{% endif %}
+            {# Global Average — coloured #}
+            <td class="px-2 py-1 text-center"
+                style="border: 1px solid var(--grid-line);
+                       {% if scores.global_avg is not none and scores.global_avg > 0 %}background-color: {{ score_to_colour(scores.global_avg) }};{% endif %}">
+                {% if scores.global_avg is not none %}{{ "%.3f"|format(scores.global_avg) }}{% else %}0{% endif %}
             </td>
-            <td class="px-2 py-1"
-                style="color: var({{ gender_css[a.gender_id] }});">
+            {# Artist name — gender coloured #}
+            <td class="px-2 py-1" style="border: 1px solid var(--grid-line); color: var({{ gender_css[a.gender_id] }});">
                 {% if row.has_subunits %}<span class="mr-1">&gt;</span>{% endif %}
                 {{ a.name }}
             </td>
+            {# Per-user scores — heat mapped #}
             {% for u in users %}
-            <td class="px-2 py-1 text-center">
-                {% if scores.per_user[u.id] is not none %}{{ scores.per_user[u.id] }}{% else %}-{% endif %}
+            {% set user_score = scores.per_user[u.id] %}
+            <td class="px-1 py-1 text-center"
+                style="border: 1px solid var(--grid-line);
+                       {% if user_score is not none and user_score > 0 %}background-color: {{ score_to_colour(user_score) }};{% endif %}">
+                {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% else %}0{% endif %}
             </td>
             {% endfor %}
-            <td class="px-2 py-1 text-center text-xs" style="color: var(--text-secondary);">
-                0-5
+            {# Key column #}
+            {% if key_pos == 0 %}
+            <td class="px-1 py-1 text-center font-bold"
+                style="border: 1px solid var(--grid-line);
+                       background-color: var({% if key_set_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                {{ key_names[key_set_idx] }}
             </td>
+            {% else %}
+            {% set key_score = 5 - (key_pos - 1) %}
+            {% set key_style = rating_cell_style(key_score) %}
+            <td class="px-1 py-1"
+                style="border: 1px solid var(--grid-line);
+                       {% if key_style %}background-color: {{ key_style.bg }}; color: {{ key_style.text }};{% endif %}">
+                {{ key_score }}.0 {{ current_key[key_score] }}
+            </td>
+            {% endif %}
         </tr>
+
+        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
         {% endfor %}
     </tbody>
 </table>
