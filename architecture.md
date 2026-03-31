@@ -366,7 +366,19 @@ Use `db.session.merge()` so the seed is idempotent — safe to re-run without du
     → update User row, create UserSettings, create personal Theme
     → flask_login.login_user(user, remember=True)
     → redirect /
+
+[Logout] → GET /logout
+    → flask_login.logout_user()
+    → session.clear()
+    → redirect /login
 ```
+
+### Logout
+
+- `GET /logout` is protected by `@login_required`.
+- Calls `logout_user()` to clear the Flask-Login session, then `session.clear()` to wipe all session data (including Guest filter preferences).
+- Redirects to the login page.
+- A "Logout" link is always visible in the navbar (far right, next to the username) on all pages that extend `base.html`.
 
 ### Key Decisions
 
