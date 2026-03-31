@@ -20,7 +20,8 @@
 </head>
 <body style="background-color: var(--bg-primary); color: var(--text-primary);">
     <!-- Navbar — all inline styles to guarantee single line -->
-    <nav style="background-color: var(--navbar-bg); color: var(--navbar-text);
+    <nav style="position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+                background-color: var(--navbar-bg); color: var(--navbar-text);
                 display: flex; flex-wrap: nowrap; align-items: center;
                 gap: 10px; padding: 6px 12px; overflow-x: auto;
                 white-space: nowrap; font-size: 13px;">
@@ -79,7 +80,7 @@
     </nav>
 
     <!-- Main content -->
-    <main id="main-content" class="p-4 overflow-x-auto">
+    <main id="main-content" class="p-4 overflow-x-auto" style="padding-top: 44px;">
         {% block content %}{% endblock %}
     </main>
 
