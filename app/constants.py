@@ -19,4 +19,5 @@ RATING_KEY_STEALTH = {
 }
 
 # Scores where text should be light (white) on the dark background
-RATING_DARK_BG_SCORES = {0, 1, 2, 5}
+# Empty — all scores now use dark (black) text per user request
+RATING_DARK_BG_SCORES = set()

@@ -52,7 +52,7 @@ CLASSIC_THEME = {
     # Structural (6)
     'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
-    'grid_line': '#333333',
+    'grid_line': '#D9D9D9',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#D9EAD3',
@@ -99,7 +99,7 @@ DARK_THEME = {
     # Structural (6) — dark variants
     'album_header_bg': '#5C2A4A',
     'row_alternate': '#16213E',
-    'grid_line': '#555555',
+    'grid_line': '#444444',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#1A3A2E',
