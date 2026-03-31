@@ -134,11 +134,16 @@ def _import_artists(artists_data, user_map):
     print(f'  {len(artist_map)} artists created/mapped')
 
     # Create ArtistArtist relationships
+    # Skip if the child is a main artist (has its own sheet) — it shouldn't be a subunit of a project
+    main_artist_names = {e['name'] for e in artists_data if e['relationship'] == 'main'}
     rel_count = 0
     for child_name, (parent_name, rel_type) in parent_map.items():
         parent_id = artist_map.get(parent_name)
         child_id = artist_map.get(child_name)
         if parent_id and child_id:
+            # Don't make a main artist a child of another artist
+            if child_name in main_artist_names:
+                continue
             existing = ArtistArtist.query.filter_by(artist_1=parent_id, artist_2=child_id).first()
             if not existing:
                 db.session.add(ArtistArtist(
