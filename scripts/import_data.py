@@ -72,7 +72,7 @@ def _import_users(users_data):
         max_sort = db.session.query(db.func.max(User.sort_order)).scalar() or 0
         user = User(
             username=u['username'],
-            email=None,  # no email — these are imported users
+            email=f'{u["username"].lower()}@arima.app',
             password=None,
             role_id=2,  # User role
             created_at='2020-01-01T00:00:00+00:00',
