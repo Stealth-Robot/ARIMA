@@ -104,7 +104,10 @@ def _get_filtered_navbar():
                 filtered.append(a)
         artists = filtered
 
-    return artists
+    # Misc. Artists always first
+    misc = [a for a in artists if a.name == 'Misc. Artists']
+    rest = [a for a in artists if a.name != 'Misc. Artists']
+    return misc + rest
 
 
 def _build_discography(artist):
