@@ -18,7 +18,7 @@ CLASSIC_THEME = {
     'bg_secondary': '#F5F5F5',
     'text_primary': '#1A1A1A',
     'text_secondary': '#6B7280',
-    'navbar_bg': '#1F2937',
+    'navbar_bg': '#000000',
     'navbar_text': '#F9FAFB',
     'header_row': '#E5E7EB',
     'promoted_song': '#FDE68A',
@@ -50,9 +50,9 @@ CLASSIC_THEME = {
     'pct_mid': '#FCA644',
     'pct_low': '#8AB5FC',
     # Structural (5)
-    'album_header_bg': '#E6EBF4',
+    'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
-    'grid_line': '#C0C0C0',
+    'grid_line': '#333333',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
 }
@@ -64,7 +64,7 @@ DARK_THEME = {
     'bg_secondary': '#16213E',
     'text_primary': '#E5E7EB',
     'text_secondary': '#9CA3AF',
-    'navbar_bg': '#0F3460',
+    'navbar_bg': '#000000',
     'navbar_text': '#E5E7EB',
     'header_row': '#1E3A5F',
     'promoted_song': '#92400E',
@@ -96,9 +96,9 @@ DARK_THEME = {
     'pct_mid': '#FCA644',
     'pct_low': '#8AB5FC',
     # Structural (5) — dark variants
-    'album_header_bg': '#1E3A5F',
+    'album_header_bg': '#5C2A4A',
     'row_alternate': '#16213E',
-    'grid_line': '#374151',
+    'grid_line': '#555555',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
 }
