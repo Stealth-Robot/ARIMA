@@ -1,10 +1,13 @@
+{% set cell_style = rating_cell_style(rating.rating if rating else None) %}
 <td id="rating-{{ song_id }}-{{ user_id }}"
     {% if rating and rating.note %}title="{{ rating.note }}"{% endif %}
-    class="text-center px-2 py-1 cursor-pointer"
-    style="color: var(--text-primary);">
-    {% if rating %}
-    {{ rating.rating }}
-    {% else %}
-    -
-    {% endif %}
+    class="text-center px-1 py-1 cursor-pointer hover:opacity-70"
+    style="border: 1px solid var(--grid-line);
+           {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+    hx-post="{{ url_for('ratings.rate') }}"
+    hx-vals='{"song_id": {{ song_id }}}'
+    hx-swap="outerHTML"
+    hx-trigger="click"
+    hx-prompt="Rate (0-5):">
+    {% if rating %}{{ rating.rating }}{% endif %}
 </td>
