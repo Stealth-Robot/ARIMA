@@ -1,0 +1,89 @@
+<!-- Artist header -->
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold"
+        style="color: var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
+        {{ artist.name }}
+    </h2>
+    {% if artist.last_updated %}
+    <span class="text-xs" style="color: var(--text-secondary);">
+        Last updated: {{ artist.last_updated }}
+    </span>
+    {% endif %}
+</div>
+
+{% if not discography %}
+<p style="color: var(--text-secondary);">No albums found.</p>
+{% else %}
+
+{% for entry in discography %}
+{% set album = entry.album %}
+{% set songs = entry.songs %}
+{% set ratings = entry.ratings %}
+{% set is_pending = entry.is_pending %}
+
+<!-- Album -->
+<div class="mb-6 {% if is_pending %}opacity-75{% endif %}"
+     {% if is_pending %}style="background-color: var(--pending-item); padding: 8px; border-radius: 4px;"{% endif %}>
+
+    <div class="flex items-center gap-2 mb-2">
+        <h3 class="font-semibold" style="color: var(--album-name);">
+            {{ album.name }}
+        </h3>
+        <span class="text-xs" style="color: var(--text-secondary);">
+            ({{ album.release_date }})
+        </span>
+        {% if is_pending %}
+        <a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>
+        {% endif %}
+    </div>
+
+    <table class="w-full text-sm">
+        <thead>
+            <tr style="background-color: var(--header-row);">
+                <th class="text-left px-2 py-1">Song</th>
+                <th class="px-2 py-1 w-8" title="Promoted Song">P</th>
+                {% for u in users %}
+                <th class="px-2 py-1">{{ u.username }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for song, track_num in songs %}
+            {% set song_pending = song.submission.status == 'pending' if song.submission else false %}
+            <tr class="border-b {% if song_pending %}opacity-75{% endif %}"
+                style="border-color: var(--border);
+                       {% if song_pending %}background-color: var(--pending-item);{% endif %}
+                       {% if song.is_promoted %}color: var(--promoted-song);{% endif %}">
+                <td class="px-2 py-1">
+                    {{ track_num }}. {{ song.name }}
+                    {% if song_pending %}
+                    <a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>
+                    {% endif %}
+                </td>
+                <td class="text-center px-2 py-1">
+                    {% if song.is_promoted %}&#10003;{% endif %}
+                </td>
+                {% for u in users %}
+                {% set r = ratings.get(song.id, {}).get(u.id) %}
+                <td id="rating-{{ song.id }}-{{ u.id }}"
+                    {% if r and r.note %}title="{{ r.note }}"{% endif %}
+                    class="text-center px-2 py-1
+                           {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
+                    {% if u.id == current_user.id and current_user.can_rate %}
+                    hx-post="{{ url_for('ratings.rate') }}"
+                    hx-vals='{"song_id": {{ song.id }}}'
+                    hx-swap="outerHTML"
+                    hx-trigger="click"
+                    hx-prompt="Rate {{ song.name }} (0-5):"
+                    {% endif %}
+                    style="color: var(--text-primary);">
+                    {% if r %}{{ r.rating }}{% else %}-{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+{% endif %}
