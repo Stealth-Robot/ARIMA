@@ -37,11 +37,8 @@
         <a href="{{ url_for('users.user_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Users</a>
         {% endif %}
 
-        <!-- Spacer -->
-        <div class="flex-1"></div>
-
         <!-- Right: Filters + Profile -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-shrink-0 ml-auto">
             <!-- Country filter -->
             <select name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
