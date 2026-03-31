@@ -18,6 +18,28 @@
             overflow-x: scroll; overflow-y: hidden; height: 42px;
             background-color: var(--bg-secondary); border-top: 1px solid var(--border);
             padding: 0 8px; gap: 4px;">
+    <!-- Hamburger menu button -->
+    <button id="hamburger-btn" onclick="toggleArtistMenu()" type="button"
+            style="flex: 0 0 auto; background: none; border: none; cursor: pointer;
+                   padding: 6px 8px; font-size: 20px; line-height: 1; color: var(--text-primary);">
+        &#9776;
+    </button>
+    <!-- Hamburger dropdown — opens upward -->
+    <div id="artist-menu" class="artist-menu" style="display: none;">
+        {% for a in navbar_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           hx-get="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           hx-target="#discography"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           onclick="closeArtistMenu()"
+           class="artist-menu-item"
+           style="background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }});
+                  {% if artist and artist.id == a.id %}font-weight: bold;{% endif %}">
+            {{ a.name }}
+        </a>
+        {% endfor %}
+    </div>
     {% for a in navbar_artists %}
     <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
        hx-get="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
