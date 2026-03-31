@@ -23,6 +23,11 @@ export FLASK_APP=app:create_app
 if [ ! -f "instance/arima.db" ]; then
     echo "Seeding database..."
     flask seed
+    # Import spreadsheet data if data.json exists
+    if [ -f "data.json" ]; then
+        echo "Importing spreadsheet data..."
+        flask import-data data.json
+    fi
 fi
 
 # Set admin password if not already set
