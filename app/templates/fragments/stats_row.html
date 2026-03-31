@@ -1,16 +1,27 @@
 {% for row in rows %}
-<tr style="border-bottom: 1px solid var(--border); background-color: var(--bg-secondary);">
-    <td class="px-2 py-1 text-center">{{ row.stats.global_avg_pct }}%</td>
-    <td class="px-2 py-1 pl-8"
-        style="color: var({{ gender_css[row.artist.gender_id] }});">
+<tr style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
+    <td class="px-2 py-1 text-center" style="border: 1px solid var(--grid-line);
+        {% if row.stats.global_avg_pct > 0 %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
+        {{ row.stats.global_avg_pct }}
+    </td>
+    <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line); color: var({{ gender_css[row.artist.gender_id] }});">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
     {% for u in users %}
-    <td class="px-2 py-1 text-center">{{ row.stats.per_user[u.id].pct_rated }}%</td>
+    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);
+        {% if row.stats.per_user[u.id].pct_rated > 0 %}background-color: {{ pct_to_colour(row.stats.per_user[u.id].pct_rated) }};{% endif %}">
+        {{ row.stats.per_user[u.id].pct_rated }}
+    </td>
     {% endfor %}
-    <td class="px-2 py-1 text-center">{{ row.stats.song_count }}</td>
+    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);">
+        {{ row.stats.song_count }}
+    </td>
     {% for u in users %}
-    <td class="px-2 py-1 text-center">{{ row.stats.per_user[u.id].unrated_count }}</td>
+    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ row.stats.per_user[u.id].unrated_count }}</td>
+    {% endfor %}
+    <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
+    {% for u in users %}
+    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ row.stats.per_user[u.id].rated_count }}</td>
     {% endfor %}
 </tr>
 {% endfor %}
