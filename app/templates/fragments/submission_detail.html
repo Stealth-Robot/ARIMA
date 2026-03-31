@@ -1,0 +1,18 @@
+<div id="submission-{{ sub.id }}" class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+    <p class="font-semibold">
+        Submission #{{ sub.id }} —
+        <span class="{% if sub.status == 'approved' %}text-green-600{% elif sub.status == 'rejected' %}text-red-600{% endif %}">
+            {{ sub.status }}
+        </span>
+    </p>
+    {% if sub.status == 'approved' and sub.approved_by %}
+    <p class="text-sm" style="color: var(--text-secondary);">
+        Approved by {{ sub.approved_by.username }} at {{ sub.approved_at }}
+    </p>
+    {% elif sub.status == 'rejected' %}
+    <p class="text-sm" style="color: var(--text-secondary);">
+        Rejected by {{ sub.rejected_by.username if sub.rejected_by else 'Unknown' }} at {{ sub.rejected_at }}
+        — {{ sub.rejected_reason }}
+    </p>
+    {% endif %}
+</div>

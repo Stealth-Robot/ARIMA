@@ -6,8 +6,10 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.music import Artist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
-from app.services.submission import create_submission
-from app.decorators import role_required, USER_OR_ABOVE
+from app.models.music import Artist, Album, Song
+from app.models.submission import Submission
+from app.services.submission import create_submission, approve_submission, reject_submission
+from app.decorators import role_required, USER_OR_ABOVE, EDITOR_OR_ADMIN
 
 submissions_bp = Blueprint('submissions', __name__)
 
@@ -69,3 +71,73 @@ def submit_content():
     submission = create_submission(current_user, artist_data, albums_data)
 
     return redirect(url_for('artists.artists_list'))
+
+
+@submissions_bp.route('/submissions')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def submissions_list():
+    """List pending submissions for review."""
+    search = request.args.get('q', '').strip()
+    query = Submission.query.filter(Submission.status == 'pending')
+    if search:
+        # Search by submitted_by username or by artist/album/song names in the submission
+        sub_ids_artist = {a.submission_id for a in Artist.query.filter(Artist.name.ilike(f'%{search}%')).all()}
+        sub_ids_album = {a.submission_id for a in Album.query.filter(Album.name.ilike(f'%{search}%')).all()}
+        sub_ids_song = {s.submission_id for s in Song.query.filter(Song.name.ilike(f'%{search}%')).all()}
+        matching_ids = sub_ids_artist | sub_ids_album | sub_ids_song
+        if matching_ids:
+            query = query.filter(Submission.id.in_(matching_ids))
+        else:
+            query = query.filter(False)  # no results
+
+    subs = query.order_by(Submission.submitted_at.desc()).all()
+
+    # Build detail data for each submission
+    submissions_data = []
+    for sub in subs:
+        artists = Artist.query.filter_by(submission_id=sub.id).all()
+        albums = Album.query.filter_by(submission_id=sub.id).all()
+        songs = Song.query.filter_by(submission_id=sub.id).all()
+        submissions_data.append({
+            'submission': sub,
+            'artists': artists,
+            'albums': albums,
+            'songs': songs,
+        })
+
+    return render_template('submissions.html', submissions=submissions_data, search=search)
+
+
+@submissions_bp.route('/submissions/<int:sub_id>/approve', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def approve(sub_id):
+    """Approve a submission with optional song rejections."""
+    rejected_ids = request.form.getlist('reject_song_ids', type=int)
+    result = approve_submission(sub_id, current_user,
+                                rejected_song_ids=set(rejected_ids) if rejected_ids else None)
+    if result is None:
+        return 'Submission not found or already processed', 404
+
+    if request.headers.get('HX-Request'):
+        return render_template('fragments/submission_detail.html', sub=result)
+    return redirect(url_for('submissions.submissions_list'))
+
+
+@submissions_bp.route('/submissions/<int:sub_id>/reject', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def reject(sub_id):
+    """Fully reject a submission."""
+    reason = request.form.get('rejected_reason', '').strip()
+    if not reason:
+        return 'Rejection reason is required', 400
+
+    result = reject_submission(sub_id, current_user, reason)
+    if result is None:
+        return 'Submission not found or already processed', 404
+
+    if request.headers.get('HX-Request'):
+        return render_template('fragments/submission_detail.html', sub=result)
+    return redirect(url_for('submissions.submissions_list'))

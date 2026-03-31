@@ -1,10 +1,11 @@
-"""Submission service — atomic content creation."""
+"""Submission service — atomic content creation, approval, rejection."""
 
 from datetime import datetime, timezone
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres
+from app.models.music import Artist, Album, Song, Rating, ArtistSong, AlbumSong, album_genres
 from app.models.submission import Submission
+from app.models.changelog import Changelog
 
 
 def _now():
@@ -95,3 +96,96 @@ def create_submission(user, artist_data, albums_data):
 
     db.session.commit()
     return submission
+
+
+def approve_submission(submission_id, approver, rejected_song_ids=None):
+    """Approve a submission, optionally rejecting individual songs.
+
+    Args:
+        submission_id: The Submission ID to approve.
+        approver: The approving User object.
+        rejected_song_ids: Optional set of song IDs to reject (delete).
+    """
+    timestamp = _now()
+    sub = db.session.get(Submission, submission_id)
+    if not sub or sub.status != 'pending':
+        return None
+
+    # Delete rejected songs + their ratings + changelog entries
+    if rejected_song_ids:
+        for song_id in rejected_song_ids:
+            song = db.session.get(Song, song_id)
+            if song and song.submission_id == submission_id:
+                # Changelog entry for rejection
+                db.session.add(Changelog(
+                    date=timestamp,
+                    user_id=approver.id,
+                    approved_by_id=approver.id,
+                    submission_id=submission_id,
+                    song_id=song_id,
+                    description=f"Song '{song.name}' rejected from submission #{submission_id}",
+                ))
+                # Delete ratings for this song
+                Rating.query.filter_by(song_id=song_id).delete()
+                # Delete pivot rows
+                ArtistSong.query.filter_by(song_id=song_id).delete()
+                AlbumSong.query.filter_by(song_id=song_id).delete()
+                # Delete the song
+                db.session.delete(song)
+
+    sub.status = 'approved'
+    sub.approved_by_id = approver.id
+    sub.approved_at = timestamp
+
+    db.session.commit()
+    return sub
+
+
+def reject_submission(submission_id, rejector, reason):
+    """Fully reject a submission — delete all created entities.
+
+    The Submission row itself is NEVER deleted (permanent audit record).
+    Changelog entries survive via ON DELETE SET NULL.
+    """
+    timestamp = _now()
+    sub = db.session.get(Submission, submission_id)
+    if not sub or sub.status != 'pending':
+        return None
+
+    # Find all entities created by this submission
+    artists = Artist.query.filter_by(submission_id=submission_id).all()
+    albums = Album.query.filter_by(submission_id=submission_id).all()
+    songs = Song.query.filter_by(submission_id=submission_id).all()
+
+    # Delete songs (cascades to ratings via ON DELETE CASCADE, pivots too)
+    for song in songs:
+        Rating.query.filter_by(song_id=song.id).delete()
+        ArtistSong.query.filter_by(song_id=song.id).delete()
+        AlbumSong.query.filter_by(song_id=song.id).delete()
+        db.session.delete(song)
+
+    # Delete albums (cascade to album_genres, album_song already cleaned)
+    for album in albums:
+        db.session.execute(album_genres.delete().where(album_genres.c.album_id == album.id))
+        db.session.delete(album)
+
+    # Delete artists created by this submission
+    for artist in artists:
+        db.session.delete(artist)
+
+    # Create rejection changelog entry
+    db.session.add(Changelog(
+        date=timestamp,
+        user_id=rejector.id,
+        submission_id=submission_id,
+        description=f"Submission #{submission_id} rejected: {reason}",
+    ))
+
+    # Update submission (never delete)
+    sub.status = 'rejected'
+    sub.rejected_by_id = rejector.id
+    sub.rejected_at = timestamp
+    sub.rejected_reason = reason
+
+    db.session.commit()
+    return sub
