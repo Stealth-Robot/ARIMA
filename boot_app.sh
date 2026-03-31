@@ -35,12 +35,10 @@ from app.routes.auth import _hash_password
 app = create_app()
 with app.app_context():
     admin = db.session.get(User, 2)
-    if admin and not admin.password:
+    if admin:
         admin.password = _hash_password('admin')
         db.session.commit()
         print('Admin password set to: admin')
-    else:
-        print('Admin password already set')
 "
 
 echo ""
