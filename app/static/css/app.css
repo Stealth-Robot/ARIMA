@@ -49,12 +49,13 @@ table.text-xs th {
     text-overflow: ellipsis;
 }
 
-/* Bottom artist navbar — compact, no underlines */
-nav.fixed.bottom-0 a {
-    font-size: 12px;
-    padding: 2px 8px;
-    text-decoration: none;
-    display: inline-block;
+/* Bottom artist navbar — hide scrollbar */
+.artist-nav {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE/Edge */
+}
+.artist-nav::-webkit-scrollbar {
+    display: none;                  /* Chrome/Safari */
 }
 
 /* Horizontal scroll wrapper for all pages */
