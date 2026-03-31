@@ -109,6 +109,14 @@
     </div>
 
     <script>
+        // Show error/success as alert on page load
+        {% if error %}
+        alert('{{ error }}');
+        {% endif %}
+        {% if success %}
+        alert('{{ success }}');
+        {% endif %}
+
         const loginForm = document.getElementById('login-form');
         const createForm = document.getElementById('create-form');
         const toggleBtn = document.getElementById('toggle-create');
