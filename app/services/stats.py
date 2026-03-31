@@ -172,18 +172,21 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
     for r in all_ratings:
         user_total_rated[r.user_id] = user_total_rated.get(r.user_id, 0) + 1
 
-    # Scored group count per user
+    # Scored group counts per user
     top_artists = get_top_level_artists()
-    user_scored_groups = {u.id: 0 for u in users}
+    user_scored_groups_80 = {u.id: 0 for u in users}
+    user_scored_groups_any = {u.id: 0 for u in users}
 
     for artist in top_artists:
         stats = get_artist_stats(artist.id, users, include_featured, include_remixes)
         for u in users:
             user_stats = stats['per_user'].get(u.id)
             if user_stats and stats['song_count'] > 0:
+                if user_stats['rated_count'] > 0:
+                    user_scored_groups_any[u.id] += 1
                 ratio = user_stats['rated_count'] / stats['song_count']
                 if ratio >= SCORED_GROUP_THRESHOLD:
-                    user_scored_groups[u.id] += 1
+                    user_scored_groups_80[u.id] += 1
 
     # Per-user summary
     per_user = {}
@@ -195,7 +198,8 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
             'pct_rated': pct,
             'rated_count': rated,
             'rank': 0,  # filled below
-            'scored_group_count': user_scored_groups[u.id],
+            'scored_group_count_80': user_scored_groups_80[u.id],
+            'scored_group_count_any': user_scored_groups_any[u.id],
         }
         if rated > 0:
             rated_counts.append((u.id, rated))
@@ -210,7 +214,8 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
     global_stats = {
         'avg_pct': round(sum(s['pct_rated'] for s in active_users) / len(active_users), 1) if active_users else 0.0,
         'avg_rated_count': round(sum(s['rated_count'] for s in active_users) / len(active_users), 1) if active_users else 0.0,
-        'avg_scored_group_count': round(sum(s['scored_group_count'] for s in active_users) / len(active_users), 1) if active_users else 0.0,
+        'avg_scored_group_count_any': round(sum(s['scored_group_count_any'] for s in active_users) / len(active_users), 1) if active_users else 0.0,
+        'avg_scored_group_count_80': round(sum(s['scored_group_count_80'] for s in active_users) / len(active_users), 1) if active_users else 0.0,
     }
 
     return {
