@@ -1,5 +1,5 @@
 <!-- Artist header -->
-<div class="flex items-center justify-between mb-4">
+<div class="flex items-center justify-between mb-2">
     <h2 class="text-xl font-bold"
         style="color: var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
         {{ artist.name }}
@@ -15,75 +15,114 @@
 <p style="color: var(--text-secondary);">No albums found.</p>
 {% else %}
 
-{% for entry in discography %}
-{% set album = entry.album %}
-{% set songs = entry.songs %}
-{% set ratings = entry.ratings %}
-{% set is_pending = entry.is_pending %}
-
-<!-- Album -->
-<div class="mb-6 {% if is_pending %}opacity-75{% endif %}"
-     {% if is_pending %}style="background-color: var(--pending-item); padding: 8px; border-radius: 4px;"{% endif %}>
-
-    <div class="flex items-center gap-2 mb-2">
-        <h3 class="font-semibold" style="color: var(--album-name);">
-            {{ album.name }}
-        </h3>
-        <span class="text-xs" style="color: var(--text-secondary);">
-            ({{ album.release_date }})
-        </span>
-        {% if is_pending %}
-        <a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>
-        {% endif %}
-    </div>
-
-    <table class="w-full text-sm">
-        <thead>
-            <tr style="background-color: var(--header-row);">
-                <th class="text-left px-2 py-1">Song</th>
-                <th class="px-2 py-1 w-8" title="Promoted Song">P</th>
-                {% for u in users %}
-                <th class="px-2 py-1">{{ u.username }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for song, track_num in songs %}
-            {% set song_pending = song.submission.status == 'pending' if song.submission else false %}
-            <tr class="border-b {% if song_pending %}opacity-75{% endif %}"
-                style="border-color: var(--border);
-                       {% if song_pending %}background-color: var(--pending-item);{% endif %}
-                       {% if song.is_promoted %}color: var(--promoted-song);{% endif %}">
-                <td class="px-2 py-1">
-                    {{ track_num }}. {{ song.name }}
-                    {% if song_pending %}
-                    <a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>
-                    {% endif %}
-                </td>
-                <td class="text-center px-2 py-1">
-                    {% if song.is_promoted %}&#10003;{% endif %}
-                </td>
-                {% for u in users %}
-                {% set r = ratings.get(song.id, {}).get(u.id) %}
-                <td id="rating-{{ song.id }}-{{ u.id }}"
-                    {% if r and r.note %}title="{{ r.note }}"{% endif %}
-                    class="text-center px-2 py-1
-                           {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
-                    {% if u.id == current_user.id and current_user.can_rate %}
-                    hx-post="{{ url_for('ratings.rate') }}"
-                    hx-vals='{"song_id": {{ song.id }}}'
-                    hx-swap="outerHTML"
-                    hx-trigger="click"
-                    hx-prompt="Rate {{ song.name }} (0-5):"
-                    {% endif %}
-                    style="color: var(--text-primary);">
-                    {% if r %}{{ r.rating }}{% else %}-{% endif %}
-                </td>
-                {% endfor %}
-            </tr>
+<div class="overflow-x-auto">
+<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+    <!-- Sticky header -->
+    <thead>
+        <tr style="position: sticky; top: 0; z-index: 10; background-color: var(--header-row);">
+            <th class="text-left px-2 py-1" style="width: 350px; border: 1px solid var(--grid-line);">DIRECTORY</th>
+            {% for u in users %}
+            <th class="px-1 py-1 text-center" style="width: 65px; border: 1px solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
-        </tbody>
-    </table>
+            <th class="px-1 py-1 text-center" style="width: 140px; border: 1px solid var(--grid-line);">Key (Standard)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {# Key column cycles: Standard header + 6 scores, Stealth header + 6 scores, repeat #}
+        {% set key_cycle = [0] %}
+        {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
+        {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
+
+        {% for entry in discography %}
+        {% set album = entry.album %}
+        {% set songs = entry.songs %}
+        {% set ratings = entry.ratings %}
+        {% set is_pending = entry.is_pending %}
+
+        <!-- Album header row -->
+        <tr style="background-color: var(--album-header-bg); border: 1px solid var(--grid-line);">
+            <td colspan="{{ users|length + 1 }}" class="px-2 py-1 font-bold"
+                {% if is_pending %}style="opacity: 0.7;"{% endif %}>
+                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
+                {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
+            </td>
+            {# Key column on album row shows the current key version name #}
+            {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
+            <td class="px-1 py-1 text-center text-xs font-bold"
+                style="border: 1px solid var(--grid-line);
+                       background-color: var({% if key_set_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                {{ key_names[key_set_idx] }}
+            </td>
+        </tr>
+
+        {% for song, track_num in songs %}
+        {% set song_pending = song.submission.status == 'pending' if song.submission else false %}
+        {% set row_idx = loop.index0 %}
+
+        {# Determine key entry for this row #}
+        {% set key_pos = key_cycle[0] % 7 %}
+        {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
+        {% set current_key = key_labels[key_set_idx] %}
+        {% if key_pos == 0 %}
+            {% set key_score = None %}
+        {% else %}
+            {% set key_score = 5 - (key_pos - 1) %}
+        {% endif %}
+
+        <tr style="border: 1px solid var(--grid-line);
+                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}
+                   {% if song_pending %}opacity: 0.7;{% endif %}">
+            <!-- Song name (no track number) -->
+            <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
+                {% if song.is_promoted %}color: var(--promoted-song); font-weight: 600;{% endif %}">
+                {{ song.name }}
+                {% if song_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
+            </td>
+
+            <!-- Rating cells per user -->
+            {% for u in users %}
+            {% set r = ratings.get(song.id, {}).get(u.id) %}
+            {% set cell_style = rating_cell_style(r.rating if r else None) %}
+            <td class="text-center px-1 py-1
+                       {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
+                style="border: 1px solid var(--grid-line);
+                       {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+                {% if r and r.note %}title="{{ r.note }}"{% endif %}
+                {% if u.id == current_user.id and current_user.can_rate %}
+                hx-post="{{ url_for('ratings.rate') }}"
+                hx-vals='{"song_id": {{ song.id }}}'
+                hx-swap="outerHTML"
+                hx-trigger="click"
+                hx-prompt="Rate {{ song.name }} (0-5):"
+                {% endif %}>
+                {% if r %}{{ r.rating }}{% endif %}
+            </td>
+            {% endfor %}
+
+            <!-- Key column -->
+            {% if key_pos == 0 %}
+            {# Key header row within the cycle #}
+            <td class="px-1 py-1 text-center font-bold"
+                style="border: 1px solid var(--grid-line);
+                       background-color: var({% if key_set_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                {{ key_names[key_set_idx] }}
+            </td>
+            {% else %}
+            {% set key_rating_style = rating_cell_style(key_score) %}
+            <td class="px-1 py-1"
+                style="border: 1px solid var(--grid-line);
+                       {% if key_rating_style %}background-color: {{ key_rating_style.bg }}; color: {{ key_rating_style.text }};{% endif %}">
+                {{ key_score }} {{ current_key[key_score] }}
+            </td>
+            {% endif %}
+        </tr>
+
+        {# Advance key cycle counter — use namespace trick for Jinja2 scoping #}
+        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
+
+        {% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
 </div>
-{% endfor %}
 {% endif %}
