@@ -25,3 +25,10 @@ out/
 
 # Logs
 *.log
+
+# Flask / SQLite
+instance/
+*.db
+*.db-wal
+*.db-shm
+venv/
