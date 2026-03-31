@@ -25,5 +25,29 @@ if [ ! -f "instance/arima.db" ]; then
     flask seed
 fi
 
-echo "Starting ARIMA on http://127.0.0.1:5000"
+# Set admin password if not already set
+python3 -c "
+from app import create_app
+from app.extensions import db
+from app.models.user import User
+from app.routes.auth import _hash_password
+
+app = create_app()
+with app.app_context():
+    admin = db.session.get(User, 2)
+    if admin and not admin.password:
+        admin.password = _hash_password('admin')
+        db.session.commit()
+        print('Admin password set to: admin')
+    else:
+        print('Admin password already set')
+"
+
+echo ""
+echo "==================================="
+echo "  ARIMA running on http://127.0.0.1:5000"
+echo "  Login: Stealth_Robot / admin"
+echo "  Or click 'Login as Guest'"
+echo "==================================="
+echo ""
 flask run

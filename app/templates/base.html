@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}A.R.I.M.A.{% endblock %}</title>
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -66,10 +67,13 @@
                 {% endfor %}
             </select>
 
-            <!-- Profile -->
+            <!-- Profile + Logout -->
             {% if current_user.is_authenticated %}
             <a href="#" class="hover:opacity-80" style="color: var(--navbar-text);">
                 {{ current_user.username }}
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="hover:opacity-80" style="color: var(--navbar-text);">
+                Logout
             </a>
             {% endif %}
         </div>
