@@ -47,6 +47,10 @@ function showRatingInput(event, songId) {
         } else if (e.key === 'Escape') {
             e.preventDefault();
             cancelRating(cell);
+        } else if (e.key === 'n') {
+            e.preventDefault();
+            cancelRating(cell);
+            showNoteInput(cell, songId);
         } else if (e.key === 'ArrowDown' || e.key === 's') {
             e.preventDefault();
             cancelRating(cell);
@@ -130,6 +134,119 @@ function closeRatingInput() {
         cancelRating(activeInput.cell);
     }
 }
+
+/* Note overlay — right-click or N key to add/edit notes */
+
+let activeNote = null;
+
+function showNoteInput(cell, songId) {
+    closeNoteInput();
+    closeRatingInput();
+
+    const existingNote = cell.getAttribute('title') || '';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: absolute; z-index: 50; background: #fff; border: 2px solid var(--link, #2563EB);
+        border-radius: 4px; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        min-width: 200px;
+    `;
+
+    const textarea = document.createElement('textarea');
+    textarea.value = existingNote;
+    textarea.rows = 3;
+    textarea.style.cssText = `
+        width: 100%; border: 1px solid #ccc; border-radius: 3px; padding: 4px;
+        font-size: 13px; font-family: inherit; resize: vertical; color: #000;
+    `;
+    textarea.placeholder = 'Add a note...';
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end;';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = `
+        padding: 2px 10px; font-size: 12px; background: var(--link, #2563EB);
+        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+    `;
+    saveBtn.onclick = () => submitNote(cell, songId, textarea.value.trim());
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = `
+        padding: 2px 10px; font-size: 12px; background: #6B7280;
+        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+    `;
+    cancelBtn.onclick = () => closeNoteInput();
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    overlay.appendChild(textarea);
+    overlay.appendChild(btnRow);
+
+    // Position relative to cell
+    const rect = cell.getBoundingClientRect();
+    overlay.style.position = 'fixed';
+    overlay.style.left = rect.left + 'px';
+    overlay.style.top = (rect.bottom + 2) + 'px';
+
+    document.body.appendChild(overlay);
+    textarea.focus();
+    activeNote = { overlay, cell };
+
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeNoteInput();
+        }
+    });
+}
+
+function submitNote(cell, songId, noteText) {
+    closeNoteInput();
+
+    // Get current rating value from cell text
+    const ratingText = cell.textContent.trim();
+    const rating = /^[0-5]$/.test(ratingText) ? parseInt(ratingText) : null;
+
+    if (rating === null) {
+        // No rating yet — can't attach a note without a rating
+        return;
+    }
+
+    htmx.ajax('POST', '/rate', {
+        target: cell,
+        swap: 'outerHTML',
+        values: { song_id: songId, rating: rating, note: noteText || '' },
+    });
+}
+
+function closeNoteInput() {
+    if (activeNote) {
+        activeNote.overlay.remove();
+        activeNote = null;
+    }
+}
+
+// Right-click on rating cells opens note editor
+document.addEventListener('contextmenu', (e) => {
+    const cell = e.target.closest('td[onclick*="showRatingInput"]');
+    if (cell) {
+        e.preventDefault();
+        const match = cell.getAttribute('onclick').match(/showRatingInput\(event,\s*(\d+)\)/);
+        if (match) {
+            showNoteInput(cell, parseInt(match[1]));
+        }
+    }
+});
+
+// Close note overlay on outside click
+document.addEventListener('click', (e) => {
+    if (activeNote && !activeNote.overlay.contains(e.target)) {
+        closeNoteInput();
+    }
+});
 
 function navigateToCell(cell, direction) {
     const row = cell.parentElement;

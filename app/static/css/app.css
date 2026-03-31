@@ -56,6 +56,21 @@ table.text-xs th {
     text-overflow: ellipsis;
 }
 
+/* Note indicator — Google Sheets style triangle in top-right corner */
+td.has-note {
+    position: relative;
+}
+td.has-note::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 6px solid #000;
+    border-left: 6px solid transparent;
+}
+
 /* Bottom artist navbar — hide scrollbar */
 .artist-nav {
     scrollbar-width: none;          /* Firefox */
