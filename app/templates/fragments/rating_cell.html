@@ -1,7 +1,7 @@
 {% set cell_style = rating_cell_style(rating.rating if rating else None) %}
 <td id="rating-{{ song_id }}-{{ user_id }}"
     {% if rating and rating.note %}title="{{ rating.note }}"{% endif %}
-    class="text-center px-1 py-1 relative cursor-pointer hover:opacity-70"
+    class="text-center px-1 py-1 relative cursor-pointer hover:opacity-70{% if rating and rating.note %} has-note{% endif %}"
     style="border: 1px solid var(--grid-line);
            {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
     onclick="showRatingInput(event, {{ song_id }})">
