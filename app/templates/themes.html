@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Themes — A.R.I.M.A.{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Themes</h1>
+
+    <div class="space-y-6">
+    {% for data in themes %}
+    <div class="p-4 border rounded" style="border-color: var(--border);">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="font-semibold">{{ data.display_name }}</h2>
+            {% if data.can_edit %}
+            <a href="{{ url_for('themes.theme_edit', theme_id=data.theme.id) }}"
+               class="text-sm px-3 py-1 rounded"
+               style="background-color: var(--button-primary); color: white;">
+                Edit
+            </a>
+            {% endif %}
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% for col in colour_cols %}
+            {% set val = data.colours[col] %}
+            {% if val %}
+            <div class="text-center">
+                <div class="w-8 h-8 rounded border"
+                     style="background-color: {{ val }}; border-color: var(--grid-line);"
+                     title="{{ col }}: {{ val }}"></div>
+                <span class="text-xs" style="color: var(--text-secondary);">{{ col[:8] }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}
