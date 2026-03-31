@@ -1,37 +1,24 @@
 {% if not entries %}
 <p style="color: var(--text-secondary);">No changelog entries found.</p>
 {% else %}
-<table class="w-full text-sm border-collapse">
+<table class="w-full text-sm border-collapse" style="border: 1px solid var(--grid-line);">
     <thead>
         <tr style="background-color: var(--header-row);">
-            <th class="text-left px-3 py-2">Date</th>
-            <th class="text-left px-3 py-2">User</th>
-            <th class="text-left px-3 py-2">Approved By</th>
-            <th class="text-left px-3 py-2">Description</th>
-            <th class="text-left px-3 py-2">Justification</th>
+            <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Name</th>
+            <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Desc</th>
+            <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Date</th>
         </tr>
     </thead>
     <tbody>
         {% for e in entries %}
-        <tr style="border-bottom: 1px solid var(--border);">
-            <td class="px-3 py-2 text-xs whitespace-nowrap">{{ e.date[:10] if e.date else '-' }}</td>
-            <td class="px-3 py-2 text-xs">
-                {{ e.user.username if e.user else 'Deleted user' }}
+        <tr style="border: 1px solid var(--grid-line);
+                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
+                {{ e.user.username if e.user else 'Unknown' }}
             </td>
-            <td class="px-3 py-2 text-xs">
-                {% if e.approved_by_id == 0 %}
-                (auto)
-                {% elif e.submission and e.submission.status == 'pending' %}
-                <a href="{{ url_for('submissions.submissions_list') }}" style="color: var(--link);">(pending)</a>
-                {% elif e.approved_by %}
-                {{ e.approved_by.username }}
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td class="px-3 py-2">{{ e.description }}</td>
-            <td class="px-3 py-2 text-xs" style="color: var(--text-secondary);">
-                {{ e.justification or '' }}
+            <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">{{ e.description }}</td>
+            <td class="px-3 py-2 text-xs whitespace-nowrap" style="border: 1px solid var(--grid-line);">
+                {{ e.date[:10] if e.date else '-' }}
             </td>
         </tr>
         {% endfor %}
