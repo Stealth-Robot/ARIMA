@@ -24,6 +24,14 @@ NON_DATA_SHEETS = {
 }
 MISC_ARTISTS_SHEET = 'Misc. Artists'
 
+# Tab colour → gender mapping
+TAB_COLOUR_GENDER = {
+    'FFFF00FF': 'female',   # Pink/Magenta
+    'FF4A86E8': 'male',     # Blue
+    'FF3C78D8': 'male',     # Dark Blue
+    'FF00FF00': 'mixed',    # Green
+}
+
 USER_COL_START = 1   # column B (0-based)
 USER_COL_END = 11    # column L (0-based, inclusive)
 S_FLAG_COL = 15      # column P (0-based)
@@ -310,12 +318,35 @@ def extract_changelog(ws):
     return entries
 
 
+def extract_tab_genders(wb_format):
+    """Extract gender from tab colours. Requires workbook opened WITHOUT data_only."""
+    genders = {}
+    for name in wb_format.sheetnames:
+        if name in NON_DATA_SHEETS or name == MISC_ARTISTS_SHEET:
+            continue
+        ws = wb_format[name]
+        tc = ws.sheet_properties.tabColor
+        if tc and tc.rgb:
+            genders[name] = TAB_COLOUR_GENDER.get(tc.rgb, 'mixed')
+        else:
+            genders[name] = 'mixed'
+    return genders
+
+
 def main():
     args = parse_args()
 
     print(f'Loading {args.spreadsheet}...')
     wb = openpyxl.load_workbook(args.spreadsheet, data_only=True)
     print(f'  {len(wb.sheetnames)} sheets found')
+
+    # Load again without data_only for tab colours
+    print('  Reading tab colours...')
+    wb_format = openpyxl.load_workbook(args.spreadsheet)
+    tab_genders = extract_tab_genders(wb_format)
+    from collections import Counter
+    gender_dist = Counter(tab_genders.values())
+    print(f'  Gender distribution: {dict(gender_dist)}')
 
     artist_sheet_names = [
         name for name in wb.sheetnames
@@ -341,11 +372,16 @@ def main():
         ws = wb[sheet_name]
         entries = extract_artist_sheet(ws, sheet_name, users)
 
+        # Get gender from tab colour (main artist's tab)
+        sheet_gender = tab_genders.get(sheet_name, 'mixed')
+
         for entry in entries:
             song_count = sum(len(a['songs']) for a in entry['albums'])
             rating_count = sum(len(s['ratings']) for a in entry['albums'] for s in a['songs'])
 
             if entry['albums']:
+                # Subunits/soloists inherit parent's gender
+                entry['gender'] = sheet_gender
                 all_artists.append(entry)
                 total_albums += len(entry['albums'])
                 total_songs += song_count

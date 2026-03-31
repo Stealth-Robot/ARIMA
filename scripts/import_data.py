@@ -107,10 +107,16 @@ def _import_artists(artists_data, user_map):
         existing = Artist.query.filter_by(name=name).first()
         if existing:
             artist_map[name] = existing.id
+            # Main artists override gender (subunits may have created the row first)
+            if entry['relationship'] == 'main':
+                gender_map_upd = {'female': 0, 'male': 1, 'mixed': 2}
+                existing.gender_id = gender_map_upd.get(entry.get('gender', 'mixed'), 2)
         else:
+            gender_map = {'female': 0, 'male': 1, 'mixed': 2}
+            gender_id = gender_map.get(entry.get('gender', 'mixed'), 2)
             artist = Artist(
                 name=name,
-                gender_id=2,  # Default: Mixed
+                gender_id=gender_id,
                 country_id=0,  # Default: Korean
                 submitted_by_id=0,
                 submission_id=0,
