@@ -57,6 +57,11 @@ def parse_album_header(text):
     return text.strip(), None
 
 
+def has_year_in_parens(text):
+    """Check if text contains (YYYY) pattern."""
+    return bool(re.search(r'\(\d{4}\)', str(text)))
+
+
 def extract_ratings(ws, row_idx, users):
     """Extract ratings for a song row. Returns dict of username→rating."""
     ratings = {}
@@ -74,59 +79,115 @@ def extract_ratings(ws, row_idx, users):
 
 
 def extract_artist(ws, artist_name, users):
-    """Extract albums and songs from an artist sheet."""
+    """Extract albums and songs from an artist sheet.
+
+    Structure:
+    - Main discography: s=True for songs, s=False for album headers
+    - After a BLANK row: subunit/soloist section begins
+      - First row after blank = member/subunit name (header)
+      - Then album headers with (YYYY)
+      - Then songs (may be s=True or s=False)
+    - BLANK rows separate each subunit/soloist section
+    """
     albums = []
     current_album = None
     track_num = 0
+    in_soloist_section = False
+    expect_member_header = False
 
     for row_idx in range(2, ws.max_row + 1):
-        name = ws.cell(row=row_idx, column=1).value
-        if name is None or str(name).strip() == '':
+        raw_name = ws.cell(row=row_idx, column=1).value
+        is_blank = raw_name is None or str(raw_name).strip() == '' or str(raw_name).strip() == 'None'
+
+        if is_blank:
+            # Blank row = section separator
+            # Next non-blank row could be a member header
+            expect_member_header = True
+            current_album = None  # reset album context
             continue
 
+        name_str = str(raw_name).strip()
         s_flag = ws.cell(row=row_idx, column=S_FLAG_COL + 1).value
+        is_s_true = s_flag is True or s_flag == 'True'
+        is_s_false = s_flag is False or s_flag == 'False'
 
-        # Detect if a row marked s=False actually has ratings (soloist/member songs)
-        is_song_row = s_flag is True or s_flag == 'True'
-        if not is_song_row and (s_flag is False or s_flag == 'False'):
-            has_ratings = any(
-                ws.cell(row=row_idx, column=c).value is not None
-                for c in range(USER_COL_START + 1, USER_COL_END + 2)
-            )
-            if has_ratings:
-                is_song_row = True  # treat as song despite s=False
-
-        if not is_song_row and (s_flag is False or s_flag == 'False'):
-            # Album header row
-            album_name, year = parse_album_header(str(name))
-            current_album = {
-                'name': album_name,
-                'year': year,
-                'songs': [],
-            }
-            albums.append(current_album)
-            track_num = 0
-        elif is_song_row:
-            # Song row
+        # In the main discography, s flag is reliable
+        if is_s_true:
+            # Definitely a song
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
             song = {
-                'name': str(name).strip(),
+                'name': name_str,
                 'track_number': track_num,
                 'ratings': ratings,
             }
             if current_album is not None:
                 current_album['songs'].append(song)
             else:
-                # Song without album — create a default album
                 current_album = {
                     'name': f'{artist_name} - Singles',
                     'year': None,
                     'songs': [song],
                 }
                 albums.append(current_album)
+            expect_member_header = False
+            continue
 
-    # Filter out empty albums (subunit/member headers with no songs)
+        if is_s_false:
+            if expect_member_header and not has_year_in_parens(name_str):
+                # This is a member/subunit name after a blank row
+                # Treat as a section header — create an album group for it
+                in_soloist_section = True
+                current_album = None
+                expect_member_header = False
+                continue
+
+            if has_year_in_parens(name_str):
+                # Album header (has year)
+                album_name, year = parse_album_header(name_str)
+                current_album = {
+                    'name': album_name,
+                    'year': year,
+                    'songs': [],
+                }
+                albums.append(current_album)
+                track_num = 0
+                expect_member_header = False
+            else:
+                # In soloist section with s=False: this is a song
+                if in_soloist_section and current_album is not None:
+                    track_num += 1
+                    ratings = extract_ratings(ws, row_idx, users)
+                    song = {
+                        'name': name_str,
+                        'track_number': track_num,
+                        'ratings': ratings,
+                    }
+                    current_album['songs'].append(song)
+                elif current_album is not None:
+                    # Not in soloist section but s=False without year
+                    # Could be a non-standard album header (no year)
+                    album_name, year = parse_album_header(name_str)
+                    current_album = {
+                        'name': album_name,
+                        'year': year,
+                        'songs': [],
+                    }
+                    albums.append(current_album)
+                    track_num = 0
+                else:
+                    # No album context, not after blank — treat as album header
+                    album_name, year = parse_album_header(name_str)
+                    current_album = {
+                        'name': album_name,
+                        'year': year,
+                        'songs': [],
+                    }
+                    albums.append(current_album)
+                    track_num = 0
+                expect_member_header = False
+
+    # Filter out empty albums (headers with no songs beneath them)
     return [a for a in albums if a['songs']]
 
 
