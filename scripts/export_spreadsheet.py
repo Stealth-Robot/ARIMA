@@ -213,7 +213,8 @@ def _parse_section_standard(ws, rows, users):
         if s_flag is True or s_flag == 'True':
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
-            song = {'name': name_str, 'track_number': track_num, 'ratings': ratings}
+            is_promoted = bool(ws.cell(row=row_idx, column=1).font and ws.cell(row=row_idx, column=1).font.bold)
+            song = {'name': name_str, 'track_number': track_num, 'is_promoted': is_promoted, 'ratings': ratings}
             if current_album is not None:
                 current_album['songs'].append(song)
             else:
@@ -248,7 +249,8 @@ def _parse_section_soloist(ws, rows, users):
             # Song
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
-            song = {'name': name_str, 'track_number': track_num, 'ratings': ratings}
+            is_promoted = bool(ws.cell(row=row_idx, column=1).font and ws.cell(row=row_idx, column=1).font.bold)
+            song = {'name': name_str, 'track_number': track_num, 'is_promoted': is_promoted, 'ratings': ratings}
             if current_album is not None:
                 current_album['songs'].append(song)
             else:

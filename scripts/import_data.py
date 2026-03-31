@@ -200,7 +200,7 @@ def _import_album(artist_id, alb_data, user_map):
             name=song_data['name'],
             submitted_by_id=0,
             submission_id=0,
-            is_promoted=False,
+            is_promoted=song_data.get('is_promoted', False),
             is_remix=False,
         )
         db.session.add(song)

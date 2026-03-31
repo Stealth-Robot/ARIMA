@@ -68,7 +68,7 @@ DARK_THEME = {
     'navbar_bg': '#000000',
     'navbar_text': '#E5E7EB',
     'header_row': '#1E3A5F',
-    'promoted_song': '#92400E',
+    'promoted_song': '#FDE68A',
     'gender_female': '#F472B6',
     'gender_male': '#60A5FA',
     'gender_mixed': '#00CC00',
