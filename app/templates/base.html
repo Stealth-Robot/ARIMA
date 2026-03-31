@@ -33,6 +33,9 @@
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
         <a href="{{ url_for('submissions.submissions_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Submissions</a>
         {% endif %}
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('users.user_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Users</a>
+        {% endif %}
 
         <!-- Spacer -->
         <div class="flex-1"></div>

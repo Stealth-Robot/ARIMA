@@ -40,34 +40,40 @@
         {% set is_pending = entry.is_pending %}
 
         <!-- Album header row -->
+        {# Key cycle: 14-row pattern. 0=Std header, 1-6=Std scores, 7=Stealth header, 8-13=Stealth scores #}
+        {% set kp = key_cycle[0] % 14 %}
         <tr style="background-color: var(--album-header-bg); border: 1px solid var(--grid-line);">
             <td colspan="{{ users|length + 1 }}" class="px-2 py-1 font-bold"
                 {% if is_pending %}style="opacity: 0.7;"{% endif %}>
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
-            {# Key column on album row shows the current key version name #}
-            {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
+            {# Key column on album row #}
+            {% if kp == 0 or kp == 7 %}
+            {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
                 style="border: 1px solid var(--grid-line);
-                       background-color: var({% if key_set_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
-                {{ key_names[key_set_idx] }}
+                       background-color: var({% if key_hdr_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                {{ key_names[key_hdr_idx] }}
             </td>
+            {% else %}
+            {% set key_score_ab = 5 - ((kp - 1) % 7) if kp < 7 else 5 - ((kp - 8) % 7) %}
+            {% set key_set_ab = 0 if kp < 7 else 1 %}
+            {% set key_style_ab = rating_cell_style(key_score_ab) %}
+            <td class="px-1 py-1"
+                style="border: 1px solid var(--grid-line);
+                       {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
+                {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
+            </td>
+            {% endif %}
         </tr>
+        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
 
         {% for song, track_num in songs %}
         {% set song_pending = song.submission.status == 'pending' if song.submission else false %}
-        {% set row_idx = loop.index0 %}
 
-        {# Determine key entry for this row #}
-        {% set key_pos = key_cycle[0] % 7 %}
-        {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
-        {% set current_key = key_labels[key_set_idx] %}
-        {% if key_pos == 0 %}
-            {% set key_score = None %}
-        {% else %}
-            {% set key_score = 5 - (key_pos - 1) %}
-        {% endif %}
+        {# Key cycle position for this song row #}
+        {% set kp = key_cycle[0] % 14 %}
 
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}
@@ -95,20 +101,22 @@
             </td>
             {% endfor %}
 
-            <!-- Key column -->
-            {% if key_pos == 0 %}
-            {# Key header row within the cycle #}
+            <!-- Key column (14-row cycle) -->
+            {% if kp == 0 or kp == 7 %}
+            {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center font-bold"
                 style="border: 1px solid var(--grid-line);
-                       background-color: var({% if key_set_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
-                {{ key_names[key_set_idx] }}
+                       background-color: var({% if key_hdr_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                {{ key_names[key_hdr_idx] }}
             </td>
             {% else %}
-            {% set key_rating_style = rating_cell_style(key_score) %}
+            {% set ks = 5 - ((kp - 1) % 7) if kp < 7 else 5 - ((kp - 8) % 7) %}
+            {% set ki = 0 if kp < 7 else 1 %}
+            {% set kstyle = rating_cell_style(ks) %}
             <td class="px-1 py-1"
                 style="border: 1px solid var(--grid-line);
-                       {% if key_rating_style %}background-color: {{ key_rating_style.bg }}; color: {{ key_rating_style.text }};{% endif %}">
-                {{ key_score }} {{ current_key[key_score] }}
+                       {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                {{ ks }} {{ key_labels[ki][ks] }}
             </td>
             {% endif %}
         </tr>

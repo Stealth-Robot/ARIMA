@@ -20,11 +20,7 @@
             {% for u in users %}
             <th class="px-1 py-1 text-center" style="width: 55px; border: 1px solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
-            {# Separator + Set 3: rated count per user #}
-            <th class="px-1 py-1" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line); width: 5px;"></th>
-            {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 55px; border: 1px solid var(--grid-line);">{{ u.username }}</th>
-            {% endfor %}
+            {# Set 3 (rated count) removed — was intermediate calculation only #}
         </tr>
     </thead>
     <tbody>
@@ -42,8 +38,7 @@
             <td class="px-1 py-1 text-center font-bold text-lg" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"
                 rowspan="5">{{ summary.total_songs }}</td>
             {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
+            {# Set 3 removed #}
         </tr>
         {# Row 2: Total Rated Songs #}
         <tr style="border: 1px solid var(--grid-line);">
@@ -53,8 +48,7 @@
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rated_count }}</td>
             {% endfor %}
             {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
+            {# Set 3 removed #}
         </tr>
         {# Row 3: Rank #}
         <tr style="border: 1px solid var(--grid-line);">
@@ -64,8 +58,7 @@
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rank or '-' }}</td>
             {% endfor %}
             {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
+            {# Set 3 removed #}
         </tr>
         {# Row 4: SGC (any%) #}
         <tr style="border: 1px solid var(--grid-line);">
@@ -75,8 +68,7 @@
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_any }}</td>
             {% endfor %}
             {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
+            {# Set 3 removed #}
         </tr>
         {# Row 5: SGC (80%) #}
         <tr style="border: 3px solid var(--grid-line);">
@@ -89,8 +81,7 @@
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_80 }}</td>
             {% endfor %}
             {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);"></td>{% endfor %}
+            {# Set 3 removed #}
         </tr>
 
         <!-- GAP -->
@@ -135,13 +126,7 @@
                 {{ stats.per_user[u.id].unrated_count }}
             </td>
             {% endfor %}
-            {# Separator + Set 3: rated count per user #}
-            <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-            {% for u in users %}
-            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">
-                {{ stats.per_user[u.id].rated_count }}
-            </td>
-            {% endfor %}
+            {# Set 3 removed #}
         </tr>
         {% endfor %}
     </tbody>

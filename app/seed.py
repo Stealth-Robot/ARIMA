@@ -46,9 +46,9 @@ CLASSIC_THEME = {
     'heatmap_mid': '#FF8E1E',
     'heatmap_low': '#8AB5FC',
     # Completion heat map (3)
-    'pct_high': '#FFB7FE',
-    'pct_mid': '#FCA644',
-    'pct_low': '#8AB5FC',
+    'pct_high': '#FCB045',
+    'pct_mid': '#B76D7D',
+    'pct_low': '#833AB4',
     # Structural (5)
     'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
@@ -92,9 +92,9 @@ DARK_THEME = {
     'heatmap_mid': '#FF8E1E',
     'heatmap_low': '#8AB5FC',
     # Completion heat map (3)
-    'pct_high': '#FFB7FE',
-    'pct_mid': '#FCA644',
-    'pct_low': '#8AB5FC',
+    'pct_high': '#FCB045',
+    'pct_mid': '#B76D7D',
+    'pct_low': '#833AB4',
     # Structural (5) — dark variants
     'album_header_bg': '#5C2A4A',
     'row_alternate': '#16213E',
