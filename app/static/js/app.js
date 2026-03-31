@@ -1,86 +1,116 @@
-/* Rating popover — reads colours from CSS custom properties (theme-driven) */
+/* Inline rating — spreadsheet-style type-and-go */
 
-let activePopover = null;
+let activeInput = null;
 
-function getRatingColours() {
-    const style = getComputedStyle(document.documentElement);
-    return {
-        5: {bg: style.getPropertyValue('--rating-5-bg').trim(), text: style.getPropertyValue('--rating-text-light').trim()},
-        4: {bg: style.getPropertyValue('--rating-4-bg').trim(), text: style.getPropertyValue('--rating-text-dark').trim()},
-        3: {bg: style.getPropertyValue('--rating-3-bg').trim(), text: style.getPropertyValue('--rating-text-dark').trim()},
-        2: {bg: style.getPropertyValue('--rating-2-bg').trim(), text: style.getPropertyValue('--rating-text-dark').trim()},
-        1: {bg: style.getPropertyValue('--rating-1-bg').trim(), text: style.getPropertyValue('--rating-text-dark').trim()},
-        0: {bg: style.getPropertyValue('--rating-0-bg').trim(), text: style.getPropertyValue('--rating-text-light').trim()},
-    };
-}
-
-function showRatingPopover(event, songId) {
+function showRatingInput(event, songId) {
     event.stopPropagation();
-    closeRatingPopover();
+    closeRatingInput();
 
     const cell = event.currentTarget;
-    const colours = getRatingColours();
-    const popover = document.createElement('div');
-    popover.className = 'rating-popover';
-    popover.style.cssText = `
-        position: absolute; z-index: 50; display: flex; gap: 2px;
-        padding: 4px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        background: white; border: 1px solid #ccc; left: 50%; top: 100%;
-        transform: translateX(-50%); white-space: nowrap;
+    const currentValue = cell.textContent.trim();
+
+    // Save original content for cancel
+    cell.dataset.original = cell.innerHTML;
+    cell.dataset.songId = songId;
+
+    // Create input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.maxLength = 1;
+    input.value = currentValue;
+    input.style.cssText = `
+        width: 100%; height: 100%; border: none; outline: 2px solid var(--link, #2563EB);
+        text-align: center; font-size: inherit; font-family: inherit;
+        background: transparent; padding: 0; margin: 0; box-sizing: border-box;
     `;
 
-    // Buttons 0-5
-    for (let score = 0; score <= 5; score++) {
-        const btn = document.createElement('button');
-        btn.textContent = score;
-        btn.style.cssText = `
-            width: 24px; height: 24px; border: none; border-radius: 3px;
-            cursor: pointer; font-weight: bold; font-size: 11px;
-            background-color: ${colours[score].bg};
-            color: ${colours[score].text};
-        `;
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeRatingPopover();
-            htmx.ajax('POST', '/rate', {
-                target: cell,
-                swap: 'outerHTML',
-                values: {song_id: songId, rating: score},
-            });
-        });
-        popover.appendChild(btn);
-    }
+    // Clear cell and insert input
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    input.focus();
+    input.select();
+    activeInput = { input, cell };
 
-    // Clear button (×)
-    const clearBtn = document.createElement('button');
-    clearBtn.textContent = '×';
-    clearBtn.style.cssText = `
-        width: 24px; height: 24px; border: 1px solid var(--grid-line, #ccc); border-radius: 3px;
-        cursor: pointer; font-size: 14px; background: var(--row-alternate, #f5f5f5);
-        color: var(--text-secondary, #666);
-    `;
-    clearBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeRatingPopover();
+    // Key handlers
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = input.value.trim();
+            if (val === '') {
+                // Empty = delete rating
+                submitRating(cell, songId, null);
+            } else if (/^[0-5]$/.test(val)) {
+                submitRating(cell, songId, parseInt(val));
+            }
+            // Invalid input — do nothing, stay in input
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelRating(cell);
+        } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
+            // Block non-0-5 characters
+            e.preventDefault();
+        }
+    });
+
+    // Blur = cancel
+    input.addEventListener('blur', () => {
+        // Small delay to allow Enter handler to fire first
+        setTimeout(() => {
+            if (activeInput && activeInput.cell === cell) {
+                cancelRating(cell);
+            }
+        }, 100);
+    });
+}
+
+function submitRating(cell, songId, rating) {
+    activeInput = null;
+
+    if (rating === null) {
+        // Delete rating
         htmx.ajax('POST', '/rate/delete', {
             target: cell,
             swap: 'outerHTML',
-            values: {song_id: songId},
+            values: { song_id: songId },
         });
-    });
-    popover.appendChild(clearBtn);
+    } else {
+        htmx.ajax('POST', '/rate', {
+            target: cell,
+            swap: 'outerHTML',
+            values: { song_id: songId, rating: rating },
+        });
+    }
 
-    cell.style.position = 'relative';
-    cell.appendChild(popover);
-    activePopover = popover;
+    // Auto-advance to next cell below after a brief delay (wait for HTMX swap)
+    const colIndex = Array.from(cell.parentElement.children).indexOf(cell);
+    const currentRow = cell.parentElement;
+
+    setTimeout(() => {
+        // Walk rows to find next song row (skip album headers)
+        let nextRow = currentRow.nextElementSibling;
+        while (nextRow) {
+            const nextCell = nextRow.children[colIndex];
+            if (nextCell && nextCell.getAttribute('onclick')) {
+                nextCell.click();
+                break;
+            }
+            nextRow = nextRow.nextElementSibling;
+        }
+    }, 300);
 }
 
-function closeRatingPopover() {
-    if (activePopover) {
-        activePopover.remove();
-        activePopover = null;
+function cancelRating(cell) {
+    if (cell.dataset.original !== undefined) {
+        cell.innerHTML = cell.dataset.original;
+        delete cell.dataset.original;
+        delete cell.dataset.songId;
+    }
+    activeInput = null;
+}
+
+function closeRatingInput() {
+    if (activeInput) {
+        cancelRating(activeInput.cell);
     }
 }
-
-// Close popover on click outside
-document.addEventListener('click', closeRatingPopover);

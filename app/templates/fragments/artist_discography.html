@@ -95,7 +95,7 @@
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
                 {% if r and r.note %}title="{{ r.note }}"{% endif %}
                 {% if u.id == current_user.id and current_user.can_rate %}
-                onclick="showRatingPopover(event, {{ song.id }})"
+                onclick="showRatingInput(event, {{ song.id }})"
                 {% endif %}>
                 {% if r %}{{ r.rating }}{% endif %}
             </td>
