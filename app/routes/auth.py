@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 
-from flask import Blueprint, request, redirect, url_for, session
+from flask import Blueprint, request, redirect, url_for, session, render_template
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app.extensions import db, bcrypt
-from app.models.user import User
+from app.models.user import User, UserSettings
+from app.models.theme import Theme
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,10 +26,9 @@ def login():
             return redirect(url_for('home.home'))
 
         # Generic error — no indication of whether username or password was wrong
-        return redirect(url_for('auth.login'))
+        return render_template('auth/login.html', error='Invalid username or password.')
 
-    # GET — render login page (placeholder until #4)
-    return 'Login page placeholder', 200
+    return render_template('auth/login.html')
 
 
 @auth_bp.route('/guest', methods=['POST'])
@@ -36,6 +36,64 @@ def guest_login():
     guest = db.session.get(User, 1)
     if guest:
         _do_login(guest)
+    return redirect(url_for('home.home'))
+
+
+@auth_bp.route('/create-account', methods=['POST'])
+def create_account():
+    email = request.form.get('email', '').strip().lower()
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '')
+    confirm = request.form.get('confirm_password', '')
+
+    # Validate passwords match
+    if password != confirm:
+        return render_template('auth/login.html', mode='create',
+                               create_email=email, create_username=username,
+                               error='Passwords do not match.')
+
+    if not password:
+        return render_template('auth/login.html', mode='create',
+                               create_email=email, create_username=username,
+                               error='Password is required.')
+
+    # Look up invited user by email
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        return render_template('auth/login.html', mode='create',
+                               create_email=email,
+                               error='User Not Invited')
+
+    if user.password is not None:
+        return render_template('auth/login.html', mode='create',
+                               create_email=email,
+                               error='User Account Already Exists')
+
+    # Check username uniqueness (if changed from the pre-populated value)
+    if username != user.username:
+        existing = User.query.filter_by(username=username).first()
+        if existing:
+            return render_template('auth/login.html', mode='create',
+                                   create_email=email, create_username=username,
+                                   error='Username already taken.')
+
+    # All valid — create account in single transaction
+    user.username = username
+    user.password = _hash_password(password)
+    user.created_at = datetime.now(timezone.utc).isoformat()
+
+    # Create UserSettings with defaults
+    settings = UserSettings(user_id=user.id)
+    db.session.add(settings)
+
+    # Create personal Theme row (all NULLs — renders as Classic via fallback)
+    personal_theme = Theme(user_id=user.id)
+    db.session.add(personal_theme)
+
+    db.session.commit()
+
+    _do_login(user)
     return redirect(url_for('home.home'))
 
 
