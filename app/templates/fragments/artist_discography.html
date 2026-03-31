@@ -22,7 +22,7 @@
         <tr style="position: sticky; top: 48px; z-index: 10;">
             <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); background-color: var(--header-user-bg);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
             {% endfor %}
             <th class="px-1 py-1 text-center" style="width: 125px; border: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
@@ -54,7 +54,8 @@
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       border-top: 2px solid #000; border-bottom: 2px solid #000;
                        background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
@@ -63,7 +64,9 @@
             {% set key_set_ab = 0 if kp < 7 else 1 %}
             {% set key_style_ab = rating_cell_style(key_score_ab) %}
             <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
+                       {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
                        {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
                 {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
             </td>
@@ -107,7 +110,8 @@
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center font-bold"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       border-top: 2px solid #000; border-bottom: 2px solid #000;
                        background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
@@ -116,7 +120,9 @@
             {% set ki = 0 if kp < 7 else 1 %}
             {% set kstyle = rating_cell_style(ks) %}
             <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
+                       {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
                        {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                 {{ ks }} {{ key_labels[ki][ks] }}
             </td>
@@ -157,7 +163,9 @@
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
-                style="border: 1px solid var(--grid-line); background-color: var(--bg-primary);">
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       border-top: 2px solid #000; border-bottom: 2px solid #000;
+                       background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
             {% else %}
@@ -165,7 +173,9 @@
             {% set key_set_ab = 0 if kp < 7 else 1 %}
             {% set key_style_ab = rating_cell_style(key_score_ab) %}
             <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
+                       {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
                        {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
                 {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
             </td>
@@ -195,7 +205,9 @@
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center font-bold"
-                style="border: 1px solid var(--grid-line); background-color: var(--bg-primary);">
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       border-top: 2px solid #000; border-bottom: 2px solid #000;
+                       background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
             {% else %}
@@ -203,7 +215,9 @@
             {% set ki = 0 if kp < 7 else 1 %}
             {% set kstyle = rating_cell_style(ks) %}
             <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
+                       {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
+                       {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
                        {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                 {{ ks }} {{ key_labels[ki][ks] }}
             </td>
