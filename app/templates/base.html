@@ -24,7 +24,7 @@
                 background-color: var(--navbar-bg); color: var(--navbar-text);
                 display: flex; flex-wrap: nowrap; align-items: center;
                 gap: 10px; padding: 6px 12px; overflow-x: auto;
-                white-space: nowrap; font-size: 13px;">
+                white-space: nowrap; font-size: 15px;">
         <a href="{{ url_for('home.home') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Home</a>
         <a href="{{ url_for('stats.artist_stats') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Artist Stats</a>
         <a href="{{ url_for('stats.global_stats') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Global Stats</a>
@@ -45,7 +45,7 @@
             <select name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 11px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for c in countries %}
                 <option value="{{ c.id }}" {% if current_country == c.id %}selected{% endif %}>
@@ -58,7 +58,7 @@
             <select name="genre"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 11px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for g in genres %}
                 <option value="{{ g.id }}" {% if current_genre == g.id %}selected{% endif %}>
@@ -80,7 +80,7 @@
     </nav>
 
     <!-- Main content -->
-    <main id="main-content" class="p-4 overflow-x-auto" style="padding-top: 44px;">
+    <main id="main-content" class="p-4 overflow-x-auto" style="padding-top: 48px;">
         {% block content %}{% endblock %}
     </main>
 
