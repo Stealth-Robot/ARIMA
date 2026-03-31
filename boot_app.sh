@@ -19,19 +19,19 @@ export SECRET_KEY="${SECRET_KEY:-dev-secret-key-change-me}"
 export PEPPER="${PEPPER:-dev-pepper-change-me}"
 export FLASK_APP=app:create_app
 
-# Seed database if it doesn't exist
-if [ ! -f "instance/arima.db" ]; then
-    echo "Seeding database..."
-    flask seed
-    # Import spreadsheet data if data.json exists
-    if [ -f "data.json" ]; then
-        echo "Importing spreadsheet data..."
-        flask import-data data.json
-        echo "Merging duplicate users..."
-        flask merge-users
-        echo "Renaming admin..."
-        flask rename-admin
-    fi
+# Seed database (idempotent — always run to pick up theme/lookup changes)
+echo "Seeding database..."
+flask seed
+
+# Import spreadsheet data on first run (if DB is fresh and data.json exists)
+if [ ! -f "instance/.imported" ] && [ -f "data.json" ]; then
+    echo "Importing spreadsheet data..."
+    flask import-data data.json
+    echo "Merging duplicate users..."
+    flask merge-users
+    echo "Renaming admin..."
+    flask rename-admin
+    touch instance/.imported
 fi
 
 # Set admin password if not already set
