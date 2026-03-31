@@ -1,3 +1,31 @@
+/* Hamburger artist menu — toggle, outside-click, Escape */
+
+function toggleArtistMenu() {
+    var menu = document.getElementById('artist-menu');
+    if (!menu) return;
+    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+}
+
+function closeArtistMenu() {
+    var menu = document.getElementById('artist-menu');
+    if (menu) menu.style.display = 'none';
+}
+
+document.addEventListener('click', function (e) {
+    var menu = document.getElementById('artist-menu');
+    var btn = document.getElementById('hamburger-btn');
+    if (!menu || menu.style.display === 'none') return;
+    if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        closeArtistMenu();
+    }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeArtistMenu();
+    }
+});
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
