@@ -3,6 +3,7 @@ import os
 
 import click
 from flask import Flask
+from flask_login import current_user
 from sqlalchemy import event
 
 from app.config import Config, ProdConfig
@@ -41,6 +42,14 @@ def create_app():
 
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
+
+    # Theme context processor — injects resolved theme into all templates
+    @flask_app.context_processor
+    def inject_theme():
+        from app.services.theme import get_resolved_theme
+        if current_user.is_authenticated:
+            return {'theme': get_resolved_theme(current_user)}
+        return {'theme': {}}
 
     # Register routes
     from app.routes import register_routes

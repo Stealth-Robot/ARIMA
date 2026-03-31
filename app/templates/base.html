@@ -17,7 +17,7 @@
     </style>
     {% endif %}
 </head>
-<body>
+<body style="background-color: var(--bg-primary); color: var(--text-primary);">
     {% block content %}{% endblock %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
