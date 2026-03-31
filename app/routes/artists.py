@@ -37,16 +37,27 @@ def artist_detail(artist_id):
     discography = _build_discography(artist)
     users = _get_display_users()
 
+    # Build child sections (subunits + soloists)
+    children_sections = []
+    subunits, soloists = get_children(artist.id)
+    for child in subunits + soloists:
+        child_disco = _build_discography(child)
+        if child_disco:
+            children_sections.append({
+                'artist': child,
+                'discography': child_disco,
+            })
+
     if request.headers.get('HX-Request'):
         return render_template('fragments/artist_discography.html',
                                artist=artist, discography=discography, users=users,
-                               gender_css=GENDER_CSS)
+                               gender_css=GENDER_CSS, children=children_sections)
 
     navbar = _get_filtered_navbar()
     return render_template('artists.html',
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
-                           gender_css=GENDER_CSS)
+                           gender_css=GENDER_CSS, children=children_sections)
 
 
 def _get_display_users():
@@ -97,8 +108,8 @@ def _get_filtered_navbar():
 
 
 def _build_discography(artist):
-    """Build discography data for an artist including subunit/soloist songs."""
-    song_ids = get_discography_songs(artist.id)
+    """Build discography data for an artist (own songs only, not children)."""
+    song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
     if not song_ids:
         return []
 
