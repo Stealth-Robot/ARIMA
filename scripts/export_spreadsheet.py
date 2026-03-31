@@ -263,10 +263,12 @@ def extract_misc_artists(ws, users):
             continue
 
         text = str(name).strip()
-        match = re.match(r'^(.+?)\s*\(([^)]+)\)\s*$', text)
-        if match:
-            song_name = match.group(1).strip()
-            artist_name = match.group(2).strip()
+        # Split on first ' (' to handle nested parens like "SHOCK (ALL(H)OURS)"
+        # Format is always "Song Name (Artist Name)" with a space before the paren
+        paren_idx = text.find(' (')
+        if paren_idx > 0 and text.endswith(')'):
+            song_name = text[:paren_idx].strip()
+            artist_name = text[paren_idx + 2:-1].strip()
         else:
             song_name = text
             artist_name = 'Unknown'
