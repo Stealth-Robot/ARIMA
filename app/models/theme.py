@@ -6,6 +6,7 @@ class Theme(db.Model):
     name = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
 
+    # UI chrome colours (existing 17)
     bg_primary = db.Column(db.Text)
     bg_secondary = db.Column(db.Text)
     text_primary = db.Column(db.Text)
@@ -23,5 +24,34 @@ class Theme(db.Model):
     button_primary = db.Column(db.Text)
     button_secondary = db.Column(db.Text)
     border = db.Column(db.Text)
+
+    # Rating cell backgrounds (6)
+    rating_5_bg = db.Column(db.Text)
+    rating_4_bg = db.Column(db.Text)
+    rating_3_bg = db.Column(db.Text)
+    rating_2_bg = db.Column(db.Text)
+    rating_1_bg = db.Column(db.Text)
+    rating_0_bg = db.Column(db.Text)
+
+    # Rating text colours (2)
+    rating_text_light = db.Column(db.Text)
+    rating_text_dark = db.Column(db.Text)
+
+    # Heat map anchors — average scores (3)
+    heatmap_high = db.Column(db.Text)
+    heatmap_mid = db.Column(db.Text)
+    heatmap_low = db.Column(db.Text)
+
+    # Completion heat map anchors — percentages (3)
+    pct_high = db.Column(db.Text)
+    pct_mid = db.Column(db.Text)
+    pct_low = db.Column(db.Text)
+
+    # Structural colours (5)
+    album_header_bg = db.Column(db.Text)
+    row_alternate = db.Column(db.Text)
+    grid_line = db.Column(db.Text)
+    key_bg_standard = db.Column(db.Text)
+    key_bg_stealth = db.Column(db.Text)
 
     owner = db.relationship('User', foreign_keys=[user_id])
