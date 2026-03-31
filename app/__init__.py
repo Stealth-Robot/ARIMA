@@ -2,7 +2,7 @@ import logging
 import os
 
 import click
-from flask import Flask
+from flask import Flask, session
 from flask_login import current_user
 from sqlalchemy import event
 
@@ -50,6 +50,25 @@ def create_app():
         if current_user.is_authenticated:
             return {'theme': get_resolved_theme(current_user)}
         return {'theme': {}}
+
+    # Filter context processor — injects country/genre filters + dropdown options
+    @flask_app.context_processor
+    def inject_filters():
+        from app.models.lookups import Country, Genre
+        if current_user.is_authenticated:
+            if not current_user.is_system_or_guest and current_user.settings:
+                country_id = current_user.settings.country
+                genre_id = current_user.settings.genre
+            else:
+                country_id = session.get('country')
+                genre_id = session.get('genre')
+            return {
+                'current_country': country_id,
+                'current_genre': genre_id,
+                'countries': Country.query.order_by(Country.id).all(),
+                'genres': Genre.query.order_by(Genre.id).all(),
+            }
+        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': []}
 
     # Register routes
     from app.routes import register_routes
