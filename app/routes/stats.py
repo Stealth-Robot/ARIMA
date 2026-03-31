@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, session
 from flask_login import login_required, current_user
 
-from app.services.stats import get_display_users, get_artist_stats, get_summary_stats
+from app.services.stats import get_display_users, get_artist_stats, get_summary_stats, get_artist_score_stats
 from app.services.artist import get_top_level_artists, get_children
 
 stats_bp = Blueprint('stats', __name__)
@@ -58,4 +58,44 @@ def expand_subunit(artist_id):
         rows.append({'artist': sub, 'stats': stats})
 
     return render_template('fragments/stats_row.html',
+                           rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True)
+
+
+@stats_bp.route('/global-stats')
+@login_required
+def global_stats():
+    """Global Stats page — average scores per artist per user."""
+    users = get_display_users()
+    settings = _get_viewer_settings()
+
+    artists = get_top_level_artists()
+    artist_rows = []
+    for a in artists:
+        scores = get_artist_score_stats(a.id, users, **settings)
+        has_subunits = len(get_children(a.id)[0]) > 0
+        artist_rows.append({
+            'artist': a,
+            'scores': scores,
+            'has_subunits': has_subunits,
+        })
+
+    return render_template('global_stats.html',
+                           users=users, artist_rows=artist_rows,
+                           gender_css=GENDER_CSS)
+
+
+@stats_bp.route('/global-stats/expand/<int:artist_id>')
+@login_required
+def expand_subunit_scores(artist_id):
+    """HTMX endpoint: return score rows for subunits of an artist."""
+    users = get_display_users()
+    settings = _get_viewer_settings()
+
+    subunits, _ = get_children(artist_id)
+    rows = []
+    for sub in subunits:
+        scores = get_artist_score_stats(sub.id, users, **settings)
+        rows.append({'artist': sub, 'scores': scores})
+
+    return render_template('fragments/global_stats_row.html',
                            rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True)

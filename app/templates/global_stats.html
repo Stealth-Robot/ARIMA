@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Global Stats — A.R.I.M.A.{% endblock %}
+
+{% block content %}
+<div class="overflow-x-auto">
+<table class="w-full text-sm border-collapse">
+    <!-- Sticky header -->
+    <thead>
+        <tr style="position: sticky; top: 0; z-index: 10; background-color: var(--header-row);">
+            <th class="px-2 py-1 text-left">Global Average</th>
+            <th class="px-2 py-1 text-left">Artist</th>
+            {% for u in users %}
+            <th class="px-2 py-1">{{ u.username }}</th>
+            {% endfor %}
+            <th class="px-2 py-1">Key</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in artist_rows %}
+        {% set a = row.artist %}
+        {% set scores = row.scores %}
+        <tr style="border-bottom: 1px solid var(--border);"
+            {% if row.has_subunits %}
+            class="cursor-pointer"
+            hx-get="{{ url_for('stats.expand_subunit_scores', artist_id=a.id) }}"
+            hx-swap="afterend"
+            hx-trigger="click once"
+            {% endif %}>
+            <td class="px-2 py-1 text-center">
+                {% if scores.global_avg is not none %}{{ scores.global_avg }}{% else %}-{% endif %}
+            </td>
+            <td class="px-2 py-1"
+                style="color: var({{ gender_css[a.gender_id] }});">
+                {% if row.has_subunits %}<span class="mr-1">&gt;</span>{% endif %}
+                {{ a.name }}
+            </td>
+            {% for u in users %}
+            <td class="px-2 py-1 text-center">
+                {% if scores.per_user[u.id] is not none %}{{ scores.per_user[u.id] }}{% else %}-{% endif %}
+            </td>
+            {% endfor %}
+            <td class="px-2 py-1 text-center text-xs" style="color: var(--text-secondary);">
+                0-5
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% for row in rows %}
+<tr style="border-bottom: 1px solid var(--border); background-color: var(--bg-secondary);">
+    <td class="px-2 py-1 text-center">
+        {% if row.scores.global_avg is not none %}{{ row.scores.global_avg }}{% else %}-{% endif %}
+    </td>
+    <td class="px-2 py-1 pl-8"
+        style="color: var({{ gender_css[row.artist.gender_id] }});">
+        {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
+    </td>
+    {% for u in users %}
+    <td class="px-2 py-1 text-center">
+        {% if row.scores.per_user[u.id] is not none %}{{ row.scores.per_user[u.id] }}{% else %}-{% endif %}
+    </td>
+    {% endfor %}
+    <td class="px-2 py-1 text-center text-xs" style="color: var(--text-secondary);">0-5</td>
+</tr>
+{% endfor %}
