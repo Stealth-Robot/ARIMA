@@ -73,49 +73,36 @@ def _lerp_colour(hex1, hex2, t):
 def score_to_colour(value, theme):
     """Get heat map colour for an average score (0-5).
 
-    Uses theme heatmap anchors: high (4-5), mid (2.5-4), low (0-2.5).
-    Returns '#RRGGBB' hex string.
+    Step-based matching (not gradient) — matches spreadsheet conditional formatting.
     """
     if value is None or value == 0:
         return '#FFFFFF'
-
-    high = theme.get('heatmap_high', '#FFB7FE')
-    mid = theme.get('heatmap_mid', '#FF8E1E')
-    low = theme.get('heatmap_low', '#8AB5FC')
-
-    if value >= 4.0:
-        t = (value - 4.0) / 1.0  # 4→5
-        return _lerp_colour(mid, high, t)
-    elif value >= 2.5:
-        t = (value - 2.5) / 1.5  # 2.5→4
-        return _lerp_colour(low, mid, t)
-    else:
-        t = value / 2.5  # 0→2.5
-        return _lerp_colour('#FFFFFF', low, t)
+    if value >= 5.0:
+        return theme.get('rating_5_bg', '#FF0016')
+    if value >= 4.5:
+        return theme.get('heatmap_high', '#FFB7FE')
+    if value >= 3.5:
+        return theme.get('rating_4_bg', '#FF8E1E')
+    if value >= 2.5:
+        return theme.get('rating_3_bg', '#FEFF2A')
+    if value >= 1.5:
+        return theme.get('rating_2_bg', '#9EFFA4')
+    return theme.get('rating_1_bg', '#8AB5FC')
 
 
 def pct_to_colour(value, theme):
-    """Get heat map colour for a percentage (0-100).
+    """Get heat map colour for a completion percentage (0-100).
 
-    Uses theme completion anchors: high (80-100), mid (40-80), low (0-40).
-    Returns '#RRGGBB' hex string.
+    Purple→orange gradient matching spreadsheet colour scale.
     """
     if value is None or value == 0:
         return '#FFFFFF'
 
-    high = theme.get('pct_high', '#FFB7FE')
-    mid = theme.get('pct_mid', '#FCA644')
-    low = theme.get('pct_low', '#8AB5FC')
+    low = theme.get('pct_low', '#833AB4')   # Purple at 0%
+    high = theme.get('pct_high', '#FCB045')  # Orange at 100%
 
-    if value >= 80:
-        t = (value - 80) / 20  # 80→100
-        return _lerp_colour(mid, high, t)
-    elif value >= 40:
-        t = (value - 40) / 40  # 40→80
-        return _lerp_colour(low, mid, t)
-    else:
-        t = value / 40  # 0→40
-        return _lerp_colour('#FFFFFF', low, t)
+    t = min(value, 100) / 100.0
+    return _lerp_colour(low, high, t)
 
 
 def rating_cell_style(score, theme):

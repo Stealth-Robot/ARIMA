@@ -19,9 +19,6 @@
     {% for u in users %}
     <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ row.stats.per_user[u.id].unrated_count }}</td>
     {% endfor %}
-    <td style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"></td>
-    {% for u in users %}
-    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ row.stats.per_user[u.id].rated_count }}</td>
-    {% endfor %}
+    {# Set 3 removed #}
 </tr>
 {% endfor %}
