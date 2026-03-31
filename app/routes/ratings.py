@@ -15,12 +15,7 @@ ratings_bp = Blueprint('ratings', __name__)
 def rate():
     """Create or update a rating. Returns a rating_cell fragment for HTMX swap."""
     song_id = request.form.get('song_id', type=int)
-    # Rating can come from form data or HX-Prompt header (inline prompt from artists page)
     rating_value = request.form.get('rating', type=int)
-    if rating_value is None:
-        prompt = request.headers.get('HX-Prompt', '').strip()
-        if prompt.isdigit():
-            rating_value = int(prompt)
     note = request.form.get('note', '').strip() or None
 
     if song_id is None or rating_value is None:

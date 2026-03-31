@@ -83,17 +83,13 @@
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
-            <td class="text-center px-1 py-1
+            <td class="text-center px-1 py-1 relative
                        {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line);
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
                 {% if r and r.note %}title="{{ r.note }}"{% endif %}
                 {% if u.id == current_user.id and current_user.can_rate %}
-                hx-post="{{ url_for('ratings.rate') }}"
-                hx-vals='{"song_id": {{ song.id }}}'
-                hx-swap="outerHTML"
-                hx-trigger="click"
-                hx-prompt="Rate {{ song.name }} (0-5):"
+                onclick="showRatingPopover(event, {{ song.id }})"
                 {% endif %}>
                 {% if r %}{{ r.rating }}{% endif %}
             </td>
