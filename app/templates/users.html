@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — A.R.I.M.A.{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">User Management</h1>
+
+    <table class="w-full text-sm border-collapse mb-8">
+        <thead>
+            <tr style="background-color: var(--header-row);">
+                <th class="text-left px-3 py-2">Username</th>
+                <th class="text-left px-3 py-2">Role</th>
+                <th class="text-left px-3 py-2">Email</th>
+                <th class="text-left px-3 py-2">Join Date</th>
+                <th class="text-left px-3 py-2">Last Seen</th>
+                <th class="px-3 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td class="px-3 py-2 font-medium">
+                    {{ u.username }}
+                    {% if not u.password %}
+                    <span class="text-xs" style="color: var(--text-secondary);">(invited)</span>
+                    {% endif %}
+                </td>
+                <td class="px-3 py-2">
+                    <form method="POST" action="{{ url_for('users.change_role', user_id=u.id) }}"
+                          class="inline">
+                        <select name="role_id" onchange="this.form.submit()"
+                                class="px-2 py-1 border rounded text-xs" style="border-color: var(--border);">
+                            {% for r in roles %}
+                            <option value="{{ r.id }}" {% if r.id == u.role_id %}selected{% endif %}>
+                                {{ r.role }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </td>
+                <td class="px-3 py-2 text-xs">{{ u.email }}</td>
+                <td class="px-3 py-2 text-xs">{{ u.created_at[:10] if u.created_at else '-' }}</td>
+                <td class="px-3 py-2 text-xs">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
+                <td class="px-3 py-2 text-center">
+                    {% if u.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('users.delete', user_id=u.id) }}"
+                          class="inline"
+                          onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Submitted content will survive.')">
+                        <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
+                    </form>
+                    {% else %}
+                    <span class="text-xs" style="color: var(--text-secondary);">You</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Invite form -->
+    <div class="p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Invite New User</h2>
+        <form method="POST" action="{{ url_for('users.invite_user') }}" class="flex gap-3 items-end">
+            <div class="flex-1">
+                <label class="block text-sm mb-1">Username</label>
+                <input type="text" name="username" required
+                       class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm mb-1">Email</label>
+                <input type="email" name="email" required
+                       class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="w-32">
+                <label class="block text-sm mb-1">Role</label>
+                <select name="role_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                    {% for r in roles %}
+                    <option value="{{ r.id }}" {% if r.id == 2 %}selected{% endif %}>{{ r.role }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 rounded text-white"
+                    style="background-color: var(--button-primary);">
+                Invite
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
