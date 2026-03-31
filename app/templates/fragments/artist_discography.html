@@ -53,7 +53,7 @@
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
                 style="border: 1px solid var(--grid-line);
-                       background-color: var({% if key_hdr_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                       background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
             {% else %}
@@ -106,7 +106,7 @@
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center font-bold"
                 style="border: 1px solid var(--grid-line);
-                       background-color: var({% if key_hdr_idx == 0 %}--key-bg-standard{% else %}--key-bg-stealth{% endif %});">
+                       background-color: var(--bg-primary);">
                 {{ key_names[key_hdr_idx] }}
             </td>
             {% else %}

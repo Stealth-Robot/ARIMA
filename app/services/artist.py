@@ -85,7 +85,7 @@ def get_top_level_artists():
     """
     # Get all artist IDs that are subunits (artist_2 where relationship=0)
     subunit_ids = {row.artist_2 for row in ArtistArtist.query.filter_by(relationship=SUBUNIT).all()}
-    return Artist.query.filter(~Artist.id.in_(subunit_ids) if subunit_ids else Artist.id.isnot(None)).all()
+    return Artist.query.filter(~Artist.id.in_(subunit_ids) if subunit_ids else Artist.id.isnot(None)).order_by(Artist.name).all()
 
 
 def get_navbar_artists():

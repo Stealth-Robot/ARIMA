@@ -3,8 +3,8 @@
 {% block title %}Artists — A.R.I.M.A.{% endblock %}
 
 {% block content %}
-<!-- Discography area -->
-<div id="discography" class="mb-4">
+<!-- Discography area — padding-bottom to avoid hiding behind fixed nav -->
+<div id="discography" class="mb-4" style="padding-bottom: 44px;">
     {% if artist %}
     {% include "fragments/artist_discography.html" %}
     {% else %}
@@ -12,17 +12,21 @@
     {% endif %}
 </div>
 
-<!-- Bottom artist navbar -->
-<nav class="fixed bottom-0 left-0 right-0 overflow-x-auto overflow-y-hidden px-4 py-1 border-t flex flex-nowrap gap-1"
-     style="background-color: var(--bg-secondary); border-color: var(--border); height: 36px;">
+<!-- Bottom artist navbar — fixed at viewport bottom, horizontal scroll -->
+<nav style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+            display: flex; flex-wrap: nowrap; align-items: center;
+            overflow-x: scroll; overflow-y: hidden; height: 32px;
+            background-color: var(--bg-secondary); border-top: 1px solid var(--border);
+            padding: 0 8px; gap: 4px;">
     {% for a in navbar_artists %}
     <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
        hx-get="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
        hx-target="#discography"
        hx-swap="innerHTML"
-       class="flex-shrink-0 px-3 py-1 rounded text-xs hover:opacity-80
-              {% if artist and artist.id == a.id %}font-bold border-b-2 border-white{% endif %}"
-       style="background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }}); color: white;">
+       style="flex: 0 0 auto; white-space: nowrap; padding: 2px 10px; border-radius: 3px;
+              font-size: 11px; text-decoration: none;
+              background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }}); color: white;
+              {% if artist and artist.id == a.id %}font-weight: bold; border-bottom: 2px solid white;{% endif %}">
         {{ a.name }}
     </a>
     {% endfor %}
