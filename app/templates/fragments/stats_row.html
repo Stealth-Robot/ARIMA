@@ -1,0 +1,16 @@
+{% for row in rows %}
+<tr style="border-bottom: 1px solid var(--border); background-color: var(--bg-secondary);">
+    <td class="px-2 py-1 text-center">{{ row.stats.global_avg_pct }}%</td>
+    <td class="px-2 py-1 pl-8"
+        style="color: var({{ gender_css[row.artist.gender_id] }});">
+        {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
+    </td>
+    {% for u in users %}
+    <td class="px-2 py-1 text-center">{{ row.stats.per_user[u.id].pct_rated }}%</td>
+    {% endfor %}
+    <td class="px-2 py-1 text-center">{{ row.stats.song_count }}</td>
+    {% for u in users %}
+    <td class="px-2 py-1 text-center">{{ row.stats.per_user[u.id].unrated_count }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}
