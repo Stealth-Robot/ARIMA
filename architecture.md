@@ -823,3 +823,90 @@ Phase 5: Admin & Settings
 ```
 
 Phase 1 is pure backend — no UI needed to validate. Phase 2 gets a working login-to-homepage flow. Phase 3 is the meat of the app. Phase 4 adds the content pipeline. Phase 5 is admin tooling that can ship last because the admin (you) can manage directly via SQLite until then.
+
+---
+
+## 14. Rating Colours & Heat Maps
+
+### Decision: ALL colours go in the Theme table.
+
+Per the whitepaper: **"Every colour used in the app is a column in this table. No hardcoded colours — all colours are theme-driven."** This includes rating cell colours, heat map anchors, and structural colours. Users with personal themes can customise every visual aspect.
+
+### New Theme Columns Required
+
+Add the following columns to the Themes table (all `Text`, nullable, Classic fallback as with all other theme columns):
+
+**Rating cell backgrounds (6 columns):**
+
+| Column | Classic | Dark | Purpose |
+|--------|---------|------|---------|
+| `rating_5_bg` | `#FF0016` | `#FF0016` | Score 5 cell (Red) |
+| `rating_4_bg` | `#FF8E1E` | `#FF8E1E` | Score 4 cell (Orange) |
+| `rating_3_bg` | `#FEFF2A` | `#FEFF2A` | Score 3 cell (Yellow) |
+| `rating_2_bg` | `#9EFFA4` | `#9EFFA4` | Score 2 cell (Light Green) |
+| `rating_1_bg` | `#8AB5FC` | `#8AB5FC` | Score 1 cell (Light Blue) |
+| `rating_0_bg` | `#9200FC` | `#9200FC` | Score 0 cell (Purple) |
+
+**Rating text colours (2 columns):**
+
+| Column | Classic | Dark | Purpose |
+|--------|---------|------|---------|
+| `rating_text_light` | `#FFFFFF` | `#FFFFFF` | Text on dark cells (scores 0, 5) |
+| `rating_text_dark` | `#000000` | `#000000` | Text on light cells (scores 1-4) |
+
+**Heat map anchors — average scores (3 columns):**
+
+| Column | Classic | Dark | Purpose |
+|--------|---------|------|---------|
+| `heatmap_high` | `#FFB7FE` | `#FFB7FE` | Avg 4-5 (Pink) |
+| `heatmap_mid` | `#FF8E1E` | `#FF8E1E` | Avg 2.5-4 (Orange) |
+| `heatmap_low` | `#8AB5FC` | `#8AB5FC` | Avg 0-2.5 (Blue) |
+
+**Completion heat map anchors — percentages (3 columns):**
+
+| Column | Classic | Dark | Purpose |
+|--------|---------|------|---------|
+| `pct_high` | `#FFB7FE` | `#FFB7FE` | 80-100% (Pink) |
+| `pct_mid` | `#FCA644` | `#FCA644` | 40-79% (Orange) |
+| `pct_low` | `#8AB5FC` | `#8AB5FC` | 1-39% (Blue) |
+
+**Structural colours (5 columns):**
+
+| Column | Classic | Dark | Purpose |
+|--------|---------|------|---------|
+| `album_header_bg` | `#E6EBF4` | `#1E3A5F` | Album header row on artist page |
+| `row_alternate` | `#F7F9FD` | `#16213E` | Alternating row background |
+| `grid_line` | `#C0C0C0` | `#374151` | Cell borders |
+| `key_bg_standard` | `#FF8E1E` | `#FF8E1E` | Key column bg (Standard) |
+| `key_bg_stealth` | `#FEFF2A` | `#FEFF2A` | Key column bg (Stealth) |
+
+**Total: 19 new columns.** Combined with existing 17, the Themes table will have 36 colour columns. This is the column-per-colour approach working as designed.
+
+### Heat Map Interpolation
+
+For continuous values (averages, percentages), interpolate between the theme's anchor colours using linear RGB interpolation. Implement as a helper in `services/theme.py`:
+
+```python
+def score_to_colour(value, theme):
+    """Interpolate heat map colour for an average score (0-5)."""
+    # Uses theme['heatmap_high'], theme['heatmap_mid'], theme['heatmap_low']
+    # Returns hex string
+```
+
+### Rating Key Labels
+
+These are **not colours** — they are text content. Store as application constants (not in Theme table):
+
+```python
+# app/constants.py
+RATING_KEY_STANDARD = {
+    5: 'Fucking banger', 4: 'Great song', 3: 'A vibe',
+    2: 'Eh / Mid / No opinion', 1: "This isn't great", 0: 'Absolute shit',
+}
+RATING_KEY_STEALTH = {
+    5: 'Fucking banger', 4: 'Bit of a Bop', 3: 'Decent/Lacking Pop',
+    2: 'Mid / kinda bad', 1: 'Bad', 0: 'I feel Offended',
+}
+```
+
+The Key column cycles: Standard (7 rows: header + 6 scores) → Stealth (7 rows) → repeat.
