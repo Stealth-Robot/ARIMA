@@ -4,6 +4,6 @@
     class="text-center px-1 py-1 relative cursor-pointer hover:opacity-70"
     style="border: 1px solid var(--grid-line);
            {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
-    onclick="showRatingPopover(event, {{ song_id }})">
+    onclick="showRatingInput(event, {{ song_id }})">
     {% if rating %}{{ rating.rating }}{% endif %}
 </td>
