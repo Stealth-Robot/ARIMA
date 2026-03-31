@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Content — A.R.I.M.A.{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Submit New Content</h1>
+
+    <form id="submit-form" method="POST" action="{{ url_for('submissions.submit_content') }}">
+        <!-- Artist Selection -->
+        <fieldset class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+            <legend class="font-semibold px-2">Artist</legend>
+
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Select Existing Artist</label>
+                <select id="artist-select" name="artist_id"
+                        class="w-full px-3 py-2 border rounded" style="border-color: var(--border);"
+                        onchange="toggleNewArtist()">
+                    <option value="">— New Artist —</option>
+                    {% for a in artists %}
+                    <option value="{{ a.id }}">{{ a.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="new-artist-fields">
+                <div class="mb-3">
+                    <label class="block text-sm mb-1">Artist Name</label>
+                    <input type="text" name="artist_name"
+                           class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                </div>
+                <div class="flex gap-3 mb-3">
+                    <div class="flex-1">
+                        <label class="block text-sm mb-1">Gender</label>
+                        <select name="gender_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            {% for g in genders %}
+                            <option value="{{ g.id }}">{{ g.gender }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm mb-1">Country</label>
+                        <select name="country_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            {% for c in countries %}
+                            <option value="{{ c.id }}">{{ c.country }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Albums -->
+        <div id="albums-container">
+            <!-- Album template will be cloned here by JS -->
+        </div>
+
+        <button type="button" onclick="addAlbum()"
+                class="mb-6 px-4 py-2 rounded text-sm"
+                style="background-color: var(--button-secondary); color: var(--text-primary);">
+            + Add Album
+        </button>
+
+        <!-- Hidden field for serialized album/song data -->
+        <input type="hidden" name="albums_data" id="albums-data">
+
+        <div class="flex gap-3">
+            <button type="submit"
+                    class="px-6 py-2 rounded font-semibold"
+                    style="background-color: var(--button-primary); color: white;">
+                Submit
+            </button>
+            <a href="{{ url_for('artists.artists_list') }}"
+               class="px-6 py-2 rounded"
+               style="background-color: var(--button-secondary); color: var(--text-primary);">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+let albumCount = 0;
+
+function toggleNewArtist() {
+    const sel = document.getElementById('artist-select');
+    const fields = document.getElementById('new-artist-fields');
+    fields.style.display = sel.value ? 'none' : 'block';
+}
+
+function addAlbum() {
+    albumCount++;
+    const container = document.getElementById('albums-container');
+    const div = document.createElement('div');
+    div.className = 'mb-6 p-4 border rounded';
+    div.style.borderColor = 'var(--border)';
+    div.id = `album-${albumCount}`;
+    div.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <legend class="font-semibold">Album ${albumCount}</legend>
+            <button type="button" onclick="removeAlbum(${albumCount})"
+                    class="text-sm text-red-500 hover:underline">Remove</button>
+        </div>
+        <div class="flex gap-3 mb-3">
+            <div class="flex-1">
+                <label class="block text-sm mb-1">Album Name</label>
+                <input type="text" data-album="${albumCount}" data-field="name"
+                       class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="w-40">
+                <label class="block text-sm mb-1">Release Date</label>
+                <input type="date" data-album="${albumCount}" data-field="release_date"
+                       class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="w-32">
+                <label class="block text-sm mb-1">Type</label>
+                <select data-album="${albumCount}" data-field="album_type_id"
+                        class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                    {% for t in album_types %}
+                    <option value="{{ t.id }}">{{ t.type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="block text-sm mb-1">Genres</label>
+            <div class="flex gap-2 flex-wrap">
+                {% for g in genres %}
+                <label class="text-sm">
+                    <input type="checkbox" data-album="${albumCount}" data-genre="{{ g.id }}"
+                           class="genre-checkbox"> {{ g.genre }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="block text-sm mb-1">Songs</label>
+            <div id="songs-${albumCount}" class="space-y-2"></div>
+            <button type="button" onclick="addSong(${albumCount})"
+                    class="mt-2 text-sm hover:underline" style="color: var(--link);">
+                + Add Song
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+    addSong(albumCount);
+}
+
+function removeAlbum(num) {
+    document.getElementById(`album-${num}`)?.remove();
+}
+
+let songCounters = {};
+
+function addSong(albumNum) {
+    if (!songCounters[albumNum]) songCounters[albumNum] = 0;
+    songCounters[albumNum]++;
+    const songNum = songCounters[albumNum];
+    const container = document.getElementById(`songs-${albumNum}`);
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center';
+    div.id = `song-${albumNum}-${songNum}`;
+    div.innerHTML = `
+        <span class="text-sm w-6">${songNum}.</span>
+        <input type="text" data-album="${albumNum}" data-song="${songNum}" data-field="name"
+               placeholder="Song name"
+               class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">
+        <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="is_promoted" class="song-check"> P</label>
+        <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="is_remix" class="song-check"> Remix</label>
+        <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="artist_is_main" class="song-check" checked> Main</label>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-sm">×</button>
+    `;
+    container.appendChild(div);
+}
+
+// Serialize form data before submit
+document.getElementById('submit-form').addEventListener('submit', function(e) {
+    const albums = [];
+    document.querySelectorAll('[id^="album-"]').forEach(albumDiv => {
+        const albumNum = albumDiv.id.split('-')[1];
+        const album = {
+            name: albumDiv.querySelector(`[data-album="${albumNum}"][data-field="name"]`)?.value || '',
+            release_date: albumDiv.querySelector(`[data-album="${albumNum}"][data-field="release_date"]`)?.value || '',
+            album_type_id: parseInt(albumDiv.querySelector(`[data-album="${albumNum}"][data-field="album_type_id"]`)?.value || '0'),
+            genre_ids: [],
+            songs: [],
+        };
+        albumDiv.querySelectorAll(`[data-album="${albumNum}"][data-genre]`).forEach(cb => {
+            if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
+        });
+        albumDiv.querySelectorAll(`[id^="song-${albumNum}-"]`).forEach(songDiv => {
+            const songNum = songDiv.id.split('-')[2];
+            const song = {
+                name: songDiv.querySelector(`[data-song="${songNum}"][data-field="name"]`)?.value || '',
+                is_promoted: songDiv.querySelector(`[data-song="${songNum}"][data-field="is_promoted"]`)?.checked || false,
+                is_remix: songDiv.querySelector(`[data-song="${songNum}"][data-field="is_remix"]`)?.checked || false,
+                artist_is_main: songDiv.querySelector(`[data-song="${songNum}"][data-field="artist_is_main"]`)?.checked ?? true,
+            };
+            if (song.name.trim()) albums.length; // only add non-empty songs
+            if (song.name.trim()) album.songs.push(song);
+        });
+        if (album.name.trim()) albums.push(album);
+    });
+    document.getElementById('albums-data').value = JSON.stringify(albums);
+});
+
+// Prompt on leaving page with unsaved changes
+let formDirty = false;
+document.getElementById('submit-form').addEventListener('input', () => formDirty = true);
+window.addEventListener('beforeunload', (e) => {
+    if (formDirty) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Check capitalisation before leaving.';
+    }
+});
+
+// Start with one album
+addAlbum();
+</script>
+{% endblock %}
