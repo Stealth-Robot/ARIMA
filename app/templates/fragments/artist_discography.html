@@ -126,49 +126,51 @@
 
         {% endfor %}
         {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-{# Child sections (subunits + soloists) #}
-{% if children %}
-{% for child in children %}
-<!-- Gap between sections -->
-<div style="height: 16px;"></div>
-
-<!-- Child header — black bg, white text -->
-<div style="background-color: #000000; color: #FFFFFF; padding: 4px 8px; font-weight: bold; font-size: 13px;">
-    {{ child.artist.name }}
-</div>
-
-{% if child.discography %}
-<div class="overflow-x-auto">
-<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
-    <thead>
-        <tr style="position: sticky; top: 36px; z-index: 10;">
-            <th class="text-left px-2 py-1" style="width: 350px; border: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
-            {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 65px; border: 1px solid var(--grid-line); background-color: var(--header-user-bg);">{{ u.username }}</th>
-            {% endfor %}
-            <th class="px-1 py-1 text-center" style="width: 140px; border: 1px solid var(--grid-line); background-color: var(--header-row);">Key</th>
+        {# Child sections — inside same table, no duplicate headers, key continues #}
+        {% if children %}
+        {% for child in children %}
+        {# Gap row #}
+        <tr><td colspan="100" style="height: 12px; border: none;"></td></tr>
+        {# Child name header — black bg, white text, full width #}
+        <tr style="background-color: #000000; border: 1px solid var(--grid-line);">
+            <td colspan="100" style="padding: 4px 8px; font-weight: bold; font-size: 13px; color: #FFFFFF;">
+                {{ child.artist.name }}
+            </td>
         </tr>
-    </thead>
-    <tbody>
+
         {% for entry in child.discography %}
         {% set album = entry.album %}
         {% set songs = entry.songs %}
         {% set ratings = entry.ratings %}
         {% set is_pending = entry.is_pending %}
 
+        {# Album header — same as main discography #}
+        {% set kp = key_cycle[0] % 14 %}
         <tr style="background-color: var(--album-header-bg); border: 1px solid var(--grid-line);">
             <td colspan="{{ users|length + 1 }}" class="px-2 py-1 font-bold">
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
             </td>
-            <td class="px-1 py-1" style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            {% if kp == 0 or kp == 7 %}
+            {% set key_hdr_idx = 0 if kp == 0 else 1 %}
+            <td class="px-1 py-1 text-center text-xs font-bold"
+                style="border: 1px solid var(--grid-line); background-color: var(--bg-primary);">
+                {{ key_names[key_hdr_idx] }}
+            </td>
+            {% else %}
+            {% set key_score_ab = 5 - ((kp - 1) % 7) if kp < 7 else 5 - ((kp - 8) % 7) %}
+            {% set key_set_ab = 0 if kp < 7 else 1 %}
+            {% set key_style_ab = rating_cell_style(key_score_ab) %}
+            <td class="px-1 py-1"
+                style="border: 1px solid var(--grid-line);
+                       {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
+                {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
+            </td>
+            {% endif %}
         </tr>
+        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
 
         {% for song, track_num in songs %}
+        {% set kp = key_cycle[0] % 14 %}
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ song.name }}</td>
@@ -185,13 +187,31 @@
                 {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
-            <td class="px-1 py-1" style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            {# Key column — continues from main discography cycle #}
+            {% if kp == 0 or kp == 7 %}
+            {% set key_hdr_idx = 0 if kp == 0 else 1 %}
+            <td class="px-1 py-1 text-center font-bold"
+                style="border: 1px solid var(--grid-line); background-color: var(--bg-primary);">
+                {{ key_names[key_hdr_idx] }}
+            </td>
+            {% else %}
+            {% set ks = 5 - ((kp - 1) % 7) if kp < 7 else 5 - ((kp - 8) % 7) %}
+            {% set ki = 0 if kp < 7 else 1 %}
+            {% set kstyle = rating_cell_style(ks) %}
+            <td class="px-1 py-1"
+                style="border: 1px solid var(--grid-line);
+                       {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                {{ ks }} {{ key_labels[ki][ks] }}
+            </td>
+            {% endif %}
         </tr>
+        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
         {% endfor %}
         {% endfor %}
+        {% endfor %}
+        {% endif %}
+
     </tbody>
 </table>
 </div>
-{% endif %}
-{% endfor %}
 {% endif %}
