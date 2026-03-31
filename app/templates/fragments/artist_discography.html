@@ -19,12 +19,12 @@
 <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
     <!-- Sticky header -->
     <thead>
-        <tr style="position: sticky; top: 34px; z-index: 10; box-shadow: 0 1px 0 var(--grid-line), 0 -1px 0 var(--grid-line);">
-            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
+        <tr style="position: sticky; top: 34px; z-index: 10;">
+            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="width: 125px; border: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
+            <th class="px-1 py-1 text-center" style="width: 125px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
