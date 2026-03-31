@@ -86,7 +86,17 @@ def extract_artist(ws, artist_name, users):
 
         s_flag = ws.cell(row=row_idx, column=S_FLAG_COL + 1).value
 
-        if s_flag is False or s_flag == 'False':
+        # Detect if a row marked s=False actually has ratings (soloist/member songs)
+        is_song_row = s_flag is True or s_flag == 'True'
+        if not is_song_row and (s_flag is False or s_flag == 'False'):
+            has_ratings = any(
+                ws.cell(row=row_idx, column=c).value is not None
+                for c in range(USER_COL_START + 1, USER_COL_END + 2)
+            )
+            if has_ratings:
+                is_song_row = True  # treat as song despite s=False
+
+        if not is_song_row and (s_flag is False or s_flag == 'False'):
             # Album header row
             album_name, year = parse_album_header(str(name))
             current_album = {
@@ -96,7 +106,7 @@ def extract_artist(ws, artist_name, users):
             }
             albums.append(current_album)
             track_num = 0
-        elif s_flag is True or s_flag == 'True':
+        elif is_song_row:
             # Song row
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
