@@ -100,8 +100,10 @@ def create_account():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    # Clear custom session keys before logout (filters, theme)
+    for key in ['country', 'genre', 'theme']:
+        session.pop(key, None)
     logout_user()
-    session.clear()
     return redirect(url_for('auth.login'))
 
 
