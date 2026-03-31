@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -14,7 +14,10 @@ GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed'}
 @artists_bp.route('/artists')
 @login_required
 def artists_list():
-    """Full page: artist bottom navbar + discography (if artist selected)."""
+    """Redirect to Misc. Artists by default."""
+    misc = Artist.query.filter_by(name='Misc. Artists').first()
+    if misc:
+        return redirect(url_for('artists.artist_detail', artist_id=misc.id))
     navbar = _get_filtered_navbar()
     return render_template('artists.html', navbar_artists=navbar, gender_css=GENDER_CSS)
 
