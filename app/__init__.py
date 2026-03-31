@@ -43,13 +43,23 @@ def create_app():
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
-    # Theme context processor — injects resolved theme into all templates
+    # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor
     def inject_theme():
-        from app.services.theme import get_resolved_theme
+        from app.services.theme import get_resolved_theme, score_to_colour, pct_to_colour, rating_cell_style
+        from app.constants import RATING_KEY_STANDARD, RATING_KEY_STEALTH
         if current_user.is_authenticated:
-            return {'theme': get_resolved_theme(current_user)}
-        return {'theme': {}}
+            theme = get_resolved_theme(current_user)
+        else:
+            theme = {}
+        return {
+            'theme': theme,
+            'score_to_colour': lambda v: score_to_colour(v, theme),
+            'pct_to_colour': lambda v: pct_to_colour(v, theme),
+            'rating_cell_style': lambda s: rating_cell_style(s, theme),
+            'RATING_KEY_STANDARD': RATING_KEY_STANDARD,
+            'RATING_KEY_STEALTH': RATING_KEY_STEALTH,
+        }
 
     # Filter context processor — injects country/genre filters + dropdown options
     @flask_app.context_processor
