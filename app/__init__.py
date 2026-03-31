@@ -114,6 +114,18 @@ def create_app():
         from scripts.import_data import import_data
         import_data(json_file)
 
+    @flask_app.cli.command('rename-admin')
+    def rename_admin_command():
+        """Rename Stealth_Robot to Stealth."""
+        from app.models.user import User
+        sr = User.query.filter_by(username='Stealth_Robot').first()
+        if sr:
+            sr.username = 'Stealth'
+            db.session.commit()
+            click.echo('Renamed Stealth_Robot → Stealth.')
+        else:
+            click.echo('Stealth_Robot not found.')
+
     @flask_app.cli.command('merge-users')
     def merge_users_command():
         """Merge Stealth (imported) into Stealth_Robot (admin)."""

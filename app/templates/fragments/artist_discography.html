@@ -1,7 +1,7 @@
 <!-- Artist header -->
 <div class="flex items-center justify-between mb-2">
-    <h2 class="text-xl font-bold"
-        style="color: var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
+    <h2 class="text-xl font-bold inline-block px-3 py-1 rounded"
+        style="background-color: var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); color: #000000;">
         {{ artist.name }}
     </h2>
     {% if artist.last_updated %}
@@ -19,12 +19,12 @@
 <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
     <!-- Sticky header -->
     <thead>
-        <tr style="position: sticky; top: 0; z-index: 10; background-color: var(--header-row);">
-            <th class="text-left px-2 py-1" style="width: 350px; border: 1px solid var(--grid-line);">DIRECTORY</th>
+        <tr style="position: sticky; top: 0; z-index: 10;">
+            <th class="text-left px-2 py-1" style="width: 350px; border: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 65px; border: 1px solid var(--grid-line);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="width: 65px; border: 1px solid var(--grid-line); background-color: var(--header-user-bg);">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="width: 140px; border: 1px solid var(--grid-line);">Key (Standard)</th>
+            <th class="px-1 py-1 text-center" style="width: 140px; border: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
@@ -89,15 +89,15 @@
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
-            <td class="text-center px-1 py-1 relative
+            <td class="text-center px-1 py-1
                        {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); min-height: 20px;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
                 {% if r and r.note %}title="{{ r.note }}"{% endif %}
                 {% if u.id == current_user.id and current_user.can_rate %}
                 onclick="showRatingInput(event, {{ song.id }})"
                 {% endif %}>
-                {% if r %}{{ r.rating }}{% endif %}
+                {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
 

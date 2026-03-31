@@ -53,5 +53,6 @@ class Theme(db.Model):
     grid_line = db.Column(db.Text)
     key_bg_standard = db.Column(db.Text)
     key_bg_stealth = db.Column(db.Text)
+    header_user_bg = db.Column(db.Text)
 
     owner = db.relationship('User', foreign_keys=[user_id])
