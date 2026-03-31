@@ -27,6 +27,8 @@ if [ ! -f "instance/arima.db" ]; then
     if [ -f "data.json" ]; then
         echo "Importing spreadsheet data..."
         flask import-data data.json
+        echo "Merging duplicate users..."
+        flask merge-users
     fi
 fi
 
