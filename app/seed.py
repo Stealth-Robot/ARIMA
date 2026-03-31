@@ -52,7 +52,7 @@ CLASSIC_THEME = {
     # Structural (6)
     'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
-    'grid_line': '#D9D9D9',
+    'grid_line': '#333333',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#D9EAD3',
