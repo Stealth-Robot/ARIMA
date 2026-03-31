@@ -52,7 +52,7 @@ def artist_detail(artist_id):
 def _get_display_users():
     """Get users to show in rating columns (sorted by sort_order, exclude system/guest)."""
     return User.query.filter(
-        User.email.isnot(None)
+        User.sort_order.isnot(None)
     ).order_by(User.sort_order).all()
 
 
