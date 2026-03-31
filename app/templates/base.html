@@ -19,32 +19,32 @@
     {% endif %}
 </head>
 <body style="background-color: var(--bg-primary); color: var(--text-primary);">
-    <!-- Navbar -->
-    <nav style="background-color: var(--navbar-bg); color: var(--navbar-text);"
-         class="px-6 py-2 flex items-center gap-6 text-sm flex-nowrap overflow-x-auto whitespace-nowrap">
-        <!-- Left: Navigation links -->
-        <a href="{{ url_for('home.home') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Home</a>
-        <a href="{{ url_for('stats.artist_stats') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Artist Stats</a>
-        <a href="{{ url_for('stats.global_stats') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Global Stats</a>
-        <a href="{{ url_for('artists.artists_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Artists</a>
-        <a href="{{ url_for('changelog.changelog') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Changelog</a>
-        <a href="{{ url_for('rules.rules') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Rules</a>
-        <a href="{{ url_for('views.views_page') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Views</a>
+    <!-- Navbar — all inline styles to guarantee single line -->
+    <nav style="background-color: var(--navbar-bg); color: var(--navbar-text);
+                display: flex; flex-wrap: nowrap; align-items: center;
+                gap: 10px; padding: 6px 12px; overflow-x: auto;
+                white-space: nowrap; font-size: 13px;">
+        <a href="{{ url_for('home.home') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Home</a>
+        <a href="{{ url_for('stats.artist_stats') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Artist Stats</a>
+        <a href="{{ url_for('stats.global_stats') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Global Stats</a>
+        <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Artists</a>
+        <a href="{{ url_for('changelog.changelog') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Changelog</a>
+        <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Rules</a>
+        <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Views</a>
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
-        <a href="{{ url_for('submissions.submissions_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Submissions</a>
+        <a href="{{ url_for('submissions.submissions_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Submissions</a>
         {% endif %}
         {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('users.user_list') }}" class="hover:opacity-80" style="color: var(--navbar-text);">Users</a>
+        <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Users</a>
         {% endif %}
 
         <!-- Right: Filters + Profile -->
-        <div class="flex items-center gap-3 flex-shrink-0 ml-auto">
+        <div style="flex-shrink: 0; margin-left: auto; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
             <!-- Country filter -->
             <select name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    style="background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border);"
-                    class="border rounded px-2 py-1 text-xs">
+                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 11px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for c in countries %}
                 <option value="{{ c.id }}" {% if current_country == c.id %}selected{% endif %}>
@@ -57,8 +57,7 @@
             <select name="genre"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    style="background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border);"
-                    class="border rounded px-2 py-1 text-xs">
+                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 11px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for g in genres %}
                 <option value="{{ g.id }}" {% if current_genre == g.id %}selected{% endif %}>
