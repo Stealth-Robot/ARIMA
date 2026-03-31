@@ -116,7 +116,8 @@ def extract_artist(ws, artist_name, users):
                 }
                 albums.append(current_album)
 
-    return albums
+    # Filter out empty albums (subunit/member headers with no songs)
+    return [a for a in albums if a['songs']]
 
 
 def extract_misc_artists(ws, users):
