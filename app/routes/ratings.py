@@ -1,5 +1,6 @@
 from flask import Blueprint, request, render_template
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models.music import Rating
@@ -38,7 +39,11 @@ def rate():
         )
         db.session.add(existing)
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return 'Invalid song or user', 400
 
     return render_template('fragments/rating_cell.html',
                            rating=existing, song_id=song_id, user_id=current_user.id)
