@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.theme import Theme
+from app.models.user import UserSettings
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -66,6 +67,10 @@ def update_settings():
                 session['include_remixes'] = request.form.get('include_remixes') == 'on'
     else:
         settings = current_user.settings
+        if not settings:
+            settings = UserSettings(user_id=current_user.id)
+            db.session.add(settings)
+            current_user.settings = settings
         if settings:
             if 'country' in request.form:
                 val = request.form.get('country')
