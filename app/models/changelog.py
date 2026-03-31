@@ -19,3 +19,10 @@ class Changelog(db.Model):
     artist = db.relationship('Artist')
     album = db.relationship('Album')
     song = db.relationship('Song')
+
+    __table_args__ = (
+        db.Index('ix_changelog_artist_id', 'artist_id'),
+        db.Index('ix_changelog_album_id', 'album_id'),
+        db.Index('ix_changelog_song_id', 'song_id'),
+        db.Index('ix_changelog_submission_id', 'submission_id'),
+    )
