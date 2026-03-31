@@ -2,6 +2,14 @@
 
 Usage:
     python scripts/export_spreadsheet.py "lettuce kpop.xlsx" --output data.json
+
+Structure rules:
+- Main artist songs have s=True, album headers have s=False
+- After a blank row: subunit or soloist section begins
+  - First row = member/subunit name (no year in parens)
+  - Subunit songs have s=True
+  - Soloist songs have s=False
+  - Blank row separates each member section
 """
 
 import argparse
@@ -16,9 +24,8 @@ NON_DATA_SHEETS = {
 }
 MISC_ARTISTS_SHEET = 'Misc. Artists'
 
-# Columns B-L (index 1-11 in 0-based) are user ratings
-USER_COL_START = 1   # column B
-USER_COL_END = 11    # column L (inclusive)
+USER_COL_START = 1   # column B (0-based)
+USER_COL_END = 11    # column L (0-based, inclusive)
 S_FLAG_COL = 15      # column P (0-based)
 
 
@@ -78,117 +85,169 @@ def extract_ratings(ws, row_idx, users):
     return ratings
 
 
-def extract_artist(ws, artist_name, users):
-    """Extract albums and songs from an artist sheet.
+def extract_artist_sheet(ws, artist_name, users):
+    """Extract the main artist plus any subunits/soloists from a sheet.
 
-    Structure:
-    - Main discography: s=True for songs, s=False for album headers
-    - After a BLANK row: subunit/soloist section begins
-      - First row after blank = member/subunit name (header)
-      - Then album headers with (YYYY)
-      - Then songs (may be s=True or s=False)
-    - BLANK rows separate each subunit/soloist section
+    Returns a list of artist entries:
+    [
+        {
+            "name": "aespa",
+            "relationship": "main",
+            "parent": null,
+            "albums": [...]
+        },
+        {
+            "name": "KARINA",
+            "relationship": "soloist",
+            "parent": "aespa",
+            "albums": [...]
+        },
+        {
+            "name": "MISAMO",
+            "relationship": "subunit",
+            "parent": "TWICE",
+            "albums": [...]
+        },
+    ]
     """
-    albums = []
-    current_album = None
-    track_num = 0
-    in_soloist_section = False
-    expect_member_header = False
+    # First pass: split the sheet into sections separated by blank rows
+    sections = []
+    current_section_rows = []
 
     for row_idx in range(2, ws.max_row + 1):
         raw_name = ws.cell(row=row_idx, column=1).value
         is_blank = raw_name is None or str(raw_name).strip() == '' or str(raw_name).strip() == 'None'
 
         if is_blank:
-            # Blank row = section separator
-            # Next non-blank row could be a member header
-            expect_member_header = True
-            current_album = None  # reset album context
+            if current_section_rows:
+                sections.append(current_section_rows)
+                current_section_rows = []
+        else:
+            s_flag = ws.cell(row=row_idx, column=S_FLAG_COL + 1).value
+            current_section_rows.append((row_idx, str(raw_name).strip(), s_flag))
+
+    if current_section_rows:
+        sections.append(current_section_rows)
+
+    if not sections:
+        return []
+
+    # First section is always the main artist
+    results = []
+    main_albums = _parse_section_standard(ws, sections[0], users)
+    results.append({
+        'name': artist_name,
+        'relationship': 'main',
+        'parent': None,
+        'albums': [a for a in main_albums if a['songs']],
+    })
+
+    # Remaining sections are subunits or soloists
+    for section in sections[1:]:
+        if not section:
             continue
 
-        name_str = str(raw_name).strip()
-        s_flag = ws.cell(row=row_idx, column=S_FLAG_COL + 1).value
-        is_s_true = s_flag is True or s_flag == 'True'
-        is_s_false = s_flag is False or s_flag == 'False'
+        # First row of section: check if it's a member header (no year)
+        first_row_idx, first_name, first_s = section[0]
 
-        # In the main discography, s flag is reliable
-        if is_s_true:
-            # Definitely a song
+        if has_year_in_parens(first_name):
+            # No member header — this is a continuation of albums
+            # (e.g. an album that was separated by a blank row)
+            albums = _parse_section_standard(ws, section, users)
+            results[0]['albums'].extend([a for a in albums if a['songs']])
+            continue
+
+        # First row is a member/subunit header
+        member_name = first_name
+        remaining_rows = section[1:]
+
+        if not remaining_rows:
+            # Just a header with nothing under it — skip
+            continue
+
+        # Determine if subunit or soloist by checking s flags on song rows
+        # Subunit songs have s=True, soloist songs have s=False
+        song_s_flags = []
+        for _, _, s in remaining_rows:
+            if not has_year_in_parens(_):
+                song_s_flags.append(s)
+
+        # Check the non-album rows to determine type
+        has_true_songs = any(s is True or s == 'True' for s in song_s_flags)
+        has_false_songs = any(s is False or s == 'False' for s in song_s_flags)
+
+        if has_true_songs:
+            relationship = 'subunit'
+            albums = _parse_section_standard(ws, remaining_rows, users)
+        else:
+            relationship = 'soloist'
+            albums = _parse_section_soloist(ws, remaining_rows, users)
+
+        albums = [a for a in albums if a['songs']]
+        if albums:
+            results.append({
+                'name': member_name,
+                'relationship': relationship,
+                'parent': artist_name,
+                'albums': albums,
+            })
+
+    return results
+
+
+def _parse_section_standard(ws, rows, users):
+    """Parse a section where s=True means song, s=False means album header."""
+    albums = []
+    current_album = None
+    track_num = 0
+
+    for row_idx, name_str, s_flag in rows:
+        if s_flag is True or s_flag == 'True':
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
-            song = {
-                'name': name_str,
-                'track_number': track_num,
-                'ratings': ratings,
-            }
+            song = {'name': name_str, 'track_number': track_num, 'ratings': ratings}
             if current_album is not None:
                 current_album['songs'].append(song)
             else:
-                current_album = {
-                    'name': f'{artist_name} - Singles',
-                    'year': None,
-                    'songs': [song],
-                }
+                current_album = {'name': 'Singles', 'year': None, 'songs': [song]}
                 albums.append(current_album)
-            expect_member_header = False
-            continue
+        elif s_flag is False or s_flag == 'False':
+            album_name, year = parse_album_header(name_str)
+            current_album = {'name': album_name, 'year': year, 'songs': []}
+            albums.append(current_album)
+            track_num = 0
 
-        if is_s_false:
-            if expect_member_header and not has_year_in_parens(name_str):
-                # This is a member/subunit name after a blank row
-                # Treat as a section header — create an album group for it
-                in_soloist_section = True
-                current_album = None
-                expect_member_header = False
-                continue
+    return albums
 
-            if has_year_in_parens(name_str):
-                # Album header (has year)
-                album_name, year = parse_album_header(name_str)
-                current_album = {
-                    'name': album_name,
-                    'year': year,
-                    'songs': [],
-                }
-                albums.append(current_album)
-                track_num = 0
-                expect_member_header = False
+
+def _parse_section_soloist(ws, rows, users):
+    """Parse a soloist section where ALL rows are s=False.
+
+    Albums have (YYYY) in the name, songs don't.
+    """
+    albums = []
+    current_album = None
+    track_num = 0
+
+    for row_idx, name_str, s_flag in rows:
+        if has_year_in_parens(name_str):
+            # Album header
+            album_name, year = parse_album_header(name_str)
+            current_album = {'name': album_name, 'year': year, 'songs': []}
+            albums.append(current_album)
+            track_num = 0
+        else:
+            # Song
+            track_num += 1
+            ratings = extract_ratings(ws, row_idx, users)
+            song = {'name': name_str, 'track_number': track_num, 'ratings': ratings}
+            if current_album is not None:
+                current_album['songs'].append(song)
             else:
-                # In soloist section with s=False: this is a song
-                if in_soloist_section and current_album is not None:
-                    track_num += 1
-                    ratings = extract_ratings(ws, row_idx, users)
-                    song = {
-                        'name': name_str,
-                        'track_number': track_num,
-                        'ratings': ratings,
-                    }
-                    current_album['songs'].append(song)
-                elif current_album is not None:
-                    # Not in soloist section but s=False without year
-                    # Could be a non-standard album header (no year)
-                    album_name, year = parse_album_header(name_str)
-                    current_album = {
-                        'name': album_name,
-                        'year': year,
-                        'songs': [],
-                    }
-                    albums.append(current_album)
-                    track_num = 0
-                else:
-                    # No album context, not after blank — treat as album header
-                    album_name, year = parse_album_header(name_str)
-                    current_album = {
-                        'name': album_name,
-                        'year': year,
-                        'songs': [],
-                    }
-                    albums.append(current_album)
-                    track_num = 0
-                expect_member_header = False
+                current_album = {'name': 'Singles', 'year': None, 'songs': [song]}
+                albums.append(current_album)
 
-    # Filter out empty albums (headers with no songs beneath them)
-    return [a for a in albums if a['songs']]
+    return albums
 
 
 def extract_misc_artists(ws, users):
@@ -204,7 +263,6 @@ def extract_misc_artists(ws, users):
             continue
 
         text = str(name).strip()
-        # Split on last '(' to get "Song Name (Artist Name)"
         match = re.match(r'^(.+?)\s*\(([^)]+)\)\s*$', text)
         if match:
             song_name = match.group(1).strip()
@@ -257,7 +315,6 @@ def main():
     wb = openpyxl.load_workbook(args.spreadsheet, data_only=True)
     print(f'  {len(wb.sheetnames)} sheets found')
 
-    # Get users from first artist sheet
     artist_sheet_names = [
         name for name in wb.sheetnames
         if name not in NON_DATA_SHEETS and name != MISC_ARTISTS_SHEET
@@ -270,33 +327,41 @@ def main():
     users = extract_users(wb[artist_sheet_names[0]])
     print(f'  {len(users)} users: {[u["username"] for u in users]}')
 
-    # Extract artists
-    artists = []
+    # Extract all artists (main + subunits + soloists)
+    all_artists = []
     total_songs = 0
     total_albums = 0
     total_ratings = 0
+    subunit_count = 0
+    soloist_count = 0
 
     for sheet_name in artist_sheet_names:
         ws = wb[sheet_name]
-        albums = extract_artist(ws, sheet_name, users)
-        song_count = sum(len(a['songs']) for a in albums)
-        rating_count = sum(
-            len(s['ratings']) for a in albums for s in a['songs']
-        )
+        entries = extract_artist_sheet(ws, sheet_name, users)
 
-        if albums:
-            artists.append({
-                'name': sheet_name,
-                'albums': albums,
-            })
-            total_albums += len(albums)
-            total_songs += song_count
-            total_ratings += rating_count
+        for entry in entries:
+            song_count = sum(len(a['songs']) for a in entry['albums'])
+            rating_count = sum(len(s['ratings']) for a in entry['albums'] for s in a['songs'])
 
-        if len(artists) % 50 == 0 and len(artists) > 0:
-            print(f'  Processed {len(artists)} artists...')
+            if entry['albums']:
+                all_artists.append(entry)
+                total_albums += len(entry['albums'])
+                total_songs += song_count
+                total_ratings += rating_count
 
-    print(f'  {len(artists)} artists, {total_albums} albums, {total_songs} songs, {total_ratings} ratings')
+                if entry['relationship'] == 'subunit':
+                    subunit_count += 1
+                elif entry['relationship'] == 'soloist':
+                    soloist_count += 1
+
+        if len([a for a in all_artists if a['relationship'] == 'main']) % 50 == 0:
+            main_count = len([a for a in all_artists if a['relationship'] == 'main'])
+            if main_count > 0:
+                print(f'  Processed {main_count} artist sheets...')
+
+    main_count = len([a for a in all_artists if a['relationship'] == 'main'])
+    print(f'  {main_count} main artists, {subunit_count} subunits, {soloist_count} soloists')
+    print(f'  {total_albums} albums, {total_songs} songs, {total_ratings} ratings')
 
     # Extract Misc. Artists
     misc_entries = []
@@ -313,17 +378,19 @@ def main():
     # Build output
     data = {
         'users': users,
-        'artists': artists,
+        'artists': all_artists,
         'misc_artists': misc_entries,
         'changelog': changelog,
     }
 
-    # Write JSON
     with open(args.output, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     print(f'\nExported to {args.output}')
-    print(f'  Artists: {len(artists)}')
+    print(f'  Main artists: {main_count}')
+    print(f'  Subunits: {subunit_count}')
+    print(f'  Soloists: {soloist_count}')
+    print(f'  Total artist entries: {len(all_artists)}')
     print(f'  Albums: {total_albums}')
     print(f'  Songs: {total_songs}')
     print(f'  Ratings: {total_ratings}')
