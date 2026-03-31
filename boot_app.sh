@@ -29,6 +29,8 @@ if [ ! -f "instance/arima.db" ]; then
         flask import-data data.json
         echo "Merging duplicate users..."
         flask merge-users
+        echo "Renaming admin..."
+        flask rename-admin
     fi
 fi
 

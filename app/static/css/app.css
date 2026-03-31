@@ -1,14 +1,17 @@
-/* Dense spreadsheet styling — matches the source spreadsheet look */
+/* Dense spreadsheet styling */
 
-/* All data tables: tight, dense, spreadsheet-like */
+/* All data tables: tight, dense, no gaps */
 table.text-xs {
     font-size: 11px;
     line-height: 1.2;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 table.text-xs td,
 table.text-xs th {
     padding: 2px 4px;
+    vertical-align: middle;
 }
 
 /* Monospace numbers in rating/stats cells for alignment */
@@ -16,6 +19,8 @@ table.text-xs td.text-center {
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
+    text-align: center;
+    vertical-align: middle;
 }
 
 /* Song name column stays proportional */
@@ -44,13 +49,16 @@ table.text-xs th {
     text-overflow: ellipsis;
 }
 
-/* Rating popover — ensure it's above everything */
-.rating-popover {
-    z-index: 50 !important;
-}
-
-/* Bottom artist navbar — compact */
+/* Bottom artist navbar — compact, no underlines */
 nav.fixed.bottom-0 a {
     font-size: 12px;
     padding: 2px 8px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Horizontal scroll wrapper for all pages */
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }

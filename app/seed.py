@@ -35,8 +35,8 @@ CLASSIC_THEME = {
     'rating_5_bg': '#FF0016',
     'rating_4_bg': '#FF8E1E',
     'rating_3_bg': '#FEFF2A',
-    'rating_2_bg': '#9EFFA4',
-    'rating_1_bg': '#8AB5FC',
+    'rating_2_bg': '#CDDFFC',
+    'rating_1_bg': '#1800FB',
     'rating_0_bg': '#9200FC',
     # Rating text (2)
     'rating_text_light': '#FFFFFF',
@@ -44,17 +44,18 @@ CLASSIC_THEME = {
     # Heat map anchors (3)
     'heatmap_high': '#FFB7FE',
     'heatmap_mid': '#FF8E1E',
-    'heatmap_low': '#8AB5FC',
+    'heatmap_low': '#1800FB',
     # Completion heat map (3)
     'pct_high': '#FCB045',
     'pct_mid': '#B76D7D',
     'pct_low': '#833AB4',
-    # Structural (5)
+    # Structural (6)
     'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
     'grid_line': '#333333',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
+    'header_user_bg': '#D9EAD3',
 }
 
 # Dark theme — all 36 columns populated, no NULLs
@@ -81,8 +82,8 @@ DARK_THEME = {
     'rating_5_bg': '#FF0016',
     'rating_4_bg': '#FF8E1E',
     'rating_3_bg': '#FEFF2A',
-    'rating_2_bg': '#9EFFA4',
-    'rating_1_bg': '#8AB5FC',
+    'rating_2_bg': '#CDDFFC',
+    'rating_1_bg': '#1800FB',
     'rating_0_bg': '#9200FC',
     # Rating text (2)
     'rating_text_light': '#FFFFFF',
@@ -90,17 +91,18 @@ DARK_THEME = {
     # Heat map anchors (3)
     'heatmap_high': '#FFB7FE',
     'heatmap_mid': '#FF8E1E',
-    'heatmap_low': '#8AB5FC',
+    'heatmap_low': '#1800FB',
     # Completion heat map (3)
     'pct_high': '#FCB045',
     'pct_mid': '#B76D7D',
     'pct_low': '#833AB4',
-    # Structural (5) — dark variants
+    # Structural (6) — dark variants
     'album_header_bg': '#5C2A4A',
     'row_alternate': '#16213E',
     'grid_line': '#555555',
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
+    'header_user_bg': '#1A3A2E',
 }
 
 

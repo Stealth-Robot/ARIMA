@@ -19,4 +19,4 @@ RATING_KEY_STEALTH = {
 }
 
 # Scores where text should be light (white) on the dark background
-RATING_DARK_BG_SCORES = {0, 5}
+RATING_DARK_BG_SCORES = {0, 1, 5}
