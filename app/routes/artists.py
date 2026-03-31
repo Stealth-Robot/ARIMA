@@ -125,17 +125,20 @@ def _build_discography(artist):
         genre_id = current_user.settings.genre
         include_remixes = current_user.settings.include_remixes
         include_featured = current_user.settings.include_featured
+        album_sort_order = current_user.settings.album_sort_order or 'desc'
     else:
         genre_id = session.get('genre')
         include_remixes = False
         include_featured = False
+        album_sort_order = session.get('album_sort_order', 'desc')
 
     # Get all albums containing these songs
+    order = Album.release_date.asc() if album_sort_order == 'asc' else Album.release_date.desc()
     albums = db.session.query(Album).join(
         AlbumSong, Album.id == AlbumSong.album_id
     ).filter(
         AlbumSong.song_id.in_(song_ids)
-    ).distinct().order_by(Album.release_date.desc()).all()
+    ).distinct().order_by(order).all()
 
     # Apply genre filter at album level
     if genre_id is not None:

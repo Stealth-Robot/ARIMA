@@ -57,6 +57,15 @@
             </label>
         </div>
 
+        <!-- Album Sort Order -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Album Sort Order</label>
+            <select name="album_sort_order" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                <option value="desc" {% if settings.album_sort_order == 'desc' %}selected{% endif %}>Newest first</option>
+                <option value="asc" {% if settings.album_sort_order == 'asc' %}selected{% endif %}>Oldest first</option>
+            </select>
+        </div>
+
         <button type="submit" class="px-6 py-2 rounded text-white"
                 style="background-color: var(--button-primary);">
             Save Settings
