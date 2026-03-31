@@ -53,5 +53,6 @@ class UserSettings(db.Model):
     include_remixes = db.Column(db.Boolean, nullable=False, default=False)
     theme = db.Column(db.Integer, db.ForeignKey('theme.id'), nullable=False, default=0)
     hide_duplicate_songs = db.Column(db.Boolean, nullable=False, default=False)
+    album_sort_order = db.Column(db.String(4), nullable=False, default='desc')
 
     user = db.relationship('User', back_populates='settings')

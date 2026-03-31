@@ -30,6 +30,7 @@ def profile():
             'theme': session.get('theme', 0),
             'include_featured': session.get('include_featured', False),
             'include_remixes': session.get('include_remixes', False),
+            'album_sort_order': session.get('album_sort_order', 'desc'),
         }
     else:
         s = current_user.settings
@@ -37,6 +38,7 @@ def profile():
             'theme': s.theme if s else 0,
             'include_featured': s.include_featured if s else False,
             'include_remixes': s.include_remixes if s else False,
+            'album_sort_order': s.album_sort_order if s else 'desc',
         }
 
     return render_template('profile.html', themes=theme_list, settings=settings)
@@ -60,11 +62,16 @@ def update_settings():
         if 'theme' in request.form:
             session['include_featured'] = request.form.get('include_featured') == 'on'
             session['include_remixes'] = request.form.get('include_remixes') == 'on'
+            val = request.form.get('album_sort_order')
+            session['album_sort_order'] = val if val in ('asc', 'desc') else 'desc'
         else:
             if 'include_featured' in request.form:
                 session['include_featured'] = request.form.get('include_featured') == 'on'
             if 'include_remixes' in request.form:
                 session['include_remixes'] = request.form.get('include_remixes') == 'on'
+            if 'album_sort_order' in request.form:
+                val = request.form.get('album_sort_order')
+                session['album_sort_order'] = val if val in ('asc', 'desc') else 'desc'
     else:
         settings = current_user.settings
         if not settings:
@@ -85,12 +92,17 @@ def update_settings():
             if 'theme' in request.form:
                 settings.include_featured = request.form.get('include_featured') == 'on'
                 settings.include_remixes = request.form.get('include_remixes') == 'on'
+                val = request.form.get('album_sort_order')
+                settings.album_sort_order = val if val in ('asc', 'desc') else 'desc'
             else:
                 # From navbar/artist page — only update if explicitly present
                 if 'include_featured' in request.form:
                     settings.include_featured = request.form.get('include_featured') == 'on'
                 if 'include_remixes' in request.form:
                     settings.include_remixes = request.form.get('include_remixes') == 'on'
+                if 'album_sort_order' in request.form:
+                    val = request.form.get('album_sort_order')
+                    settings.album_sort_order = val if val in ('asc', 'desc') else 'desc'
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200
