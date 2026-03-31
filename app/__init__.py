@@ -22,7 +22,7 @@ def create_app():
     login_manager.init_app(flask_app)
     bcrypt.init_app(flask_app)
 
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth.login'
 
     # SQLite PRAGMAs — must be registered after db.init_app
     with flask_app.app_context():
