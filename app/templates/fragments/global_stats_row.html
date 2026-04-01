@@ -9,7 +9,7 @@
     </td>
     <td class="px-2 py-1 pl-8"
         style="border: 1px solid var(--grid-line);
-               background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));
+               background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) {% if row.artist.gender_id == 2 %}40%{% else %}60%{% endif %}, var(--bg-primary));
                color: var(--text-primary);">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
