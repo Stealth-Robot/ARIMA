@@ -89,6 +89,8 @@ function closeSearchOverlay() {
     var nav = document.querySelector('.artist-nav');
     if (!nav) return;
     nav.addEventListener('wheel', function (e) {
+        var menu = document.getElementById('artist-menu');
+        if (menu && menu.contains(e.target)) return;
         if (e.deltaY === 0) return;
         e.preventDefault();
         nav.scrollLeft += e.deltaY;
