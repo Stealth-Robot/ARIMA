@@ -93,33 +93,18 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
-    # Add artist_button_text column to theme table if it doesn't exist
+    # Add any missing theme columns — one PRAGMA call, all guards in sequence
     with flask_app.app_context():
         try:
             with db.engine.connect() as conn:
                 cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
+                changed = False
                 if 'artist_button_text' not in cols:
                     conn.execute(db.text("ALTER TABLE theme ADD COLUMN artist_button_text VARCHAR(7)"))
-                    conn.commit()
-        except Exception:
-            pass  # DB may not exist yet
-
-    # Add navbar_active column to theme table if it doesn't exist
-    with flask_app.app_context():
-        try:
-            with db.engine.connect() as conn:
-                cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
+                    changed = True
                 if 'navbar_active' not in cols:
                     conn.execute(db.text("ALTER TABLE theme ADD COLUMN navbar_active VARCHAR(7)"))
-                    conn.commit()
-        except Exception:
-            pass  # DB may not exist yet
-
-    # Add unrated colour columns with hardcoded defaults
-    with flask_app.app_context():
-        try:
-            with db.engine.connect() as conn:
-                cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
+                    changed = True
                 if 'unrated_0_bg' not in cols:
                     conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_0_bg VARCHAR(7) DEFAULT '#A4C2F4'"))
                     conn.execute(db.text("UPDATE theme SET unrated_0_bg = '#A4C2F4'"))
@@ -129,6 +114,8 @@ def create_app():
                     conn.execute(db.text("UPDATE theme SET unrated_mid_bg = '#FFE599'"))
                     conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_high_bg VARCHAR(7) DEFAULT '#EA9999'"))
                     conn.execute(db.text("UPDATE theme SET unrated_high_bg = '#EA9999'"))
+                    changed = True
+                if changed:
                     conn.commit()
         except Exception:
             pass  # DB may not exist yet
