@@ -31,7 +31,6 @@ CLASSIC_THEME = {
     'button_primary': '#2563EB',
     'button_secondary': '#6B7280',
     'border': '#D1D5DB',
-    'artist_button_text': '#000000',
     # Rating cell backgrounds (6)
     'rating_5_bg': '#FF0016',
     'rating_4_bg': '#FF8E1E',
@@ -85,7 +84,6 @@ DARK_THEME = {
     'button_primary': '#3B82F6',
     'button_secondary': '#4B5563',
     'border': '#374151',
-    'artist_button_text': '#000000',
     # Rating cell backgrounds (6) — same as Classic (data semantics)
     'rating_5_bg': '#FF0016',
     'rating_4_bg': '#FF8E1E',
