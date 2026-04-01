@@ -6,11 +6,40 @@ Key rules:
 - Nesting is exactly one level deep (subunits cannot have subunits)
 """
 
+import re
+
 from flask import session
 from flask_login import current_user
 
 from app.extensions import db
 from app.models.music import Artist, ArtistArtist, ArtistSong, Song, Album, AlbumSong, album_genres
+
+
+def slugify(name):
+    """Convert an artist name to a URL-safe slug.
+
+    Examples:
+        'TWICE'         → 'twice'
+        '(G)I-DLE'      → 'gi-dle'
+        'Misc. Artists' → 'misc-artists'
+    """
+    s = name.lower()
+    s = re.sub(r'\s+', '-', s)           # spaces → hyphens
+    s = re.sub(r'[^a-z0-9-]', '', s)    # strip non-alphanumeric except hyphens
+    s = re.sub(r'-{2,}', '-', s)        # collapse multiple hyphens
+    s = s.strip('-')
+    return s
+
+
+def generate_unique_slug(name, existing_slugs):
+    """Return a unique slug for name, appending -2/-3/... if needed."""
+    base = slugify(name)
+    candidate = base
+    counter = 2
+    while candidate in existing_slugs:
+        candidate = f'{base}-{counter}'
+        counter += 1
+    return candidate
 
 SUBUNIT = 0
 SOLOIST = 1

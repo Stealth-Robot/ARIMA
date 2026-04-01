@@ -15,6 +15,7 @@ from app.models.music import (
     Artist, Album, Song, Rating, ArtistSong, AlbumSong, ArtistArtist, album_genres,
 )
 from app.models.changelog import Changelog
+from app.services.artist import generate_unique_slug
 
 
 def import_data(json_path):
@@ -99,6 +100,7 @@ def _import_artists(artists_data, user_map):
     total_songs = 0
     total_ratings = 0
     parent_map = {}  # child_name → (parent_name, relationship)
+    used_slugs = set()  # track slugs assigned this run
 
     # First pass: create all artists
     for entry in artists_data:
@@ -116,11 +118,21 @@ def _import_artists(artists_data, user_map):
             if entry['relationship'] == 'main':
                 gender_map_upd = {'female': 0, 'male': 1, 'mixed': 2}
                 existing.gender_id = gender_map_upd.get(entry.get('gender', 'mixed'), 2)
+            # Assign slug if missing
+            if not existing.slug:
+                slug = generate_unique_slug(name, used_slugs)
+                existing.slug = slug
+                used_slugs.add(slug)
+            else:
+                used_slugs.add(existing.slug)
         else:
             gender_map = {'female': 0, 'male': 1, 'mixed': 2}
             gender_id = gender_map.get(entry.get('gender', 'mixed'), 2)
+            slug = generate_unique_slug(name, used_slugs)
+            used_slugs.add(slug)
             artist = Artist(
                 name=name,
+                slug=slug,
                 gender_id=gender_id,
                 country_id=0,  # Default: Korean
                 submitted_by_id=0,
@@ -266,12 +278,16 @@ def _import_misc_artists(misc_data, user_map):
     if not misc_artist:
         misc_artist = Artist(
             name='Misc. Artists',
+            slug='misc-artists',
             gender_id=2,  # Mixed
             country_id=0,  # Korean
             submitted_by_id=0,
             submission_id=0,
         )
         db.session.add(misc_artist)
+        db.session.flush()
+    elif not misc_artist.slug:
+        misc_artist.slug = 'misc-artists'
         db.session.flush()
 
     # Create single album
