@@ -70,6 +70,14 @@ def get_parent(artist_id):
     return None
 
 
+def get_soloist_parent(artist_id):
+    """Return the parent Artist if this artist is a soloist, else None."""
+    rel = ArtistArtist.query.filter_by(artist_2=artist_id, relationship=SOLOIST).first()
+    if rel:
+        return db.session.get(Artist, rel.artist_1)
+    return None
+
+
 def get_songs_for_artist(artist_id, include_subunit_songs=True):
     """Get song IDs for an artist.
 

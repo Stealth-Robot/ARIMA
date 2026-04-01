@@ -36,9 +36,10 @@
 <body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar — all inline styles to guarantee single line -->
     <nav style="position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+                height: 44px; box-sizing: border-box;
                 background-color: var(--navbar-bg); color: var(--navbar-text);
                 display: flex; flex-wrap: nowrap; align-items: center;
-                gap: 10px; padding: 6px 12px; overflow-x: auto;
+                gap: 10px; padding: 0 12px; overflow-x: auto;
                 white-space: nowrap; font-size: 15px;">
         <a href="{{ url_for('home.home') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'home.home' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Home</a>
         <a href="{{ url_for('stats.artist_stats') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'stats.artist_stats' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artist Stats</a>
@@ -46,7 +47,9 @@
         <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
         <a href="{{ url_for('changelog.changelog') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'changelog.changelog' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
         <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
+        {% endif %}
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
         <a href="{{ url_for('submissions.submissions_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
@@ -85,6 +88,7 @@
             <select name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful) window.location.reload()"
                     style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for c in countries %}
@@ -98,6 +102,7 @@
             <select name="genre"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful) window.location.reload()"
                     style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
                 <option value="">All</option>
                 {% for g in genres %}
@@ -110,12 +115,10 @@
             <!-- Profile + Logout -->
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80" style="color: var(--navbar-text); display: flex; align-items: center; gap: 4px; text-decoration: none;">
-                {% if current_user.profile_image %}
-                <img src="{{ current_user.profile_image }}" alt=""
+                <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
                      referrerpolicy="no-referrer"
-                     onerror="this.remove()"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
                      style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
-                {% endif %}
                 {{ current_user.username }}
             </a>
             <a href="{{ url_for('auth.logout') }}" class="hover:opacity-80" style="color: var(--navbar-text);">

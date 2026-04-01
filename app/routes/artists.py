@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, album_genres
 from app.models.user import User
-from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_discography_songs
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parent, get_discography_songs
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -59,27 +59,34 @@ def artist_detail(artist_slug):
     discography = _build_discography(artist)
     users = _get_display_users()
 
+    # Detect soloist parent (for display on the soloist's own page)
+    soloist_parent = get_soloist_parent(artist_id)
+
     # Build child sections (subunits + soloists)
     children_sections = []
     subunits, soloists = get_children(artist.id)
+    soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
         child_disco = _build_discography(child)
         if child_disco:
             children_sections.append({
                 'artist': child,
                 'discography': child_disco,
+                'is_soloist': child.id in soloist_ids,
             })
 
     if request.headers.get('HX-Request'):
         return render_template('fragments/artist_discography.html',
                                artist=artist, discography=discography, users=users,
-                               gender_css=GENDER_CSS, children=children_sections)
+                               gender_css=GENDER_CSS, children=children_sections,
+                               soloist_parent=soloist_parent)
 
     navbar = _get_filtered_navbar()
     return render_template('artists.html',
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
-                           gender_css=GENDER_CSS, children=children_sections)
+                           gender_css=GENDER_CSS, children=children_sections,
+                           soloist_parent=soloist_parent)
 
 
 def _get_display_users():

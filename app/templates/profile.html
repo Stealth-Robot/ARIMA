@@ -10,18 +10,28 @@
     {% if not current_user.is_system_or_guest %}
     <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
         <h2 class="font-semibold mb-3">Profile Image</h2>
-        {% if current_user.profile_image %}
-        <img src="{{ current_user.profile_image }}" alt="Profile" class="w-24 h-24 rounded-full mb-3 object-cover">
-        {% endif %}
-        <form method="POST" action="{{ url_for('profile.update_image') }}" class="flex gap-2">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="profile_image"
-                   value="{{ current_user.profile_image or '' }}"
-                   placeholder="Image URL"
-                   class="flex-1 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
-            <button type="submit" class="px-4 py-2 rounded text-sm text-white"
-                    style="background-color: var(--button-primary);">Save</button>
-        </form>
+        <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt="Profile"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+             class="w-24 h-24 rounded-full mb-3 object-cover">
+        <div class="flex gap-2">
+            <form method="POST" action="{{ url_for('profile.update_image') }}" class="flex gap-2 flex-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="profile_image"
+                       value="{{ current_user.profile_image or '' }}"
+                       placeholder="Image URL"
+                       class="flex-1 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                        style="background-color: var(--button-primary);">Save</button>
+            </form>
+            {% if current_user.profile_image %}
+            <form method="POST" action="{{ url_for('profile.update_image') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="profile_image" value="">
+                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                        style="background-color: #DC2626;">Delete</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 

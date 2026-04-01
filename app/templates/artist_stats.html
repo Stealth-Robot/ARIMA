@@ -54,7 +54,7 @@
         </tr>
         {# Row 3: Rank #}
         <tr style="border: 1px solid var(--grid-line);">
-            <td class="px-2 py-1 text-right" style="border: 1px solid var(--grid-line);">X</td>
+            <td class="px-2 py-1 text-right" style="border: 1px solid var(--grid-line);"></td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);"></td>
             {% for u in users %}
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rank or '-' }}</td>

@@ -46,8 +46,10 @@ function closeSearchOverlay() {
         clearTimeout(searchTimer);
         var q = searchInput.value.trim();
         if (q.length < 2) {
-            searchResults.style.display = 'none';
-            searchResults.innerHTML = '';
+            searchResults.innerHTML = q.length === 1
+                ? '<div style="padding: 10px 14px; font-size: 13px; color: var(--text-secondary);">Type at least 2 characters to search</div>'
+                : '';
+            searchResults.style.display = q.length === 1 ? 'block' : 'none';
             return;
         }
         searchTimer = setTimeout(function () {

@@ -3,14 +3,14 @@ from flask_login import login_required
 
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong
-from app.decorators import role_required, EDITOR_OR_ADMIN
+from app.decorators import role_required, ADMIN
 
 views_bp = Blueprint('views', __name__)
 
 
 @views_bp.route('/views')
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(ADMIN)
 def views_page():
     """Data integrity monitoring page."""
     # Orphaned songs: no AlbumSong entry

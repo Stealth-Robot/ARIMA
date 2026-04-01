@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 
+from flask import current_app
+
+from app.extensions import bcrypt
 from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship
 from app.models.user import Role, User
 from app.models.theme import Theme
@@ -9,6 +12,11 @@ from app.models.rules import Rules
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _hash(password):
+    pepper = current_app.config['PEPPER']
+    return bcrypt.generate_password_hash(pepper + password).decode('utf-8')
 
 
 # Classic theme — all 40 columns populated, no NULLs
@@ -178,6 +186,10 @@ def seed(db):
                 password=None, role_id=0, created_at=_now(), sort_order=1,
                 profile_image='https://i.imgur.com/Nux0Yn7.png',
             ))
+
+        existing_globe = User.query.filter_by(username='Globe').first()
+        if existing_globe and not existing_globe.password:
+            existing_globe.password = _hash('admin')
 
         # Flush users so Submission FK to user.id resolves
         db.session.flush()
