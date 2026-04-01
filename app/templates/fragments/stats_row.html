@@ -2,7 +2,7 @@
 <tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
     style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
     <td class="px-2 py-1 text-center" style="border: 1px solid var(--grid-line);
-        {% if row.stats.global_avg_pct > 0 %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
+        {% if row.stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
         {{ row.stats.global_avg_pct }}
     </td>
     <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line);
@@ -10,18 +10,24 @@
         color: var(--text-primary);">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
+    {# Set 1: pct_rated per user #}
     {% for u in users %}
-    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);
-        {% if row.stats.per_user[u.id].pct_rated > 0 %}background-color: {{ pct_to_colour(row.stats.per_user[u.id].pct_rated) }};{% endif %}">
+    <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
+        {% if row.stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(row.stats.per_user[u.id].pct_rated) }};{% endif %}">
         {{ row.stats.per_user[u.id].pct_rated }}
     </td>
     {% endfor %}
-    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);">
+    {# Set 2: unrated count per user #}
+    {% for u in users %}
+    {% set uc = row.stats.per_user[u.id].unrated_count %}
+    <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
+        {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }};{% endif %}">
+        {{ uc }}
+    </td>
+    {% endfor %}
+    {# Song Count — always far right #}
+    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">
         {{ row.stats.song_count }}
     </td>
-    {% for u in users %}
-    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ row.stats.per_user[u.id].unrated_count }}</td>
-    {% endfor %}
-    {# Set 3 removed #}
 </tr>
 {% endfor %}

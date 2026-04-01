@@ -708,6 +708,8 @@ document.addEventListener('click', function (e) {
                 btn.closest('tr').insertAdjacentHTML('afterend', html);
                 btn.dataset.expanded = 'true';
                 btn.classList.add('expanded');
+                var sel = document.getElementById('stat-mode');
+                if (sel) switchStatMode(sel.value);
             });
     }
 });
