@@ -58,7 +58,8 @@ def expand_subunit(artist_id):
         rows.append({'artist': sub, 'stats': stats})
 
     return render_template('fragments/stats_row.html',
-                           rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True)
+                           rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True,
+                           parent_artist_id=artist_id)
 
 
 @stats_bp.route('/global-stats')
@@ -98,4 +99,5 @@ def expand_subunit_scores(artist_id):
         rows.append({'artist': sub, 'scores': scores})
 
     return render_template('fragments/global_stats_row.html',
-                           rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True)
+                           rows=rows, users=users, gender_css=GENDER_CSS, is_subunit=True,
+                           parent_artist_id=artist_id)

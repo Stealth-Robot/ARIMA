@@ -1,5 +1,6 @@
 {% for row in rows %}
-<tr style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
+<tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
+    style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
     {% set global_style = score_to_style(row.scores.global_avg) %}
     <td class="px-2 py-1 text-center"
         style="border: 1px solid var(--grid-line);
@@ -7,7 +8,9 @@
         {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% else %}0{% endif %}
     </td>
     <td class="px-2 py-1 pl-8"
-        style="border: 1px solid var(--grid-line); color: var({{ gender_css[row.artist.gender_id] }});">
+        style="border: 1px solid var(--grid-line);
+               background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));
+               color: var(--text-primary);">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
     {% for u in users %}

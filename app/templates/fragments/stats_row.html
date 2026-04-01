@@ -1,10 +1,13 @@
 {% for row in rows %}
-<tr style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
+<tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
+    style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
     <td class="px-2 py-1 text-center" style="border: 1px solid var(--grid-line);
         {% if row.stats.global_avg_pct > 0 %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
         {{ row.stats.global_avg_pct }}
     </td>
-    <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line); color: var({{ gender_css[row.artist.gender_id] }});">
+    <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line);
+        background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));
+        color: var(--text-primary);">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
     {% for u in users %}
