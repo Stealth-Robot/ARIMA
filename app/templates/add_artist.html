@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Add Artist{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Add Artist</h1>
+
+    <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Left column: Artist Info -->
+            <div class="lg:w-5/12">
+                <fieldset class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+                    <legend class="font-semibold px-2">Artist Info</legend>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="artist_name" id="artist_name"
+                               value="{{ form_data.get('artist_name', '') }}"
+                               class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                        {% if errors.get('artist_name') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['artist_name'] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Gender <span class="text-red-500">*</span></label>
+                        <select name="gender_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            <option value="">— Select —</option>
+                            {% for g in genders %}
+                            <option value="{{ g.id }}" {% if form_data.get('gender_id')|string == g.id|string %}selected{% endif %}>{{ g.gender }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.get('gender_id') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['gender_id'] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Country <span class="text-red-500">*</span></label>
+                        <select name="country_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            <option value="">— Select —</option>
+                            {% for c in countries %}
+                            <option value="{{ c.id }}" {% if form_data.get('country_id')|string == c.id|string %}selected{% endif %}>{{ c.country }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.get('country_id') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['country_id'] }}</p>
+                        {% endif %}
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Right column: Discography -->
+            <div class="lg:w-7/12">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-semibold">Discography</span>
+                    <button type="button" onclick="addAlbum()"
+                            class="px-3 py-1 rounded text-sm"
+                            style="background-color: var(--button-secondary); color: var(--text-primary);">
+                        + Add Album
+                    </button>
+                </div>
+
+                {% if errors.get('albums') %}
+                <p class="text-xs text-red-400 mb-2">{{ errors['albums'] }}</p>
+                {% endif %}
+
+                <div id="albums-container"></div>
+            </div>
+        </div>
+
+        <!-- Hidden serialised album data -->
+        <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
+
+        <div class="flex gap-3 mt-4 mb-10">
+            <button type="submit"
+                    class="px-6 py-2 rounded font-semibold"
+                    style="background-color: #16a34a; color: white;">
+                Add Artist
+            </button>
+            <a href="{{ url_for('artists.artists_list') }}"
+               class="px-6 py-2 rounded"
+               style="background-color: var(--button-secondary); color: var(--text-primary);">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+let albumCount = 0;
+
+function addAlbum() {
+    albumCount++;
+    const container = document.getElementById('albums-container');
+    const div = document.createElement('div');
+    div.className = 'mb-6 p-4 border rounded';
+    div.style.borderColor = 'var(--border)';
+    div.id = 'album-' + albumCount;
+    div.innerHTML =
+        '<div class="flex justify-between items-center mb-3">' +
+            '<span class="font-semibold">Album ' + albumCount + '</span>' +
+            '<button type="button" onclick="removeAlbum(' + albumCount + ')" class="text-sm text-red-500 hover:underline">Remove</button>' +
+        '</div>' +
+        '<div class="flex gap-3 mb-3">' +
+            '<div class="flex-1">' +
+                '<label class="block text-sm mb-1">Album Name</label>' +
+                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+            '</div>' +
+            '<div class="w-40">' +
+                '<label class="block text-sm mb-1">Release Date</label>' +
+                '<input type="date" data-album="' + albumCount + '" data-field="release_date" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+            '</div>' +
+            '<div class="w-32">' +
+                '<label class="block text-sm mb-1">Type</label>' +
+                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                    albumTypeOptions() +
+                '</select>' +
+            '</div>' +
+        '</div>' +
+        '<div class="mb-3">' +
+            '<label class="block text-sm mb-1">Genres</label>' +
+            '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(albumCount) + '</div>' +
+        '</div>' +
+        '<div class="mb-3">' +
+            '<label class="block text-sm mb-1">Songs</label>' +
+            '<div id="songs-' + albumCount + '" class="space-y-2"></div>' +
+            '<button type="button" onclick="addSong(' + albumCount + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
+        '</div>';
+    container.appendChild(div);
+    addSong(albumCount);
+}
+
+function albumTypeOptions() {
+    const types = {{ album_types_js | tojson }};
+    return types.map(function(t) { return '<option value="' + t.id + '">' + t.type + '</option>'; }).join('');
+}
+
+function genreCheckboxes(albumNum) {
+    const genres = {{ genres_js | tojson }};
+    return genres.map(function(g) {
+        return '<label class="text-sm"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox"> ' + g.genre + '</label>';
+    }).join('');
+}
+
+function removeAlbum(num) {
+    const el = document.getElementById('album-' + num);
+    if (el) el.remove();
+}
+
+let songCounters = {};
+
+function addSong(albumNum) {
+    if (!songCounters[albumNum]) songCounters[albumNum] = 0;
+    songCounters[albumNum]++;
+    const songNum = songCounters[albumNum];
+    const container = document.getElementById('songs-' + albumNum);
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center';
+    div.id = 'song-' + albumNum + '-' + songNum;
+    div.innerHTML =
+        '<span class="text-sm w-6">' + songNum + '.</span>' +
+        '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
+        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> P</label>' +
+        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
+        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="artist_is_main" class="song-check" checked> Main</label>' +
+        '<button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-sm">x</button>';
+    container.appendChild(div);
+}
+
+document.getElementById('add-artist-form').addEventListener('submit', function() {
+    const albums = [];
+    document.querySelectorAll('[id^="album-"]').forEach(function(albumDiv) {
+        const albumNum = albumDiv.id.split('-')[1];
+        const album = {
+            name: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '',
+            release_date: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="release_date"]') || {}).value || '',
+            album_type_id: parseInt((albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]') || {}).value || '0'),
+            genre_ids: [],
+            songs: [],
+        };
+        albumDiv.querySelectorAll('[data-album="' + albumNum + '"][data-genre]').forEach(function(cb) {
+            if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
+        });
+        albumDiv.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function(songDiv) {
+            const songNum = songDiv.id.split('-')[2];
+            const name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
+            if (name.trim()) {
+                album.songs.push({
+                    name: name,
+                    is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
+                    is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
+                    artist_is_main: (songDiv.querySelector('[data-song="' + songNum + '"][data-field="artist_is_main"]') || {checked: true}).checked,
+                });
+            }
+        });
+        if (album.name.trim()) albums.push(album);
+    });
+    document.getElementById('albums-data').value = JSON.stringify(albums);
+});
+
+let formDirty = false;
+document.getElementById('add-artist-form').addEventListener('input', function() { formDirty = true; });
+window.addEventListener('beforeunload', function(e) {
+    if (formDirty) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes.';
+    }
+});
+
+// Restore albums from previously submitted form data on validation error
+(function() {
+    const raw = document.getElementById('albums-data').value;
+    if (!raw || raw === '[]') {
+        addAlbum();
+        return;
+    }
+    try {
+        const albums = JSON.parse(raw);
+        if (!albums || !albums.length) { addAlbum(); return; }
+        albums.forEach(function(albumData) {
+            albumCount++;
+            const num = albumCount;
+            const container = document.getElementById('albums-container');
+            const div = document.createElement('div');
+            div.className = 'mb-6 p-4 border rounded';
+            div.style.borderColor = 'var(--border)';
+            div.id = 'album-' + num;
+            div.innerHTML =
+                '<div class="flex justify-between items-center mb-3">' +
+                    '<span class="font-semibold">Album ' + num + '</span>' +
+                    '<button type="button" onclick="removeAlbum(' + num + ')" class="text-sm text-red-500 hover:underline">Remove</button>' +
+                '</div>' +
+                '<div class="flex gap-3 mb-3">' +
+                    '<div class="flex-1">' +
+                        '<label class="block text-sm mb-1">Album Name</label>' +
+                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                    '</div>' +
+                    '<div class="w-40">' +
+                        '<label class="block text-sm mb-1">Release Date</label>' +
+                        '<input type="date" data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                    '</div>' +
+                    '<div class="w-32">' +
+                        '<label class="block text-sm mb-1">Type</label>' +
+                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                            albumTypeOptions() +
+                        '</select>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="mb-3">' +
+                    '<label class="block text-sm mb-1">Genres</label>' +
+                    '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(num) + '</div>' +
+                '</div>' +
+                '<div class="mb-3">' +
+                    '<label class="block text-sm mb-1">Songs</label>' +
+                    '<div id="songs-' + num + '" class="space-y-2"></div>' +
+                    '<button type="button" onclick="addSong(' + num + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
+                '</div>';
+            container.appendChild(div);
+
+            // Set album type
+            if (albumData.album_type_id) {
+                const sel = div.querySelector('[data-album="' + num + '"][data-field="album_type_id"]');
+                if (sel) sel.value = albumData.album_type_id;
+            }
+            // Restore genre checkboxes
+            if (albumData.genre_ids && albumData.genre_ids.length) {
+                albumData.genre_ids.forEach(function(gid) {
+                    const cb = div.querySelector('[data-album="' + num + '"][data-genre="' + gid + '"]');
+                    if (cb) cb.checked = true;
+                });
+            }
+            // Restore songs
+            if (!songCounters[num]) songCounters[num] = 0;
+            (albumData.songs || []).forEach(function(songData) {
+                songCounters[num]++;
+                const sNum = songCounters[num];
+                const sc = document.getElementById('songs-' + num);
+                const sdiv = document.createElement('div');
+                sdiv.className = 'flex gap-2 items-center';
+                sdiv.id = 'song-' + num + '-' + sNum;
+                sdiv.innerHTML =
+                    '<span class="text-sm w-6">' + sNum + '.</span>' +
+                    '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
+                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> P</label>' +
+                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="artist_is_main" class="song-check"' + (songData.artist_is_main !== false ? ' checked' : '') + '> Main</label>' +
+                    '<button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-sm">x</button>';
+                sc.appendChild(sdiv);
+            });
+        });
+    } catch(e) {
+        addAlbum();
+    }
+})();
+</script>
+{% endblock %}

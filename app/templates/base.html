@@ -64,6 +64,13 @@
                        {% if session.get('edit_mode') %}background:#16a34a; color:#fff;{% else %}background:#6B7280; color:#fff;{% endif %}">
             &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
         </button>
+        {% if session.get('edit_mode') %}
+        <a href="{{ url_for('edit.add_artist_form') }}"
+           style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
+                  background:#16a34a; color:#fff; text-decoration:none;">
+            + Artist
+        </a>
+        {% endif %}
         {% endif %}
 
         <!-- Search trigger (compact in navbar) -->
