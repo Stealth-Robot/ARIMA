@@ -3,25 +3,39 @@
 {% block title %}A.R.I.M.A. — Artist Stats{% endblock %}
 
 {% block content %}
+{# Column widths — both tables use identical values so columns line up #}
+{% set col_global = 55 %}
+{% set col_group = 220 %}
+{% set col_user = 65 %}
+{% set col_song = 65 %}
+{% set table_width = col_global + col_group + users|length * col_user + col_song %}
+
 <div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px;">
+<div style="width: {{ table_width }}px;">
 
 <!-- TOP SUMMARY TABLE — always shows % data, unaffected by mode toggle -->
-<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+<table class="text-xs border-collapse" style="table-layout: fixed; width: 100%; border: 1px solid var(--grid-line);">
+    <colgroup>
+        <col style="width: {{ col_global }}px">
+        <col style="width: {{ col_group }}px">
+        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
+        <col style="width: {{ col_song }}px">
+    </colgroup>
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Global</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Group</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Song Count</th>
         </tr>
     </thead>
     <tbody>
         {# Row 1: Overall Average % #}
         <tr style="border: 1px solid var(--grid-line);">
-            <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ summary.global.avg_pct }}</td>
-            <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);">Overall Average (weighted)</td>
+            <td class="px-2 py-1" style="border: 1px solid var(--grid-line); overflow: hidden;">{{ summary.global.avg_pct }}</td>
+            <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line); overflow: hidden;">Overall Average (weighted)</td>
             {% for u in users %}
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);
                 {% if summary.per_user[u.id].pct_rated > 0 %}background-color: {{ pct_to_colour(summary.per_user[u.id].pct_rated) }};{% endif %}">
@@ -66,7 +80,7 @@
     </tbody>
 </table>
 
-<!-- DROPDOWN — left-aligned, with title, generous vertical spacing -->
+<!-- DROPDOWN — left-aligned, labelled, generous vertical spacing -->
 <div style="padding: 20px 0 12px 0; display: flex; align-items: center; gap: 8px;">
     <span style="font-size: 12px; color: var(--text-primary); font-weight: 600;">Per-artist breakdown:</span>
     <select id="stat-mode" onchange="switchStatMode(this.value)"
@@ -79,18 +93,25 @@
 </div>
 
 <!-- BOTTOM DETAIL TABLE — user columns toggle, Song Count always far right -->
-<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+<table class="text-xs border-collapse" style="table-layout: fixed; width: 100%; border: 1px solid var(--grid-line);">
+    <colgroup>
+        <col style="width: {{ col_global }}px">
+        <col style="width: {{ col_group }}px">
+        {% for u in users %}<col class="col-set1" style="width: {{ col_user }}px">{% endfor %}
+        {% for u in users %}<col class="col-set2" style="display: none; width: {{ col_user }}px">{% endfor %}
+        <col style="width: {{ col_song }}px">
+    </colgroup>
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Global</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Group</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center col-set1" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center col-set1" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">{{ u.username }}</th>
             {% endfor %}
             {% for u in users %}
-            <th class="px-1 py-1 text-center col-set2" style="display: none; position: sticky; top: 44px; z-index: 10; width: 55px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center col-set2" style="display: none; position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row); overflow: hidden;">Song Count</th>
         </tr>
     </thead>
     <tbody>
@@ -105,7 +126,7 @@
                 {{ stats.global_avg_pct }}
             </td>
             {# Artist name #}
-            <td class="px-2 py-1" style="border: 1px solid var(--grid-line); background-color: var({{ gender_css[a.gender_id] }}); color: #000000;">
+            <td class="px-2 py-1" style="border: 1px solid var(--grid-line); overflow: hidden; background-color: var({{ gender_css[a.gender_id] }}); color: #000000;">
                 {% if row.has_subunits %}<button class="expand-btn" data-artist-id="{{ a.id }}" data-url="{{ url_for('stats.expand_subunit', artist_id=a.id) }}" data-expanded="false">&rsaquo;</button>{% endif %}
                 <a href="{{ url_for('artists.artist_detail', artist_slug=a.slug or a.id) }}" style="color: #000000; text-decoration: none;">{{ a.name }}</a>
             </td>
@@ -131,6 +152,7 @@
     </tbody>
 </table>
 
+</div>
 </div>
 {% include "fragments/artist_navbar.html" %}
 {% endblock %}

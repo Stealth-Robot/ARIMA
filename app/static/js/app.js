@@ -90,7 +90,18 @@ function switchStatMode(val) {
     var hide = val === 'pct' ? 'col-set2' : 'col-set1';
     document.querySelectorAll('.' + show).forEach(function (el) { el.style.display = ''; });
     document.querySelectorAll('.' + hide).forEach(function (el) { el.style.display = 'none'; });
+    document.cookie = 'stat_mode=' + val + '; path=/; max-age=31536000; SameSite=Lax';
 }
+
+(function () {
+    var sel = document.getElementById('stat-mode');
+    if (!sel) return;
+    var match = document.cookie.match(/(?:^|;\s*)stat_mode=([^;]+)/);
+    if (match && match[1] !== sel.value) {
+        sel.value = match[1];
+        switchStatMode(match[1]);
+    }
+})();
 
 /* Artist navbar — convert vertical wheel scroll to horizontal */
 (function () {
