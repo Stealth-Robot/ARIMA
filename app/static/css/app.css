@@ -89,6 +89,29 @@ td.has-note::after {
     transition: opacity 0.15s;
 }
 
+/* Subunit expand/collapse button on stats pages */
+.expand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    color: inherit;
+    transition: transform 0.2s;
+    padding: 0;
+    margin-right: 2px;
+    vertical-align: middle;
+}
+.expand-btn.expanded {
+    transform: rotate(90deg);
+}
+
 /* Bottom artist navbar — hide scrollbar */
 .artist-nav {
     scrollbar-width: none;          /* Firefox */
