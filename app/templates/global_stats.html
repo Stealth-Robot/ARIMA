@@ -13,7 +13,7 @@
             {% for u in users %}
             <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; width: 140px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
@@ -69,7 +69,7 @@
             {% set key_score = 5 - (key_pos - 1) %}
             {% set key_style = rating_cell_style(key_score) %}
             <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line);
+                style="border: 1px solid var(--grid-line); white-space: nowrap;
                        {% if key_style %}background-color: {{ key_style.bg }}; color: {{ key_style.text }};{% endif %}">
                 {{ key_score }}.0 {{ current_key[key_score] }}
             </td>
