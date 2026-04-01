@@ -16,6 +16,9 @@
             --{{ name | replace('_', '-') }}: {{ value }};
             {% endfor %}
         }
+    </style>
+    {% endif %}
+    <style>
         input[type="text"],
         input[type="email"],
         input[type="password"],
@@ -29,7 +32,6 @@
             border-color: var(--border);
         }
     </style>
-    {% endif %}
 </head>
 <body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar — all inline styles to guarantee single line -->
