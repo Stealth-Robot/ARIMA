@@ -111,6 +111,11 @@ td.has-note::after {
     filter: brightness(1.2);
 }
 
+/* Search results dropdown */
+.search-result-item:hover {
+    background-color: var(--bg-primary, #16213e);
+}
+
 /* Horizontal scroll wrapper for all pages */
 .overflow-x-auto {
     overflow-x: auto;
