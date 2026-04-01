@@ -102,8 +102,9 @@ const undoStack = [];
 
 document.addEventListener('keydown', function (e) {
     if (!((e.ctrlKey || e.metaKey) && e.key === 'z')) return;
-    // Let browser handle undo when user is typing in an input/textarea
-    if (activeInput || activeNote) return;
+    // Let browser handle undo when user is typing in any input/textarea
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     e.preventDefault();
     const entry = undoStack.pop();
     if (!entry) return;
