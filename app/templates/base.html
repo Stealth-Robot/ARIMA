@@ -78,7 +78,8 @@
             <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80" style="color: var(--navbar-text); display: flex; align-items: center; gap: 4px; text-decoration: none;">
                 {% if current_user.profile_image %}
                 <img src="{{ current_user.profile_image }}" alt=""
-                     onerror="this.style.display='none'"
+                     referrerpolicy="no-referrer"
+                     onerror="this.remove()"
                      style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
                 {% endif %}
                 {{ current_user.username }}
