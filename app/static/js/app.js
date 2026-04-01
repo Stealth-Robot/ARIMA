@@ -84,6 +84,14 @@ function closeSearchOverlay() {
     });
 })();
 
+/* Artist stats — toggle between % complete and # remaining columns */
+function switchStatMode(val) {
+    var show = val === 'pct' ? 'col-set1' : 'col-set2';
+    var hide = val === 'pct' ? 'col-set2' : 'col-set1';
+    document.querySelectorAll('.' + show).forEach(function (el) { el.style.display = ''; });
+    document.querySelectorAll('.' + hide).forEach(function (el) { el.style.display = 'none'; });
+}
+
 /* Artist navbar — convert vertical wheel scroll to horizontal */
 (function () {
     var nav = document.querySelector('.artist-nav');
