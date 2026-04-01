@@ -4,95 +4,96 @@
 
 {% block content %}
 <div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px;">
+
+<!-- TOP SUMMARY TABLE — always shows % data, unaffected by mode toggle -->
 <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
-    <!-- Sticky header -->
     <thead>
         <tr>
             <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
             <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
-            {# Set 1: % rated per user #}
             {% for u in users %}
-            <th class="px-1 py-1 text-center col-set1" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
             {% endfor %}
-            {# Separator + Song Count #}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
-            {# Set 2: unrated count per user #}
-            {% for u in users %}
-            <th class="px-1 py-1 text-center col-set2" style="display: none; position: sticky; top: 44px; z-index: 10; width: 55px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
-            {% endfor %}
-            {# Set 3 (rated count) removed — was intermediate calculation only #}
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
         </tr>
     </thead>
     <tbody>
-        <!-- TOP TABLE: Summary rows -->
         {# Row 1: Overall Average % #}
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ summary.global.avg_pct }}</td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);">Overall Average (weighted)</td>
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);
                 {% if summary.per_user[u.id].pct_rated > 0 %}background-color: {{ pct_to_colour(summary.per_user[u.id].pct_rated) }};{% endif %}">
                 {{ summary.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
-            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);"
-                rowspan="5">{{ summary.total_songs }}</td>
-            {% for u in users %}<td class="col-set2" style="display: none; border: 1px solid var(--grid-line);"></td>{% endfor %}
+            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 1px solid var(--grid-line);" rowspan="5">{{ summary.total_songs }}</td>
         </tr>
         {# Row 2: Total Rated Songs #}
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ summary.global.avg_rated_count }}</td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);">Total Rated Songs</td>
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rated_count }}</td>
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rated_count }}</td>
             {% endfor %}
-            {% for u in users %}<td class="col-set2" style="display: none; border: 1px solid var(--grid-line);"></td>{% endfor %}
         </tr>
         {# Row 3: Rank #}
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">X</td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);"></td>
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rank or '-' }}</td>
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].rank or '-' }}</td>
             {% endfor %}
-            {% for u in users %}<td class="col-set2" style="display: none; border: 1px solid var(--grid-line);"></td>{% endfor %}
         </tr>
         {# Row 4: SGC (any%) #}
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ summary.global.avg_scored_group_count_any }}</td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);">Scored Group Count (any%)</td>
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_any }}</td>
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_any }}</td>
             {% endfor %}
-            {% for u in users %}<td class="col-set2" style="display: none; border: 1px solid var(--grid-line);"></td>{% endfor %}
         </tr>
         {# Row 5: SGC (80%) #}
         <tr style="border: 3px solid var(--grid-line);">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);">{{ summary.global.avg_scored_group_count_80 }}</td>
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line);"
-                title="Count of artists where you've rated 80%+ of their songs">
-                Scored Group Count (80%+)
-            </td>
+                title="Count of artists where you've rated 80%+ of their songs">Scored Group Count (80%+)</td>
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_80 }}</td>
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ summary.per_user[u.id].scored_group_count_80 }}</td>
             {% endfor %}
-            {% for u in users %}<td class="col-set2" style="display: none; border: 1px solid var(--grid-line);"></td>{% endfor %}
         </tr>
+    </tbody>
+</table>
 
-        <!-- GAP + dropdown -->
+<!-- DROPDOWN — left-aligned, with title, generous vertical spacing -->
+<div style="padding: 20px 0 12px 0; display: flex; align-items: center; gap: 8px;">
+    <span style="font-size: 12px; color: var(--text-primary); font-weight: 600;">Per-artist breakdown:</span>
+    <select id="stat-mode" onchange="switchStatMode(this.value)"
+            style="font-size: 12px; padding: 2px 6px; border-radius: 3px;
+                   background-color: var(--bg-secondary); color: var(--text-primary);
+                   border: 1px solid var(--border); cursor: pointer;">
+        <option value="pct">% Complete</option>
+        <option value="unrated"># Songs Remaining to Rate</option>
+    </select>
+</div>
+
+<!-- BOTTOM DETAIL TABLE — user columns toggle, Song Count always far right -->
+<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+    <thead>
         <tr>
-            <td colspan="100" class="py-2" style="text-align: center;">
-                <select id="stat-mode" onchange="switchStatMode(this.value)"
-                        style="font-size: 12px; padding: 2px 6px; border-radius: 3px;
-                               background-color: var(--bg-secondary); color: var(--text-primary);
-                               border: 1px solid var(--border); cursor: pointer;">
-                    <option value="pct">% Complete</option>
-                    <option value="unrated"># Songs Remaining to Rate</option>
-                </select>
-            </td>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
+            {% for u in users %}
+            <th class="px-1 py-1 text-center col-set1" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            {% endfor %}
+            {% for u in users %}
+            <th class="px-1 py-1 text-center col-set2" style="display: none; position: sticky; top: 44px; z-index: 10; width: 55px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            {% endfor %}
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
         </tr>
-
-        <!-- BOTTOM TABLE: Per-artist rows -->
+    </thead>
+    <tbody>
         {% for row in artist_rows %}
         {% set a = row.artist %}
         {% set stats = row.stats %}
@@ -103,7 +104,7 @@
                 {% if stats.global_avg_pct > 0 %}background-color: {{ pct_to_colour(stats.global_avg_pct) }};{% endif %}">
                 {{ stats.global_avg_pct }}
             </td>
-            {# Artist name — black text on gender bg, clickable #}
+            {# Artist name #}
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line); background-color: var({{ gender_css[a.gender_id] }}); color: #000000;">
                 {% if row.has_subunits %}<button class="expand-btn" data-artist-id="{{ a.id }}" data-url="{{ url_for('stats.expand_subunit', artist_id=a.id) }}" data-expanded="false">&rsaquo;</button>{% endif %}
                 <a href="{{ url_for('artists.artist_detail', artist_slug=a.slug or a.id) }}" style="color: #000000; text-decoration: none;">{{ a.name }}</a>
@@ -115,21 +116,21 @@
                 {{ stats.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
-            {# Song Count #}
-            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line);">
-                {{ stats.song_count }}
-            </td>
             {# Set 2: unrated count per user #}
             {% for u in users %}
             <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);">
                 {{ stats.per_user[u.id].unrated_count }}
             </td>
             {% endfor %}
-            {# Set 3 removed #}
+            {# Song Count — always far right #}
+            <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">
+                {{ stats.song_count }}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
 </div>
 {% include "fragments/artist_navbar.html" %}
 {% endblock %}
