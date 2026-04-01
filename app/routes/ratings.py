@@ -16,7 +16,9 @@ def rate():
     """Create or update a rating. Returns a rating_cell fragment for HTMX swap."""
     song_id = request.form.get('song_id', type=int)
     rating_value = request.form.get('rating', type=int)
-    note = request.form.get('note', '').strip() or None
+    note_raw = request.form.get('note')
+    note_sent = note_raw is not None
+    note = (note_raw.strip() or None) if note_sent else None
 
     if song_id is None or rating_value is None:
         return 'Missing song_id or rating', 400
@@ -38,7 +40,8 @@ def rate():
 
     if existing:
         existing.rating = rating_value
-        existing.note = note
+        if note_sent:
+            existing.note = note
     else:
         existing = Rating(
             song_id=song_id,

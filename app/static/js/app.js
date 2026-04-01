@@ -646,13 +646,14 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Note tooltip — shows on hover of entire rating cell
+// Note tooltip — event delegation, works for dynamically added cells
 (function () {
     const tooltip = document.getElementById('note-tooltip');
     if (!tooltip) return;
 
-    function show(e) {
-        const td = e.currentTarget;
+    document.addEventListener('mouseover', function (e) {
+        const td = e.target.closest('td.has-note');
+        if (!td) return;
         const note = td.getAttribute('data-note');
         if (!note) return;
         tooltip.textContent = note;
@@ -669,24 +670,15 @@ document.addEventListener('click', (e) => {
             tooltip.style.bottom = 'auto';
         }
         tooltip.style.opacity = '1';
-    }
+    });
 
-    function hide() {
-        tooltip.style.opacity = '0';
-    }
-
-    function attach(root) {
-        root.querySelectorAll('td.has-note').forEach(function (td) {
-            td.addEventListener('mouseenter', show);
-            td.addEventListener('mouseleave', hide);
-        });
-    }
-
-    attach(document);
-
-    // Re-attach after HTMX swaps
-    document.addEventListener('htmx:afterSettle', function (e) {
-        attach(e.detail.elt);
+    document.addEventListener('mouseout', function (e) {
+        const td = e.target.closest('td.has-note');
+        if (!td) return;
+        // Only hide if we're leaving the td (not entering a child)
+        if (!td.contains(e.relatedTarget)) {
+            tooltip.style.opacity = '0';
+        }
     });
 })();
 
