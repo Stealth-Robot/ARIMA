@@ -156,8 +156,12 @@ def add_artist_submit():
             if not album.get('songs'):
                 errors['albums'] = 'Each album must have at least one song.'
                 break
-            if not album.get('release_date'):
+            release_date = album.get('release_date', '')
+            if release_date == '':
                 errors['albums'] = 'Album release date is required.'
+                break
+            if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', release_date):
+                errors['albums'] = 'Release date must be in YYYY-MM-DD format.'
                 break
 
     if errors:
@@ -192,14 +196,6 @@ def add_artist_submit():
         'slug': slug,
     }
 
-    submission = create_submission(current_user, artist_data, albums_data)
+    create_submission(current_user, artist_data, albums_data)
 
-    # Find the newly created artist from this submission
-    new_artist = Artist.query.filter_by(submission_id=submission.id).first()
-    if new_artist and not new_artist.slug:
-        new_artist.slug = slug
-        db.session.commit()
-
-    if new_artist:
-        return redirect(url_for('artists.artist_detail', artist_slug=new_artist.slug or str(new_artist.id)))
-    return redirect(url_for('artists.artists_list'))
+    return redirect(url_for('artists.artist_detail', artist_slug=slug))

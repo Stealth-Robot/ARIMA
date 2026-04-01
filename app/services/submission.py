@@ -46,6 +46,7 @@ def create_submission(user, artist_data, albums_data):
             name=artist_data['name'],
             gender_id=artist_data['gender_id'],
             country_id=artist_data['country_id'],
+            slug=artist_data.get('slug'),
             submitted_by_id=user.id,
             submission_id=submission.id,
         )
