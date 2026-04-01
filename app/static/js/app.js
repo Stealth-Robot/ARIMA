@@ -271,16 +271,18 @@ function showRatingInput(event, songId, targetUserId) {
 
     // Key handlers
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 's') {
             e.preventDefault();
-            const val = input.value.trim();
-            if (val === '') {
-                // Empty = delete rating
-                submitRating(cell, songId, null, targetUserId);
-            } else if (/^[0-5]$/.test(val)) {
-                submitRating(cell, songId, parseInt(val), targetUserId);
-            }
-            // Invalid input — do nothing, stay in input
+            submitAndNavigate(cell, songId, targetUserId, 'down');
+        } else if (e.key === 'ArrowUp' || e.key === 'w') {
+            e.preventDefault();
+            submitAndNavigate(cell, songId, targetUserId, 'up');
+        } else if (e.key === 'ArrowRight' || e.key === 'd') {
+            e.preventDefault();
+            submitAndNavigate(cell, songId, targetUserId, 'right');
+        } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+            e.preventDefault();
+            submitAndNavigate(cell, songId, targetUserId, 'left');
         } else if (e.key === 'Escape') {
             e.preventDefault();
             cancelRating(cell);
@@ -288,22 +290,6 @@ function showRatingInput(event, songId, targetUserId) {
             e.preventDefault();
             cancelRating(cell);
             showNoteInput(cell, songId);
-        } else if (e.key === 'ArrowDown' || e.key === 's') {
-            e.preventDefault();
-            cancelRating(cell);
-            navigateToCell(cell, 'down');
-        } else if (e.key === 'ArrowUp' || e.key === 'w') {
-            e.preventDefault();
-            cancelRating(cell);
-            navigateToCell(cell, 'up');
-        } else if (e.key === 'ArrowRight' || e.key === 'd') {
-            e.preventDefault();
-            cancelRating(cell);
-            navigateToCell(cell, 'right');
-        } else if (e.key === 'ArrowLeft' || e.key === 'a') {
-            e.preventDefault();
-            cancelRating(cell);
-            navigateToCell(cell, 'left');
         } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
             // Block non-0-5 characters
             e.preventDefault();
@@ -319,6 +305,18 @@ function showRatingInput(event, songId, targetUserId) {
             }
         }, 100);
     });
+}
+
+function submitAndNavigate(cell, songId, targetUserId, direction) {
+    const val = activeInput ? activeInput.input.value.trim() : '';
+    if (val === '') {
+        submitRating(cell, songId, null, targetUserId);
+    } else if (/^[0-5]$/.test(val)) {
+        submitRating(cell, songId, parseInt(val), targetUserId);
+    } else {
+        cancelRating(cell);
+    }
+    if (direction) navigateToCell(cell, direction);
 }
 
 function submitRating(cell, songId, rating, targetUserId) {
@@ -351,23 +349,6 @@ function submitRating(cell, songId, rating, targetUserId) {
             values: Object.assign({ song_id: songId, rating: rating }, extraValues),
         });
     }
-
-    // Auto-advance to next cell below after a brief delay (wait for HTMX swap)
-    const colIndex = Array.from(cell.parentElement.children).indexOf(cell);
-    const currentRow = cell.parentElement;
-
-    setTimeout(() => {
-        // Walk rows to find next song row (skip album headers)
-        let nextRow = currentRow.nextElementSibling;
-        while (nextRow) {
-            const nextCell = nextRow.children[colIndex];
-            if (nextCell && nextCell.getAttribute('onclick')) {
-                nextCell.click();
-                break;
-            }
-            nextRow = nextRow.nextElementSibling;
-        }
-    }, 300);
 }
 
 function cancelRating(cell) {
