@@ -178,7 +178,7 @@ def _import_artists(artists_data, user_map):
 def _import_album(artist_id, alb_data, user_map):
     """Import a single album with songs. Returns (song_count, rating_count)."""
     # Create album
-    release_date = f'{alb_data["year"]}-01-01' if alb_data.get('year') else '2020-01-01'
+    release_date = f'{alb_data["year"]}-01-01' if alb_data.get('year') else None
     album = Album(
         name=alb_data['name'],
         release_date=release_date,
@@ -258,7 +258,7 @@ def _import_misc_artists(misc_data, user_map):
     # Create single album
     misc_album = Album(
         name='Misc. Artists',
-        release_date='2020-01-01',
+        release_date=None,
         album_type_id=0,
         submitted_by_id=0,
         submission_id=0,
