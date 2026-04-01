@@ -11,7 +11,7 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-# Classic theme — all 36 columns populated, no NULLs
+# Classic theme — all 40 columns populated, no NULLs
 CLASSIC_THEME = {
     # UI chrome (17)
     'bg_primary': '#FFFFFF',
@@ -38,9 +38,13 @@ CLASSIC_THEME = {
     'rating_2_bg': '#4A86E8',
     'rating_1_bg': '#1800FB',
     'rating_0_bg': '#9200FC',
-    # Rating text (2)
-    'rating_text_light': '#FFFFFF',
-    'rating_text_dark': '#000000',
+    # Rating text (6) — white on dark bgs (0-2), black on bright bgs (3-5)
+    'rating_5_text': '#000000',
+    'rating_4_text': '#000000',
+    'rating_3_text': '#000000',
+    'rating_2_text': '#FFFFFF',
+    'rating_1_text': '#FFFFFF',
+    'rating_0_text': '#FFFFFF',
     # Heat map anchors (3)
     'heatmap_high': '#FFB7FE',
     'heatmap_mid': '#FF8E1E',
@@ -58,7 +62,7 @@ CLASSIC_THEME = {
     'header_user_bg': '#D9EAD3',
 }
 
-# Dark theme — all 36 columns populated, no NULLs
+# Dark theme — all 40 columns populated, no NULLs
 DARK_THEME = {
     # UI chrome (17)
     'bg_primary': '#1A1A2E',
@@ -85,9 +89,13 @@ DARK_THEME = {
     'rating_2_bg': '#4A86E8',
     'rating_1_bg': '#1800FB',
     'rating_0_bg': '#9200FC',
-    # Rating text (2)
-    'rating_text_light': '#FFFFFF',
-    'rating_text_dark': '#000000',
+    # Rating text (6) — white on dark bgs (0-2), black on bright bgs (3-5)
+    'rating_5_text': '#000000',
+    'rating_4_text': '#000000',
+    'rating_3_text': '#000000',
+    'rating_2_text': '#FFFFFF',
+    'rating_1_text': '#FFFFFF',
+    'rating_0_text': '#FFFFFF',
     # Heat map anchors (3)
     'heatmap_high': '#FFB7FE',
     'heatmap_mid': '#FF8E1E',
