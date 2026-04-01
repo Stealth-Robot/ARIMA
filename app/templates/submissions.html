@@ -53,6 +53,7 @@
                   hx-post="{{ url_for('submissions.approve', sub_id=sub.id) }}"
                   hx-target="#submission-{{ sub.id }}"
                   hx-swap="outerHTML">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
                     <h4 class="text-sm font-semibold mb-1">Songs:</h4>
                     {% for song in data.songs %}
@@ -84,6 +85,7 @@
                   hx-target="#submission-{{ sub.id }}"
                   hx-swap="outerHTML"
                   class="mt-3 flex gap-2 items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="flex-1">
                     <label class="block text-sm mb-1">Rejection reason:</label>
                     <input type="text" name="rejected_reason" required

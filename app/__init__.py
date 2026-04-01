@@ -7,7 +7,7 @@ from flask_login import current_user
 from sqlalchemy import event
 
 from app.config import Config, ProdConfig
-from app.extensions import db, login_manager, bcrypt
+from app.extensions import db, login_manager, bcrypt, csrf
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ def create_app():
     db.init_app(flask_app)
     login_manager.init_app(flask_app)
     bcrypt.init_app(flask_app)
+    csrf.init_app(flask_app)
 
     login_manager.login_view = 'auth.login'
 
