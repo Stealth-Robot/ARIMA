@@ -71,13 +71,9 @@ td.has-note::after {
     border-left: 6px solid transparent;
 }
 
-/* CSS tooltip for notes — triggers on full cell hover */
-td.has-note::before {
-    content: attr(data-note);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+/* JS-driven note tooltip — positioned via script */
+#note-tooltip {
+    position: fixed;
     background: #222;
     color: #fff;
     font-size: 12px;
@@ -87,13 +83,10 @@ td.has-note::before {
     white-space: pre-wrap;
     max-width: 250px;
     width: max-content;
-    z-index: 50;
+    z-index: 100;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.15s;
-}
-td.has-note:hover::before {
-    opacity: 1;
 }
 
 /* Bottom artist navbar — hide scrollbar */

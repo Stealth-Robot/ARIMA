@@ -367,6 +367,50 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Note tooltip — shows on hover of entire rating cell
+(function () {
+    const tooltip = document.getElementById('note-tooltip');
+    if (!tooltip) return;
+
+    function show(e) {
+        const td = e.currentTarget;
+        const note = td.getAttribute('data-note');
+        if (!note) return;
+        tooltip.textContent = note;
+        const rect = td.getBoundingClientRect();
+        tooltip.style.left = rect.left + rect.width / 2 + 'px';
+        tooltip.style.transform = 'translateX(-50%)';
+        // Position above cell; if too close to top, show below
+        if (rect.top > 40) {
+            tooltip.style.top = (rect.top - 4) + 'px';
+            tooltip.style.bottom = 'auto';
+            tooltip.style.transform += ' translateY(-100%)';
+        } else {
+            tooltip.style.top = (rect.bottom + 4) + 'px';
+            tooltip.style.bottom = 'auto';
+        }
+        tooltip.style.opacity = '1';
+    }
+
+    function hide() {
+        tooltip.style.opacity = '0';
+    }
+
+    function attach(root) {
+        root.querySelectorAll('td.has-note').forEach(function (td) {
+            td.addEventListener('mouseenter', show);
+            td.addEventListener('mouseleave', hide);
+        });
+    }
+
+    attach(document);
+
+    // Re-attach after HTMX swaps
+    document.addEventListener('htmx:afterSettle', function (e) {
+        attach(e.detail.elt);
+    });
+})();
+
 function navigateToCell(cell, direction) {
     const row = cell.parentElement;
     const colIndex = Array.from(row.children).indexOf(cell);
