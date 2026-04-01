@@ -52,9 +52,16 @@ function closeSearchOverlay() {
         }
         searchTimer = setTimeout(function () {
             fetch('/search?q=' + encodeURIComponent(q))
-                .then(function (r) { return r.text(); })
+                .then(function (r) {
+                    if (!r.ok) { throw new Error('server error'); }
+                    return r.text();
+                })
                 .then(function (html) {
                     searchResults.innerHTML = html;
+                    searchResults.style.display = 'block';
+                })
+                .catch(function () {
+                    searchResults.innerHTML = '<p class="text-red-400 p-4">Search unavailable \u2014 try again</p>';
                     searchResults.style.display = 'block';
                 });
         }, 300);
