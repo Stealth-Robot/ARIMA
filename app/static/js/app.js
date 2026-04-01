@@ -3,7 +3,14 @@
 function openSearchOverlay() {
     var overlay = document.getElementById('search-overlay');
     var input = document.getElementById('global-search');
-    if (overlay) {
+    var trigger = document.getElementById('search-trigger');
+    if (overlay && trigger) {
+        var rect = trigger.getBoundingClientRect();
+        overlay.style.top = (rect.bottom + 4) + 'px';
+        // Align right edge with trigger button, but don't go off left edge
+        var left = rect.right - 320;
+        if (left < 8) left = 8;
+        overlay.style.left = left + 'px';
         overlay.style.display = 'block';
         if (input) input.focus();
     }

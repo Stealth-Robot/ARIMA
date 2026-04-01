@@ -5,7 +5,7 @@
 {% else %}
 
 {% if artists %}
-<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--text-secondary, #888); text-transform: uppercase; background-color: var(--header-row, #E5E7EB); border-bottom: 1px solid var(--border, #D1D5DB);">Artists</div>
+<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: #374151; color: #9CA3AF; border-bottom: 1px solid #4B5563;">Artists</div>
 {% for a in artists %}
 <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
    class="search-result-item"
@@ -16,7 +16,7 @@
 {% endif %}
 
 {% if albums %}
-<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--text-secondary, #888); text-transform: uppercase; background-color: var(--header-row, #E5E7EB); border-bottom: 1px solid var(--border, #D1D5DB);">Albums</div>
+<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: #374151; color: #9CA3AF; border-bottom: 1px solid #4B5563;">Albums</div>
 {% for album, artist in albums %}
 <a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}"
    class="search-result-item"
@@ -27,7 +27,7 @@
 {% endif %}
 
 {% if songs %}
-<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--text-secondary, #888); text-transform: uppercase; background-color: var(--header-row, #E5E7EB); border-bottom: 1px solid var(--border, #D1D5DB);">Songs</div>
+<div style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: #374151; color: #9CA3AF; border-bottom: 1px solid #4B5563;">Songs</div>
 {% for song, album, artist in songs %}
 <a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}"
    class="search-result-item"

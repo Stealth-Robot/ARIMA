@@ -90,18 +90,17 @@
         </div>
     </nav>
 
-    <!-- Search overlay (outside nav to prevent navbar expansion) -->
+    <!-- Search overlay (outside nav, positioned by JS near trigger button) -->
     <div id="search-overlay"
-         style="display: none; position: fixed; top: 34px; left: 0; right: 0; z-index: 40;
-                padding: 8px 12px; background-color: var(--navbar-bg);
-                border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+         style="display: none; position: fixed; top: 34px; z-index: 40; width: 320px;">
         <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                autocomplete="off"
                style="background-color: var(--bg-secondary, #1a1a2e); color: var(--text-primary);
-                      border: 1px solid var(--border); font-size: 14px; padding: 4px 10px;
-                      border-radius: 3px; width: 100%; max-width: 400px; box-sizing: border-box;">
+                      border: 1px solid var(--border); font-size: 14px; padding: 6px 10px;
+                      border-radius: 4px; width: 100%; box-sizing: border-box;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div id="search-results"
-             style="display: none; max-width: 400px; max-height: 400px; overflow-y: auto;
+             style="display: none; max-height: 400px; overflow-y: auto;
                     background-color: var(--bg-secondary, #1a1a2e);
                     border: 1px solid var(--border); border-top: none;
                     border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
