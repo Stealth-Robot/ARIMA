@@ -95,7 +95,7 @@ def score_to_style(value, theme):
     Returns dict with 'bg' and 'text' hex values, or None for zero/unrated.
     Uses same step logic as score_to_colour but pairs with the nearest rating text colour.
     """
-    if value is None or value == 0:
+    if value is None:
         return None
     if value >= 5.0:
         return {'bg': theme.get('rating_5_bg', '#FF0016'), 'text': theme.get('rating_5_text', '#000000')}
@@ -107,7 +107,9 @@ def score_to_style(value, theme):
         return {'bg': theme.get('rating_3_bg', '#FEFF2A'), 'text': theme.get('rating_3_text', '#000000')}
     if value >= 1.5:
         return {'bg': theme.get('rating_2_bg', '#9EFFA4'), 'text': theme.get('rating_2_text', '#FFFFFF')}
-    return {'bg': theme.get('rating_1_bg', '#8AB5FC'), 'text': theme.get('rating_1_text', '#FFFFFF')}
+    if value >= 1.0:
+        return {'bg': theme.get('rating_1_bg', '#8AB5FC'), 'text': theme.get('rating_1_text', '#FFFFFF')}
+    return {'bg': theme.get('rating_0_bg', '#9200FC'), 'text': theme.get('rating_0_text', '#FFFFFF')}
 
 
 def pct_to_colour(value, theme):
