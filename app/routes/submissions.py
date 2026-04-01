@@ -75,7 +75,7 @@ def submit_content():
 
 @submissions_bp.route('/submissions')
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(USER_OR_ABOVE)
 def submissions_list():
     """List pending submissions for review."""
     search = request.args.get('q', '').strip()
@@ -106,7 +106,8 @@ def submissions_list():
             'songs': songs,
         })
 
-    return render_template('submissions.html', submissions=submissions_data, search=search)
+    return render_template('submissions.html', submissions=submissions_data, search=search,
+                           is_editor=current_user.is_editor_or_admin)
 
 
 @submissions_bp.route('/submissions/<int:sub_id>/approve', methods=['POST'])

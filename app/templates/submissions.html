@@ -48,7 +48,8 @@
             </div>
             {% endfor %}
 
-            <!-- Songs with rejection checkboxes -->
+            {% if is_editor %}
+            <!-- Songs with per-song reject checkboxes + Approve -->
             <form method="POST" action="{{ url_for('submissions.approve', sub_id=sub.id) }}"
                   hx-post="{{ url_for('submissions.approve', sub_id=sub.id) }}"
                   hx-target="#submission-{{ sub.id }}"
@@ -68,7 +69,6 @@
                     </div>
                     {% endfor %}
                 </div>
-
                 <div class="flex gap-3 mt-4">
                     <button type="submit"
                             class="px-4 py-2 rounded text-sm text-white"
@@ -97,6 +97,19 @@
                     Reject All
                 </button>
             </form>
+            {% else %}
+            <!-- Songs read-only for non-editors -->
+            <div class="mb-3">
+                <h4 class="text-sm font-semibold mb-1">Songs:</h4>
+                {% for song in data.songs %}
+                <div class="flex items-center gap-2 ml-4 text-sm py-1">
+                    <span>{{ song.name }}</span>
+                    {% if song.is_promoted %}<span class="text-xs" style="color: var(--promoted-song);">(promoted)</span>{% endif %}
+                    {% if song.is_remix %}<span class="text-xs" style="color: var(--text-secondary);">(remix)</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </details>
     </div>
     {% endfor %}
