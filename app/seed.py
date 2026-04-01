@@ -62,6 +62,8 @@ CLASSIC_THEME = {
     'header_user_bg': '#D9EAD3',
     # Artist navbar
     'artist_button_text': '#000000',
+    # Top navbar active indicator
+    'navbar_active': '#FFD700',
 }
 
 # Dark theme — all 40 columns populated, no NULLs
@@ -115,6 +117,8 @@ DARK_THEME = {
     'header_user_bg': '#1A3A2E',
     # Artist navbar
     'artist_button_text': '#FFFFFF',
+    # Top navbar active indicator
+    'navbar_active': '#FFD700',
 }
 
 

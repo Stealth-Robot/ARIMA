@@ -62,4 +62,7 @@ class Theme(db.Model):
     # Artist navbar
     artist_button_text = db.Column(db.Text)
 
+    # Top navbar active indicator
+    navbar_active = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])
