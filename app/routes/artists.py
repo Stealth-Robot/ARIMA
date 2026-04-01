@@ -74,6 +74,32 @@ def _get_filtered_navbar():
     return get_filtered_navbar()
 
 
+def _get_collab_labels(song_ids, artist_id):
+    """Return {song_id: 'feat. Artist1, Artist2'} for songs with multiple main artists.
+
+    For each song in song_ids that has more than one ArtistSong row with artist_is_main=True,
+    return a label listing the OTHER main artists (not artist_id).
+    """
+    if not song_ids:
+        return {}
+    rows = ArtistSong.query.filter(
+        ArtistSong.song_id.in_(song_ids),
+        ArtistSong.artist_is_main == True,
+        ArtistSong.artist_id != artist_id,
+    ).all()
+    if not rows:
+        return {}
+    labels = {}
+    for row in rows:
+        other_artist = db.session.get(Artist, row.artist_id)
+        if not other_artist:
+            continue
+        if row.song_id not in labels:
+            labels[row.song_id] = []
+        labels[row.song_id].append(other_artist.name)
+    return {sid: 'feat. ' + ', '.join(names) for sid, names in labels.items()}
+
+
 def _build_discography(artist):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
@@ -141,12 +167,14 @@ def _build_discography(artist):
             # Get ratings for these songs
             song_objs = [s for s, _ in album_songs]
             ratings_map = _get_ratings_map([s.id for s in song_objs])
+            collab_labels = _get_collab_labels({s.id for s in song_objs}, artist.id)
             is_pending = album.submission.status == 'pending' if album.submission else False
 
             discography.append({
                 'album': album,
                 'songs': album_songs,
                 'ratings': ratings_map,
+                'collab_labels': collab_labels,
                 'is_pending': is_pending,
             })
 
