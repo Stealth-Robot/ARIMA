@@ -411,6 +411,29 @@ document.addEventListener('click', (e) => {
     });
 })();
 
+// Subunit expand/collapse toggle on stats pages
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.expand-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    const artistId = btn.dataset.artistId;
+    if (btn.dataset.expanded === 'true') {
+        document.querySelectorAll('[data-subunit-for="' + artistId + '"]').forEach(function (row) {
+            row.remove();
+        });
+        btn.dataset.expanded = 'false';
+        btn.classList.remove('expanded');
+    } else {
+        fetch(btn.dataset.url)
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                btn.closest('tr').insertAdjacentHTML('afterend', html);
+                btn.dataset.expanded = 'true';
+                btn.classList.add('expanded');
+            });
+    }
+});
+
 function navigateToCell(cell, direction) {
     const row = cell.parentElement;
     const colIndex = Array.from(row.children).indexOf(cell);

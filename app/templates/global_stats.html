@@ -31,13 +31,7 @@
         {% set current_key = key_labels[key_set_idx] %}
 
         <tr style="border: 1px solid var(--grid-line);
-                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}"
-            {% if row.has_subunits %}
-            class="cursor-pointer"
-            hx-get="{{ url_for('stats.expand_subunit_scores', artist_id=a.id) }}"
-            hx-swap="afterend"
-            hx-trigger="click once"
-            {% endif %}>
+                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             {# Global Average — coloured with text #}
             {% set global_style = score_to_style(scores.global_avg) %}
             <td class="px-2 py-1 text-center"
@@ -47,7 +41,7 @@
             </td>
             {# Artist name — black text on gender bg, clickable #}
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line); background-color: var({{ gender_css[a.gender_id] }}); color: #000000;">
-                {% if row.has_subunits %}<span class="mr-1">&gt;</span>{% endif %}
+                {% if row.has_subunits %}<button class="expand-btn" data-artist-id="{{ a.id }}" data-url="{{ url_for('stats.expand_subunit_scores', artist_id=a.id) }}" data-expanded="false">&rsaquo;</button>{% endif %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" style="color: #000000; text-decoration: none;">{{ a.name }}</a>
             </td>
             {# Per-user scores — coloured with text #}
