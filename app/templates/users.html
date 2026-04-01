@@ -9,6 +9,7 @@
     <table class="w-full text-sm border-collapse mb-8">
         <thead>
             <tr style="background-color: var(--header-row);">
+                <th class="px-3 py-2">Order</th>
                 <th class="text-left px-3 py-2">Username</th>
                 <th class="text-left px-3 py-2">Role</th>
                 <th class="text-left px-3 py-2">Email</th>
@@ -20,6 +21,20 @@
         <tbody>
             {% for u in users %}
             <tr style="border-bottom: 1px solid var(--border);">
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                    <form method="POST" action="{{ url_for('users.move_up', user_id=u.id) }}" class="inline"
+                          hx-post="{{ url_for('users.move_up', user_id=u.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs px-1"
+                                {% if loop.first %}disabled style="opacity:0.3;"{% endif %}>▲</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('users.move_down', user_id=u.id) }}" class="inline"
+                          hx-post="{{ url_for('users.move_down', user_id=u.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs px-1"
+                                {% if loop.last %}disabled style="opacity:0.3;"{% endif %}>▼</button>
+                    </form>
+                </td>
                 <td class="px-3 py-2 font-medium">
                     {{ u.username }}
                     {% if not u.password %}

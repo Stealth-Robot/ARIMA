@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, redirect, url_for, Response
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -21,7 +21,7 @@ def user_list():
     """Admin user management page."""
     users = User.query.filter(
         User.email.isnot(None)  # exclude System and Guest
-    ).order_by(User.created_at).all()
+    ).order_by(User.sort_order.asc().nullslast()).all()
 
     roles = Role.query.filter(Role.id.in_(ASSIGNABLE_ROLES)).order_by(Role.id).all()
 
@@ -102,3 +102,47 @@ def delete(user_id):
 
     delete_user(user)
     return redirect(url_for('users.user_list'))
+
+
+@users_bp.route('/admin/users/<int:user_id>/move-up', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def move_up(user_id):
+    """Move a user one position up in sort order."""
+    _swap_sort_order(user_id, direction='up')
+    r = Response('', 204)
+    r.headers['HX-Refresh'] = 'true'
+    return r
+
+
+@users_bp.route('/admin/users/<int:user_id>/move-down', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def move_down(user_id):
+    """Move a user one position down in sort order."""
+    _swap_sort_order(user_id, direction='down')
+    r = Response('', 204)
+    r.headers['HX-Refresh'] = 'true'
+    return r
+
+
+def _swap_sort_order(user_id, direction):
+    """Swap sort_order between user and their neighbour."""
+    users = User.query.filter(
+        User.email.isnot(None)
+    ).order_by(User.sort_order.asc().nullslast()).all()
+
+    idx = next((i for i, u in enumerate(users) if u.id == user_id), None)
+    if idx is None:
+        return
+
+    if direction == 'up' and idx > 0:
+        neighbour = users[idx - 1]
+    elif direction == 'down' and idx < len(users) - 1:
+        neighbour = users[idx + 1]
+    else:
+        return
+
+    target = users[idx]
+    target.sort_order, neighbour.sort_order = neighbour.sort_order, target.sort_order
+    db.session.commit()
