@@ -38,10 +38,11 @@
             hx-swap="afterend"
             hx-trigger="click once"
             {% endif %}>
-            {# Global Average — coloured #}
+            {# Global Average — coloured with text #}
+            {% set global_style = score_to_style(scores.global_avg) %}
             <td class="px-2 py-1 text-center"
                 style="border: 1px solid var(--grid-line);
-                       {% if scores.global_avg is not none and scores.global_avg > 0 %}background-color: {{ score_to_colour(scores.global_avg) }};{% endif %}">
+                       {% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
                 {% if scores.global_avg is not none %}{{ "%.3f"|format(scores.global_avg) }}{% else %}0{% endif %}
             </td>
             {# Artist name — black text on gender bg, clickable #}
@@ -49,12 +50,13 @@
                 {% if row.has_subunits %}<span class="mr-1">&gt;</span>{% endif %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" style="color: #000000; text-decoration: none;">{{ a.name }}</a>
             </td>
-            {# Per-user scores — heat mapped #}
+            {# Per-user scores — coloured with text #}
             {% for u in users %}
             {% set user_score = scores.per_user[u.id] %}
+            {% set user_style = score_to_style(user_score) %}
             <td class="px-1 py-1 text-center"
                 style="border: 1px solid var(--grid-line);
-                       {% if user_score is not none and user_score > 0 %}background-color: {{ score_to_colour(user_score) }};{% endif %}">
+                       {% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
                 {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% else %}0{% endif %}
             </td>
             {% endfor %}

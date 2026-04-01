@@ -46,7 +46,7 @@ def create_app():
     # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor
     def inject_theme():
-        from app.services.theme import get_resolved_theme, score_to_colour, pct_to_colour, rating_cell_style
+        from app.services.theme import get_resolved_theme, score_to_colour, score_to_style, pct_to_colour, rating_cell_style
         from app.constants import RATING_KEY_STANDARD, RATING_KEY_STEALTH
         if current_user.is_authenticated:
             theme = get_resolved_theme(current_user)
@@ -55,6 +55,7 @@ def create_app():
         return {
             'theme': theme,
             'score_to_colour': lambda v: score_to_colour(v, theme),
+            'score_to_style': lambda v: score_to_style(v, theme),
             'pct_to_colour': lambda v: pct_to_colour(v, theme),
             'rating_cell_style': lambda s: rating_cell_style(s, theme),
             'RATING_KEY_STANDARD': RATING_KEY_STANDARD,
