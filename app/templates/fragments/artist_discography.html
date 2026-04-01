@@ -141,7 +141,8 @@
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
             {% set cell_editable = is_editable and (u.id == current_user.id or edit_mode) %}
-            <td class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
+            <td id="rating-{{ song.id }}-{{ u.id }}"
+                class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
                        {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
@@ -283,7 +284,8 @@
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
             {% set cell_editable = is_editable and (u.id == current_user.id or edit_mode) %}
-            <td class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
+            <td id="rating-{{ song.id }}-{{ u.id }}"
+                class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
                        {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"

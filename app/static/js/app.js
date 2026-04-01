@@ -682,6 +682,26 @@ document.addEventListener('click', (e) => {
     });
 })();
 
+// Real-time rating sync via SSE
+(function () {
+    if (!document.querySelector('td[id^="rating-"]')) return;
+
+    var source = new EventSource('/events/ratings');
+
+    source.addEventListener('rating-update', function (e) {
+        var data = JSON.parse(e.data);
+        var cellId = 'rating-' + data.song_id + '-' + data.user_id;
+        var cell = document.getElementById(cellId);
+        if (!cell) return;
+
+        fetch('/rate/cell?song_id=' + data.song_id + '&user_id=' + data.user_id)
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                cell.outerHTML = html;
+            });
+    });
+})();
+
 // Subunit expand/collapse toggle on stats pages
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.expand-btn');

@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.music import Rating
 from app.decorators import role_required, USER_OR_ABOVE
+from app.services.events import publish
 
 ratings_bp = Blueprint('ratings', __name__)
 
@@ -57,6 +58,8 @@ def rate():
         db.session.rollback()
         return 'Invalid song or user', 400
 
+    publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})
+
     return render_template('fragments/rating_cell.html',
                            rating=existing, song_id=song_id, user_id=target_user_id)
 
@@ -84,6 +87,20 @@ def delete_rating():
     if existing:
         db.session.delete(existing)
         db.session.commit()
+        publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})
 
     return render_template('fragments/rating_cell.html',
                            rating=None, song_id=song_id, user_id=target_user_id)
+
+
+@ratings_bp.route('/rate/cell')
+@login_required
+def get_rating_cell():
+    """Return a single rating cell fragment (for SSE-triggered refresh)."""
+    song_id = request.args.get('song_id', type=int)
+    user_id = request.args.get('user_id', type=int)
+    if song_id is None or user_id is None:
+        return '', 400
+    rating = db.session.get(Rating, (song_id, user_id))
+    return render_template('fragments/rating_cell.html',
+                           rating=rating, song_id=song_id, user_id=user_id)
