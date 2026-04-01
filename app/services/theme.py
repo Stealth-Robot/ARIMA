@@ -117,7 +117,7 @@ def pct_to_colour(value, theme):
 
     Purple→orange gradient matching spreadsheet colour scale.
     """
-    if value is None or value == 0:
+    if value is None:
         return '#FFFFFF'
 
     low = theme.get('pct_low', '#833AB4')   # Purple at 0%
