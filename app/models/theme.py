@@ -33,9 +33,13 @@ class Theme(db.Model):
     rating_1_bg = db.Column(db.Text)
     rating_0_bg = db.Column(db.Text)
 
-    # Rating text colours (2)
-    rating_text_light = db.Column(db.Text)
-    rating_text_dark = db.Column(db.Text)
+    # Rating text colours (6) — per-score text for readability
+    rating_5_text = db.Column(db.Text)
+    rating_4_text = db.Column(db.Text)
+    rating_3_text = db.Column(db.Text)
+    rating_2_text = db.Column(db.Text)
+    rating_1_text = db.Column(db.Text)
+    rating_0_text = db.Column(db.Text)
 
     # Heat map anchors — average scores (3)
     heatmap_high = db.Column(db.Text)

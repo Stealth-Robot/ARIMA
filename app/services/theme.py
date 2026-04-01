@@ -3,7 +3,6 @@ from flask_login import current_user
 
 from app.extensions import db
 from app.models.theme import Theme
-from app.constants import RATING_DARK_BG_SCORES
 
 
 # Colour columns — everything except id, name, user_id
@@ -117,5 +116,5 @@ def rating_cell_style(score, theme):
     if not bg:
         return None
 
-    text = theme.get('rating_text_light') if score in RATING_DARK_BG_SCORES else theme.get('rating_text_dark')
-    return {'bg': bg, 'text': text or '#000000'}
+    text = theme.get(f'rating_{score}_text', '#000000')
+    return {'bg': bg, 'text': text}
