@@ -24,6 +24,7 @@ class Theme(db.Model):
     button_primary = db.Column(db.Text)
     button_secondary = db.Column(db.Text)
     border = db.Column(db.Text)
+    artist_button_text = db.Column(db.Text)
 
     # Rating cell backgrounds (6)
     rating_5_bg = db.Column(db.Text)

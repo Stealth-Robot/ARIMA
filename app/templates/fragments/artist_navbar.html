@@ -31,7 +31,7 @@
            style="display: block; padding: 6px 12px; white-space: nowrap;
                   text-decoration: none; font-size: 13px;
                   background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }});
-                  color: #000000;
+                  color: var(--artist-button-text);
                   {% if artist and artist.id == a.id %}font-weight: bold;{% endif %}">
             {{ a.name }}
         </a>
@@ -47,8 +47,8 @@
        {% endif %}
        style="flex: 0 0 auto; white-space: nowrap; padding: 4px 10px; border-radius: 3px;
               font-size: 13px; text-decoration: none;
-              background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }}); color: white;
-              {% if artist and artist.id == a.id %}font-weight: bold; border-bottom: 2px solid white;{% endif %}">
+              background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }}); color: var(--artist-button-text);
+              {% if artist and artist.id == a.id %}font-weight: bold; border-bottom: 2px solid var(--artist-button-text);{% endif %}">
         {{ a.name }}
     </a>
     {% endfor %}
