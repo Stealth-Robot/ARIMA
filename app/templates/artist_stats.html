@@ -8,17 +8,17 @@
     <!-- Sticky header -->
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 34px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 34px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
+            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
             {# Set 1: % rated per user #}
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
             {% endfor %}
             {# Separator + Song Count #}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); border-left: 3px solid var(--grid-line); background-color: var(--header-row);">Song Count</th>
             {# Set 2: unrated count per user #}
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 34px; z-index: 10; width: 55px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 55px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
             {% endfor %}
             {# Set 3 (rated count) removed — was intermediate calculation only #}
         </tr>
