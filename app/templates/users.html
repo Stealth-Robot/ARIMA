@@ -29,6 +29,7 @@
                 <td class="px-3 py-2">
                     <form method="POST" action="{{ url_for('users.change_role', user_id=u.id) }}"
                           class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <select name="role_id" onchange="this.form.submit()"
                                 class="px-2 py-1 border rounded text-xs" style="border-color: var(--border);">
                             {% for r in roles %}
@@ -47,6 +48,7 @@
                     <form method="POST" action="{{ url_for('users.delete', user_id=u.id) }}"
                           class="inline"
                           onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Submitted content will survive.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
                     </form>
                     {% else %}
@@ -62,6 +64,7 @@
     <div class="p-4 border rounded" style="border-color: var(--border);">
         <h2 class="font-semibold mb-3">Invite New User</h2>
         <form method="POST" action="{{ url_for('users.invite_user') }}" class="flex gap-3 items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex-1">
                 <label class="block text-sm mb-1">Username</label>
                 <input type="text" name="username" required

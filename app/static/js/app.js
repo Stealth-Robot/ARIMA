@@ -1,3 +1,12 @@
+/* CSRF — inject X-CSRFToken header on every HTMX request */
+
+document.body.addEventListener('htmx:configRequest', function (e) {
+    var token = document.querySelector('meta[name="csrf-token"]');
+    if (token) {
+        e.detail.headers['X-CSRFToken'] = token.content;
+    }
+});
+
 /* Global search — overlay with debounced input, dropdown results */
 
 function openSearchOverlay() {
