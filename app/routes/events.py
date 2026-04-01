@@ -22,7 +22,7 @@ def rating_stream():
                     yield f"event: {msg['event']}\ndata: {json.dumps(msg['data'])}\n\n"
                 except queue.Empty:
                     yield ": keepalive\n\n"
-        except GeneratorExit:
+        finally:
             unsubscribe(q)
 
     return Response(
