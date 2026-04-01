@@ -17,25 +17,44 @@ def artists_list():
     """Redirect to Misc. Artists by default."""
     misc = Artist.query.filter_by(name='Misc. Artists').first()
     if misc:
-        return redirect(url_for('artists.artist_detail', artist_id=misc.id))
+        return redirect(url_for('artists.artist_detail', artist_slug=misc.slug or str(misc.id)))
     navbar = _get_filtered_navbar()
     return render_template('artists.html', navbar_artists=navbar, gender_css=GENDER_CSS)
 
 
 @artists_bp.route('/artists/<int:artist_id>')
 @login_required
-def artist_detail(artist_id):
+def artist_detail_by_id(artist_id):
+    """Backwards-compat redirect: numeric ID → slug URL (301)."""
+    artist = db.session.get(Artist, artist_id)
+    if not artist:
+        return 'Artist not found', 404
+    slug = artist.slug or str(artist.id)
+    return redirect(url_for('artists.artist_detail', artist_slug=slug), 301)
+
+
+@artists_bp.route('/artists/<artist_slug>')
+@login_required
+def artist_detail(artist_slug):
     """Show artist discography. Returns fragment for HTMX or full page."""
+    artist = Artist.query.filter_by(slug=artist_slug).first()
+    if not artist:
+        return 'Artist not found', 404
+
+    artist_id = artist.id
+
     # Subunits redirect to parent
     if is_subunit(artist_id):
         from app.services.artist import get_parent
         parent = get_parent(artist_id)
         if parent:
-            artist_id = parent.id
-
-    artist = db.session.get(Artist, artist_id)
-    if not artist:
-        return 'Artist not found', 404
+            parent_artist = db.session.get(Artist, parent.id)
+            if parent_artist:
+                parent_slug = parent_artist.slug or str(parent_artist.id)
+                if not request.headers.get('HX-Request'):
+                    return redirect(url_for('artists.artist_detail', artist_slug=parent_slug))
+                artist = parent_artist
+                artist_id = parent_artist.id
 
     discography = _build_discography(artist)
     users = _get_display_users()

@@ -59,6 +59,7 @@ class ArtistArtist(db.Model):
 class Artist(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    slug = db.Column(db.String(100), unique=True, nullable=True, index=True)
     gender_id = db.Column(db.Integer, db.ForeignKey('group_gender.id'), nullable=False)
     country_id = db.Column(db.Integer, db.ForeignKey('country.id'), nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))

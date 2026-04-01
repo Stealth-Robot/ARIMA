@@ -115,4 +115,33 @@ def create_app():
         from scripts.import_data import import_data
         import_data(json_file)
 
+    @flask_app.cli.command('migrate-slugs')
+    def migrate_slugs_command():
+        """Add slug column to artist table and backfill slugs for existing rows."""
+        from app.services.artist import generate_unique_slug
+        from app.models.music import Artist
+
+        # Add the column if it doesn't exist (SQLite-safe)
+        with db.engine.connect() as conn:
+            cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(artist)")).fetchall()]
+            if 'slug' not in cols:
+                conn.execute(db.text("ALTER TABLE artist ADD COLUMN slug VARCHAR(100)"))
+                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_artist_slug ON artist (slug)"))
+                conn.commit()
+                click.echo('Added slug column to artist table.')
+            else:
+                click.echo('slug column already exists.')
+
+        # Backfill missing slugs
+        artists = Artist.query.filter(Artist.slug.is_(None)).all()
+        used_slugs = {a.slug for a in Artist.query.filter(Artist.slug.isnot(None)).all()}
+        updated = 0
+        for artist in artists:
+            slug = generate_unique_slug(artist.name, used_slugs)
+            artist.slug = slug
+            used_slugs.add(slug)
+            updated += 1
+        db.session.commit()
+        click.echo(f'Backfilled {updated} artist slugs.')
+
     return flask_app
