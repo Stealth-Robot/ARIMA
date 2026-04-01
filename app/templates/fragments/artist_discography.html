@@ -12,6 +12,7 @@
 </div>
 
 {% set is_editable = current_user.can_rate %}
+{% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
 
 {% if not discography %}
 <p style="color: var(--text-secondary);">No albums found.</p>
@@ -26,6 +27,10 @@
             {% for u in users %}
             <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
             {% endfor %}
+            {% if edit_mode %}
+            <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Rmx</th>
+            <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Pro</th>
+            {% endif %}
             <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
@@ -49,10 +54,18 @@
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg);
                 {% if is_pending %}opacity: 0.7;{% endif %}">
+                {% if edit_mode %}
+                <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
+                {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
+                {% endif %}
                 {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
             {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
+            {% if edit_mode %}
+            <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            {% endif %}
             {# Key column on album row #}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
@@ -90,7 +103,12 @@
             <!-- Song name (no track number) -->
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
                 {% if song.is_promoted %}color: var(--promoted-song); font-weight: 600;{% endif %}">
-                {{ song.name }}{% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
+                {% if edit_mode %}
+                <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% else %}
+                {{ song.name }}
+                {% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
                 {% if song_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
 
@@ -98,17 +116,36 @@
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
+            {% set cell_editable = is_editable and (u.id == current_user.id or edit_mode) %}
             <td class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
-                       {% if u.id == current_user.id and is_editable %}cursor-pointer hover:opacity-70{% endif %}"
+                       {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
                 {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
-                {% if u.id == current_user.id and is_editable %}
-                onclick="showRatingInput(event, {{ song.id }})"
+                {% if cell_editable %}
+                onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"
                 {% endif %}>
                 {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
+
+            <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
+            {% if edit_mode %}
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            {% endif %}
 
             <!-- Key column (14-row cycle) -->
             {% if kp == 0 or kp == 7 %}
@@ -163,9 +200,17 @@
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg);">
+                {% if edit_mode %}
+                <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
+                {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
+                {% endif %}
             </td>
             {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
+            {% if edit_mode %}
+            <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
+            {% endif %}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
@@ -196,21 +241,44 @@
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
                 {% if song.is_promoted %}color: var(--promoted-song); font-weight: 600;{% endif %}">
-                {{ song.name }}{% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}</td>
+                {% if edit_mode %}
+                <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% else %}
+                {{ song.name }}
+                {% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
+            </td>
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
+            {% set cell_editable = is_editable and (u.id == current_user.id or edit_mode) %}
             <td class="text-center px-1 py-1{% if r and r.note %} has-note{% endif %}
-                       {% if u.id == current_user.id and is_editable %}cursor-pointer hover:opacity-70{% endif %}"
+                       {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
                 {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
-                {% if u.id == current_user.id and is_editable %}
-                onclick="showRatingInput(event, {{ song.id }})"
+                {% if cell_editable %}
+                onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"
                 {% endif %}>
                 {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
+            {% if edit_mode %}
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            {% endif %}
             {# Key column — continues from main discography cycle #}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
