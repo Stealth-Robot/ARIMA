@@ -6,8 +6,11 @@ Key rules:
 - Nesting is exactly one level deep (subunits cannot have subunits)
 """
 
+from flask import session
+from flask_login import current_user
+
 from app.extensions import db
-from app.models.music import Artist, ArtistArtist, ArtistSong, Song
+from app.models.music import Artist, ArtistArtist, ArtistSong, Song, Album, AlbumSong, album_genres
 
 SUBUNIT = 0
 SOLOIST = 1
@@ -94,6 +97,43 @@ def get_navbar_artists():
     Subunits are excluded (accessed via parent only). Soloists get their own entry.
     """
     return get_top_level_artists()
+
+
+def get_filtered_navbar():
+    """Get navbar artists filtered by the current user's country/genre settings."""
+    artists = get_navbar_artists()
+
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        country_id = current_user.settings.country
+        genre_id = current_user.settings.genre
+    else:
+        country_id = session.get('country')
+        genre_id = session.get('genre')
+
+    if country_id is not None:
+        artists = [a for a in artists if a.country_id == country_id]
+
+    if genre_id is not None:
+        filtered = []
+        for a in artists:
+            song_ids = get_discography_songs(a.id)
+            if not song_ids:
+                continue
+            has_genre = db.session.query(Album).join(
+                AlbumSong, Album.id == AlbumSong.album_id
+            ).join(
+                album_genres, Album.id == album_genres.c.album_id
+            ).filter(
+                AlbumSong.song_id.in_(song_ids),
+                album_genres.c.genre_id == genre_id
+            ).first() is not None
+            if has_genre:
+                filtered.append(a)
+        artists = filtered
+
+    misc = [a for a in artists if a.name == 'Misc. Artists']
+    rest = [a for a in artists if a.name != 'Misc. Artists']
+    return misc + rest
 
 
 def resolve_artist_for_search(artist_id):
