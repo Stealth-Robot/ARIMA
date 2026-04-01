@@ -71,6 +71,31 @@ td.has-note::after {
     border-left: 6px solid transparent;
 }
 
+/* CSS tooltip for notes — triggers on full cell hover */
+td.has-note::before {
+    content: attr(data-note);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    max-width: 250px;
+    width: max-content;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+td.has-note:hover::before {
+    opacity: 1;
+}
+
 /* Bottom artist navbar — hide scrollbar */
 .artist-nav {
     scrollbar-width: none;          /* Firefox */
