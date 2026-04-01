@@ -315,10 +315,15 @@ function showNoteInput(cell, songId) {
     activeNote = { overlay, cell };
 
     textarea.addEventListener('keydown', (e) => {
+        e.stopPropagation();
         if (e.key === 'Escape') {
             e.preventDefault();
             closeNoteInput();
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitNote(cell, songId, textarea.value.trim());
         }
+        // Shift+Enter: allow default (newline in textarea)
     });
 }
 
