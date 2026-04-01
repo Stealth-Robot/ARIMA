@@ -16,6 +16,18 @@
             --{{ name | replace('_', '-') }}: {{ value }};
             {% endfor %}
         }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        input[type="url"],
+        select,
+        textarea {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
     </style>
     {% endif %}
 </head>
