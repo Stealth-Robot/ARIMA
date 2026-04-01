@@ -103,6 +103,17 @@ def create_app():
         except Exception:
             pass  # DB may not exist yet
 
+    # Add navbar_active column to theme table if it doesn't exist
+    with flask_app.app_context():
+        try:
+            with db.engine.connect() as conn:
+                cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
+                if 'navbar_active' not in cols:
+                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN navbar_active VARCHAR(7)"))
+                    conn.commit()
+        except Exception:
+            pass  # DB may not exist yet
+
     # Validate Classic theme on startup
     with flask_app.app_context():
         try:
