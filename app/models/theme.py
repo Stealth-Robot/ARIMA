@@ -65,4 +65,10 @@ class Theme(db.Model):
     # Top navbar active indicator
     navbar_active = db.Column(db.Text)
 
+    # Songs remaining to rate colours
+    unrated_0_bg = db.Column(db.Text)
+    unrated_low_bg = db.Column(db.Text)
+    unrated_mid_bg = db.Column(db.Text)
+    unrated_high_bg = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])

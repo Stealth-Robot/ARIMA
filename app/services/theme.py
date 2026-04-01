@@ -127,25 +127,25 @@ def pct_to_colour(value, theme):
     return _lerp_colour(low, high, t)
 
 
-def unrated_to_colour(value):
+def unrated_to_colour(value, theme):
     """Get background colour for an unrated song count.
 
     Mirrors the Excel STATS 2.0 conditional formatting on the songs-remaining columns:
-      0        → blue   #A4C2F4
-      1–20     → green  #B6D7A8
-      21–40    → yellow #FFE599
-      41+      → red    #EA9999
+      0        → unrated_0_bg   (default #A4C2F4 blue)
+      1–20     → unrated_low_bg (default #B6D7A8 green)
+      21–40    → unrated_mid_bg (default #FFE599 yellow)
+      41+      → unrated_high_bg(default #EA9999 red)
     Returns None for None (no colour).
     """
     if value is None:
         return None
     if value == 0:
-        return '#A4C2F4'
+        return theme.get('unrated_0_bg', '#A4C2F4')
     if value <= 20:
-        return '#B6D7A8'
+        return theme.get('unrated_low_bg', '#B6D7A8')
     if value <= 40:
-        return '#FFE599'
-    return '#EA9999'
+        return theme.get('unrated_mid_bg', '#FFE599')
+    return theme.get('unrated_high_bg', '#EA9999')
 
 
 def rating_cell_style(score, theme):
