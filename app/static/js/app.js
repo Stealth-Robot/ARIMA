@@ -119,15 +119,56 @@ document.addEventListener('keydown', function (e) {
     if (!entry) return;
     const { songId, previousRating, previousNote, artistSlug } = entry;
 
+    function showSessionExpiredToast() {
+        var toast = document.createElement('div');
+        toast.textContent = 'Session expired \u2014 please log in again';
+        toast.style.cssText = [
+            'position:fixed',
+            'bottom:24px',
+            'left:50%',
+            'transform:translateX(-50%)',
+            'background:#1f2937',
+            'color:#fff',
+            'padding:10px 20px',
+            'border-radius:6px',
+            'font-size:14px',
+            'z-index:9999',
+            'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
+            'pointer-events:none',
+        ].join(';');
+        document.body.appendChild(toast);
+        setTimeout(function () { toast.remove(); }, 3000);
+    }
+
+    function guardedAjax(url, options, cell, cellHTML) {
+        if (cell) {
+            function onBeforeSwap(evt) {
+                if (evt.detail.target !== cell) return;
+                cell.removeEventListener('htmx:beforeSwap', onBeforeSwap);
+                var xhr = evt.detail.xhr;
+                var isLoginPage = (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1) ||
+                    (xhr.responseText && xhr.responseText.indexOf('id="login-form"') !== -1);
+                var isAuthError = xhr.status === 401 || xhr.status === 403;
+                if (isLoginPage || isAuthError) {
+                    evt.detail.shouldSwap = false;
+                    cell.outerHTML = cellHTML;
+                    showSessionExpiredToast();
+                }
+            }
+            cell.addEventListener('htmx:beforeSwap', onBeforeSwap);
+        }
+        htmx.ajax('POST', url, options);
+    }
+
     function doUndo() {
         const cell = document.querySelector('[id^="rating-' + songId + '-"]');
         if (previousRating === null) {
             if (cell) {
-                htmx.ajax('POST', '/rate/delete', {
+                guardedAjax('/rate/delete', {
                     target: cell,
                     swap: 'outerHTML',
                     values: { song_id: songId },
-                });
+                }, cell, entry.cellHTML);
             } else {
                 htmx.ajax('POST', '/rate/delete', {
                     swap: 'none',
@@ -136,11 +177,11 @@ document.addEventListener('keydown', function (e) {
             }
         } else {
             if (cell) {
-                htmx.ajax('POST', '/rate', {
+                guardedAjax('/rate', {
                     target: cell,
                     swap: 'outerHTML',
                     values: { song_id: songId, rating: previousRating, note: previousNote || '' },
-                });
+                }, cell, entry.cellHTML);
             } else {
                 htmx.ajax('POST', '/rate', {
                     swap: 'none',
