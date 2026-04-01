@@ -169,7 +169,7 @@ def _import_artists(artists_data, user_map):
             continue
 
         for alb_data in entry['albums']:
-            songs, ratings = _import_album(artist_id, alb_data, user_map)
+            songs, ratings = _import_album(artist_id, alb_data, user_map, artist_map)
             total_songs += songs
             total_ratings += ratings
 
@@ -180,7 +180,7 @@ def _import_artists(artists_data, user_map):
     return artist_map, total_songs, total_ratings
 
 
-def _import_album(artist_id, alb_data, user_map):
+def _import_album(artist_id, alb_data, user_map, artist_map=None):
     """Import a single album with songs. Returns (song_count, rating_count)."""
     # Create album
     release_date = f'{alb_data["year"]}-01-01' if alb_data.get('year') else None
@@ -218,12 +218,26 @@ def _import_album(artist_id, alb_data, user_map):
             track_number=song_data['track_number'],
         ))
 
-        # ArtistSong
+        # ArtistSong — primary artist
         db.session.add(ArtistSong(
             artist_id=artist_id,
             song_id=song.id,
             artist_is_main=True,
         ))
+
+        # ArtistSong — collab main artists (multi-main-artist songs, e.g. collabs)
+        for collab_name in song_data.get('collab_artists', []):
+            collab_id = artist_map.get(collab_name) if artist_map else None
+            if collab_id and collab_id != artist_id:
+                existing_link = ArtistSong.query.filter_by(
+                    artist_id=collab_id, song_id=song.id
+                ).first()
+                if not existing_link:
+                    db.session.add(ArtistSong(
+                        artist_id=collab_id,
+                        song_id=song.id,
+                        artist_is_main=True,
+                    ))
 
         # Ratings
         for username, rating_val in song_data.get('ratings', {}).items():
