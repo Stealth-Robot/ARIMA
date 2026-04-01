@@ -153,6 +153,14 @@ function removeAlbum(num) {
 
 let songCounters = {};
 
+function renumberSongs(albumNum) {
+    const container = document.getElementById(`songs-${albumNum}`);
+    container.querySelectorAll(`[id^="song-${albumNum}-"]`).forEach(function (div, i) {
+        const span = div.querySelector('span');
+        if (span) span.textContent = (i + 1) + '.';
+    });
+}
+
 function addSong(albumNum) {
     if (!songCounters[albumNum]) songCounters[albumNum] = 0;
     songCounters[albumNum]++;
@@ -169,7 +177,7 @@ function addSong(albumNum) {
         <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="is_promoted" class="song-check"> P</label>
         <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="is_remix" class="song-check"> Remix</label>
         <label class="text-xs"><input type="checkbox" data-album="${albumNum}" data-song="${songNum}" data-field="artist_is_main" class="song-check" checked> Main</label>
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-sm">×</button>
+        <button type="button" onclick="this.parentElement.remove(); renumberSongs(${albumNum})" class="text-red-500 text-sm">×</button>
     `;
     container.appendChild(div);
 }
