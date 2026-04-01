@@ -1,11 +1,14 @@
 """Stats calculation service — all computed live, viewer-relative."""
 
+import math
+from collections import defaultdict
+
 from app.extensions import db
-from app.models.music import Rating, ArtistSong, Song
+from app.models.music import Rating, ArtistSong, Song, ArtistArtist
 from app.models.user import User
-from app.services.artist import get_songs_for_artist, get_top_level_artists, get_children
 
 SCORED_GROUP_THRESHOLD = 0.80
+SUBUNIT = 0
 
 
 def get_display_users():
@@ -13,60 +16,100 @@ def get_display_users():
     return User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
 
 
-def get_user_song_set(user, include_featured=False, include_remixes=False):
-    """Get the set of all song IDs relevant to a user's settings."""
-    query = Song.query
-    if not include_remixes:
-        query = query.filter(Song.is_remix == False)
-    # Featured filtering: if not including featured, only count main artist songs
-    # This is applied per-artist in the stats calculation, not globally
-    return {s.id for s in query.all()}
+class _BulkData:
+    """Pre-loaded data for batch stats computation (~5 queries total)."""
+
+    def __init__(self, include_featured, include_remixes):
+        # 1. All artist-song mappings
+        all_as = ArtistSong.query.all()
+        self.artist_songs = defaultdict(set)        # artist_id → {song_id, ...}
+        self.artist_main_songs = defaultdict(set)    # artist_id → {song_id where main}
+        for row in all_as:
+            self.artist_songs[row.artist_id].add(row.song_id)
+            if row.artist_is_main:
+                self.artist_main_songs[row.artist_id].add(row.song_id)
+
+        # 2. All artist-artist relationships (only subunits)
+        all_rels = ArtistArtist.query.filter_by(relationship=SUBUNIT).all()
+        self.subunit_ids = set()                     # all IDs that are subunits
+        self.children = defaultdict(list)             # parent_id → [child_id, ...]
+        for rel in all_rels:
+            self.subunit_ids.add(rel.artist_2)
+            self.children[rel.artist_1].append(rel.artist_2)
+
+        # 3. Remix song IDs
+        if not include_remixes:
+            self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True).all()}
+        else:
+            self.remix_ids = set()
+
+        # 4. All ratings
+        all_ratings = Rating.query.all()
+        self.song_ratings = defaultdict(dict)        # song_id → {user_id: rating_value}
+        self.song_rated_by = defaultdict(set)         # song_id → {user_id, ...}
+        for r in all_ratings:
+            self.song_ratings[r.song_id][r.user_id] = r.rating
+            self.song_rated_by[r.song_id].add(r.user_id)
+
+        # 5. All main song IDs (for summary total)
+        if not include_featured:
+            self.all_main_song_ids = set()
+            for song_ids in self.artist_main_songs.values():
+                self.all_main_song_ids |= song_ids
+        else:
+            self.all_main_song_ids = None
+
+        # 6. All song IDs (for total count)
+        all_songs_query = Song.query
+        if not include_remixes:
+            all_songs_query = all_songs_query.filter(Song.is_remix == False)
+        self.all_song_ids = {s.id for s in all_songs_query.all()}
+        if not include_featured and self.all_main_song_ids is not None:
+            self.all_song_ids &= self.all_main_song_ids
+
+        self.include_featured = include_featured
+        self.include_remixes = include_remixes
+
+    def get_song_ids(self, artist_id):
+        """Get filtered song IDs for an artist (including subunit songs)."""
+        song_ids = set(self.artist_songs.get(artist_id, set()))
+        for child_id in self.children.get(artist_id, []):
+            song_ids |= self.artist_songs.get(child_id, set())
+
+        if not self.include_remixes:
+            song_ids -= self.remix_ids
+
+        if not self.include_featured:
+            main_ids = set(self.artist_main_songs.get(artist_id, set()))
+            for child_id in self.children.get(artist_id, []):
+                main_ids |= self.artist_main_songs.get(child_id, set())
+            song_ids &= main_ids
+
+        return song_ids
+
+    def has_subunits(self, artist_id):
+        return bool(self.children.get(artist_id))
 
 
-def get_artist_stats(artist_id, users, include_featured=False, include_remixes=False):
-    """Calculate per-artist stats for the Artist Stats page.
-
-    Returns dict with:
-        - song_ids: set of song IDs for this artist (with subunit songs)
-        - song_count: total songs
-        - per_user: {user_id: {rated_count, unrated_count, pct_rated}}
-        - global_avg_pct: average % rated across users who rated at least one
-    """
-    song_ids = get_songs_for_artist(artist_id, include_subunit_songs=True)
-
-    # Apply remix filter
-    if not include_remixes:
-        remix_ids = {s.id for s in Song.query.filter(Song.id.in_(song_ids), Song.is_remix == True).all()}
-        song_ids -= remix_ids
-
-    # Apply featured filter
-    if not include_featured:
-        # Only keep songs where artist_is_main=True for this artist or its subunits
-        main_ids = {row.song_id for row in ArtistSong.query.filter(
-            ArtistSong.artist_id == artist_id, ArtistSong.artist_is_main == True
-        ).all()}
-        subunits, _ = get_children(artist_id)
-        for sub in subunits:
-            sub_main = {row.song_id for row in ArtistSong.query.filter(
-                ArtistSong.artist_id == sub.id, ArtistSong.artist_is_main == True
-            ).all()}
-            main_ids |= sub_main
-        song_ids &= main_ids
-
+def _artist_completion_stats(artist_id, users, bulk):
+    """Calculate per-artist rating completion stats (Artist Stats page)."""
+    song_ids = bulk.get_song_ids(artist_id)
     song_count = len(song_ids)
+
     if song_count == 0:
         return {
             'song_ids': set(),
             'song_count': 0,
             'per_user': {u.id: {'rated_count': 0, 'unrated_count': 0, 'pct_rated': 0.0} for u in users},
             'global_avg_pct': 0.0,
+            'global_avg_unrated': 0,
         }
 
-    # Get ratings for these songs
-    ratings = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
-    user_rated = {}  # {user_id: count of rated songs}
-    for r in ratings:
-        user_rated[r.user_id] = user_rated.get(r.user_id, 0) + 1
+    # Count ratings per user from pre-loaded data
+    user_rated = defaultdict(int)
+    for sid in song_ids:
+        for uid in bulk.song_rated_by.get(sid, set()):
+            user_rated[uid] += 1
 
     per_user = {}
     pcts_for_global = []
@@ -82,40 +125,21 @@ def get_artist_stats(artist_id, users, include_featured=False, include_remixes=F
             pcts_for_global.append(pct)
 
     global_avg_pct = round(sum(pcts_for_global) / len(pcts_for_global), 1) if pcts_for_global else 0.0
+    unrated_counts = [per_user[u.id]['unrated_count'] for u in users]
+    global_avg_unrated = math.ceil(sum(unrated_counts) / len(unrated_counts)) if unrated_counts else 0
 
     return {
         'song_ids': song_ids,
         'song_count': song_count,
         'per_user': per_user,
         'global_avg_pct': global_avg_pct,
+        'global_avg_unrated': global_avg_unrated,
     }
 
 
-def get_artist_score_stats(artist_id, users, include_featured=False, include_remixes=False):
-    """Calculate average score stats for the Global Stats page.
-
-    Returns dict with:
-        - song_count: total songs
-        - per_user: {user_id: avg_score} (None if user has no ratings)
-        - global_avg: average score across users who rated at least one song
-    """
-    song_ids = get_songs_for_artist(artist_id, include_subunit_songs=True)
-
-    if not include_remixes:
-        remix_ids = {s.id for s in Song.query.filter(Song.id.in_(song_ids), Song.is_remix == True).all()}
-        song_ids -= remix_ids
-
-    if not include_featured:
-        main_ids = {row.song_id for row in ArtistSong.query.filter(
-            ArtistSong.artist_id == artist_id, ArtistSong.artist_is_main == True
-        ).all()}
-        subunits, _ = get_children(artist_id)
-        for sub in subunits:
-            sub_main = {row.song_id for row in ArtistSong.query.filter(
-                ArtistSong.artist_id == sub.id, ArtistSong.artist_is_main == True
-            ).all()}
-            main_ids |= sub_main
-        song_ids &= main_ids
+def _artist_score_stats(artist_id, users, bulk):
+    """Calculate average score stats (Global Stats page)."""
+    song_ids = bulk.get_song_ids(artist_id)
 
     if not song_ids:
         return {
@@ -124,12 +148,11 @@ def get_artist_score_stats(artist_id, users, include_featured=False, include_rem
             'global_avg': None,
         }
 
-    ratings = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
-    user_scores = {}  # {user_id: [scores]}
-    for r in ratings:
-        if r.user_id not in user_scores:
-            user_scores[r.user_id] = []
-        user_scores[r.user_id].append(r.rating)
+    # Collect scores per user from pre-loaded data
+    user_scores = defaultdict(list)
+    for sid in song_ids:
+        for uid, score in bulk.song_ratings.get(sid, {}).items():
+            user_scores[uid].append(score)
 
     per_user = {}
     user_avgs = []
@@ -151,37 +174,42 @@ def get_artist_score_stats(artist_id, users, include_featured=False, include_rem
     }
 
 
-def get_summary_stats(users, include_featured=False, include_remixes=False):
-    """Calculate top-table summary stats for all users.
+# --- Public API (used by routes) ---
 
-    Returns dict with:
-        - total_songs: total songs in database
-        - per_user: {user_id: {pct_rated, rated_count, rank, scored_group_count}}
-        - global: {avg_pct, avg_rated_count, avg_scored_group_count}
-    """
-    # Total songs (respecting filters)
-    query = Song.query
-    if not include_remixes:
-        query = query.filter(Song.is_remix == False)
-    if not include_featured:
-        main_song_ids = {row.song_id for row in ArtistSong.query.filter(ArtistSong.artist_is_main == True).all()}
-        query = query.filter(Song.id.in_(main_song_ids))
-    all_songs = {s.id for s in query.all()}
-    total_songs = len(all_songs)
+def load_bulk_data(include_featured=False, include_remixes=False):
+    """Load all data needed for stats pages in ~5 queries."""
+    return _BulkData(include_featured, include_remixes)
 
-    # All ratings
-    all_ratings = Rating.query.filter(Rating.song_id.in_(all_songs)).all() if all_songs else []
-    user_total_rated = {}
-    for r in all_ratings:
-        user_total_rated[r.user_id] = user_total_rated.get(r.user_id, 0) + 1
 
-    # Scored group counts per user
-    top_artists = get_top_level_artists()
+def get_artist_stats(artist_id, users, bulk):
+    """Per-artist completion stats using pre-loaded data."""
+    return _artist_completion_stats(artist_id, users, bulk)
+
+
+def get_artist_score_stats(artist_id, users, bulk):
+    """Per-artist score stats using pre-loaded data."""
+    return _artist_score_stats(artist_id, users, bulk)
+
+
+def get_summary_stats(users, bulk):
+    """Top-table summary stats for all users."""
+    total_songs = len(bulk.all_song_ids)
+
+    # Count ratings per user across all relevant songs
+    user_total_rated = defaultdict(int)
+    for sid in bulk.all_song_ids:
+        for uid in bulk.song_rated_by.get(sid, set()):
+            user_total_rated[uid] += 1
+
+    # Scored group counts per user (reuses bulk data, no extra queries)
+    from app.services.artist import get_top_level_artists
+    top_artists = get_top_level_artists(bulk)
+
     user_scored_groups_80 = {u.id: 0 for u in users}
     user_scored_groups_any = {u.id: 0 for u in users}
 
     for artist in top_artists:
-        stats = get_artist_stats(artist.id, users, include_featured, include_remixes)
+        stats = _artist_completion_stats(artist.id, users, bulk)
         for u in users:
             user_stats = stats['per_user'].get(u.id)
             if user_stats and stats['song_count'] > 0:
@@ -191,7 +219,6 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
                 if ratio >= SCORED_GROUP_THRESHOLD:
                     user_scored_groups_80[u.id] += 1
 
-    # Per-user summary
     per_user = {}
     rated_counts = []
     for u in users:
@@ -200,19 +227,17 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
         per_user[u.id] = {
             'pct_rated': pct,
             'rated_count': rated,
-            'rank': 0,  # filled below
+            'rank': 0,
             'scored_group_count_80': user_scored_groups_80[u.id],
             'scored_group_count_any': user_scored_groups_any[u.id],
         }
         if rated > 0:
             rated_counts.append((u.id, rated))
 
-    # Rank by rated count (descending)
     rated_counts.sort(key=lambda x: x[1], reverse=True)
     for rank, (uid, _) in enumerate(rated_counts, 1):
         per_user[uid]['rank'] = rank
 
-    # Global averages (exclude users with zero rated)
     active_users = [per_user[u.id] for u in users if per_user[u.id]['rated_count'] > 0]
     global_stats = {
         'avg_pct': round(sum(s['pct_rated'] for s in active_users) / len(active_users), 1) if active_users else 0.0,

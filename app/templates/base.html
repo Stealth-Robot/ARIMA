@@ -58,7 +58,7 @@
         {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
-        <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="display:inline; margin:0;">
+        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="display:inline; margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="edit-mode-btn" type="submit"
                     style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
@@ -68,7 +68,7 @@
             </button>
         </form>
         {% if session.get('edit_mode') %}
-        <a href="{{ url_for('edit.add_artist_form') }}"
+        <a id="add-artist-link" href="{{ url_for('edit.add_artist_form') }}"
            style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
                   background:#16a34a; color:#fff; text-decoration:none;">
             + Artist
@@ -154,5 +154,39 @@
     </main>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% set _ep = request.endpoint or '' %}
+    {% if _ep in ('home.home', 'stats.global_stats', 'stats.artist_stats', 'rules.rules', 'views.views_page', 'profile.profile') %}
+    <script>
+    (function() {
+        var form = document.getElementById('edit-mode-form');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = document.getElementById('edit-mode-btn');
+            var csrfToken = form.querySelector('[name=csrf_token]').value;
+            fetch(form.action, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + encodeURIComponent(csrfToken), redirect: 'manual'}).then(function() {
+                var isOn = btn.textContent.indexOf('ON') !== -1;
+                btn.style.background = isOn ? '#6B7280' : '#16a34a';
+                btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
+                var addLink = document.getElementById('add-artist-link');
+                if (isOn) {
+                    if (addLink) addLink.style.display = 'none';
+                } else {
+                    if (addLink) {
+                        addLink.style.display = '';
+                    } else {
+                        addLink = document.createElement('a');
+                        addLink.id = 'add-artist-link';
+                        addLink.href = '{{ url_for("edit.add_artist_form") }}';
+                        addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:#16a34a; color:#fff; text-decoration:none;';
+                        addLink.textContent = '+ Artist';
+                        form.parentNode.insertBefore(addLink, form.nextSibling);
+                    }
+                }
+            });
+        });
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

@@ -120,13 +120,16 @@ def is_soloist(artist_id):
     return ArtistArtist.query.filter_by(artist_2=artist_id, relationship=SOLOIST).first() is not None
 
 
-def get_top_level_artists():
+def get_top_level_artists(bulk=None):
     """Get artists that should appear as standalone rows in stats/navbar.
 
     Returns artists that are NOT subunits. Soloists ARE included (they get their own row).
+    If bulk data is provided, uses pre-loaded subunit IDs to avoid an extra query.
     """
-    # Get all artist IDs that are subunits (artist_2 where relationship=0)
-    subunit_ids = {row.artist_2 for row in ArtistArtist.query.filter_by(relationship=SUBUNIT).all()}
+    if bulk is not None:
+        subunit_ids = bulk.subunit_ids
+    else:
+        subunit_ids = {row.artist_2 for row in ArtistArtist.query.filter_by(relationship=SUBUNIT).all()}
     return Artist.query.filter(~Artist.id.in_(subunit_ids) if subunit_ids else Artist.id.isnot(None)).order_by(func.lower(Artist.name)).all()
 
 
