@@ -92,6 +92,17 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
+    # Add artist_button_text column to theme table if it doesn't exist
+    with flask_app.app_context():
+        try:
+            with db.engine.connect() as conn:
+                cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
+                if 'artist_button_text' not in cols:
+                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN artist_button_text VARCHAR(7)"))
+                    conn.commit()
+        except Exception:
+            pass  # DB may not exist yet
+
     # Validate Classic theme on startup
     with flask_app.app_context():
         try:

@@ -60,4 +60,7 @@ class Theme(db.Model):
     key_bg_stealth = db.Column(db.Text)
     header_user_bg = db.Column(db.Text)
 
+    # Artist navbar
+    artist_button_text = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])

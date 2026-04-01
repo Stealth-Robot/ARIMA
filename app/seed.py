@@ -61,6 +61,8 @@ CLASSIC_THEME = {
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#D9EAD3',
+    # Artist navbar
+    'artist_button_text': '#000000',
 }
 
 # Dark theme — all 40 columns populated, no NULLs
@@ -113,6 +115,8 @@ DARK_THEME = {
     'key_bg_standard': '#FF8E1E',
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#1A3A2E',
+    # Artist navbar
+    'artist_button_text': '#FFFFFF',
 }
 
 
