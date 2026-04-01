@@ -97,8 +97,7 @@
     <colgroup>
         <col style="width: {{ col_global }}px">
         <col style="width: {{ col_group }}px">
-        {% for u in users %}<col class="col-set1" style="width: {{ col_user }}px">{% endfor %}
-        {% for u in users %}<col class="col-set2" style="display: none; width: {{ col_user }}px">{% endfor %}
+        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
         <col style="width: {{ col_song }}px">
     </colgroup>
     <thead>
