@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}A.R.I.M.A.{% endblock %}</title>
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4/dist/tailwind.min.css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
+    <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     {% if theme %}
     <style>
