@@ -400,3 +400,84 @@ Row 6: **"Macro-Stats (DO NOT EDIT THIS ROW OR ABOVE)"** — separator between s
 16. Add SGC (any%) row to STATS 2.0
 17. Investigate and implement Log column
 18. Locked user (🔒) indicator in headers
+
+---
+
+## UX Review of Architecture §15 (Issues #36-47)
+
+### 1. Bottom Navbar — Gender Background Colours (#37)
+
+**Recommendation: Use white text on ALL three gender colours, but darken the backgrounds slightly for WCAG compliance.**
+
+The current theme gender colours fail the 4.5:1 contrast ratio with white text:
+- Female `#EC4899`: 3.5:1 (fail)
+- Male `#3B82F6`: 3.7:1 (fail)
+- Mixed `#8B5CF6`: 4.2:1 (borderline)
+
+**Fix:** Use slightly darker shades for the bottom navbar backgrounds specifically. These are not the same as the gender text colours used in tables — they're a separate use case.
+
+| Gender | Current (text colour) | Navbar bg (darker) | White text contrast |
+|--------|----------------------|-------------------|-------------------|
+| Female | `#EC4899` | `#D63384` | 4.6:1 ✓ |
+| Male | `#3B82F6` | `#2563EB` | 4.8:1 ✓ |
+| Mixed | `#8B5CF6` | `#7C3AED` | 5.7:1 ✓ |
+
+Add these as new theme columns: `gender_female_bg`, `gender_male_bg`, `gender_mixed_bg`. Or — simpler — just use the darker values directly in the template since the bottom navbar is a unique context.
+
+**Simpler approach for the spreadsheet:** Looking at the screenshot, the spreadsheet tabs are quite small and saturated. The existing gender colours work fine at tab size. Use white text and accept the slightly low contrast — this is a navigation aid, not body text. The user already knows the artist names.
+
+**My call: White text on existing colours. Don't add new theme columns.** The spreadsheet doesn't have WCAG compliance and neither do the tabs. Match the feel.
+
+### 2. Album Header Pink `#F99FD0` (#41)
+
+**Recommendation: Use it.**
+
+- Black text on `#F99FD0`: 10.9:1 contrast — excellent readability
+- It's the exact colour from the spreadsheet
+- For Dark theme: use a muted dark pink like `#5C2A4A` — keeps the pink identity without blinding on dark backgrounds
+- The album header colour is the **same for all artists** regardless of gender — confirmed from the spreadsheet data (TWICE, BTS, KARD all use `#F99FD0`)
+
+### 3. Top Navbar Black `#000000` (#42)
+
+**Recommendation: Match the spreadsheet — go black.**
+
+The spreadsheet header row is `FF000000` (pure black) with white text. The current dark blue (`#1F2937`) is close but not matching. Pure black:
+- Maximum contrast with white text (21:1)
+- Matches the spreadsheet exactly
+- Clean, authoritative header
+
+No clash concerns — the black navbar is visually distinct from the coloured content below. It anchors the page.
+
+### 4. Cell Borders — Grey to Black (#47)
+
+**Recommendation: Use very dark grey `#333333` instead of pure black `#000000`.**
+
+Looking at the spreadsheet screenshot closely, the cell borders are thin and dark but not pure black — they're the default Google Sheets grid colour, which is a dark grey. Pure black (`#000000`) borders would:
+- Create too much visual weight — the borders would compete with the rating numbers
+- Look harsh against the coloured rating backgrounds (especially yellow and green)
+- Not match the spreadsheet's subtle grid feel
+
+`#333333` gives the "thin dark line" feel without being overpowering. Update the `grid_line` theme seed to `#333333`.
+
+### 5. Heatmap Step-Based vs Gradient (#43)
+
+**Recommendation: Go step-based for STATS — it matches the spreadsheet exactly.**
+
+The spreadsheet uses conditional formatting with discrete thresholds, not smooth gradients. Each cell gets one of 6 solid colours based on where the value falls. This is actually *better* visually because:
+- Distinct colour bands are easier to scan than subtle gradients
+- Users quickly learn "blue = low, pink = high" without needing to distinguish between shades
+- Matches the spreadsheet's actual look — which is what the users expect
+
+For STATS 2.0 (percentages): the spreadsheet uses a purple-to-orange colour scale gradient. This IS a smooth gradient, not steps. Keep the linear interpolation for percentages, but update the anchor colours:
+- 0% → `#833AB4` (purple)
+- 100% → `#FCB045` (orange/gold)
+
+### 6. Rating Inline Input (#39) — UX Guidance
+
+The spreadsheet-style "type and Enter" flow is the right call. A few UX details:
+
+- **Input should be visually minimal** — no border, same font size as the cell, centred. The cell IS the input.
+- **Background stays coloured** while editing if there's an existing rating — so you can see what you're changing FROM
+- **After Enter/save**, the cell briefly flashes (opacity pulse) to confirm the save landed, then the cursor moves down
+- **Clear a rating**: type nothing (empty) + Enter = delete the rating
+- **Mobile**: the `inputmode="numeric"` attribute brings up the number keyboard on phones

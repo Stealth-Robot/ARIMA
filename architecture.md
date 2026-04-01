@@ -910,3 +910,129 @@ RATING_KEY_STEALTH = {
 ```
 
 The Key column cycles: Standard (7 rows: header + 6 scores) → Stealth (7 rows) → repeat.
+
+---
+
+## 15. UI Refinement Plan (Issues #36–#47)
+
+### Grouping and Dependencies
+
+The 12 open issues fall into 4 work batches. Each batch can be done as a single commit or a small set of commits.
+
+#### Batch A: Data Pipeline Fix (must run first — re-import required)
+**Issues: #38 (gender extraction), #45 (user merge)**
+
+These change the data in the database. Everything else is visual — do this batch first, re-import once, then all visual work operates on correct data.
+
+**#38 — Gender extraction:**
+- Update `scripts/export_spreadsheet.py` to read `ws.sheet_properties.tabColor.rgb`
+- Colour mapping: `FFFF00FF` → female, `FF4A86E8`/`FF3C78D8` → male, `FF00FF00` → mixed, default → mixed
+- Add `"gender"` field to each artist entry in JSON output
+- Subunits/soloists inherit parent's tab colour
+- Update `scripts/import_data.py` to read `gender` field and set `gender_id` accordingly
+- **Must open workbook without `data_only=True`** to read tab colours (or open twice)
+
+**#45 — User merge:**
+- One-time migration: create `flask merge-users` CLI command
+- Transfer ratings: `UPDATE rating SET user_id = 2 WHERE user_id = 4`
+- Transfer sort_order: copy Stealth's sort_order to Stealth_Robot
+- Delete Stealth user (id=4) — cascades UserSettings
+- Run after import, before any visual work
+
+**After Batch A:** Delete DB, re-run `flask seed && flask import-data data.json`, then `flask merge-users`.
+
+#### Batch B: Theme + CSS Fixes (no backend changes, pure visual)
+**Issues: #41 (album colour), #42 (top navbar), #47 (cell borders), #36 (bottom navbar scroll)**
+
+All are theme seed updates or CSS changes. Can be done in one commit.
+
+**#41 — Album header colour:**
+- Update Classic seed: `album_header_bg = '#F99FD0'`
+- Update Dark seed: `album_header_bg = '#5C2A4A'` (dark pink variant)
+
+**#42 — Top navbar:**
+- Update Classic seed: `navbar_bg = '#000000'`
+- In `base.html`: add `flex-nowrap` to nav, increase `gap-4` to `gap-6`
+- Ensure all nav items stay on one line
+
+**#47 — Cell borders:**
+- In `app.css`: change grid line from `var(--grid-line)` to `1px solid #000` on all table cells
+- Or update Classic seed: `grid_line = '#000000'` (simpler — uses existing theme var)
+- Verify `border-collapse: collapse` eliminates gaps
+
+**#36 — Bottom navbar scroll:**
+- Add `height: 36px` and `overflow-y: hidden` to bottom nav container
+- Verify `whitespace-nowrap` and `overflow-x-auto` are working
+
+#### Batch C: Template Fixes (logic changes in Jinja2 templates)
+**Issues: #37 (navbar gender bg), #40 (key column cycle), #43 (heatmap steps), #44 (remove stats col 3), #46 (admin nav link)**
+
+**#37 — Bottom navbar gender bg:**
+- Change from `color: var(--gender-X)` to `background-color: var(--gender-X); color: white`
+- Artist name text becomes white on coloured background
+- Active artist: add a border or underline for distinction
+
+**#40 — Key column 14-row cycle:**
+The current implementation has a bug — the cycle counter doesn't properly do the 14-row pattern. Fix:
+```
+Row 0: "Key (Standard)" header
+Row 1-6: Standard scores 5,4,3,2,1,0
+Row 7: "Key (Stealth Ver)" header
+Row 8-13: Stealth scores 5,4,3,2,1,0
+Row 14: back to "Key (Standard)" (row 0)
+```
+The cycle position should be `key_cycle % 14`. Position 0 and 7 are headers, 1-6 are Standard scores, 8-13 are Stealth scores.
+
+**#43 — Heatmap step-based colours:**
+Replace `score_to_colour()` linear interpolation with step-based matching:
+
+```python
+# STATS page (average scores) — step-based, not gradient
+def score_to_colour(value, theme):
+    if value is None or value == 0: return '#FFFFFF'
+    if value >= 5.0: return theme.get('rating_5_bg', '#FF0016')  # Red
+    if value >= 4.5: return theme.get('heatmap_high', '#FFB7FE')  # Pink
+    if value >= 3.5: return theme.get('rating_4_bg', '#FF8E1E')  # Orange
+    if value >= 2.5: return theme.get('rating_3_bg', '#FEFF2A')  # Yellow
+    if value >= 1.5: return theme.get('rating_2_bg', '#9EFFA4')  # Green
+    return theme.get('rating_1_bg', '#8AB5FC')  # Blue
+```
+
+For STATS 2.0 (percentages), use a purple→orange gradient:
+- Update theme seeds: `pct_high = '#FCB045'` (orange/gold), `pct_low = '#833AB4'` (purple)
+- Linear interpolation between purple (0%) and orange (100%)
+
+**#44 — Remove third column group:**
+- Delete Set 3 (rated count) columns from `artist_stats.html` and `fragments/stats_row.html`
+- Remove the separator column before Set 3
+- Keep Set 1 (% rated), Song Count, Set 2 (unrated count)
+
+**#46 — Admin nav link:**
+- Add to `base.html` navbar: `{% if current_user.is_admin %}<a href="/admin/users">Users</a>{% endif %}`
+
+#### Batch D: Rating Interaction (standalone JS work)
+**Issue: #39 (inline input with Enter/Escape/auto-advance)**
+
+This is the biggest single change and is completely independent of everything else. It replaces the popover JS in `app.js`.
+
+**Design:**
+- Click cell → replace cell content with `<input type="text" maxlength="1" inputmode="numeric">`
+- Input auto-focuses and selects existing value
+- `keydown` handler:
+  - Enter: validate 0-5, POST via `htmx.ajax()`, find next cell below (same column, next `<tr>`), trigger click on it
+  - Escape: remove input, restore original content
+  - Any other key that's not 0-5: ignore
+- `blur` event: same as Escape (cancel)
+- After HTMX response replaces the cell, the new cell will have `onclick` ready for the next interaction
+- "Next cell below" logic: walk DOM from current `<td>` → parent `<tr>` → `nextElementSibling` → find `<td>` at same column index
+
+### Implementation Order
+
+```
+Batch A: #38 + #45 → re-import data
+Batch B: #41 + #42 + #47 + #36 → theme/CSS (one commit)
+Batch C: #37 + #40 + #43 + #44 + #46 → template fixes (one or two commits)
+Batch D: #39 → rating interaction (standalone commit)
+```
+
+Total: 4 batches, ~4 commits. Each batch is independently testable.
