@@ -39,20 +39,27 @@
         <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Users</a>
         {% endif %}
 
-        <!-- Search -->
-        <div style="flex-shrink: 0; margin-left: auto; position: relative;">
-            <input id="global-search" type="text" placeholder="Search..."
+        <!-- Search trigger (compact in navbar) -->
+        <button id="search-trigger" onclick="openSearchOverlay()"
+                style="flex-shrink: 0; margin-left: auto; background: none; border: 1px solid var(--border);
+                       color: var(--navbar-text); font-size: 13px; padding: 2px 8px;
+                       border-radius: 3px; cursor: pointer;">&#128269; Search</button>
+
+        <!-- Search overlay (fixed, covers page content) -->
+        <div id="search-overlay"
+             style="display: none; position: fixed; top: 34px; left: 0; right: 0; z-index: 40;
+                    padding: 8px 12px; background-color: var(--navbar-bg);
+                    border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                    autocomplete="off"
                    style="background-color: var(--bg-secondary, #1a1a2e); color: var(--text-primary);
-                          border: 1px solid var(--border); font-size: 13px; padding: 2px 8px;
-                          border-radius: 3px; width: 160px;">
+                          border: 1px solid var(--border); font-size: 14px; padding: 4px 10px;
+                          border-radius: 3px; width: 100%; max-width: 400px; box-sizing: border-box;">
             <div id="search-results"
-                 style="display: none; position: absolute; top: 100%; left: 0; right: 0;
-                        min-width: 280px; max-height: 400px; overflow-y: auto;
+                 style="display: none; max-width: 400px; max-height: 400px; overflow-y: auto;
                         background-color: var(--bg-secondary, #1a1a2e);
                         border: 1px solid var(--border); border-top: none;
-                        border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                        z-index: 50;">
+                        border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
             </div>
         </div>
 
