@@ -107,7 +107,7 @@ class Song(db.Model):
 class Album(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
-    release_date = db.Column(db.Text, nullable=False)
+    release_date = db.Column(db.Text, nullable=True)
     album_type_id = db.Column(db.Integer, db.ForeignKey('album_type.id'), nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     submission_id = db.Column(db.Integer, db.ForeignKey('submission.id', ondelete='RESTRICT'),
