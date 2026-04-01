@@ -1,8 +1,8 @@
 <!-- Artist header -->
-<div class="flex items-center justify-between mb-2">
-    <h2 class="text-xl font-bold inline-block px-3 py-1 rounded"
-        style="background-color: var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); color: #000000;">
+<div class="mb-3" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); padding-left: 12px;">
+    <h2 class="text-2xl font-bold" style="color: var(--text-primary); margin: 0; line-height: 1.2;">
         {{ artist.name }}
+        {% if artist.is_disbanded %}<span class="text-sm font-normal" style="color: var(--text-secondary);">(disbanded)</span>{% endif %}
     </h2>
     {% if artist.last_updated %}
     <span class="text-xs" style="color: var(--text-secondary);">
