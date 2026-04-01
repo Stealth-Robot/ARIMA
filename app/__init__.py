@@ -93,50 +93,18 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
-    # Add any missing theme columns — one PRAGMA call, all guards in sequence
-    with flask_app.app_context():
-        try:
-            with db.engine.connect() as conn:
-                cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(theme)")).fetchall()]
-                changed = False
-                if 'artist_button_text' not in cols:
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN artist_button_text VARCHAR(7)"))
-                    changed = True
-                if 'navbar_active' not in cols:
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN navbar_active VARCHAR(7)"))
-                    changed = True
-                if 'unrated_0_bg' not in cols:
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_0_bg VARCHAR(7) DEFAULT '#A4C2F4'"))
-                    conn.execute(db.text("UPDATE theme SET unrated_0_bg = '#A4C2F4'"))
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_low_bg VARCHAR(7) DEFAULT '#B6D7A8'"))
-                    conn.execute(db.text("UPDATE theme SET unrated_low_bg = '#B6D7A8'"))
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_mid_bg VARCHAR(7) DEFAULT '#FFE599'"))
-                    conn.execute(db.text("UPDATE theme SET unrated_mid_bg = '#FFE599'"))
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_high_bg VARCHAR(7) DEFAULT '#EA9999'"))
-                    conn.execute(db.text("UPDATE theme SET unrated_high_bg = '#EA9999'"))
-                    changed = True
-                if 'search_section_bg' not in cols:
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN search_section_bg VARCHAR(7) DEFAULT '#374151'"))
-                    conn.execute(db.text("UPDATE theme SET search_section_bg = '#374151'"))
-                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN search_section_text VARCHAR(7) DEFAULT '#9CA3AF'"))
-                    conn.execute(db.text("UPDATE theme SET search_section_text = '#9CA3AF'"))
-                    changed = True
-                if changed:
-                    conn.commit()
-        except Exception:
-            pass  # DB may not exist yet
-
-    # Validate Classic theme on startup
+    # Validate system themes on startup
     with flask_app.app_context():
         try:
             from app.models.theme import Theme
-            classic = db.session.get(Theme, 0)
-            if classic:
-                colour_cols = [c.name for c in Theme.__table__.columns
-                               if c.name not in ('id', 'name', 'user_id')]
-                for col in colour_cols:
-                    if getattr(classic, col) is None:
-                        logger.warning('Classic theme (id=0) has NULL value for column: %s', col)
+            colour_cols = [c.name for c in Theme.__table__.columns
+                           if c.name not in ('id', 'name', 'user_id')]
+            for theme_id, theme_name in ((0, 'Classic'), (1, 'Dark')):
+                theme = db.session.get(Theme, theme_id)
+                if theme:
+                    for col in colour_cols:
+                        if getattr(theme, col) is None:
+                            logger.warning('%s theme (id=%d) has NULL value for column: %s', theme_name, theme_id, col)
         except Exception:
             pass  # DB may not exist yet (first run before seed)
 
@@ -148,41 +116,5 @@ def create_app():
         from app.seed import seed
         seed(db)
         click.echo('Database seeded.')
-
-    @flask_app.cli.command('import-data')
-    @click.argument('json_file')
-    def import_data_command(json_file):
-        """Import data from exported JSON file."""
-        from scripts.import_data import import_data
-        import_data(json_file)
-
-    @flask_app.cli.command('migrate-slugs')
-    def migrate_slugs_command():
-        """Add slug column to artist table and backfill slugs for existing rows."""
-        from app.services.artist import generate_unique_slug
-        from app.models.music import Artist
-
-        # Add the column if it doesn't exist (SQLite-safe)
-        with db.engine.connect() as conn:
-            cols = [row[1] for row in conn.execute(db.text("PRAGMA table_info(artist)")).fetchall()]
-            if 'slug' not in cols:
-                conn.execute(db.text("ALTER TABLE artist ADD COLUMN slug VARCHAR(100)"))
-                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_artist_slug ON artist (slug)"))
-                conn.commit()
-                click.echo('Added slug column to artist table.')
-            else:
-                click.echo('slug column already exists.')
-
-        # Backfill missing slugs
-        artists = Artist.query.filter(Artist.slug.is_(None)).all()
-        used_slugs = {a.slug for a in Artist.query.filter(Artist.slug.isnot(None)).all()}
-        updated = 0
-        for artist in artists:
-            slug = generate_unique_slug(artist.name, used_slugs)
-            artist.slug = slug
-            used_slugs.add(slug)
-            updated += 1
-        db.session.commit()
-        click.echo(f'Backfilled {updated} artist slugs.')
 
     return flask_app

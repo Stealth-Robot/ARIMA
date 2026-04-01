@@ -144,5 +144,11 @@ def _swap_sort_order(user_id, direction):
         return
 
     target = users[idx]
-    target.sort_order, neighbour.sort_order = neighbour.sort_order, target.sort_order
+    original_target = target.sort_order
+    original_neighbour = neighbour.sort_order
+    target.sort_order = -1
+    db.session.flush()
+    neighbour.sort_order = original_target
+    db.session.flush()
+    target.sort_order = original_neighbour
     db.session.commit()

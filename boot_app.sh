@@ -23,17 +23,6 @@ export FLASK_APP=app:create_app
 echo "Seeding database..."
 flask seed
 
-# Import spreadsheet data on first run (if DB is fresh and data.json exists)
-if [ ! -f "instance/.imported" ] && [ -f "data.json" ]; then
-    echo "Importing spreadsheet data..."
-    flask import-data data.json
-    echo "Merging duplicate users..."
-    flask merge-users
-    echo "Renaming admin..."
-    flask rename-admin
-    touch instance/.imported
-fi
-
 # Set admin password if not already set
 python3 -c "
 from app import create_app
