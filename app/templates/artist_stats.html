@@ -138,8 +138,10 @@
             {% endfor %}
             {# Set 2: unrated count per user #}
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);">
-                {{ stats.per_user[u.id].unrated_count }}
+            {% set uc = stats.per_user[u.id].unrated_count %}
+            <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
+                {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }};{% endif %}">
+                {{ uc }}
             </td>
             {% endfor %}
             {# Song Count — always far right #}
