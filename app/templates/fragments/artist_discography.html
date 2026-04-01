@@ -24,7 +24,7 @@
             {% for u in users %}
             <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="width: 125px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
+            <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
@@ -67,6 +67,7 @@
                 style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
                        {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
                        {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
+                       white-space: nowrap;
                        {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
                 {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
             </td>
@@ -123,6 +124,7 @@
                 style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
                        {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
                        {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
+                       white-space: nowrap;
                        {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                 {{ ks }} {{ key_labels[ki][ks] }}
             </td>
@@ -176,6 +178,7 @@
                 style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
                        {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
                        {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
+                       white-space: nowrap;
                        {% if key_style_ab %}background-color: {{ key_style_ab.bg }}; color: {{ key_style_ab.text }};{% endif %}">
                 {{ key_score_ab }} {{ key_labels[key_set_ab][key_score_ab] }}
             </td>
@@ -221,6 +224,7 @@
                 style="border: 1px solid var(--grid-line); border-right: 2px solid #000;
                        {% if kp in (1, 8) %}border-top: 2px solid #000;{% endif %}
                        {% if kp in (6, 13) %}border-bottom: 2px solid #000;{% endif %}
+                       white-space: nowrap;
                        {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                 {{ ks }} {{ key_labels[ki][ks] }}
             </td>
