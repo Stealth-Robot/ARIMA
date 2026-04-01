@@ -24,7 +24,7 @@ table.text-xs th {
 /* Monospace numbers in rating/stats cells for alignment */
 table.text-xs td.text-center {
     font-variant-numeric: tabular-nums;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 13px;
     text-align: center;
     vertical-align: middle;
