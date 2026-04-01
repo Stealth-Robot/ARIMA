@@ -682,6 +682,77 @@ document.addEventListener('click', (e) => {
     });
 })();
 
+// Real-time rating sync via SSE — one connection per browser via BroadcastChannel
+(function () {
+    var channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('sse-ratings') : null;
+
+    function handleUpdate(data) {
+        var cellId = 'rating-' + data.song_id + '-' + data.user_id;
+        var cell = document.getElementById(cellId);
+        if (!cell) return;
+        fetch('/rate/cell?song_id=' + data.song_id + '&user_id=' + data.user_id)
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                cell.outerHTML = html;
+            });
+    }
+
+    // Listen for updates from leader tab
+    if (channel) {
+        channel.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'rating-update') handleUpdate(e.data);
+        });
+    }
+
+    // Leader election: first tab to set the flag owns the SSE connection
+    var isLeader = false;
+    try {
+        if (!localStorage.getItem('sse-leader')) {
+            localStorage.setItem('sse-leader', Date.now());
+            isLeader = true;
+        }
+    } catch (e) {
+        isLeader = true; // localStorage unavailable, just connect
+    }
+
+    // Take over leadership if current leader is stale (>60s)
+    if (!isLeader) {
+        try {
+            var ts = parseInt(localStorage.getItem('sse-leader'), 10);
+            if (Date.now() - ts > 60000) {
+                localStorage.setItem('sse-leader', Date.now());
+                isLeader = true;
+            }
+        } catch (e) {
+            isLeader = true;
+        }
+    }
+
+    if (!isLeader) return;
+
+    // Keep leadership timestamp fresh
+    var heartbeat = setInterval(function () {
+        try { localStorage.setItem('sse-leader', Date.now()); } catch (e) {}
+    }, 20000);
+
+    // Relinquish leadership on tab close
+    window.addEventListener('beforeunload', function () {
+        clearInterval(heartbeat);
+        try { localStorage.removeItem('sse-leader'); } catch (e) {}
+    });
+
+    var source = new EventSource('/events/ratings');
+
+    source.addEventListener('rating-update', function (e) {
+        var data = JSON.parse(e.data);
+        handleUpdate(data);
+        // Broadcast to other tabs
+        if (channel) {
+            channel.postMessage({ type: 'rating-update', song_id: data.song_id, user_id: data.user_id });
+        }
+    });
+})();
+
 // Subunit expand/collapse toggle on stats pages
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.expand-btn');

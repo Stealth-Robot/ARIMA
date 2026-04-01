@@ -86,7 +86,8 @@ def create_app():
     # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
     def no_bfcache(response):
-        response.headers['Cache-Control'] = 'no-store'
+        if response.content_type != 'text/event-stream':
+            response.headers['Cache-Control'] = 'no-store'
         return response
 
     # Register routes
