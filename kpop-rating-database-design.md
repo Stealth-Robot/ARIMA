@@ -386,7 +386,7 @@ IDs 0-2 are reserved for system and special accounts. Real user IDs start at 3 (
 |----|---------------|----------------------------------------------------------------|
 | 0  | (auto)        | System user. Used as `approved_by_id` for auto-approved items. |
 | 1  | Guest         | Shared guest account with Viewer permissions.                  |
-| 2  | Stealth_Robot | Default admin account.                                         |
+| 2  | Stealth       | Default admin account.                                         |
 
 ### Users
 
@@ -420,7 +420,7 @@ Default data:
 |----|---------------|------------|------------|---------|------------|
 | 0  | (auto)        | NULL       | NULL       | 4       | NULL       |
 | 1  | Guest         | NULL       | NULL       | 3       | NULL       |
-| 2  | Stealth_Robot | [Redacted] | [Redacted] | 0       | 1          |
+| 2  | Stealth       | [Redacted] | [Redacted] | 0       | 1          |
 
 ### User_Settings
 
@@ -496,7 +496,7 @@ Foreign keys: `user_id` → Users(`id`) ON DELETE SET NULL.
 - The theme selector on the Profile page lists: Classic, Dark, the current user's personal theme, and every other user's personal theme. All are selectable.
 - When new UI elements need a colour, a new column is added.
 
-**User deletion and themes:** When a user is deleted, their personal theme row survives (other users may have selected it). Before deleting the user, application code sets the theme's `name` to `"deleted_" + username` (e.g., `"deleted_Stealth_Robot"`). After deletion, `user_id` becomes NULL via ON DELETE SET NULL. The theme remains selectable by other users under its new name.
+**User deletion and themes:** When a user is deleted, their personal theme row survives (other users may have selected it). Before deleting the user, application code sets the theme's `name` to `"deleted_" + username` (e.g., `"deleted_Stealth"`). After deletion, `user_id` becomes NULL via ON DELETE SET NULL. The theme remains selectable by other users under its new name.
 
 ### Countries
 

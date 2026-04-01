@@ -935,7 +935,7 @@ These change the data in the database. Everything else is visual — do this bat
 **#45 — User merge:**
 - One-time migration: create `flask merge-users` CLI command
 - Transfer ratings: `UPDATE rating SET user_id = 2 WHERE user_id = 4`
-- Transfer sort_order: copy Stealth's sort_order to Stealth_Robot
+- Transfer sort_order: copy Stealth's sort_order to Stealth (admin)
 - Delete Stealth user (id=4) — cascades UserSettings
 - Run after import, before any visual work
 

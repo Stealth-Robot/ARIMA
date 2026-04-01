@@ -53,7 +53,7 @@ with app.app_context():
 echo ""
 echo "==================================="
 echo "  ARIMA running on http://127.0.0.1:5000"
-echo "  Login: Stealth_Robot / admin"
+echo "  Login: Stealth / admin"
 echo "  Or click 'Login as Guest'"
 echo "==================================="
 echo ""
