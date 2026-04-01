@@ -1,4 +1,6 @@
-<div class="whitespace-pre-wrap text-sm" style="color: var(--text-primary);">{{ rule.content if rule else 'No rules set.' }}</div>
+<div class="prose text-sm" style="color: var(--text-primary);">
+    {% if rendered %}{{ rendered | safe }}{% else %}No rules set.{% endif %}
+</div>
 {% if rule and rule.last_edited_by %}
 <p class="text-xs mt-2" style="color: var(--text-secondary);">
     Last edited by {{ rule.editor.username if rule.editor else 'Unknown' }}

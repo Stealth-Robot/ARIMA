@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+import markdown as md
 from flask import Blueprint, request, render_template
 from flask_login import login_required, current_user
 
@@ -10,12 +11,26 @@ from app.decorators import role_required, EDITOR_OR_ADMIN
 rules_bp = Blueprint('rules', __name__)
 
 
+def _render(content):
+    return md.markdown(content, extensions=['nl2br', 'sane_lists'])
+
+
 @rules_bp.route('/rules')
 @login_required
 def rules():
     """Display rules page."""
     rule = db.session.get(Rules, 1)
-    return render_template('rules.html', rule=rule)
+    rendered = _render(rule.content) if rule and rule.content else ''
+    return render_template('rules.html', rule=rule, rendered=rendered)
+
+
+@rules_bp.route('/rules/display')
+@login_required
+def rules_display():
+    """Return display fragment (HTMX) — used by Cancel button."""
+    rule = db.session.get(Rules, 1)
+    rendered = _render(rule.content) if rule and rule.content else ''
+    return render_template('fragments/rules_display.html', rule=rule, rendered=rendered)
 
 
 @rules_bp.route('/rules/edit')
@@ -39,4 +54,5 @@ def rules_save():
         rule.last_edited_by = current_user.id
         rule.last_edited_at = datetime.now(timezone.utc).isoformat()
         db.session.commit()
-    return render_template('fragments/rules_display.html', rule=rule)
+    rendered = _render(rule.content) if rule and rule.content else ''
+    return render_template('fragments/rules_display.html', rule=rule, rendered=rendered)
