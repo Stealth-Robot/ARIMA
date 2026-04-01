@@ -168,11 +168,75 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+/* Inline text/date edit — edit mode only */
+
+function showInlineEdit(event, endpoint, span) {
+    event.stopPropagation();
+
+    const original = span.textContent.trim();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = original === 'date' ? '' : original;
+    input.style.cssText = `
+        border: 1px solid var(--link, #2563EB); border-radius: 2px;
+        font-size: inherit; font-family: inherit; padding: 0 2px;
+        width: ${Math.max(80, span.offsetWidth)}px;
+        background: var(--bg-primary); color: var(--text-primary);
+    `;
+
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+        const val = input.value.trim();
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: 'value=' + encodeURIComponent(val),
+        }).then(function(r) {
+            if (!r.ok) { restore(); return; }
+            return r.text();
+        }).then(function(text) {
+            if (text === undefined) return;
+            const newSpan = document.createElement('span');
+            newSpan.className = 'edit-inline';
+            newSpan.style.cursor = 'pointer';
+            newSpan.setAttribute('onclick', 'showInlineEdit(event, \'' + endpoint + '\', this)');
+            newSpan.textContent = text || 'date';
+            input.replaceWith(newSpan);
+        });
+    }
+
+    function restore() {
+        const newSpan = document.createElement('span');
+        newSpan.className = 'edit-inline';
+        newSpan.style.cursor = 'pointer';
+        newSpan.setAttribute('onclick', 'showInlineEdit(event, \'' + endpoint + '\', this)');
+        newSpan.textContent = original;
+        input.replaceWith(newSpan);
+    }
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); restore(); }
+    });
+
+    input.addEventListener('blur', function() {
+        setTimeout(function() {
+            if (document.activeElement !== input) restore();
+        }, 150);
+    });
+}
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
 
-function showRatingInput(event, songId) {
+function showRatingInput(event, songId, targetUserId) {
     event.stopPropagation();
     closeRatingInput();
 
@@ -182,6 +246,9 @@ function showRatingInput(event, songId) {
     // Save original content for cancel
     cell.dataset.original = cell.innerHTML;
     cell.dataset.songId = songId;
+    if (targetUserId !== undefined) {
+        cell.dataset.targetUserId = targetUserId;
+    }
 
     // Create input
     const input = document.createElement('input');
@@ -209,9 +276,9 @@ function showRatingInput(event, songId) {
             const val = input.value.trim();
             if (val === '') {
                 // Empty = delete rating
-                submitRating(cell, songId, null);
+                submitRating(cell, songId, null, targetUserId);
             } else if (/^[0-5]$/.test(val)) {
-                submitRating(cell, songId, parseInt(val));
+                submitRating(cell, songId, parseInt(val), targetUserId);
             }
             // Invalid input — do nothing, stay in input
         } else if (e.key === 'Escape') {
@@ -254,7 +321,7 @@ function showRatingInput(event, songId) {
     });
 }
 
-function submitRating(cell, songId, rating) {
+function submitRating(cell, songId, rating, targetUserId) {
     // Push previous state onto undo stack before mutating
     const originalHTML = cell.dataset.original || cell.innerHTML;
     const tempDiv = document.createElement('div');
@@ -268,18 +335,20 @@ function submitRating(cell, songId, rating) {
 
     activeInput = null;
 
+    const extraValues = targetUserId !== undefined ? { user_id: targetUserId } : {};
+
     if (rating === null) {
         // Delete rating
         htmx.ajax('POST', '/rate/delete', {
             target: cell,
             swap: 'outerHTML',
-            values: { song_id: songId },
+            values: Object.assign({ song_id: songId }, extraValues),
         });
     } else {
         htmx.ajax('POST', '/rate', {
             target: cell,
             swap: 'outerHTML',
-            values: { song_id: songId, rating: rating },
+            values: Object.assign({ song_id: songId, rating: rating }, extraValues),
         });
     }
 
@@ -448,7 +517,7 @@ document.addEventListener('contextmenu', (e) => {
     const cell = e.target.closest('td[onclick*="showRatingInput"]');
     if (cell) {
         e.preventDefault();
-        const match = cell.getAttribute('onclick').match(/showRatingInput\(event,\s*(\d+)\)/);
+        const match = cell.getAttribute('onclick').match(/showRatingInput\(event,\s*(\d+)/);
         if (match) {
             showNoteInput(cell, parseInt(match[1]));
         }
