@@ -83,7 +83,7 @@ td.has-note::after {
 /* Hamburger artist dropdown — opens upward from bottom nav */
 .artist-menu {
     position: fixed;
-    bottom: 42px;
+    bottom: 34px;
     left: 24px;
     width: 240px;
     max-height: 60vh;
