@@ -108,60 +108,88 @@ document.addEventListener('keydown', function (e) {
 /* Undo stack — client-side, session-scoped (cleared on page navigation) */
 
 const undoStack = [];
+const redoStack = [];
+let sessionExpiredToastActive = false;
 
-document.addEventListener('keydown', function (e) {
-    if (!((e.ctrlKey || e.metaKey) && e.key === 'z')) return;
-    // Let browser handle undo when user is typing in any input/textarea
-    const tag = document.activeElement && document.activeElement.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    e.preventDefault();
-    const entry = undoStack.pop();
-    if (!entry) return;
+function showSessionExpiredToast() {
+    if (sessionExpiredToastActive) return;
+    sessionExpiredToastActive = true;
+    var toast = document.createElement('div');
+    toast.textContent = 'Session expired \u2014 please log in again';
+    toast.style.cssText = [
+        'position:fixed',
+        'bottom:24px',
+        'left:50%',
+        'transform:translateX(-50%)',
+        'background:#1f2937',
+        'color:#fff',
+        'padding:10px 20px',
+        'border-radius:6px',
+        'font-size:14px',
+        'z-index:9999',
+        'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
+        'pointer-events:none',
+    ].join(';');
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); sessionExpiredToastActive = false; }, 3000);
+}
+
+function showBriefToast(message) {
+    var toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = [
+        'position:fixed',
+        'bottom:24px',
+        'left:50%',
+        'transform:translateX(-50%)',
+        'background:#1f2937',
+        'color:#fff',
+        'padding:10px 20px',
+        'border-radius:6px',
+        'font-size:14px',
+        'z-index:9999',
+        'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
+        'pointer-events:none',
+    ].join(';');
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 3000);
+}
+
+function guardedAjax(url, options, cell, cellHTML) {
+    if (cell) {
+        function onBeforeSwap(evt) {
+            if (evt.detail.target !== cell) return;
+            cell.removeEventListener('htmx:beforeSwap', onBeforeSwap);
+            var xhr = evt.detail.xhr;
+            var isLoginPage = (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1) ||
+                (xhr.responseText && xhr.responseText.indexOf('id="login-form"') !== -1);
+            var isAuthError = xhr.status === 401 || xhr.status === 403;
+            if (isLoginPage || isAuthError) {
+                evt.detail.shouldSwap = false;
+                cell.outerHTML = cellHTML;
+                showSessionExpiredToast();
+            }
+        }
+        cell.addEventListener('htmx:beforeSwap', onBeforeSwap);
+    }
+    htmx.ajax('POST', url, options);
+}
+
+function runUndoRedo(entry, targetStack, targetStackName) {
     const { songId, previousRating, previousNote, artistSlug } = entry;
 
-    function showSessionExpiredToast() {
-        var toast = document.createElement('div');
-        toast.textContent = 'Session expired \u2014 please log in again';
-        toast.style.cssText = [
-            'position:fixed',
-            'bottom:24px',
-            'left:50%',
-            'transform:translateX(-50%)',
-            'background:#1f2937',
-            'color:#fff',
-            'padding:10px 20px',
-            'border-radius:6px',
-            'font-size:14px',
-            'z-index:9999',
-            'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
-            'pointer-events:none',
-        ].join(';');
-        document.body.appendChild(toast);
-        setTimeout(function () { toast.remove(); }, 3000);
-    }
-
-    function guardedAjax(url, options, cell, cellHTML) {
-        if (cell) {
-            function onBeforeSwap(evt) {
-                if (evt.detail.target !== cell) return;
-                cell.removeEventListener('htmx:beforeSwap', onBeforeSwap);
-                var xhr = evt.detail.xhr;
-                var isLoginPage = (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1) ||
-                    (xhr.responseText && xhr.responseText.indexOf('id="login-form"') !== -1);
-                var isAuthError = xhr.status === 401 || xhr.status === 403;
-                if (isLoginPage || isAuthError) {
-                    evt.detail.shouldSwap = false;
-                    cell.outerHTML = cellHTML;
-                    showSessionExpiredToast();
-                }
-            }
-            cell.addEventListener('htmx:beforeSwap', onBeforeSwap);
-        }
-        htmx.ajax('POST', url, options);
-    }
-
-    function doUndo() {
+    function applyEntry() {
         const cell = document.querySelector('[id^="rating-' + songId + '-"]');
+
+        // Capture current cell state and push to the opposite stack
+        if (cell) {
+            const currentText = cell.textContent.trim();
+            const capturedRating = /^[0-5]$/.test(currentText) ? parseInt(currentText) : null;
+            const capturedNote = cell.getAttribute('data-note') || '';
+            if (targetStack.length >= 50) targetStack.shift();
+            targetStack.push({ songId, previousRating: capturedRating, previousNote: capturedNote, cellHTML: cell.outerHTML, artistSlug });
+        }
+
         if (previousRating === null) {
             if (cell) {
                 guardedAjax('/rate/delete', {
@@ -174,6 +202,7 @@ document.addEventListener('keydown', function (e) {
                     swap: 'none',
                     values: { song_id: songId },
                 });
+                showBriefToast(targetStackName === 'redo' ? 'Undo failed \u2014 try refreshing the page' : 'Redo failed \u2014 try refreshing the page');
             }
         } else {
             if (cell) {
@@ -187,11 +216,12 @@ document.addEventListener('keydown', function (e) {
                     swap: 'none',
                     values: { song_id: songId, rating: previousRating, note: previousNote || '' },
                 });
+                showBriefToast(targetStackName === 'redo' ? 'Undo failed \u2014 try refreshing the page' : 'Redo failed \u2014 try refreshing the page');
             }
         }
     }
 
-    // Navigate to the artist tab if not already there, then undo
+    // Navigate to the artist tab if not already there, then apply
     const currentSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
     if (artistSlug && artistSlug !== currentSlug) {
         const navLink = document.querySelector('a[hx-get*="/artists/' + artistSlug + '"]');
@@ -199,13 +229,34 @@ document.addEventListener('keydown', function (e) {
             navLink.click();
             document.addEventListener('htmx:afterSettle', function onSettle() {
                 document.removeEventListener('htmx:afterSettle', onSettle);
-                doUndo();
+                applyEntry();
             });
         } else {
             window.location.href = '/artists/' + artistSlug;
         }
     } else {
-        doUndo();
+        applyEntry();
+    }
+}
+
+document.addEventListener('keydown', function (e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        const entry = redoStack.pop();
+        if (!entry) return;
+        runUndoRedo(entry, undoStack, 'undo');
+        return;
+    }
+
+    if (!e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        const entry = undoStack.pop();
+        if (!entry) return;
+        runUndoRedo(entry, redoStack, 'redo');
     }
 });
 
@@ -371,6 +422,7 @@ function submitRating(cell, songId, rating, targetUserId) {
     const artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
     if (undoStack.length >= 50) undoStack.shift();
     undoStack.push({ songId, previousRating, previousNote, cellHTML: originalHTML, artistSlug });
+    redoStack.length = 0;
 
     activeInput = null;
 
@@ -517,6 +569,7 @@ function submitNote(cell, songId, noteText) {
     const artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
     if (undoStack.length >= 50) undoStack.shift();
     undoStack.push({ songId, previousRating: rating, previousNote, cellHTML: cell.outerHTML, artistSlug });
+    redoStack.length = 0;
 
     closeNoteInput();
 
