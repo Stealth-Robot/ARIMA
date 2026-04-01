@@ -6,8 +6,36 @@
     <title>A.R.I.M.A.</title>
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
     <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary:      {{ theme.get('bg_primary',      '#F9FAFB') }};
+            --bg-secondary:    {{ theme.get('bg_secondary',    '#FFFFFF') }};
+            --text-primary:    {{ theme.get('text_primary',    '#111827') }};
+            --text-secondary:  {{ theme.get('text_secondary',  '#6B7280') }};
+            --border:          {{ theme.get('border',          '#D1D5DB') }};
+            --button-primary:  {{ theme.get('button_primary',  '#2563EB') }};
+            --button-secondary:{{ theme.get('button_secondary','#6B7280') }};
+        }
+        body { background-color: var(--bg-primary); color: var(--text-primary); }
+        .login-input {
+            width: 100%; padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px;
+            background-color: var(--bg-secondary); color: var(--text-primary);
+        }
+        .login-input:focus { outline: none; border-color: var(--button-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--button-primary) 25%, transparent); }
+        .btn-primary {
+            width: 100%; padding: 8px; border-radius: 4px; border: none; cursor: pointer;
+            background-color: var(--button-primary); color: #fff;
+        }
+        .btn-primary:hover { filter: brightness(0.9); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer;
+            background-color: var(--bg-secondary); color: var(--text-primary);
+        }
+        .btn-secondary:hover { filter: brightness(0.95); }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-start justify-center" style="font-family: Arial, Helvetica, sans-serif;">
+<body class="min-h-screen flex items-start justify-center" style="font-family: Arial, Helvetica, sans-serif;">
     <div class="mt-24 w-full max-w-md px-6">
         <!-- Header image -->
         <div class="flex justify-center mb-6">
@@ -16,16 +44,16 @@
         </div>
 
         <!-- Title -->
-        <h1 class="text-3xl font-bold text-center text-gray-900 mb-2">A.R.I.M.A.</h1>
+        <h1 class="text-3xl font-bold text-center mb-2" style="color: var(--text-primary);">A.R.I.M.A.</h1>
 
         <!-- Mission statement -->
-        <p class="text-center text-gray-600 mb-2">App for Rating and Indexing Music Albums</p>
+        <p class="text-center mb-2" style="color: var(--text-secondary);">App for Rating and Indexing Music Albums</p>
 
         <!-- Horizontal line -->
-        <hr class="border-gray-300 mb-4">
+        <hr class="mb-4" style="border-color: var(--border);">
 
         <!-- Description -->
-        <p class="text-center text-gray-500 text-sm mb-8">
+        <p class="text-center text-sm mb-8" style="color: var(--text-secondary);">
             A lightweight app for friends to rate and compare music.
         </p>
 
@@ -48,18 +76,13 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-4">
                 <input type="text" name="username" placeholder="Username"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
             <div class="mb-6">
                 <input type="password" name="password" placeholder="Password"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
-            <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mb-3">
-                Login
-            </button>
+            <button type="submit" class="btn-primary mb-3">Login</button>
         </form>
 
         <!-- Create Account Form -->
@@ -68,28 +91,22 @@
             <div class="mb-4">
                 <input type="email" name="email" id="create-email" placeholder="Email"
                        value="{{ create_email or '' }}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
             <div class="mb-4">
                 <input type="text" name="username" id="create-username" placeholder="Username"
                        value="{{ create_username or '' }}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
             <div class="mb-4">
                 <input type="password" name="password" placeholder="Create Password"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
             <div class="mb-6">
                 <input type="password" name="confirm_password" placeholder="Confirm Password"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+                       class="login-input" required>
             </div>
-            <button type="submit" id="create-submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled>
+            <button type="submit" id="create-submit" class="btn-primary mb-3" disabled>
                 Create Account
             </button>
         </form>
@@ -98,13 +115,9 @@
         <div class="flex gap-3">
             <form method="POST" action="{{ url_for('auth.guest_login') }}" class="flex-1">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit"
-                        class="w-full bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300">
-                    Login as Guest
-                </button>
+                <button type="submit" class="btn-secondary">Login as Guest</button>
             </form>
-            <button id="toggle-create" type="button"
-                    class="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300">
+            <button id="toggle-create" type="button" class="btn-secondary flex-1">
                 {% if mode == 'create' %}Back to Login{% else %}Create Account{% endif %}
             </button>
         </div>

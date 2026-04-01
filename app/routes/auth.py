@@ -10,10 +10,21 @@ from app.models.theme import Theme
 auth_bp = Blueprint('auth', __name__)
 
 
+def _classic_theme():
+    """Return Classic theme colour values as a dict for the login page."""
+    classic = db.session.get(Theme, 0)
+    if not classic:
+        return {}
+    return {c.name: getattr(classic, c.name) for c in Theme.__table__.columns
+            if c.name not in ('id', 'name', 'user_id')}
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home.home'))
+
+    theme = _classic_theme()
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -26,9 +37,9 @@ def login():
             return redirect(url_for('home.home'))
 
         # Generic error — no indication of whether username or password was wrong
-        return render_template('auth/login.html', error='Invalid username or password.')
+        return render_template('auth/login.html', theme=theme, error='Invalid username or password.')
 
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', theme=theme)
 
 
 @auth_bp.route('/guest', methods=['POST'])
@@ -45,15 +56,16 @@ def create_account():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '')
     confirm = request.form.get('confirm_password', '')
+    theme = _classic_theme()
 
     # Validate passwords match
     if password != confirm:
-        return render_template('auth/login.html', mode='create',
+        return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email, create_username=username,
                                error='Passwords do not match.')
 
     if not password:
-        return render_template('auth/login.html', mode='create',
+        return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email, create_username=username,
                                error='Password is required.')
 
@@ -61,12 +73,12 @@ def create_account():
     user = User.query.filter_by(email=email).first()
 
     if user is None:
-        return render_template('auth/login.html', mode='create',
+        return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email,
                                error='User Not Invited')
 
     if user.password is not None:
-        return render_template('auth/login.html', mode='create',
+        return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email,
                                error='User Account Already Exists')
 
@@ -74,7 +86,7 @@ def create_account():
     if username != user.username:
         existing = User.query.filter_by(username=username).first()
         if existing:
-            return render_template('auth/login.html', mode='create',
+            return render_template('auth/login.html', theme=theme, mode='create',
                                    create_email=email, create_username=username,
                                    error='Username already taken.')
 
