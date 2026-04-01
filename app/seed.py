@@ -116,7 +116,7 @@ DARK_THEME = {
     'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#1A3A2E',
     # Artist navbar
-    'artist_button_text': '#FFFFFF',
+    'artist_button_text': '#000000',
     # Top navbar active indicator
     'navbar_active': '#FFD700',
 }
