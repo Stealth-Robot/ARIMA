@@ -11,7 +11,7 @@
     {% endif %}
 </div>
 
-{% set is_editable = current_user.can_rate and (not current_user.is_editor_or_admin or session.get('edit_mode', False)) %}
+{% set is_editable = current_user.can_rate %}
 
 {% if not discography %}
 <p style="color: var(--text-secondary);">No albums found.</p>
