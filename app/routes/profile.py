@@ -44,6 +44,29 @@ def profile():
     return render_template('profile.html', themes=theme_list, settings=settings)
 
 
+def _apply_theme_settings(set_field, form):
+    """Apply include_featured, include_remixes, and album_sort_order via set_field(key, value).
+
+    When the profile form is submitted it always includes the 'theme' field, so
+    checkbox absence means unchecked (False).  When the request comes from the
+    navbar or artist page only explicitly present fields are updated.
+    """
+    from_profile_page = 'theme' in form
+    if from_profile_page:
+        set_field('include_featured', form.get('include_featured') == 'on')
+        set_field('include_remixes', form.get('include_remixes') == 'on')
+        val = form.get('album_sort_order')
+        set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
+    else:
+        if 'include_featured' in form:
+            set_field('include_featured', form.get('include_featured') == 'on')
+        if 'include_remixes' in form:
+            set_field('include_remixes', form.get('include_remixes') == 'on')
+        if 'album_sort_order' in form:
+            val = form.get('album_sort_order')
+            set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
+
+
 @profile_bp.route('/profile/settings', methods=['POST'])
 @login_required
 def update_settings():
@@ -59,19 +82,7 @@ def update_settings():
         if 'theme' in request.form:
             val = request.form.get('theme')
             session['theme'] = int(val) if val else 0
-        if 'theme' in request.form:
-            session['include_featured'] = request.form.get('include_featured') == 'on'
-            session['include_remixes'] = request.form.get('include_remixes') == 'on'
-            val = request.form.get('album_sort_order')
-            session['album_sort_order'] = val if val in ('asc', 'desc') else 'desc'
-        else:
-            if 'include_featured' in request.form:
-                session['include_featured'] = request.form.get('include_featured') == 'on'
-            if 'include_remixes' in request.form:
-                session['include_remixes'] = request.form.get('include_remixes') == 'on'
-            if 'album_sort_order' in request.form:
-                val = request.form.get('album_sort_order')
-                session['album_sort_order'] = val if val in ('asc', 'desc') else 'desc'
+        _apply_theme_settings(lambda k, v: session.__setitem__(k, v), request.form)
     else:
         settings = current_user.settings
         if not settings:
@@ -88,21 +99,7 @@ def update_settings():
             if 'theme' in request.form:
                 val = request.form.get('theme')
                 settings.theme = int(val) if val else 0
-            # Checkboxes: if submitted from profile page (has theme field), absence = unchecked = False
-            if 'theme' in request.form:
-                settings.include_featured = request.form.get('include_featured') == 'on'
-                settings.include_remixes = request.form.get('include_remixes') == 'on'
-                val = request.form.get('album_sort_order')
-                settings.album_sort_order = val if val in ('asc', 'desc') else 'desc'
-            else:
-                # From navbar/artist page — only update if explicitly present
-                if 'include_featured' in request.form:
-                    settings.include_featured = request.form.get('include_featured') == 'on'
-                if 'include_remixes' in request.form:
-                    settings.include_remixes = request.form.get('include_remixes') == 'on'
-                if 'album_sort_order' in request.form:
-                    val = request.form.get('album_sort_order')
-                    settings.album_sort_order = val if val in ('asc', 'desc') else 'desc'
+            _apply_theme_settings(lambda k, v: setattr(settings, k, v), request.form)
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200
