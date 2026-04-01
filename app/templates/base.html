@@ -39,8 +39,25 @@
         <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none;">Users</a>
         {% endif %}
 
+        <!-- Search -->
+        <div style="flex-shrink: 0; margin-left: auto; position: relative;">
+            <input id="global-search" type="text" placeholder="Search..."
+                   autocomplete="off"
+                   style="background-color: var(--bg-secondary, #1a1a2e); color: var(--text-primary);
+                          border: 1px solid var(--border); font-size: 13px; padding: 2px 8px;
+                          border-radius: 3px; width: 160px;">
+            <div id="search-results"
+                 style="display: none; position: absolute; top: 100%; left: 0; right: 0;
+                        min-width: 280px; max-height: 400px; overflow-y: auto;
+                        background-color: var(--bg-secondary, #1a1a2e);
+                        border: 1px solid var(--border); border-top: none;
+                        border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        z-index: 50;">
+            </div>
+        </div>
+
         <!-- Right: Filters + Profile -->
-        <div style="flex-shrink: 0; margin-left: auto; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+        <div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
             <!-- Country filter -->
             <select name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"

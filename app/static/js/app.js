@@ -1,3 +1,44 @@
+/* Global search — debounced input, dropdown results */
+
+(function () {
+    var searchTimer = null;
+    var searchInput = document.getElementById('global-search');
+    var searchResults = document.getElementById('search-results');
+
+    if (!searchInput || !searchResults) return;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        var q = searchInput.value.trim();
+        if (q.length < 2) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+            return;
+        }
+        searchTimer = setTimeout(function () {
+            fetch('/search?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    searchResults.innerHTML = html;
+                    searchResults.style.display = 'block';
+                });
+        }, 300);
+    });
+
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            searchResults.style.display = 'none';
+            searchInput.blur();
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+})();
+
 /* Hamburger artist menu — toggle, outside-click, Escape */
 
 function toggleArtistMenu() {
