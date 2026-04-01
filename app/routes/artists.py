@@ -132,13 +132,16 @@ def _build_discography(artist):
         include_featured = False
         album_sort_order = session.get('album_sort_order', 'desc')
 
-    # Get all albums containing these songs
-    order = Album.release_date.asc() if album_sort_order == 'asc' else Album.release_date.desc()
+    # Get all albums containing these songs (NULLs sort last)
+    if album_sort_order == 'asc':
+        order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.asc()
+    else:
+        order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.desc()
     albums = db.session.query(Album).join(
         AlbumSong, Album.id == AlbumSong.album_id
     ).filter(
         AlbumSong.song_id.in_(song_ids)
-    ).distinct().order_by(order).all()
+    ).distinct().order_by(*order).all()
 
     # Apply genre filter at album level
     if genre_id is not None:
