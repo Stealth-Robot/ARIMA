@@ -96,6 +96,68 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+/* Undo stack — client-side, session-scoped (cleared on page navigation) */
+
+const undoStack = [];
+
+document.addEventListener('keydown', function (e) {
+    if (!((e.ctrlKey || e.metaKey) && e.key === 'z')) return;
+    // Let browser handle undo when user is typing in an input/textarea
+    if (activeInput || activeNote) return;
+    e.preventDefault();
+    const entry = undoStack.pop();
+    if (!entry) return;
+    const { songId, previousRating, previousNote, artistSlug } = entry;
+
+    function doUndo() {
+        const cell = document.querySelector('[id^="rating-' + songId + '-"]');
+        if (previousRating === null) {
+            if (cell) {
+                htmx.ajax('POST', '/rate/delete', {
+                    target: cell,
+                    swap: 'outerHTML',
+                    values: { song_id: songId },
+                });
+            } else {
+                htmx.ajax('POST', '/rate/delete', {
+                    swap: 'none',
+                    values: { song_id: songId },
+                });
+            }
+        } else {
+            if (cell) {
+                htmx.ajax('POST', '/rate', {
+                    target: cell,
+                    swap: 'outerHTML',
+                    values: { song_id: songId, rating: previousRating, note: previousNote || '' },
+                });
+            } else {
+                htmx.ajax('POST', '/rate', {
+                    swap: 'none',
+                    values: { song_id: songId, rating: previousRating, note: previousNote || '' },
+                });
+            }
+        }
+    }
+
+    // Navigate to the artist tab if not already there, then undo
+    const currentSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
+    if (artistSlug && artistSlug !== currentSlug) {
+        const navLink = document.querySelector('a[hx-get*="/artists/' + artistSlug + '"]');
+        if (navLink) {
+            navLink.click();
+            document.addEventListener('htmx:afterSettle', function onSettle() {
+                document.removeEventListener('htmx:afterSettle', onSettle);
+                doUndo();
+            });
+        } else {
+            window.location.href = '/artists/' + artistSlug;
+        }
+    } else {
+        doUndo();
+    }
+});
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
@@ -183,6 +245,17 @@ function showRatingInput(event, songId) {
 }
 
 function submitRating(cell, songId, rating) {
+    // Push previous state onto undo stack before mutating
+    const originalHTML = cell.dataset.original || cell.innerHTML;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = originalHTML;
+    const prevText = tempDiv.textContent.trim();
+    const previousRating = /^[0-5]$/.test(prevText) ? parseInt(prevText) : null;
+    const previousNote = cell.getAttribute('title') || cell.getAttribute('data-note') || '';
+    const artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
+    if (undoStack.length >= 50) undoStack.shift();
+    undoStack.push({ songId, previousRating, previousNote, cellHTML: originalHTML, artistSlug });
+
     activeInput = null;
 
     if (rating === null) {
@@ -328,16 +401,23 @@ function showNoteInput(cell, songId) {
 }
 
 function submitNote(cell, songId, noteText) {
-    closeNoteInput();
-
-    // Get current rating value from cell text
+    // Capture previous state before closing overlay (title attr holds current note)
     const ratingText = cell.textContent.trim();
     const rating = /^[0-5]$/.test(ratingText) ? parseInt(ratingText) : null;
 
     if (rating === null) {
         // No rating yet — can't attach a note without a rating
+        closeNoteInput();
         return;
     }
+
+    // Push previous state onto undo stack
+    const previousNote = cell.getAttribute('title') || cell.getAttribute('data-note') || '';
+    const artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
+    if (undoStack.length >= 50) undoStack.shift();
+    undoStack.push({ songId, previousRating: rating, previousNote, cellHTML: cell.outerHTML, artistSlug });
+
+    closeNoteInput();
 
     htmx.ajax('POST', '/rate', {
         target: cell,
