@@ -84,6 +84,17 @@ function closeSearchOverlay() {
     });
 })();
 
+/* Artist navbar — convert vertical wheel scroll to horizontal */
+(function () {
+    var nav = document.querySelector('.artist-nav');
+    if (!nav) return;
+    nav.addEventListener('wheel', function (e) {
+        if (e.deltaY === 0) return;
+        e.preventDefault();
+        nav.scrollLeft += e.deltaY;
+    }, { passive: false });
+})();
+
 /* Hamburger artist menu — toggle, outside-click, Escape */
 
 function toggleArtistMenu() {
