@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, album_genres
 from app.models.user import User
-from app.services.artist import get_navbar_artists, get_children, is_subunit, get_discography_songs
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_discography_songs
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -71,46 +71,7 @@ def _get_display_users():
 
 
 def _get_filtered_navbar():
-    """Get navbar artists filtered by current country/genre selections."""
-    from flask import session
-    artists = get_navbar_artists()
-
-    # Country filter
-    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
-        country_id = current_user.settings.country
-        genre_id = current_user.settings.genre
-    else:
-        country_id = session.get('country')
-        genre_id = session.get('genre')
-
-    if country_id is not None:
-        artists = [a for a in artists if a.country_id == country_id]
-
-    if genre_id is not None:
-        # Filter: artist visible if they have at least one album matching the genre
-        filtered = []
-        for a in artists:
-            # Get all song IDs for this artist (including subunit songs for browsing)
-            song_ids = get_discography_songs(a.id)
-            if not song_ids:
-                continue
-            # Check if any album containing these songs has the selected genre
-            has_genre = db.session.query(Album).join(
-                AlbumSong, Album.id == AlbumSong.album_id
-            ).join(
-                album_genres, Album.id == album_genres.c.album_id
-            ).filter(
-                AlbumSong.song_id.in_(song_ids),
-                album_genres.c.genre_id == genre_id
-            ).first() is not None
-            if has_genre:
-                filtered.append(a)
-        artists = filtered
-
-    # Misc. Artists always first
-    misc = [a for a in artists if a.name == 'Misc. Artists']
-    rest = [a for a in artists if a.name != 'Misc. Artists']
-    return misc + rest
+    return get_filtered_navbar()
 
 
 def _build_discography(artist):

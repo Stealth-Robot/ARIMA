@@ -2,7 +2,7 @@ from flask import Blueprint, request, render_template, session
 from flask_login import login_required, current_user
 
 from app.services.stats import get_display_users, get_artist_stats, get_summary_stats, get_artist_score_stats
-from app.services.artist import get_top_level_artists, get_children
+from app.services.artist import get_top_level_artists, get_children, get_filtered_navbar
 
 stats_bp = Blueprint('stats', __name__)
 
@@ -41,7 +41,7 @@ def artist_stats():
 
     return render_template('artist_stats.html',
                            users=users, summary=summary, artist_rows=artist_rows,
-                           gender_css=GENDER_CSS)
+                           gender_css=GENDER_CSS, navbar_artists=get_filtered_navbar())
 
 
 @stats_bp.route('/artist-stats/expand/<int:artist_id>')
@@ -82,7 +82,7 @@ def global_stats():
 
     return render_template('global_stats.html',
                            users=users, artist_rows=artist_rows,
-                           gender_css=GENDER_CSS)
+                           gender_css=GENDER_CSS, navbar_artists=get_filtered_navbar())
 
 
 @stats_bp.route('/global-stats/expand/<int:artist_id>')
