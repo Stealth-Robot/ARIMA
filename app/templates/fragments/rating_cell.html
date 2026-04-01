@@ -1,5 +1,6 @@
 {% set cell_style = rating_cell_style(rating.rating if rating else None) %}
-{% set is_editable = current_user.can_rate and (not current_user.is_editor_or_admin or session.get('edit_mode', False)) %}
+{% set is_own_column = current_user.id == user_id %}
+{% set is_editable = current_user.can_rate and (is_own_column or not current_user.is_editor_or_admin or session.get('edit_mode', False)) %}
 <td id="rating-{{ song_id }}-{{ user_id }}"
     {% if rating and rating.note %}data-note="{{ rating.note }}"{% endif %}
     class="text-center px-1 py-1 relative{% if is_editable %} cursor-pointer hover:opacity-70{% endif %}{% if rating and rating.note %} has-note{% endif %}"
