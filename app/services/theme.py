@@ -89,6 +89,27 @@ def score_to_colour(value, theme):
     return theme.get('rating_1_bg', '#8AB5FC')
 
 
+def score_to_style(value, theme):
+    """Get bg + text colour for an average score (0-5).
+
+    Returns dict with 'bg' and 'text' hex values, or None for zero/unrated.
+    Uses same step logic as score_to_colour but pairs with the nearest rating text colour.
+    """
+    if value is None or value == 0:
+        return None
+    if value >= 5.0:
+        return {'bg': theme.get('rating_5_bg', '#FF0016'), 'text': theme.get('rating_5_text', '#000000')}
+    if value >= 4.5:
+        return {'bg': theme.get('heatmap_high', '#FFB7FE'), 'text': theme.get('rating_5_text', '#000000')}
+    if value >= 3.5:
+        return {'bg': theme.get('rating_4_bg', '#FF8E1E'), 'text': theme.get('rating_4_text', '#000000')}
+    if value >= 2.5:
+        return {'bg': theme.get('rating_3_bg', '#FEFF2A'), 'text': theme.get('rating_3_text', '#000000')}
+    if value >= 1.5:
+        return {'bg': theme.get('rating_2_bg', '#9EFFA4'), 'text': theme.get('rating_2_text', '#FFFFFF')}
+    return {'bg': theme.get('rating_1_bg', '#8AB5FC'), 'text': theme.get('rating_1_text', '#FFFFFF')}
+
+
 def pct_to_colour(value, theme):
     """Get heat map colour for a completion percentage (0-100).
 
