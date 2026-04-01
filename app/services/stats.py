@@ -163,6 +163,9 @@ def get_summary_stats(users, include_featured=False, include_remixes=False):
     query = Song.query
     if not include_remixes:
         query = query.filter(Song.is_remix == False)
+    if not include_featured:
+        main_song_ids = {row.song_id for row in ArtistSong.query.filter(ArtistSong.artist_is_main == True).all()}
+        query = query.filter(Song.id.in_(main_song_ids))
     all_songs = {s.id for s in query.all()}
     total_songs = len(all_songs)
 
