@@ -140,24 +140,21 @@
             }
         });
 
-        // Enable submit button once user interacts with username field
-        let usernameInteracted = false;
-        createUsername.addEventListener('input', () => {
-            usernameInteracted = true;
-            createSubmit.disabled = createUsername.value.trim() === '';
-        });
-        createUsername.addEventListener('focus', () => {
-            if (!usernameInteracted && createUsername.value.trim() !== '') {
-                // Pre-populated but not yet interacted — keep disabled
-                createSubmit.disabled = true;
-            }
-        });
+        const createPassword = createForm.querySelector('input[name="password"]');
+        const createConfirm = createForm.querySelector('input[name="confirm_password"]');
 
-        // If returning to create mode with pre-populated data, keep submit disabled
-        // until user interacts with username
-        {% if mode == 'create' and create_username %}
-        createSubmit.disabled = true;
-        {% endif %}
+        function validateForm() {
+            const usernameValid = createUsername.value.trim() !== '';
+            const passwordValid = createPassword.value.length >= 8;
+            const passwordsMatch = createPassword.value === createConfirm.value;
+            createSubmit.disabled = !(usernameValid && passwordValid && passwordsMatch);
+        }
+
+        createUsername.addEventListener('input', validateForm);
+        createPassword.addEventListener('input', validateForm);
+        createConfirm.addEventListener('input', validateForm);
+
+        validateForm();
     </script>
 </body>
 </html>
