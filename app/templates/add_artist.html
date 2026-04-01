@@ -168,6 +168,19 @@ function renumberSongs(albumNum) {
     });
 }
 
+function moveSong(btn, direction) {
+    const div = btn.closest('[id^="song-"]');
+    const albumNum = div.id.split('-')[1];
+    const sibling = direction === 'up' ? div.previousElementSibling : div.nextElementSibling;
+    if (!sibling || !sibling.id || !sibling.id.startsWith('song-')) return;
+    if (direction === 'up') {
+        div.parentElement.insertBefore(div, sibling);
+    } else {
+        div.parentElement.insertBefore(sibling, div);
+    }
+    renumberSongs(albumNum);
+}
+
 function addSong(albumNum) {
     if (!songCounters[albumNum]) songCounters[albumNum] = 0;
     songCounters[albumNum]++;
@@ -182,6 +195,8 @@ function addSong(albumNum) {
         '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> P</label>' +
         '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
         '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="artist_is_main" class="song-check" checked> Main</label>' +
+        '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
+        '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
         '<button type="button" onclick="this.parentElement.remove(); renumberSongs(' + albumNum + ')" class="text-red-500 text-sm">x</button>';
     container.appendChild(div);
 }
@@ -317,6 +332,8 @@ window.addEventListener('beforeunload', function(e) {
                     '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> P</label>' +
                     '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
                     '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="artist_is_main" class="song-check"' + (songData.artist_is_main !== false ? ' checked' : '') + '> Main</label>' +
+                    '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
+                    '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
                     '<button type="button" onclick="this.parentElement.remove(); renumberSongs(' + num + ')" class="text-red-500 text-sm">x</button>';
                 sc.appendChild(sdiv);
             });
