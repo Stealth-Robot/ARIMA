@@ -192,7 +192,7 @@ function addSong(albumNum) {
     div.innerHTML =
         '<span class="text-sm w-6">' + songNum + '.</span>' +
         '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
-        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> P</label>' +
+        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> Promoted</label>' +
         '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
         '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="artist_is_main" class="song-check" checked> Main</label>' +
         '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
@@ -329,7 +329,7 @@ window.addEventListener('beforeunload', function(e) {
                 sdiv.innerHTML =
                     '<span class="text-sm w-6">' + sNum + '.</span>' +
                     '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
-                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> P</label>' +
+                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
                     '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
                     '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="artist_is_main" class="song-check"' + (songData.artist_is_main !== false ? ' checked' : '') + '> Main</label>' +
                     '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +

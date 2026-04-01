@@ -103,7 +103,8 @@ def song_is_promoted(song_id):
 @role_required(EDITOR_OR_ADMIN)
 def add_artist_form():
     """Show the Add Artist form (edit mode only)."""
-    _require_edit_mode()
+    if not session.get('edit_mode'):
+        return redirect(url_for('artists.artists_list'))
     countries = Country.query.order_by(Country.id).all()
     genres = Genre.query.order_by(Genre.id).all()
     album_types = AlbumType.query.order_by(AlbumType.id).all()

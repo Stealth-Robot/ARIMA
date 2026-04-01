@@ -58,15 +58,15 @@
         {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
-        <button id="edit-mode-btn"
-                hx-post="{{ url_for('profile.toggle_edit_mode') }}"
-                hx-swap="outerHTML"
-                hx-target="#edit-mode-btn"
-                style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
-                       border-radius:3px; cursor:pointer;
-                       {% if session.get('edit_mode') %}background:#16a34a; color:#fff;{% else %}background:#6B7280; color:#fff;{% endif %}">
-            &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
-        </button>
+        <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="display:inline; margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="edit-mode-btn" type="submit"
+                    style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
+                           border-radius:3px; cursor:pointer;
+                           {% if session.get('edit_mode') %}background:#16a34a; color:#fff;{% else %}background:#6B7280; color:#fff;{% endif %}">
+                &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
+            </button>
+        </form>
         {% if session.get('edit_mode') %}
         <a href="{{ url_for('edit.add_artist_form') }}"
            style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
