@@ -12,6 +12,7 @@ def register_routes(flask_app):
     from app.routes.rules import rules_bp
     from app.routes.views import views_bp
     from app.routes.themes import themes_bp
+    from app.routes.search import search_bp
 
     flask_app.register_blueprint(health_bp)
     flask_app.register_blueprint(auth_bp)
@@ -26,3 +27,4 @@ def register_routes(flask_app):
     flask_app.register_blueprint(rules_bp)
     flask_app.register_blueprint(views_bp)
     flask_app.register_blueprint(themes_bp)
+    flask_app.register_blueprint(search_bp)
