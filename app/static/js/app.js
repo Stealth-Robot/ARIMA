@@ -89,7 +89,7 @@ function closeSearchOverlay() {
 function toggleArtistMenu() {
     var menu = document.getElementById('artist-menu');
     if (!menu) return;
-    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
 function closeArtistMenu() {
