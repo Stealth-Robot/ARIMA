@@ -37,7 +37,7 @@
             <td class="px-2 py-1 text-center"
                 style="border: 1px solid var(--grid-line);
                        {% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
-                {% if scores.global_avg is not none %}{{ "%.3f"|format(scores.global_avg) }}{% else %}0{% endif %}
+                {% if scores.global_avg is not none %}{{ "%.3f"|format(scores.global_avg) }}{% endif %}
             </td>
             {# Artist name — black text on gender bg, clickable #}
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line); background-color: var({{ gender_css[a.gender_id] }}); color: #000000;">
@@ -51,7 +51,7 @@
             <td class="px-1 py-1 text-center"
                 style="border: 1px solid var(--grid-line);
                        {% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
-                {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% else %}0{% endif %}
+                {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% endif %}
             </td>
             {% endfor %}
             {# Key column #}

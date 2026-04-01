@@ -5,7 +5,7 @@
     <td class="px-2 py-1 text-center"
         style="border: 1px solid var(--grid-line);
                {% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
-        {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% else %}0{% endif %}
+        {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% endif %}
     </td>
     <td class="px-2 py-1 pl-8"
         style="border: 1px solid var(--grid-line);
@@ -19,7 +19,7 @@
     <td class="px-1 py-1 text-center"
         style="border: 1px solid var(--grid-line);
                {% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
-        {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% else %}0{% endif %}
+        {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% endif %}
     </td>
     {% endfor %}
     <td class="px-1 py-1 text-center text-xs" style="border: 1px solid var(--grid-line);">&nbsp;</td>
