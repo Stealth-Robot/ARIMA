@@ -148,6 +148,7 @@ def unrated_to_colour(value, theme):
     return theme.get('unrated_high_bg', '#EA9999')
 
 
+
 def rating_cell_style(score, theme):
     """Get inline CSS for a rating cell (background + text colour).
 

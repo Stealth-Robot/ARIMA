@@ -119,10 +119,14 @@
         {% set stats = row.stats %}
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
-            {# Global avg % — coloured #}
-            <td class="px-2 py-1 text-center" style="border: 1px solid var(--grid-line);
+            {# Global avg % — coloured (set 1) #}
+            <td class="px-2 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
                 {% if stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(stats.global_avg_pct) }};{% endif %}">
                 {{ stats.global_avg_pct }}
+            </td>
+            {# Global avg unrated (set 2) #}
+            <td class="py-1 col-set2" style="display: none; border: 1px solid var(--grid-line); text-align: right; padding-right: 14px;">
+                {{ stats.global_avg_unrated }}
             </td>
             {# Artist name #}
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line); overflow: hidden; background-color: var({{ gender_css[a.gender_id] }}); color: var(--artist-button-text);">
@@ -131,7 +135,7 @@
             </td>
             {# Set 1: % rated per user — heat mapped #}
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
+            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line); color: #000000;
                 {% if stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(stats.per_user[u.id].pct_rated) }};{% endif %}">
                 {{ stats.per_user[u.id].pct_rated }}
             </td>
@@ -139,7 +143,7 @@
             {# Set 2: unrated count per user #}
             {% for u in users %}
             {% set uc = stats.per_user[u.id].unrated_count %}
-            <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
+            <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line); color: #000000;
                 {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }};{% endif %}">
                 {{ uc }}
             </td>

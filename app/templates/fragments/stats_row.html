@@ -1,9 +1,12 @@
 {% for row in rows %}
 <tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
     style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
-    <td class="px-2 py-1 text-center" style="border: 1px solid var(--grid-line);
+    <td class="px-2 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
         {% if row.stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
         {{ row.stats.global_avg_pct }}
+    </td>
+    <td class="py-1 col-set2" style="display: none; border: 1px solid var(--grid-line); text-align: right; padding-right: 14px;">
+        {{ row.stats.global_avg_unrated }}
     </td>
     <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line);
         background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));

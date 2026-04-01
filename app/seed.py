@@ -75,9 +75,14 @@ CLASSIC_THEME = {
     # Search overlay section headers
     'search_section_bg': '#E5E7EB',
     'search_section_text': '#374151',
+    # Unrated song count heat map (4)
+    'unrated_0_bg': '#A4C2F4',
+    'unrated_low_bg': '#B6D7A8',
+    'unrated_mid_bg': '#FFE599',
+    'unrated_high_bg': '#EA9999',
 }
 
-# Dark theme — all 40 columns populated, no NULLs
+# Dark theme — all 44 columns populated, no NULLs
 DARK_THEME = {
     # UI chrome (17)
     'bg_primary': '#1A1A2E',
@@ -133,6 +138,11 @@ DARK_THEME = {
     # Search overlay section headers
     'search_section_bg': '#374151',
     'search_section_text': '#9CA3AF',
+    # Unrated song count heat map (4)
+    'unrated_0_bg': '#A4C2F4',
+    'unrated_low_bg': '#B6D7A8',
+    'unrated_mid_bg': '#FFE599',
+    'unrated_high_bg': '#EA9999',
 }
 
 
