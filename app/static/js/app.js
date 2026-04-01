@@ -256,6 +256,17 @@ document.addEventListener('keydown', function (e) {
 
 /* Inline text/date edit — edit mode only */
 
+function updatePromotedStyle(checkbox) {
+    const row = checkbox.closest('tr');
+    const songNameCell = row ? row.querySelector('td:first-child') : null;
+    if (!songNameCell) return;
+    if (checkbox.checked) {
+        songNameCell.style.backgroundColor = 'var(--promoted-song)';
+    } else {
+        songNameCell.style.backgroundColor = '';
+    }
+}
+
 function showInlineEdit(event, endpoint, span) {
     event.stopPropagation();
 

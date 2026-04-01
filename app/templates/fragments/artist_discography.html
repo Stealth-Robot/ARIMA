@@ -23,14 +23,14 @@
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 34px; z-index: 10;">
-            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DIRECTORY</th>
-            {% for u in users %}
-            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
-            {% endfor %}
+            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DISCOGRAPHY</th>
             {% if edit_mode %}
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Rmx</th>
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Pro</th>
             {% endif %}
+            {% for u in users %}
+            <th class="px-1 py-1 text-center" style="width: 45px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-user-bg); font-weight: bold;">{{ u.username }}</th>
+            {% endfor %}
             <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
@@ -61,11 +61,11 @@
                 {% endif %}
                 {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
             {% if edit_mode %}
             <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
             <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
             {% endif %}
+            {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
             {# Key column on album row #}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
@@ -102,7 +102,7 @@
                    {% if song_pending %}opacity: 0.7;{% endif %}">
             <!-- Song name (no track number) -->
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
-                {% if song.is_promoted %}color: var(--promoted-song); font-weight: 600;{% endif %}">
+                {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% else %}
@@ -111,6 +111,25 @@
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
                 {% if song_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
+
+            <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
+            {% if edit_mode %}
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
+                       onchange="updatePromotedStyle(this)"
+                       hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            {% endif %}
 
             <!-- Rating cells per user -->
             {% for u in users %}
@@ -128,24 +147,6 @@
                 {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
-
-            <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
-            {% if edit_mode %}
-            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
-                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
-                       hx-post="/edit/song/{{ song.id }}/is-remix"
-                       hx-trigger="change"
-                       hx-swap="outerHTML"
-                       hx-target="this">
-            </td>
-            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
-                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
-                       hx-post="/edit/song/{{ song.id }}/is-promoted"
-                       hx-trigger="change"
-                       hx-swap="outerHTML"
-                       hx-target="this">
-            </td>
-            {% endif %}
 
             <!-- Key column (14-row cycle) -->
             {% if kp == 0 or kp == 7 %}
@@ -206,11 +207,11 @@
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
             </td>
-            {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
             {% if edit_mode %}
             <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
             <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
             {% endif %}
+            {% for u in users %}<td style="border: 1px solid var(--grid-line);">&nbsp;</td>{% endfor %}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}
             <td class="px-1 py-1 text-center text-xs font-bold"
@@ -240,7 +241,7 @@
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
-                {% if song.is_promoted %}color: var(--promoted-song); font-weight: 600;{% endif %}">
+                {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% else %}
@@ -248,6 +249,23 @@
                 {% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
             </td>
+            {% if edit_mode %}
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
+                       hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
+                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
+                       onchange="updatePromotedStyle(this)"
+                       hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-trigger="change"
+                       hx-swap="outerHTML"
+                       hx-target="this">
+            </td>
+            {% endif %}
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
@@ -263,22 +281,6 @@
                 {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
-            {% if edit_mode %}
-            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
-                <input type="checkbox" {% if song.is_remix %}checked{% endif %}
-                       hx-post="/edit/song/{{ song.id }}/is-remix"
-                       hx-trigger="change"
-                       hx-swap="outerHTML"
-                       hx-target="this">
-            </td>
-            <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
-                <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
-                       hx-post="/edit/song/{{ song.id }}/is-promoted"
-                       hx-trigger="change"
-                       hx-swap="outerHTML"
-                       hx-target="this">
-            </td>
-            {% endif %}
             {# Key column — continues from main discography cycle #}
             {% if kp == 0 or kp == 7 %}
             {% set key_hdr_idx = 0 if kp == 0 else 1 %}

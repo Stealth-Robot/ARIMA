@@ -82,6 +82,12 @@ def create_app():
             }
         return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': []}
 
+    # Prevent bfcache so theme/session changes are always reflected on back navigation
+    @flask_app.after_request
+    def no_bfcache(response):
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
     # Register routes
     from app.routes import register_routes
     register_routes(flask_app)

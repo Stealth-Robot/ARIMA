@@ -28,6 +28,9 @@ out/
 # Logs
 *.log
 
+# Project-specific
+BASH_RULES.md
+
 # Flask / SQLite
 instance/
 *.db

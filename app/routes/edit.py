@@ -91,4 +91,4 @@ def song_is_promoted(song_id):
     song.is_promoted = not song.is_promoted
     db.session.commit()
     checked = 'checked' if song.is_promoted else ''
-    return f'<input type="checkbox" {checked} hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
+    return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'

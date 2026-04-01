@@ -100,7 +100,7 @@ def score_to_style(value, theme):
     if value >= 5.0:
         return {'bg': theme.get('rating_5_bg', '#FF0016'), 'text': theme.get('rating_5_text', '#000000')}
     if value >= 4.5:
-        return {'bg': theme.get('heatmap_high', '#FFB7FE'), 'text': theme.get('rating_5_text', '#000000')}
+        return {'bg': theme.get('rating_5_bg', '#FF0016'), 'text': theme.get('rating_5_text', '#000000')}
     if value >= 3.5:
         return {'bg': theme.get('rating_4_bg', '#FF8E1E'), 'text': theme.get('rating_4_text', '#000000')}
     if value >= 2.5:

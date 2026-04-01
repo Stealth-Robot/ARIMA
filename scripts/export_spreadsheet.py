@@ -37,6 +37,31 @@ USER_COL_END = 11    # column L (0-based, inclusive)
 S_FLAG_COL = 15      # column P (0-based)
 
 
+def _cell_is_promoted(cell):
+    """Return True if the cell has a coloured (non-white) solid fill.
+
+    Promoted songs are coloured in the spreadsheet (lighter pink than the album
+    header row). Regular songs have no fill (transparent or white).
+    """
+    fill = cell.fill
+    if not fill or fill.patternType in (None, 'none'):
+        return False
+    if fill.patternType != 'solid':
+        return False
+    fg = fill.fgColor
+    if not fg or fg.type != 'rgb':
+        return False
+    rgb = fg.rgb.upper()  # ARGB: 'FFRRGGBB'
+    # Fully transparent or white → not promoted
+    if rgb in ('00000000', 'FFFFFFFF'):
+        return False
+    if len(rgb) == 8:
+        r, g, b = int(rgb[2:4], 16), int(rgb[4:6], 16), int(rgb[6:8], 16)
+        if r > 250 and g > 250 and b > 250:
+            return False
+    return True
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Export spreadsheet to JSON')
     parser.add_argument('spreadsheet', help='Path to .xlsx file')
@@ -213,7 +238,7 @@ def _parse_section_standard(ws, rows, users):
         if s_flag is True or s_flag == 'True':
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
-            is_promoted = bool(ws.cell(row=row_idx, column=1).font and ws.cell(row=row_idx, column=1).font.bold)
+            is_promoted = _cell_is_promoted(ws.cell(row=row_idx, column=1))
             song = {'name': name_str, 'track_number': track_num, 'is_promoted': is_promoted, 'ratings': ratings, 'collab_artists': []}
             if current_album is not None:
                 current_album['songs'].append(song)
@@ -249,7 +274,7 @@ def _parse_section_soloist(ws, rows, users):
             # Song
             track_num += 1
             ratings = extract_ratings(ws, row_idx, users)
-            is_promoted = bool(ws.cell(row=row_idx, column=1).font and ws.cell(row=row_idx, column=1).font.bold)
+            is_promoted = _cell_is_promoted(ws.cell(row=row_idx, column=1))
             song = {'name': name_str, 'track_number': track_num, 'is_promoted': is_promoted, 'ratings': ratings, 'collab_artists': []}
             if current_album is not None:
                 current_album['songs'].append(song)

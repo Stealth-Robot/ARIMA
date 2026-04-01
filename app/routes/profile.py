@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session, render_template, redirect, url_for
+from flask import Blueprint, request, session, render_template, redirect, url_for, make_response
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -134,9 +134,12 @@ def toggle_edit_mode():
         else 'background:#6B7280; color:#fff;'
     )
     label = '&#9998; Edit: ON' if edit_on else '&#9998; Edit: OFF'
-    return (
+    button_html = (
         f'<button id="edit-mode-btn" hx-post="{url_for("profile.toggle_edit_mode")}"'
         f' hx-swap="outerHTML" hx-target="#edit-mode-btn"'
         f' style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;'
         f' border-radius:3px; cursor:pointer; {btn_style}">{label}</button>'
     )
+    response = make_response(button_html)
+    response.headers['HX-Refresh'] = 'true'
+    return response
