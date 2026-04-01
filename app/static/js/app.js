@@ -236,12 +236,27 @@ function showNoteInput(cell, songId) {
 
     const existingNote = cell.getAttribute('title') || '';
 
+    // Get song name from first cell in the same row
+    const row = cell.parentElement;
+    const songName = row ? row.children[0].textContent.trim() : '';
+
     const overlay = document.createElement('div');
     overlay.style.cssText = `
-        position: absolute; z-index: 50; background: #fff; border: 2px solid var(--link, #2563EB);
+        position: fixed; z-index: 50; background: #fff; border: 2px solid var(--link, #2563EB);
         border-radius: 4px; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        min-width: 200px;
+        width: 240px;
     `;
+
+    // Song name label
+    if (songName) {
+        const label = document.createElement('div');
+        label.textContent = songName;
+        label.style.cssText = `
+            font-size: 11px; font-weight: 600; color: #6B7280; margin-bottom: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        `;
+        overlay.appendChild(label);
+    }
 
     const textarea = document.createElement('textarea');
     textarea.value = existingNote;
@@ -249,6 +264,7 @@ function showNoteInput(cell, songId) {
     textarea.style.cssText = `
         width: 100%; border: 1px solid #ccc; border-radius: 3px; padding: 4px;
         font-size: 13px; font-family: inherit; resize: vertical; color: #000;
+        box-sizing: border-box;
     `;
     textarea.placeholder = 'Add a note...';
 
@@ -276,11 +292,16 @@ function showNoteInput(cell, songId) {
     overlay.appendChild(textarea);
     overlay.appendChild(btnRow);
 
-    // Position relative to cell
+    // Position: right of cell, top-aligned. Flip left if near right edge.
     const rect = cell.getBoundingClientRect();
-    overlay.style.position = 'fixed';
-    overlay.style.left = rect.left + 'px';
-    overlay.style.top = (rect.bottom + 2) + 'px';
+    const overlayWidth = 240;
+    const gap = 4;
+    overlay.style.top = rect.top + 'px';
+    if (rect.right + gap + overlayWidth < window.innerWidth) {
+        overlay.style.left = (rect.right + gap) + 'px';
+    } else {
+        overlay.style.left = (rect.left - gap - overlayWidth) + 'px';
+    }
 
     document.body.appendChild(overlay);
     textarea.focus();
