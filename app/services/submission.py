@@ -32,7 +32,7 @@ def create_submission(user, artist_data, albums_data):
         submitted_by_id=user.id,
         submitted_at=timestamp,
         status='approved' if is_auto_approved else 'pending',
-        approved_by_id=0 if is_auto_approved else None,
+        approved_by_id=0 if is_auto_approved else None,  # 0 = System: intentional, denotes auto-approval not manual review
         approved_at=timestamp if is_auto_approved else None,
     )
     db.session.add(submission)
