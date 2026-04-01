@@ -514,7 +514,7 @@ function showNoteInput(cell, songId) {
 
     const overlay = document.createElement('div');
     overlay.style.cssText = `
-        position: fixed; z-index: 50; background: #fff; border: 2px solid var(--link, #2563EB);
+        position: fixed; z-index: 50; background: var(--bg-secondary, #fff); border: 2px solid var(--link, #2563EB);
         border-radius: 4px; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         width: 240px;
     `;
@@ -524,7 +524,7 @@ function showNoteInput(cell, songId) {
         const label = document.createElement('div');
         label.textContent = songName;
         label.style.cssText = `
-            font-size: 11px; font-weight: 600; color: #6B7280; margin-bottom: 4px;
+            font-size: 11px; font-weight: 600; color: var(--text-secondary, #6B7280); margin-bottom: 4px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         `;
         overlay.appendChild(label);
@@ -534,8 +534,9 @@ function showNoteInput(cell, songId) {
     textarea.value = existingNote;
     textarea.rows = 3;
     textarea.style.cssText = `
-        width: 100%; border: 1px solid #ccc; border-radius: 3px; padding: 4px;
-        font-size: 13px; font-family: inherit; resize: vertical; color: #000;
+        width: 100%; border: 1px solid var(--border, #ccc); border-radius: 3px; padding: 4px;
+        font-size: 13px; font-family: inherit; resize: vertical;
+        background: var(--bg-primary, #fff); color: var(--text-primary, #000);
         box-sizing: border-box;
     `;
     textarea.placeholder = 'Add a note...';
