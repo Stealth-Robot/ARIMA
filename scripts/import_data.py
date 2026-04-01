@@ -62,6 +62,12 @@ def import_data(json_path):
 def _import_users(users_data):
     """Create user rows. Returns {username: user_id} map."""
     user_map = {}
+    # First pass: clear sort_order on existing users to avoid unique conflicts
+    for existing_user in User.query.filter(User.sort_order.isnot(None)).all():
+        existing_user.sort_order = None
+    db.session.flush()
+
+    # Second pass: create/update users with correct sort_order from data.json
     for i, u in enumerate(users_data, 1):
         existing = User.query.filter_by(username=u['username']).first()
         if existing:
