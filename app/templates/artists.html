@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- Discography area — padding-bottom to avoid hiding behind fixed nav -->
-<div id="discography" class="mb-4" style="padding-bottom: 44px;">
+<div id="discography" class="mb-4" style="padding-bottom: 36px;">
     {% if artist %}
     {% include "fragments/artist_discography.html" %}
     {% else %}
@@ -15,13 +15,13 @@
 <!-- Bottom artist navbar — fixed at viewport bottom, horizontal scroll -->
 <nav class="artist-nav" style="position: fixed; bottom: 0; left: 24px; right: 24px; z-index: 20;
             display: flex; flex-wrap: nowrap; align-items: center;
-            overflow-x: scroll; overflow-y: hidden; height: 42px;
+            overflow-x: scroll; overflow-y: hidden; height: 34px;
             background-color: var(--bg-secondary); border-top: 1px solid var(--border);
             padding: 0 8px; gap: 4px;">
     <!-- Hamburger menu button -->
     <button id="hamburger-btn" onclick="toggleArtistMenu()" type="button" aria-label="Artist menu"
             style="flex: 0 0 auto; background: none; border: none; cursor: pointer;
-                   padding: 6px 8px; font-size: 20px; line-height: 1; color: var(--text-primary);">
+                   padding: 4px 8px; font-size: 18px; line-height: 1; color: var(--text-primary);">
         &#9776;
     </button>
     <!-- Hamburger dropdown — opens upward -->
@@ -46,8 +46,8 @@
        hx-target="#discography"
        hx-swap="innerHTML"
        hx-push-url="true"
-       style="flex: 0 0 auto; white-space: nowrap; padding: 8px 14px; border-radius: 3px;
-              font-size: 15px; text-decoration: none;
+       style="flex: 0 0 auto; white-space: nowrap; padding: 4px 10px; border-radius: 3px;
+              font-size: 13px; text-decoration: none;
               background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }}); color: white;
               {% if artist and artist.id == a.id %}font-weight: bold; border-bottom: 2px solid white;{% endif %}">
         {{ a.name }}
