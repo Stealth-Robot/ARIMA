@@ -99,7 +99,7 @@
                        {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
-                {% if r and r.note %}title="{{ r.note }}"{% endif %}
+                {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
                 {% if u.id == current_user.id and current_user.can_rate %}
                 onclick="showRatingInput(event, {{ song.id }})"
                 {% endif %}>
@@ -200,7 +200,7 @@
                        {% if u.id == current_user.id and current_user.can_rate %}cursor-pointer hover:opacity-70{% endif %}"
                 style="border: 1px solid var(--grid-line); min-height: 20px; position: relative;
                        {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
-                {% if r and r.note %}title="{{ r.note }}"{% endif %}
+                {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
                 {% if u.id == current_user.id and current_user.can_rate %}
                 onclick="showRatingInput(event, {{ song.id }})"
                 {% endif %}>

@@ -71,6 +71,24 @@ td.has-note::after {
     border-left: 6px solid transparent;
 }
 
+/* JS-driven note tooltip — positioned via script */
+#note-tooltip {
+    position: fixed;
+    background: #222;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    max-width: 250px;
+    width: max-content;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
 /* Bottom artist navbar — hide scrollbar */
 .artist-nav {
     scrollbar-width: none;          /* Firefox */
