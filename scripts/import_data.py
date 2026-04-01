@@ -62,21 +62,20 @@ def import_data(json_path):
 def _import_users(users_data):
     """Create user rows. Returns {username: user_id} map."""
     user_map = {}
-    for u in users_data:
+    for i, u in enumerate(users_data, 1):
         existing = User.query.filter_by(username=u['username']).first()
         if existing:
+            existing.sort_order = i
             user_map[u['username']] = existing.id
             continue
 
-        # Determine next sort_order
-        max_sort = db.session.query(db.func.max(User.sort_order)).scalar() or 0
         user = User(
             username=u['username'],
             email=f'{u["username"].lower()}@arima.app',
             password=None,
             role_id=2,  # User role
             created_at='2020-01-01T00:00:00+00:00',
-            sort_order=max_sort + 1,
+            sort_order=i,
         )
         db.session.add(user)
         db.session.flush()
