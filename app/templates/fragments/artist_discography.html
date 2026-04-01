@@ -102,7 +102,7 @@
         {# Key cycle position for this song row #}
         {% set kp = key_cycle[0] % 14 %}
 
-        <tr style="border: 1px solid var(--grid-line);
+        <tr id="song-{{ song.id }}" style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}
                    {% if song_pending %}opacity: 0.7;{% endif %}">
             <!-- Song name (no track number) -->
@@ -251,7 +251,7 @@
 
         {% for song, track_num in songs %}
         {% set kp = key_cycle[0] % 14 %}
-        <tr style="border: 1px solid var(--grid-line);
+        <tr id="song-{{ song.id }}" style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
                 {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">

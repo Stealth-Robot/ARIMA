@@ -29,7 +29,7 @@
 {% if songs %}
 <div style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: #374151; color: #9CA3AF; border-bottom: 1px solid #4B5563;">Songs</div>
 {% for song, album, artist in songs %}
-<a href="{{ url_for('artists.artist_detail', artist_slug=artist.slug or artist.id) }}"
+<a href="{{ url_for('artists.artist_detail', artist_slug=artist.slug or artist.id) }}#song-{{ song.id }}"
    class="search-result-item"
    style="display: block; padding: 6px 14px; font-size: 13px; text-decoration: none; color: var(--text-primary); cursor: pointer;">
     {{ song.name }} <span style="color: var(--text-secondary, #888);">({{ album.name }} — {{ artist.name }})</span>

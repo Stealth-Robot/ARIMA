@@ -1,3 +1,8 @@
+/* Offset anchor-targeted rows so the fixed top navbar (44px) doesn't cover them */
+tr[id] {
+    scroll-margin-top: 54px;
+}
+
 /* Dense spreadsheet styling */
 
 /* All data tables: tight, dense, no gaps */
