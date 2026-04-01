@@ -175,49 +175,36 @@ function guardedAjax(url, options, cell, cellHTML) {
     htmx.ajax('POST', url, options);
 }
 
-function runUndoRedo(entry, targetStack, targetStackName) {
+function runUndoRedo(entry, targetStack, operationName) {
     const { songId, previousRating, previousNote, artistSlug } = entry;
 
     function applyEntry() {
         const cell = document.querySelector('[id^="rating-' + songId + '-"]');
 
-        // Capture current cell state and push to the opposite stack
-        if (cell) {
-            const currentText = cell.textContent.trim();
-            const capturedRating = /^[0-5]$/.test(currentText) ? parseInt(currentText) : null;
-            const capturedNote = cell.getAttribute('data-note') || '';
-            if (targetStack.length >= 50) targetStack.shift();
-            targetStack.push({ songId, previousRating: capturedRating, previousNote: capturedNote, cellHTML: cell.outerHTML, artistSlug });
+        if (!cell) {
+            showBriefToast(operationName + ' failed \u2014 try refreshing the page');
+            return;
         }
 
+        // Capture current cell state and push to the opposite stack
+        const currentText = cell.textContent.trim();
+        const capturedRating = /^[0-5]$/.test(currentText) ? parseInt(currentText) : null;
+        const capturedNote = cell.getAttribute('data-note') || '';
+        if (targetStack.length >= 50) targetStack.shift();
+        targetStack.push({ songId, previousRating: capturedRating, previousNote: capturedNote, cellHTML: cell.outerHTML, artistSlug });
+
         if (previousRating === null) {
-            if (cell) {
-                guardedAjax('/rate/delete', {
-                    target: cell,
-                    swap: 'outerHTML',
-                    values: { song_id: songId },
-                }, cell, entry.cellHTML);
-            } else {
-                htmx.ajax('POST', '/rate/delete', {
-                    swap: 'none',
-                    values: { song_id: songId },
-                });
-                showBriefToast(targetStackName === 'redo' ? 'Undo failed \u2014 try refreshing the page' : 'Redo failed \u2014 try refreshing the page');
-            }
+            guardedAjax('/rate/delete', {
+                target: cell,
+                swap: 'outerHTML',
+                values: { song_id: songId },
+            }, cell, entry.cellHTML);
         } else {
-            if (cell) {
-                guardedAjax('/rate', {
-                    target: cell,
-                    swap: 'outerHTML',
-                    values: { song_id: songId, rating: previousRating, note: previousNote || '' },
-                }, cell, entry.cellHTML);
-            } else {
-                htmx.ajax('POST', '/rate', {
-                    swap: 'none',
-                    values: { song_id: songId, rating: previousRating, note: previousNote || '' },
-                });
-                showBriefToast(targetStackName === 'redo' ? 'Undo failed \u2014 try refreshing the page' : 'Redo failed \u2014 try refreshing the page');
-            }
+            guardedAjax('/rate', {
+                target: cell,
+                swap: 'outerHTML',
+                values: { song_id: songId, rating: previousRating, note: previousNote || '' },
+            }, cell, entry.cellHTML);
         }
     }
 
@@ -248,7 +235,7 @@ document.addEventListener('keydown', function (e) {
         e.preventDefault();
         const entry = redoStack.pop();
         if (!entry) return;
-        runUndoRedo(entry, undoStack, 'undo');
+        runUndoRedo(entry, undoStack, 'redo');
         return;
     }
 
@@ -256,7 +243,7 @@ document.addEventListener('keydown', function (e) {
         e.preventDefault();
         const entry = undoStack.pop();
         if (!entry) return;
-        runUndoRedo(entry, redoStack, 'redo');
+        runUndoRedo(entry, redoStack, 'undo');
     }
 });
 
