@@ -72,6 +72,9 @@ CLASSIC_THEME = {
     'artist_button_text': '#000000',
     # Top navbar active indicator
     'navbar_active': '#FFD700',
+    # Search overlay section headers
+    'search_section_bg': '#E5E7EB',
+    'search_section_text': '#374151',
 }
 
 # Dark theme — all 40 columns populated, no NULLs
@@ -127,6 +130,9 @@ DARK_THEME = {
     'artist_button_text': '#000000',
     # Top navbar active indicator
     'navbar_active': '#FFD700',
+    # Search overlay section headers
+    'search_section_bg': '#374151',
+    'search_section_text': '#9CA3AF',
 }
 
 

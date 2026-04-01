@@ -71,4 +71,8 @@ class Theme(db.Model):
     unrated_mid_bg = db.Column(db.Text)
     unrated_high_bg = db.Column(db.Text)
 
+    # Search overlay section headers
+    search_section_bg = db.Column(db.Text)
+    search_section_text = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])

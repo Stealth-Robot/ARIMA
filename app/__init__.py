@@ -115,6 +115,12 @@ def create_app():
                     conn.execute(db.text("ALTER TABLE theme ADD COLUMN unrated_high_bg VARCHAR(7) DEFAULT '#EA9999'"))
                     conn.execute(db.text("UPDATE theme SET unrated_high_bg = '#EA9999'"))
                     changed = True
+                if 'search_section_bg' not in cols:
+                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN search_section_bg VARCHAR(7) DEFAULT '#374151'"))
+                    conn.execute(db.text("UPDATE theme SET search_section_bg = '#374151'"))
+                    conn.execute(db.text("ALTER TABLE theme ADD COLUMN search_section_text VARCHAR(7) DEFAULT '#9CA3AF'"))
+                    conn.execute(db.text("UPDATE theme SET search_section_text = '#9CA3AF'"))
+                    changed = True
                 if changed:
                     conn.commit()
         except Exception:
