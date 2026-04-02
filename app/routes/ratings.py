@@ -21,10 +21,13 @@ def rate():
     note_sent = note_raw is not None
     note = (note_raw.strip() or None) if note_sent else None
 
-    if song_id is None or rating_value is None:
-        return 'Missing song_id or rating', 400
+    if song_id is None:
+        return 'Missing song_id', 400
 
-    if rating_value < 0 or rating_value > 5:
+    if rating_value is None and not note:
+        return 'Missing rating or note', 400
+
+    if rating_value is not None and (rating_value < 0 or rating_value > 5):
         return 'Rating must be 0-5', 400
 
     # Determine target user — editors/admins can write for other users in edit mode
@@ -40,7 +43,8 @@ def rate():
     existing = db.session.get(Rating, (song_id, target_user_id))
 
     if existing:
-        existing.rating = rating_value
+        if rating_value is not None:
+            existing.rating = rating_value
         if note_sent:
             existing.note = note
     else:
@@ -51,6 +55,11 @@ def rate():
             note=note,
         )
         db.session.add(existing)
+
+    # Clean up zombie rows (no rating AND no note)
+    if existing.rating is None and not existing.note:
+        db.session.delete(existing)
+        existing = None
 
     try:
         db.session.commit()

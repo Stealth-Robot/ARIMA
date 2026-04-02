@@ -8,5 +8,5 @@
     style="border: 1px solid var(--grid-line);
            {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
     {% if is_editable %}onclick="showRatingInput(event, {{ song_id }}, {{ user_id }})"{% endif %}>
-    {% if rating %}{{ rating.rating }}{% endif %}
+    {% if rating and rating.rating is not none %}{{ rating.rating }}{% endif %}
 </td>

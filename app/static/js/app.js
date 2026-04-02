@@ -607,12 +607,6 @@ function submitNote(cell, songId, noteText) {
     const ratingText = cell.textContent.trim();
     const rating = /^[0-5]$/.test(ratingText) ? parseInt(ratingText) : null;
 
-    if (rating === null) {
-        // No rating yet — can't attach a note without a rating
-        closeNoteInput();
-        return;
-    }
-
     // Push previous state onto undo stack
     const previousNote = cell.getAttribute('title') || cell.getAttribute('data-note') || '';
     const artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
@@ -622,10 +616,13 @@ function submitNote(cell, songId, noteText) {
 
     closeNoteInput();
 
+    const values = { song_id: songId, note: noteText || '' };
+    if (rating !== null) values.rating = rating;
+
     htmx.ajax('POST', '/rate', {
         target: cell,
         swap: 'outerHTML',
-        values: { song_id: songId, rating: rating, note: noteText || '' },
+        values: values,
     });
 }
 

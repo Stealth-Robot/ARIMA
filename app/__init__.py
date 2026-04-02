@@ -109,6 +109,38 @@ def create_app():
         except Exception:
             pass  # DB may not exist yet (first run before seed)
 
+    # One-time schema migration: make rating.rating nullable (note-only entries)
+    with flask_app.app_context():
+        try:
+            row = db.session.execute(
+                db.text("SELECT sql FROM sqlite_master WHERE type='table' AND name='rating'")
+            ).scalar()
+            if row and 'rating INTEGER NOT NULL' in row:
+                logger.info('Migrating rating table: making rating column nullable')
+                db.session.execute(db.text('PRAGMA foreign_keys=OFF'))
+                db.session.execute(db.text(
+                    'CREATE TABLE rating_new ('
+                    'song_id INTEGER NOT NULL, '
+                    'user_id INTEGER NOT NULL, '
+                    'rating INTEGER, '
+                    'note TEXT, '
+                    'PRIMARY KEY (song_id, user_id), '
+                    'CONSTRAINT rating_range CHECK (rating >= 0 AND rating <= 5), '
+                    'FOREIGN KEY(song_id) REFERENCES song (id) ON DELETE CASCADE, '
+                    'FOREIGN KEY(user_id) REFERENCES user (id) ON DELETE CASCADE)'
+                ))
+                db.session.execute(db.text(
+                    'INSERT INTO rating_new SELECT * FROM rating'
+                ))
+                db.session.execute(db.text('DROP TABLE rating'))
+                db.session.execute(db.text('ALTER TABLE rating_new RENAME TO rating'))
+                db.session.execute(db.text('PRAGMA foreign_keys=ON'))
+                db.session.commit()
+                logger.info('Rating table migration complete')
+        except Exception:
+            db.session.rollback()
+            pass  # DB may not exist yet
+
     # Flask CLI: seed command
     @flask_app.cli.command('seed')
     def seed_command():

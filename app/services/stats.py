@@ -48,8 +48,9 @@ class _BulkData:
         self.song_ratings = defaultdict(dict)        # song_id → {user_id: rating_value}
         self.song_rated_by = defaultdict(set)         # song_id → {user_id, ...}
         for r in all_ratings:
-            self.song_ratings[r.song_id][r.user_id] = r.rating
-            self.song_rated_by[r.song_id].add(r.user_id)
+            if r.rating is not None:
+                self.song_ratings[r.song_id][r.user_id] = r.rating
+                self.song_rated_by[r.song_id].add(r.user_id)
 
         # 5. All main song IDs (for summary total)
         if not include_featured:

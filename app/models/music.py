@@ -131,7 +131,7 @@ class Rating(db.Model):
                         primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'),
                         primary_key=True)
-    rating = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer, nullable=True)
     note = db.Column(db.Text)
 
     song = db.relationship('Song', back_populates='ratings')
