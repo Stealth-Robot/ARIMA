@@ -58,8 +58,11 @@
                 <td class="px-3 py-2 text-xs">{{ u.email }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.created_at[:10] if u.created_at else '-' }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 py-2 text-center whitespace-nowrap">
                     {% if u.id != current_user.id %}
+                    <button type="button" class="text-xs hover:underline"
+                            style="color: var(--button-primary);"
+                            onclick="openReinvite({{ u.id }}, '{{ u.email }}')">Reinvite</button>
                     <form method="POST" action="{{ url_for('users.delete', user_id=u.id) }}"
                           class="inline"
                           onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Submitted content will survive.')">
@@ -106,4 +109,38 @@
         </form>
     </div>
 </div>
+
+<!-- Reinvite modal -->
+<div id="reinvite-modal" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background-color: var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px; width:100%; max-width:400px;">
+        <h3 class="font-semibold mb-3">Reinvite User</h3>
+        <form id="reinvite-form" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="block text-sm mb-1">Email</label>
+            <input type="email" name="email" id="reinvite-email" required
+                   class="w-full px-3 py-2 border rounded mb-4" style="border-color: var(--border);">
+            <div class="flex gap-3">
+                <button type="submit" class="px-4 py-2 rounded text-white flex-1"
+                        style="background-color: var(--button-primary);">Send</button>
+                <button type="button" onclick="closeReinvite()" class="px-4 py-2 rounded flex-1"
+                        style="background-color: var(--button-secondary, var(--bg-primary)); border:1px solid var(--border);">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openReinvite(userId, email) {
+    var modal = document.getElementById('reinvite-modal');
+    document.getElementById('reinvite-form').action = '/admin/users/' + userId + '/reinvite';
+    document.getElementById('reinvite-email').value = email;
+    modal.style.display = 'flex';
+}
+function closeReinvite() {
+    document.getElementById('reinvite-modal').style.display = 'none';
+}
+document.getElementById('reinvite-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeReinvite();
+});
+</script>
 {% endblock %}

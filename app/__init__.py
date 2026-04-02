@@ -1,6 +1,9 @@
 import logging
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import click
 from flask import Flask, session
 from flask_login import current_user

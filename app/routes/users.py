@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.user import User, Role
 from app.services.user import delete_user
+from app.services.email import send_invite_email
 from app.decorators import role_required, ADMIN
 
 users_bp = Blueprint('users', __name__)
@@ -64,7 +65,9 @@ def invite_user():
     db.session.add(user)
     db.session.commit()
 
-    # Email sending deferred (architecture.md §12) — invite row created
+    app_url = request.url_root.rstrip('/')
+    send_invite_email(email, username, app_url)
+
     return redirect(url_for('users.user_list'))
 
 
@@ -101,6 +104,34 @@ def delete(user_id):
         return 'Cannot delete your own account', 400
 
     delete_user(user)
+    return redirect(url_for('users.user_list'))
+
+
+@users_bp.route('/admin/users/<int:user_id>/reinvite', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def reinvite(user_id):
+    """Reset a user's password and send a new invite email."""
+    user = db.session.get(User, user_id)
+    if not user or user.is_system_or_guest:
+        return 'Cannot reinvite this account', 400
+
+    email = request.form.get('email', '').strip().lower()
+    if not email:
+        return 'Email is required', 400
+
+    # Check email uniqueness (if changed)
+    if email != (user.email or '').lower():
+        if User.query.filter_by(email=email).first():
+            return 'Email already in use', 400
+        user.email = email
+
+    user.password = None
+    db.session.commit()
+
+    app_url = request.url_root.rstrip('/')
+    send_invite_email(email, user.username, app_url)
+
     return redirect(url_for('users.user_list'))
 
 

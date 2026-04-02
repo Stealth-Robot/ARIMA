@@ -14,9 +14,12 @@ source venv/bin/activate
 # Install deps
 pip install -q -r requirements.txt
 
-# Dev env vars (override with real values in production)
-export SECRET_KEY="${SECRET_KEY:-dev-secret-key-change-me}"
-export PEPPER="${PEPPER:-dev-pepper-change-me}"
+# Load env vars from .env file
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
 export FLASK_APP=app:create_app
 
 # Seed database (idempotent — always run to pick up theme/lookup changes)
