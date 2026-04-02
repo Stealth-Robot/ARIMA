@@ -49,6 +49,10 @@ class ArtistArtist(db.Model):
     relationship = db.Column(db.Integer, db.ForeignKey('artist_relationship.id'),
                              nullable=False)
 
+    __table_args__ = (
+        db.Index('ix_artist_artist_relationship', 'relationship'),
+    )
+
     parent = db.relationship('Artist', foreign_keys=[artist_1], back_populates='children')
     child = db.relationship('Artist', foreign_keys=[artist_2])
     relationship_type = db.relationship('ArtistRelationship')
@@ -139,4 +143,5 @@ class Rating(db.Model):
 
     __table_args__ = (
         db.CheckConstraint('rating >= 0 AND rating <= 5', name='rating_range'),
+        db.Index('ix_rating_user_id', 'user_id'),
     )

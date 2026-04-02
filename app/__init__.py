@@ -141,6 +141,20 @@ def create_app():
             db.session.rollback()
             pass  # DB may not exist yet
 
+    # One-time migration: add missing indexes for existing databases
+    with flask_app.app_context():
+        try:
+            for idx_sql in [
+                'CREATE INDEX IF NOT EXISTS ix_artist_artist_relationship ON artist_artist (relationship)',
+                'CREATE INDEX IF NOT EXISTS ix_rating_user_id ON rating (user_id)',
+                'CREATE INDEX IF NOT EXISTS ix_submission_status ON submission (status)',
+            ]:
+                db.session.execute(db.text(idx_sql))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            pass  # DB may not exist yet
+
     # Flask CLI: seed command
     @flask_app.cli.command('seed')
     def seed_command():
