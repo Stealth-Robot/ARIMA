@@ -5,7 +5,6 @@ from flask import Blueprint, request, render_template, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Artist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.music import Artist, Album, Song
 from app.models.submission import Submission
