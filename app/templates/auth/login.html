@@ -8,20 +8,22 @@
     <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
     <style>
         :root {
-            --bg-primary:      {{ theme.get('bg_primary',      '#F9FAFB') }};
-            --bg-secondary:    {{ theme.get('bg_secondary',    '#FFFFFF') }};
-            --text-primary:    {{ theme.get('text_primary',    '#111827') }};
-            --text-secondary:  {{ theme.get('text_secondary',  '#6B7280') }};
-            --border:          {{ theme.get('border',          '#D1D5DB') }};
-            --button-primary:  {{ theme.get('button_primary',  '#2563EB') }};
-            --button-secondary:{{ theme.get('button_secondary','#6B7280') }};
+            --bg-primary:      #3C3F44;
+            --bg-secondary:    #4A4D53;
+            --text-primary:    #FAFAFA;
+            --text-secondary:  #D8D9DD;
+            --border:          #4B4D54;
+            --button-primary:  #5865F2;
+            --button-secondary:#4B4D54;
         }
         body { background-color: var(--bg-primary); color: var(--text-primary); }
         .login-input {
             width: 100%; padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px;
-            background-color: var(--bg-secondary); color: var(--text-primary);
+            background-color: #5C5F66; color: var(--text-primary);
         }
+        .login-input::placeholder { color: #A0A3AA; }
         .login-input:focus { outline: none; border-color: var(--button-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--button-primary) 25%, transparent); }
+        .required-star { color: #EF4444; margin-left: 4px; }
         .btn-primary {
             width: 100%; padding: 8px; border-radius: 4px; border: none; cursor: pointer;
             background-color: var(--button-primary); color: #fff;
@@ -40,7 +42,7 @@
         <!-- Header image -->
         <div class="flex justify-center mb-6">
             <img src="{{ url_for('static', filename='img/tab_image.jpg') }}"
-                 class="w-32 h-32 rounded-full object-cover" alt="A.R.I.M.A.">
+                 class="w-32 h-32 rounded-full object-cover" style="border: 0.25px solid #000000;" alt="A.R.I.M.A.">
         </div>
 
         <!-- Title -->
@@ -75,10 +77,12 @@
         <form id="login-form" method="POST" action="{{ url_for('auth.login') }}" class="{% if mode == 'create' %}hidden{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-4">
+                <label class="text-sm" style="color: var(--text-secondary);">Username<span class="required-star">*</span></label>
                 <input type="text" name="username" placeholder="Username"
                        class="login-input" required>
             </div>
             <div class="mb-6">
+                <label class="text-sm" style="color: var(--text-secondary);">Password<span class="required-star">*</span></label>
                 <input type="password" name="password" placeholder="Password"
                        class="login-input" required>
             </div>
@@ -89,20 +93,24 @@
         <form id="create-form" method="POST" action="{{ url_for('auth.create_account') }}" class="{% if mode != 'create' %}hidden{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-4">
+                <label class="text-sm" style="color: var(--text-secondary);">Email<span class="required-star">*</span></label>
                 <input type="email" name="email" id="create-email" placeholder="Email"
                        value="{{ create_email or '' }}"
                        class="login-input" required>
             </div>
             <div class="mb-4">
+                <label class="text-sm" style="color: var(--text-secondary);">Username<span class="required-star">*</span></label>
                 <input type="text" name="username" id="create-username" placeholder="Username"
                        value="{{ create_username or '' }}"
                        class="login-input" required>
             </div>
             <div class="mb-4">
+                <label class="text-sm" style="color: var(--text-secondary);">Password<span class="required-star">*</span></label>
                 <input type="password" name="password" placeholder="Create Password"
                        class="login-input" required>
             </div>
             <div class="mb-6">
+                <label class="text-sm" style="color: var(--text-secondary);">Confirm Password<span class="required-star">*</span></label>
                 <input type="password" name="confirm_password" placeholder="Confirm Password"
                        class="login-input" required>
             </div>
