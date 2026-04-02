@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, url_for, abort
+from flask import Blueprint, request, render_template, redirect, url_for, abort, session
 from flask_login import login_required, current_user
 
 from sqlalchemy.orm import selectinload, joinedload
@@ -73,11 +73,16 @@ def artist_detail(artist_slug):
                 'is_soloist': child.id in soloist_ids,
             })
 
+    # All artists list for edit mode (song artist picker)
+    all_artists = []
+    if session.get('edit_mode') and current_user.is_editor_or_admin:
+        all_artists = Artist.query.order_by(Artist.name).all()
+
     if request.headers.get('HX-Request'):
         return render_template('fragments/artist_discography.html',
                                artist=artist, discography=discography, users=users,
                                gender_css=GENDER_CSS, children=children_sections,
-                               soloist_parent=soloist_parent)
+                               soloist_parent=soloist_parent, all_artists=all_artists)
 
     navbar = _get_filtered_navbar()
     # Ensure current artist always appears in navbar regardless of filters
@@ -88,7 +93,7 @@ def artist_detail(artist_slug):
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
                            gender_css=GENDER_CSS, children=children_sections,
-                           soloist_parent=soloist_parent)
+                           soloist_parent=soloist_parent, all_artists=all_artists)
 
 
 def _get_display_users():

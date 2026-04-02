@@ -94,6 +94,85 @@ def artist_country(artist_id):
     return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/song/<int:song_id>/move-album', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_move_album(song_id):
+    """Move a song from one album to another."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    new_album_id = request.form.get('album_id', '').strip()
+    if not new_album_id:
+        abort(400)
+    new_album = db.session.get(Album, int(new_album_id))
+    if new_album is None:
+        abort(400)
+
+    # Remove from current album(s)
+    old_album_ids = [r.album_id for r in AlbumSong.query.filter_by(song_id=song_id).all()]
+    AlbumSong.query.filter_by(song_id=song_id).delete()
+
+    # Append to end of new album
+    max_track = db.session.query(db.func.max(AlbumSong.track_number)).filter_by(album_id=int(new_album_id)).scalar() or 0
+    db.session.add(AlbumSong(album_id=int(new_album_id), song_id=song_id, track_number=max_track + 1))
+
+    # Clean up albums that are now empty
+    for old_id in old_album_ids:
+        if old_id == int(new_album_id):
+            continue
+        remaining = AlbumSong.query.filter_by(album_id=old_id).count()
+        if remaining == 0:
+            db.session.execute(album_genres.delete().where(album_genres.c.album_id == old_id))
+            db.session.query(Album).filter_by(id=old_id).delete()
+
+    db.session.commit()
+
+    return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/artist/<int:artist_id>/add-album', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def add_album_to_artist(artist_id):
+    """Add a new album with songs to an existing artist."""
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+
+    try:
+        data = json.loads(request.form.get('data', '{}'))
+    except json.JSONDecodeError:
+        abort(400)
+
+    album_name = data.get('name', '').strip()
+    release_date = data.get('release_date', '').strip()
+    album_type_id = data.get('album_type_id')
+    genre_ids = data.get('genre_ids', [])
+    songs = data.get('songs', [])
+
+    if not album_name or album_type_id is None:
+        abort(400)
+    if release_date and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', release_date):
+        abort(400)
+    if not songs:
+        abort(400)
+
+    albums_data = [{
+        'name': album_name,
+        'release_date': release_date or None,
+        'album_type_id': int(album_type_id),
+        'genre_ids': [int(gid) for gid in genre_ids],
+        'songs': songs,
+    }]
+
+    create_submission(current_user, {'id': artist_id}, albums_data)
+
+    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/name', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -306,3 +385,76 @@ def delete_artist(artist_id):
     db.session.commit()
 
     return redirect(url_for('artists.artists_list'))
+
+
+def _verify_password():
+    """Check current user's password from form data. Returns True or False."""
+    password = request.form.get('password', '')
+    if not password:
+        return False
+    from app.routes.auth import _check_password
+    if not current_user.password or not _check_password(current_user.password, password):
+        return False
+    return True
+
+
+@edit_bp.route('/song/<int:song_id>/delete', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def delete_song(song_id):
+    """Delete a song and clean up empty albums."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    # Get album links before deleting
+    album_song_rows = AlbumSong.query.filter_by(song_id=song_id).all()
+
+    ArtistSong.query.filter_by(song_id=song_id).delete()
+    Rating.query.filter_by(song_id=song_id).delete()
+    AlbumSong.query.filter_by(song_id=song_id).delete()
+    db.session.query(Song).filter_by(id=song_id).delete()
+
+    # Clean up albums that are now empty
+    for row in album_song_rows:
+        remaining = AlbumSong.query.filter_by(album_id=row.album_id).count()
+        if remaining == 0:
+            db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
+            db.session.query(Album).filter_by(id=row.album_id).delete()
+
+    db.session.commit()
+    return '', 204
+
+
+@edit_bp.route('/album/<int:album_id>/delete', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def delete_album(album_id):
+    """Delete an album, its songs (unless shared), genres, and ratings."""
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    # Get all songs in this album
+    song_ids = [r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()]
+
+    for song_id in song_ids:
+        AlbumSong.query.filter_by(album_id=album_id, song_id=song_id).delete()
+        # Only delete song if it's not in any other album
+        other_albums = AlbumSong.query.filter_by(song_id=song_id).count()
+        if other_albums > 0:
+            continue
+        ArtistSong.query.filter_by(song_id=song_id).delete()
+        Rating.query.filter_by(song_id=song_id).delete()
+        db.session.query(Song).filter_by(id=song_id).delete()
+
+    db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
+    db.session.query(Album).filter_by(id=album_id).delete()
+    db.session.commit()
+    return '', 204

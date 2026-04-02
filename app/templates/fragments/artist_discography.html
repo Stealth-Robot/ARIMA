@@ -28,6 +28,9 @@
 <script>
 var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.country | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbums = [{% for entry in discography %}{ id: {{ entry.album.id }}, name: "{{ entry.album.name | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: "{{ a.name | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _currentArtistId = {{ artist.id }};
 </script>
 {% endif %}
 
@@ -77,6 +80,8 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.count
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
+                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: 10px; margin-left: 6px;" title="Delete album"
+                      onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} and all its songs will be permanently deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
@@ -126,6 +131,10 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.count
                 {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: 10px; margin-left: 4px;" title="Move to another album"
+                      onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
+                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: 10px; margin-left: 2px;" title="Delete song"
+                      onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -237,6 +246,8 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.count
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
+                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: 10px; margin-left: 6px;" title="Delete album"
+                      onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} and all its songs will be permanently deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
@@ -278,6 +289,10 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.count
                 {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: 10px; margin-left: 4px;" title="Move to another album"
+                      onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
+                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: 10px; margin-left: 2px;" title="Delete song"
+                      onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -351,37 +366,92 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.count
 {% endif %}
 
 {% if edit_mode %}
-<!-- Delete artist button (edit mode only) -->
-<div class="mt-8 mb-4">
-    <button type="button" onclick="document.getElementById('delete-artist-modal').style.display='flex'"
+<!-- Add album + Delete artist buttons (edit mode only) -->
+<div class="mt-8 mb-4 flex gap-3">
+    <button type="button" onclick="resetAddAlbumModal();document.getElementById('add-album-modal').style.display='flex'"
+            class="px-4 py-2 rounded text-sm text-white"
+            style="background-color: #16a34a;">
+        Add Album
+    </button>
+    <button type="button" onclick="showDeleteConfirm('Delete {{ artist.name }}?', 'This will permanently delete this artist, all their albums, songs, and ratings. This cannot be undone.', '{{ url_for('edit.delete_artist', artist_id=artist.id) }}')"
             class="px-4 py-2 rounded text-sm text-white"
             style="background-color: #DC2626;">
         Delete Artist
     </button>
 </div>
 
-<!-- Delete artist confirmation modal -->
-<div id="delete-artist-modal" style="display:none; position:fixed; inset:0; z-index:100;
+<!-- Add album modal -->
+<div id="add-album-modal" style="display:none; position:fixed; inset:0; z-index:100;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:420px; max-width:90vw; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3" style="color:var(--text-primary);">Add Album to {{ artist.name }}</h3>
+
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Album Name <span style="color:#DC2626;">*</span></label>
+        <input type="text" id="new-album-name" class="w-full px-3 py-1 border rounded mb-3 text-sm" style="border-color:var(--border);">
+
+        <div class="flex gap-3 mb-3">
+            <div class="flex-1">
+                <label class="block text-sm mb-1" style="color:var(--text-primary);">Release Date</label>
+                <input type="date" id="new-album-date" class="w-full px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm mb-1" style="color:var(--text-primary);">Type <span style="color:#DC2626;">*</span></label>
+                <select id="new-album-type" class="w-full px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
+                    <option value="0">Album</option>
+                    <option value="1">EP</option>
+                    <option value="2">Single</option>
+                </select>
+            </div>
+        </div>
+
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Genres</label>
+        <div id="new-album-genres" class="flex flex-wrap gap-2 mb-3" style="font-size:12px;">
+            {% for g in genres %}
+            <label style="cursor:pointer;"><input type="checkbox" value="{{ g.id }}" style="margin-right:2px;">{{ g.genre }}</label>
+            {% endfor %}
+        </div>
+
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Songs <span style="color:#DC2626;">*</span></label>
+        <div id="new-album-songs" class="mb-3"></div>
+        <button type="button" onclick="addNewAlbumSong({{ artist.id }})" class="text-xs px-2 py-1 rounded mb-3" style="background:var(--button-secondary); color:var(--text-primary);">+ Add Song</button>
+
+        <div class="flex gap-3 justify-end">
+            <button type="button" onclick="document.getElementById('add-album-modal').style.display='none'"
+                    class="px-4 py-2 rounded text-sm"
+                    style="background-color:var(--button-secondary); color:var(--text-primary);">
+                Cancel
+            </button>
+            <button type="button" id="add-album-submit-btn" onclick="submitNewAlbum({{ artist.id }})"
+                    class="px-4 py-2 rounded text-sm text-white" disabled
+                    style="background-color:#16a34a; opacity:0.5; cursor:not-allowed;">
+                Add Album
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Shared delete confirmation modal -->
+<div id="confirm-delete-modal" style="display:none; position:fixed; inset:0; z-index:100;
      background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
      onclick="if(event.target===this)this.style.display='none'">
     <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
                 padding:24px; width:340px; max-width:90vw;">
-        <h3 class="text-lg font-bold mb-2" style="color:var(--text-primary);">Delete {{ artist.name }}?</h3>
-        <p class="text-sm mb-4" style="color:var(--text-secondary);">
-            This will permanently delete this artist, all their albums, songs, and ratings. This cannot be undone.
-        </p>
-        <form method="POST" action="{{ url_for('edit.delete_artist', artist_id=artist.id) }}">
+        <h3 id="confirm-delete-title" class="text-lg font-bold mb-2" style="color:var(--text-primary);"></h3>
+        <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary);"></p>
+        <form id="confirm-delete-form" method="POST" action="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
-            <input type="password" name="password" required autocomplete="current-password"
+            <input type="password" name="password" id="confirm-delete-pw" required autocomplete="current-password"
                    class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
             <div class="flex gap-3 justify-end">
-                <button type="button" onclick="document.getElementById('delete-artist-modal').style.display='none'"
+                <button type="button" onclick="document.getElementById('confirm-delete-modal').style.display='none'"
                         class="px-4 py-2 rounded text-sm"
                         style="background-color:var(--button-secondary); color:var(--text-primary);">
                     Cancel
                 </button>
-                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                <button type="submit" id="confirm-delete-btn" class="px-4 py-2 rounded text-sm text-white"
                         style="background-color:#DC2626;">
                     Delete
                 </button>

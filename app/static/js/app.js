@@ -544,6 +544,333 @@ document.addEventListener('click', function(e) {
     }
 });
 
+/* Inline album move — pick album popover */
+
+var activeAlbumMovePopover = null;
+
+function closeAlbumMovePopover() {
+    if (activeAlbumMovePopover) {
+        activeAlbumMovePopover.remove();
+        activeAlbumMovePopover = null;
+    }
+}
+
+function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
+    event.stopPropagation();
+    closeAlbumMovePopover();
+
+    var others = allAlbums.filter(function(a) { return a.id !== currentAlbumId; });
+    if (!others.length) {
+        showToast('No other albums to move to');
+        return;
+    }
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:200px; max-height:240px; overflow-y:auto;';
+
+    var title = document.createElement('div');
+    title.textContent = 'Move to album:';
+    title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
+    popover.appendChild(title);
+
+    others.forEach(function(a) {
+        var btn = document.createElement('div');
+        btn.textContent = a.name;
+        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
+        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+        btn.addEventListener('click', function() {
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/song/' + songId + '/move-album', {
+                method: 'POST',
+                headers: headers,
+                body: 'album_id=' + a.id,
+            }).then(function(r) {
+                if (!r.ok) throw new Error('move failed');
+                return r.json();
+            }).then(function() {
+                closeAlbumMovePopover();
+                window.location.reload();
+            }).catch(function() {
+                showToast('Failed to move song — try again');
+                closeAlbumMovePopover();
+            });
+        });
+        popover.appendChild(btn);
+    });
+
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeAlbumMovePopover = popover;
+}
+
+document.addEventListener('click', function(e) {
+    if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
+        closeAlbumMovePopover();
+    }
+});
+
+/* Add album modal helpers */
+
+var _newAlbumSongCount = 0;
+
+function resetAddAlbumModal() {
+    _newAlbumSongCount = 0;
+    var name = document.getElementById('new-album-name');
+    if (name) name.value = '';
+    var date = document.getElementById('new-album-date');
+    if (date) date.value = '';
+    var type = document.getElementById('new-album-type');
+    if (type) type.selectedIndex = 0;
+    document.querySelectorAll('#new-album-genres input').forEach(function(cb) { cb.checked = false; });
+    var songs = document.getElementById('new-album-songs');
+    if (songs) songs.innerHTML = '';
+    validateAddAlbum();
+}
+
+function validateAddAlbum() {
+    var btn = document.getElementById('add-album-submit-btn');
+    if (!btn) return;
+    var valid = true;
+
+    var name = document.getElementById('new-album-name');
+    if (!name || !name.value.trim()) valid = false;
+
+    var songDivs = document.querySelectorAll('#new-album-songs > [id^="new-song-"]');
+    if (!songDivs.length) valid = false;
+
+    songDivs.forEach(function(div) {
+        var songName = div.querySelector('.new-album-song-name');
+        if (!songName || !songName.value.trim()) valid = false;
+        var hasMain = false;
+        div.querySelectorAll('.new-song-artist-row').forEach(function(row) {
+            var role = row.querySelector('.new-song-artist-role');
+            if (role && role.value === 'main') hasMain = true;
+        });
+        if (!hasMain) valid = false;
+    });
+
+    btn.disabled = !valid;
+    btn.style.opacity = valid ? '1' : '0.5';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+}
+
+function addNewAlbumSong(currentArtistId) {
+    _newAlbumSongCount++;
+    var n = _newAlbumSongCount;
+    var container = document.getElementById('new-album-songs');
+    var row = document.createElement('div');
+    row.id = 'new-song-' + n;
+    row.className = 'mb-2 p-2 border rounded';
+    row.style.borderColor = 'var(--border)';
+    row.innerHTML =
+        '<div class="flex gap-2 items-center mb-1">' +
+            '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);">' +
+            '<label class="text-xs"><input type="checkbox" class="new-song-promoted"> Promoted</label>' +
+            '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
+            '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:#DC2626;">&times;</button>' +
+        '</div>' +
+        '<div class="flex items-center gap-2 ml-2">' +
+            '<span class="text-xs" style="color:var(--text-secondary);">Artists:</span>' +
+            '<div id="new-song-artists-' + n + '" class="flex flex-wrap gap-2"></div>' +
+            '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border);" onchange="onNewSongArtistChange(this,' + n + ')">' +
+                newSongArtistOptions(n) +
+            '</select>' +
+        '</div>';
+    container.appendChild(row);
+    // Auto-add current artist as main
+    addNewSongArtist(n, currentArtistId, _currentArtistName(), true);
+    validateAddAlbum();
+}
+
+function _currentArtistName() {
+    if (typeof _allArtists !== 'undefined' && typeof _currentArtistId !== 'undefined') {
+        var a = _allArtists.find(function(x) { return x.id === _currentArtistId; });
+        if (a) return a.name;
+    }
+    return 'Current Artist';
+}
+
+function newSongArtistOptions(songNum) {
+    var used = newSongUsedArtistIds(songNum);
+    var opts = '<option value="">-- Add artist --</option>';
+    if (typeof _allArtists !== 'undefined') {
+        _allArtists.forEach(function(a) {
+            if (used.indexOf(a.id) === -1) {
+                opts += '<option value="' + a.id + '">' + a.name.replace(/</g, '&lt;') + '</option>';
+            }
+        });
+    }
+    return opts;
+}
+
+function newSongUsedArtistIds(songNum) {
+    var ids = [];
+    var container = document.getElementById('new-song-artists-' + songNum);
+    if (container) {
+        container.querySelectorAll('.new-song-artist-row').forEach(function(row) {
+            if (row.dataset.artistId) ids.push(parseInt(row.dataset.artistId));
+        });
+    }
+    return ids;
+}
+
+function addNewSongArtist(songNum, artistId, artistName, isMain) {
+    var container = document.getElementById('new-song-artists-' + songNum);
+    var count = container.children.length;
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-1 new-song-artist-row';
+    row.dataset.artistId = artistId || '';
+    row.innerHTML =
+        '<span class="text-xs">' + (artistName || '').replace(/</g, '&lt;') + '</span>' +
+        '<select class="new-song-artist-role text-xs px-1 border rounded" style="border-color:var(--border);" onchange="validateAddAlbum()">' +
+            '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
+            '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>' +
+        '</select>' +
+        (count > 0 ? '<button type="button" onclick="removeNewSongArtist(this,' + songNum + ')" class="text-red-500 text-xs">x</button>' : '');
+    container.appendChild(row);
+    updateNewSongArtistDropdown(songNum);
+    validateAddAlbum();
+}
+
+function removeNewSongArtist(btn, songNum) {
+    btn.parentElement.remove();
+    updateNewSongArtistDropdown(songNum);
+    validateAddAlbum();
+}
+
+function updateNewSongArtistDropdown(songNum) {
+    var songDiv = document.getElementById('new-song-' + songNum);
+    if (!songDiv) return;
+    var select = songDiv.querySelector('.new-song-artist-select');
+    if (select) {
+        select.innerHTML = newSongArtistOptions(songNum);
+        select.value = '';
+    }
+}
+
+function onNewSongArtistChange(select, songNum) {
+    var id = parseInt(select.value);
+    if (!id) return;
+    var artist = _allArtists.find(function(a) { return a.id === id; });
+    if (!artist) return;
+    addNewSongArtist(songNum, id, artist.name, false);
+    select.value = '';
+}
+
+function submitNewAlbum(artistId) {
+    var name = document.getElementById('new-album-name').value.trim();
+    var date = document.getElementById('new-album-date').value;
+    var typeId = parseInt(document.getElementById('new-album-type').value);
+
+    if (!name) { showToast('Album name is required'); return; }
+
+    var genreIds = [];
+    document.querySelectorAll('#new-album-genres input:checked').forEach(function(cb) {
+        genreIds.push(parseInt(cb.value));
+    });
+
+    var songs = [];
+    document.querySelectorAll('[id^="new-song-"]').forEach(function(songDiv) {
+        var nameInput = songDiv.querySelector('.new-album-song-name');
+        var n = nameInput ? nameInput.value.trim() : '';
+        if (!n) return;
+        var artists = [];
+        songDiv.querySelectorAll('.new-song-artist-row').forEach(function(row) {
+            var role = row.querySelector('.new-song-artist-role');
+            artists.push({
+                artist_id: row.dataset.artistId ? parseInt(row.dataset.artistId) : null,
+                is_main: role ? role.value === 'main' : true,
+            });
+        });
+        songs.push({
+            name: n,
+            is_promoted: songDiv.querySelector('.new-song-promoted') ? songDiv.querySelector('.new-song-promoted').checked : false,
+            is_remix: songDiv.querySelector('.new-song-remix') ? songDiv.querySelector('.new-song-remix').checked : false,
+            artists: artists,
+        });
+    });
+
+    if (!songs.length) { showToast('Add at least one song'); return; }
+
+    var data = {
+        name: name,
+        release_date: date,
+        album_type_id: typeId,
+        genre_ids: genreIds,
+        songs: songs,
+    };
+
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+
+    fetch('/edit/artist/' + artistId + '/add-album', {
+        method: 'POST',
+        headers: headers,
+        body: 'data=' + encodeURIComponent(JSON.stringify(data)),
+    }).then(function(r) {
+        if (!r.ok) throw new Error('save failed');
+        return r.json();
+    }).then(function() {
+        window.location.reload();
+    }).catch(function() {
+        showToast('Failed to add album — try again');
+    });
+}
+
+// Validate add-album modal on any input/change inside it
+var _addAlbumModal = document.getElementById('add-album-modal');
+if (_addAlbumModal) {
+    _addAlbumModal.addEventListener('input', validateAddAlbum);
+    _addAlbumModal.addEventListener('change', validateAddAlbum);
+}
+
+/* Shared delete confirmation modal */
+
+var _deleteIsAjax = false;
+
+function showDeleteConfirm(title, msg, action, ajax) {
+    _deleteIsAjax = !!ajax;
+    document.getElementById('confirm-delete-title').textContent = title;
+    document.getElementById('confirm-delete-msg').textContent = msg;
+    document.getElementById('confirm-delete-form').action = action;
+    document.getElementById('confirm-delete-pw').value = '';
+    document.getElementById('confirm-delete-modal').style.display = 'flex';
+}
+
+(function() {
+    var form = document.getElementById('confirm-delete-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        if (!_deleteIsAjax) return; // let normal form submit handle artist delete (redirect)
+        e.preventDefault();
+        var pw = document.getElementById('confirm-delete-pw').value;
+        var csrfToken = document.querySelector('meta[name="csrf-token"]');
+        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        fetch(form.action, {
+            method: 'POST',
+            headers: headers,
+            body: 'password=' + encodeURIComponent(pw),
+        }).then(function(r) {
+            if (r.status === 403) { alert('Incorrect password'); return; }
+            if (!r.ok) throw new Error('delete failed');
+            document.getElementById('confirm-delete-modal').style.display = 'none';
+            window.location.reload();
+        }).catch(function() {
+            showToast('Delete failed — try again');
+        });
+    });
+})();
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
