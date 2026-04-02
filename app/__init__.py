@@ -47,10 +47,11 @@ def create_app():
     # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor
     def inject_theme():
-        from app.services.theme import get_resolved_theme, score_to_colour, score_to_style, pct_to_colour, rating_cell_style, unrated_to_colour
+        from app.cache import get_cached_theme
+        from app.services.theme import score_to_colour, score_to_style, pct_to_colour, rating_cell_style, unrated_to_colour
         from app.constants import RATING_KEY_STANDARD, RATING_KEY_STEALTH
         if current_user.is_authenticated:
-            theme = get_resolved_theme(current_user)
+            theme = get_cached_theme(current_user)
         else:
             theme = {}
         return {
@@ -67,7 +68,7 @@ def create_app():
     # Filter context processor — injects country/genre filters + dropdown options
     @flask_app.context_processor
     def inject_filters():
-        from app.models.lookups import Country, Genre
+        from app.cache import get_cached_filters
         if current_user.is_authenticated:
             if not current_user.is_system_or_guest and current_user.settings:
                 country_id = current_user.settings.country
@@ -75,11 +76,12 @@ def create_app():
             else:
                 country_id = session.get('country')
                 genre_id = session.get('genre')
+            countries, genres = get_cached_filters()
             return {
                 'current_country': country_id,
                 'current_genre': genre_id,
-                'countries': Country.query.order_by(Country.id).all(),
-                'genres': Genre.query.order_by(Genre.id).all(),
+                'countries': countries,
+                'genres': genres,
             }
         return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': []}
 

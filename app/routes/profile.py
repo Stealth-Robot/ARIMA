@@ -82,6 +82,8 @@ def update_settings():
         if 'theme' in request.form:
             val = request.form.get('theme')
             session['theme'] = int(val) if val else 0
+            from app.cache import clear_theme_cache_for_user
+            clear_theme_cache_for_user(current_user.id)
         _apply_theme_settings(lambda k, v: session.__setitem__(k, v), request.form)
     else:
         settings = current_user.settings
@@ -99,6 +101,8 @@ def update_settings():
             if 'theme' in request.form:
                 val = request.form.get('theme')
                 settings.theme = int(val) if val else 0
+                from app.cache import clear_theme_cache_for_user
+                clear_theme_cache_for_user(current_user.id)
             _apply_theme_settings(lambda k, v: setattr(settings, k, v), request.form)
             db.session.commit()
 

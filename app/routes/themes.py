@@ -58,6 +58,8 @@ def theme_save(theme_id):
         setattr(t, col, value if value else None)
 
     db.session.commit()
+    from app.cache import clear_theme_cache_for_theme
+    clear_theme_cache_for_theme(theme_id)
     return redirect(url_for('themes.themes_list'))
 
 
