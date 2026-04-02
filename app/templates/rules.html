@@ -8,5 +8,61 @@
     <div id="rules-content">
         {% include "fragments/rules_display.html" %}
     </div>
+
+    <hr class="my-8" style="border-color: var(--border);">
+
+    <h1 class="text-2xl font-bold mb-2">How It Works</h1>
+    <p class="text-sm mb-6" style="color: var(--text-secondary);">A quick guide to getting the most out of A.R.I.M.A.</p>
+    <div class="prose text-sm" style="color: var(--text-primary);">
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">Rating Songs</h2>
+        <p class="mb-2">Click any cell in your column to rate a song from 0 to 5. The colour-coded key on the artist page shows what each score means. You can also leave notes on any cell — even unrated ones. Cells with notes have a small triangle in the corner; hover to read them.</p>
+        <p class="mb-2">Ratings from other users show up in real time — no need to refresh.</p>
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">Keyboard Shortcuts</h2>
+        <p class="mb-2">You can rate quickly without touching the mouse once you've clicked into a cell.</p>
+        <table class="text-xs mt-2 mb-4" style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">Key</th>
+                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">What it does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>0–5</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Set the rating</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Enter</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Save and move to the next song</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Arrow keys</strong> / <strong>WASD</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Save and move in any direction</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Escape</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Cancel without saving</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Right-click</strong> / <strong>N</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add or edit a note</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Undo last rating change</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Ctrl+Shift+Z</strong> / <strong>Cmd+Shift+Z</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Redo last rating change</td></tr>
+            </tbody>
+        </table>
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">Finding Your Way Around</h2>
+        <ul class="list-disc ml-4 mb-4 space-y-1">
+            <li><strong>Artists</strong> — The main page. Pick an artist from the bottom bar and see their full discography with everyone's ratings side by side. Artist names are colour-coded by gender (pink / blue / green). On smaller screens, tap the hamburger menu to find an artist.</li>
+            <li><strong>Global Stats</strong> — See average scores per artist, colour-coded so you can spot who rates what at a glance. Expand an artist to see subunits and soloists.</li>
+            <li><strong>Artist Stats</strong> — Check how much each person has rated. Switch between "% complete" and "songs remaining" with the dropdown.</li>
+            <li><strong>Submissions</strong> — New artists and albums waiting for approval show up here.</li>
+            <li><strong>Changelog</strong> — A searchable log of everything that's been added.</li>
+            <li><strong>Search</strong> — Hit the search icon in the top bar and type at least 2 characters. Click a result to jump straight to it.</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">Personalisation</h2>
+        <ul class="list-disc ml-4 mb-4 space-y-1">
+            <li><strong>Filters</strong> — Use the genre and country dropdowns to narrow what you see. You can also toggle remixes and featured tracks on or off, and sort albums newest- or oldest-first.</li>
+            <li><strong>Themes</strong> — Switch between Classic, Dark, or a custom theme on your profile page.</li>
+            <li>All your settings are saved automatically and stick between sessions.</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">For Editors &amp; Admins</h2>
+        <ul class="list-disc ml-4 mb-4 space-y-1">
+            <li><strong>Edit Mode</strong> — Toggle it in the navbar to edit album names, release dates, song names, and remix/promoted flags right on the page.</li>
+            <li><strong>Add Artist</strong> — Create a new artist with their albums, songs, genres, and collaborations. Editor submissions are auto-approved.</li>
+            <li><strong>Collaborations</strong> — Songs with multiple main artists automatically show "feat." labels.</li>
+        </ul>
+
+    </div>
 </div>
 {% endblock %}

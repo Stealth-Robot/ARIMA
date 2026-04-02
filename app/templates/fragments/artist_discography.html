@@ -150,7 +150,7 @@
                 {% if cell_editable %}
                 onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"
                 {% endif %}>
-                {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+                {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
 
@@ -293,7 +293,7 @@
                 {% if cell_editable %}
                 onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"
                 {% endif %}>
-                {% if r %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+                {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
             </td>
             {% endfor %}
             {# Key column — continues from main discography cycle #}

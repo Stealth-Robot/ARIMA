@@ -632,6 +632,9 @@ function submitNote(cell, songId, noteText) {
 
     const values = { song_id: songId, note: noteText || '' };
     if (rating !== null) values.rating = rating;
+    // Extract user_id from cell ID (format: rating-{songId}-{userId})
+    const cellParts = cell.id.split('-');
+    if (cellParts.length >= 3) values.user_id = cellParts[2];
 
     htmx.ajax('POST', '/rate', {
         target: cell,

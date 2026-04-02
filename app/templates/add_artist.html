@@ -83,7 +83,7 @@
         <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
 
         <div class="flex gap-3 mt-4 mb-10">
-            <button type="submit"
+            <button type="submit" id="submit-btn" disabled
                     class="px-6 py-2 rounded font-semibold"
                     style="background-color: #16a34a; color: white;">
                 Add Artist
@@ -119,11 +119,11 @@ function addAlbum() {
         '</div>' +
         '<div class="flex gap-3 mb-3">' +
             '<div class="flex-1">' +
-                '<label class="block text-sm mb-1">Album Name</label>' +
+                '<label class="block text-sm mb-1">Album Name <span class="text-red-500">*</span></label>' +
                 '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
             '</div>' +
             '<div class="w-40">' +
-                '<label class="block text-sm mb-1">Release Date</label>' +
+                '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
                 '<input type="date" data-album="' + albumCount + '" data-field="release_date" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
             '</div>' +
             '<div class="w-32">' +
@@ -205,7 +205,7 @@ function addSongArtist(albumNum, songNum, artistId, artistName, isMain, isNew) {
             '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
             '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>' +
         '</select>' +
-        (count > 0 ? '<button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs">x</button>' : '');
+        (count > 0 ? '<button type="button" onclick="this.parentElement.remove(); validateForm();" class="text-red-500 text-xs">x</button>' : '');
     container.appendChild(row);
     updateArtistDropdown(albumNum, songNum);
 }
@@ -248,7 +248,7 @@ function addSong(albumNum) {
             '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
             '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
             '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + ')" class="text-red-500 text-sm">x</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" class="text-red-500 text-sm">x</button>' +
         '</div>' +
         '<div class="flex items-center gap-2 ml-6">' +
             '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
@@ -270,6 +270,7 @@ document.getElementById('artist_name').addEventListener('input', function() {
 });
 
 document.getElementById('add-artist-form').addEventListener('submit', function() {
+    formDirty = false;
     const albums = [];
     document.querySelectorAll('[id^="album-"]').forEach(function(albumDiv) {
         const albumNum = albumDiv.id.split('-')[1];
@@ -328,6 +329,63 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
+function validateForm() {
+    var btn = document.getElementById('submit-btn');
+    var valid = true;
+
+    // Artist name, gender, country
+    if (!document.getElementById('artist_name').value.trim()) valid = false;
+    if (!document.querySelector('[name="gender_id"]').value) valid = false;
+    if (!document.querySelector('[name="country_id"]').value) valid = false;
+
+    // At least one album
+    var albums = document.querySelectorAll('[id^="album-"]');
+    if (!albums.length) valid = false;
+
+    albums.forEach(function(albumDiv) {
+        var num = albumDiv.id.split('-')[1];
+        // Album name required
+        var nameInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="name"]');
+        if (!nameInput || !nameInput.value.trim()) valid = false;
+        // Release date required
+        var dateInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="release_date"]');
+        if (!dateInput || !dateInput.value) valid = false;
+        // At least one genre checked
+        var genreChecked = albumDiv.querySelectorAll('[data-album="' + num + '"][data-genre]:checked');
+        if (!genreChecked.length) valid = false;
+        // At least one song
+        var songs = albumDiv.querySelectorAll('[id^="song-' + num + '-"]');
+        if (!songs.length) valid = false;
+        // Each song needs a name and at least one main artist
+        songs.forEach(function(songDiv) {
+            var sNum = songDiv.id.split('-')[2];
+            var songName = songDiv.querySelector('[data-song="' + sNum + '"][data-field="name"]');
+            if (!songName || !songName.value.trim()) valid = false;
+            var hasMain = false;
+            songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                var role = row.querySelector('.song-artist-role');
+                if (role && role.value === 'main') hasMain = true;
+            });
+            if (!hasMain) valid = false;
+        });
+    });
+
+    btn.disabled = !valid;
+    btn.style.opacity = valid ? '1' : '0.5';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+}
+
+// Event delegation: validate on any input/change inside the form
+document.getElementById('add-artist-form').addEventListener('input', validateForm);
+document.getElementById('add-artist-form').addEventListener('change', validateForm);
+
+// Also validate after DOM mutations (add/remove album/song/artist)
+var _origAddAlbum = addAlbum, _origRemoveAlbum = removeAlbum, _origAddSong = addSong, _origAddSongArtist = addSongArtist;
+addAlbum = function() { _origAddAlbum(); validateForm(); };
+removeAlbum = function(n) { _origRemoveAlbum(n); validateForm(); };
+addSong = function(n) { _origAddSong(n); validateForm(); };
+addSongArtist = function(a, s, id, name, isMain, isNew) { _origAddSongArtist(a, s, id, name, isMain, isNew); validateForm(); };
+
 // Restore albums from previously submitted form data on validation error
 (function() {
     const raw = document.getElementById('albums-data').value;
@@ -353,11 +411,11 @@ window.addEventListener('beforeunload', function(e) {
                 '</div>' +
                 '<div class="flex gap-3 mb-3">' +
                     '<div class="flex-1">' +
-                        '<label class="block text-sm mb-1">Album Name</label>' +
+                        '<label class="block text-sm mb-1">Album Name <span class="text-red-500">*</span></label>' +
                         '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
                     '</div>' +
                     '<div class="w-40">' +
-                        '<label class="block text-sm mb-1">Release Date</label>' +
+                        '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
                         '<input type="date" data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
                     '</div>' +
                     '<div class="w-32">' +
@@ -368,11 +426,11 @@ window.addEventListener('beforeunload', function(e) {
                     '</div>' +
                 '</div>' +
                 '<div class="mb-3">' +
-                    '<label class="block text-sm mb-1">Genres</label>' +
+                    '<label class="block text-sm mb-1">Genres <span class="text-red-500">*</span></label>' +
                     '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(num) + '</div>' +
                 '</div>' +
                 '<div class="mb-3">' +
-                    '<label class="block text-sm mb-1">Songs</label>' +
+                    '<label class="block text-sm mb-1">Songs <span class="text-red-500">*</span></label>' +
                     '<div id="songs-' + num + '" class="space-y-2"></div>' +
                     '<button type="button" onclick="addSong(' + num + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
                 '</div>';
@@ -408,7 +466,7 @@ window.addEventListener('beforeunload', function(e) {
                         '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
                         '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
                         '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + ')" class="text-red-500 text-sm">x</button>' +
+                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" class="text-red-500 text-sm">x</button>' +
                     '</div>' +
                     '<div class="flex items-center gap-2 ml-6">' +
                         '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
@@ -438,6 +496,7 @@ window.addEventListener('beforeunload', function(e) {
     } catch(e) {
         addAlbum();
     }
+    validateForm();
 })();
 </script>
 {% endblock %}

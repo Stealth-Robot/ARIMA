@@ -159,6 +159,9 @@ def add_artist_submit():
             if not album.get('songs'):
                 errors['albums'] = 'Each album must have at least one song.'
                 break
+            if not album.get('genre_ids'):
+                errors['albums'] = 'Each album needs at least one genre.'
+                break
             release_date = album.get('release_date', '')
             if release_date == '':
                 errors['albums'] = 'Album release date is required.'
