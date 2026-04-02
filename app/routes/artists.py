@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, redirect, url_for, abort
 from flask_login import login_required, current_user
 
 from sqlalchemy.orm import selectinload, joinedload
@@ -13,15 +13,11 @@ artists_bp = Blueprint('artists', __name__)
 GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed'}
 
 
-@artists_bp.route('/artists')
+@artists_bp.route('/artists', strict_slashes=False)
 @login_required
 def artists_list():
     """Redirect to Misc. Artists by default."""
-    misc = Artist.query.filter_by(name='Misc. Artists').first()
-    if misc:
-        return redirect(url_for('artists.artist_detail', artist_slug=misc.slug or str(misc.id)))
-    navbar = _get_filtered_navbar()
-    return render_template('artists.html', navbar_artists=navbar, gender_css=GENDER_CSS)
+    return redirect(url_for('artists.artist_detail', artist_slug='misc-artists'))
 
 
 @artists_bp.route('/artists/<int:artist_id>')
@@ -30,7 +26,7 @@ def artist_detail_by_id(artist_id):
     """Backwards-compat redirect: numeric ID → slug URL (301)."""
     artist = db.session.get(Artist, artist_id)
     if not artist:
-        return 'Artist not found', 404
+        abort(404)
     slug = artist.slug or str(artist.id)
     return redirect(url_for('artists.artist_detail', artist_slug=slug), 301)
 
@@ -41,7 +37,7 @@ def artist_detail(artist_slug):
     """Show artist discography. Returns fragment for HTMX or full page."""
     artist = Artist.query.filter_by(slug=artist_slug).first()
     if not artist:
-        return 'Artist not found', 404
+        abort(404)
 
     artist_id = artist.id
 

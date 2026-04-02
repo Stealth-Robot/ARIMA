@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, redirect, url_for, abort
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -132,7 +132,7 @@ def approve(sub_id):
     result = approve_submission(sub_id, current_user,
                                 rejected_song_ids=set(rejected_ids) if rejected_ids else None)
     if result is None:
-        return 'Submission not found or already processed', 404
+        abort(404)
 
     if request.headers.get('HX-Request'):
         return render_template('fragments/submission_detail.html', sub=result)
@@ -150,7 +150,7 @@ def reject(sub_id):
 
     result = reject_submission(sub_id, current_user, reason)
     if result is None:
-        return 'Submission not found or already processed', 404
+        abort(404)
 
     if request.headers.get('HX-Request'):
         return render_template('fragments/submission_detail.html', sub=result)

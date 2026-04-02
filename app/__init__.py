@@ -96,6 +96,12 @@ def create_app():
             response.headers['Cache-Control'] = 'no-store'
         return response
 
+    # 404 error page
+    @flask_app.errorhandler(404)
+    def page_not_found(e):
+        from flask import render_template
+        return render_template('404.html'), 404
+
     # Register routes
     from app.routes import register_routes
     register_routes(flask_app)
