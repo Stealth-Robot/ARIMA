@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from flask import Blueprint, request, render_template, redirect, url_for
 from flask_login import login_required, current_user
@@ -93,17 +94,30 @@ def submissions_list():
 
     subs = query.order_by(Submission.submitted_at.desc()).all()
 
-    # Build detail data for each submission
+    # Batch-load all related entities (3 queries total, regardless of submission count)
+    sub_ids = [sub.id for sub in subs]
+    all_artists = Artist.query.filter(Artist.submission_id.in_(sub_ids)).all() if sub_ids else []
+    all_albums = Album.query.filter(Album.submission_id.in_(sub_ids)).all() if sub_ids else []
+    all_songs = Song.query.filter(Song.submission_id.in_(sub_ids)).all() if sub_ids else []
+
+    # Group by submission_id
+    artists_by_sub = defaultdict(list)
+    albums_by_sub = defaultdict(list)
+    songs_by_sub = defaultdict(list)
+    for a in all_artists:
+        artists_by_sub[a.submission_id].append(a)
+    for a in all_albums:
+        albums_by_sub[a.submission_id].append(a)
+    for s in all_songs:
+        songs_by_sub[s.submission_id].append(s)
+
     submissions_data = []
     for sub in subs:
-        artists = Artist.query.filter_by(submission_id=sub.id).all()
-        albums = Album.query.filter_by(submission_id=sub.id).all()
-        songs = Song.query.filter_by(submission_id=sub.id).all()
         submissions_data.append({
             'submission': sub,
-            'artists': artists,
-            'albums': albums,
-            'songs': songs,
+            'artists': artists_by_sub[sub.id],
+            'albums': albums_by_sub[sub.id],
+            'songs': songs_by_sub[sub.id],
         })
 
     return render_template('submissions.html', submissions=submissions_data, search=search,
