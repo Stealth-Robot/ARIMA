@@ -11,7 +11,7 @@ import time
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
 
-_filter_cache = {'countries': [], 'genres': [], 'ts': 0.0}
+_filter_cache = {'countries': [], 'genres': [], 'ts': -9999.0}
 _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():

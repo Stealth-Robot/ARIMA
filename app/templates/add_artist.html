@@ -98,7 +98,12 @@
 </div>
 
 <script>
+var allArtists = {{ artists_js | tojson }};
 let albumCount = 0;
+
+function getNewArtistName() {
+    return (document.getElementById('artist_name').value || '').trim() || 'New Artist';
+}
 
 function addAlbum() {
     albumCount++;
@@ -163,7 +168,7 @@ let songCounters = {};
 function renumberSongs(albumNum) {
     const container = document.getElementById('songs-' + albumNum);
     container.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function (div, i) {
-        const span = div.querySelector('span');
+        const span = div.querySelector('.song-num');
         if (span) span.textContent = (i + 1) + '.';
     });
 }
@@ -181,25 +186,88 @@ function moveSong(btn, direction) {
     renumberSongs(albumNum);
 }
 
+function artistSelectOptions(excludeIds) {
+    return '<option value="">-- Add artist --</option>' +
+        allArtists.filter(function(a) { return excludeIds.indexOf(a.id) === -1; })
+            .map(function(a) { return '<option value="' + a.id + '">' + a.name.replace(/</g, '&lt;') + '</option>'; }).join('');
+}
+
+function addSongArtist(albumNum, songNum, artistId, artistName, isMain, isNew) {
+    var container = document.getElementById('song-artists-' + albumNum + '-' + songNum);
+    var count = container.children.length;
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-2 song-artist-row';
+    row.dataset.artistId = artistId || '';
+    row.dataset.isNew = isNew ? '1' : '0';
+    row.innerHTML =
+        '<span class="text-xs' + (isNew ? ' new-artist-label' : '') + '">' + (artistName || '').replace(/</g, '&lt;') + '</span>' +
+        '<select class="song-artist-role text-xs px-1 border rounded" style="border-color: var(--border);">' +
+            '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
+            '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>' +
+        '</select>' +
+        (count > 0 ? '<button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs">x</button>' : '');
+    container.appendChild(row);
+    updateArtistDropdown(albumNum, songNum);
+}
+
+function updateArtistDropdown(albumNum, songNum) {
+    var container = document.getElementById('song-artists-' + albumNum + '-' + songNum);
+    var select = container.parentElement.querySelector('.add-artist-select');
+    if (!select) return;
+    var usedIds = [];
+    container.querySelectorAll('.song-artist-row').forEach(function(row) {
+        if (row.dataset.artistId) usedIds.push(parseInt(row.dataset.artistId));
+    });
+    select.innerHTML = artistSelectOptions(usedIds);
+    select.value = '';
+}
+
+function onArtistDropdownChange(select, albumNum, songNum) {
+    var id = parseInt(select.value);
+    if (!id) return;
+    var artist = allArtists.find(function(a) { return a.id === id; });
+    if (!artist) return;
+    addSongArtist(albumNum, songNum, id, artist.name, true, false);
+    select.value = '';
+}
+
 function addSong(albumNum) {
     if (!songCounters[albumNum]) songCounters[albumNum] = 0;
     songCounters[albumNum]++;
     const songNum = songCounters[albumNum];
     const container = document.getElementById('songs-' + albumNum);
     const div = document.createElement('div');
-    div.className = 'flex gap-2 items-center';
+    div.className = 'mb-3 p-2 border rounded';
+    div.style.borderColor = 'var(--border)';
     div.id = 'song-' + albumNum + '-' + songNum;
     div.innerHTML =
-        '<span class="text-sm w-6">' + songNum + '.</span>' +
-        '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
-        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> Promoted</label>' +
-        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
-        '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="artist_is_main" class="song-check" checked> Main</label>' +
-        '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
-        '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-        '<button type="button" onclick="this.parentElement.remove(); renumberSongs(' + albumNum + ')" class="text-red-500 text-sm">x</button>';
+        '<div class="flex gap-2 items-center mb-1">' +
+            '<span class="text-sm w-6 song-num">' + songNum + '.</span>' +
+            '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
+            '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> Promoted</label>' +
+            '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
+            '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
+            '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + ')" class="text-red-500 text-sm">x</button>' +
+        '</div>' +
+        '<div class="flex items-center gap-2 ml-6">' +
+            '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
+            '<div id="song-artists-' + albumNum + '-' + songNum + '" class="flex flex-wrap gap-2"></div>' +
+            '<select class="add-artist-select text-xs px-1 border rounded" style="border-color: var(--border);" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
+                artistSelectOptions([]) +
+            '</select>' +
+        '</div>';
     container.appendChild(div);
+    addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
 }
+
+// Keep "new artist" labels in sync with the artist name input
+document.getElementById('artist_name').addEventListener('input', function() {
+    var name = this.value.trim() || 'New Artist';
+    document.querySelectorAll('.new-artist-label').forEach(function(el) { el.textContent = name; });
+    var slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    document.getElementById('artist-slug-preview').value = slug;
+});
 
 document.getElementById('add-artist-form').addEventListener('submit', function() {
     const albums = [];
@@ -219,11 +287,21 @@ document.getElementById('add-artist-form').addEventListener('submit', function()
             const songNum = songDiv.id.split('-')[2];
             const name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
             if (name.trim()) {
+                var artists = [];
+                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                    var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
+                    var isNew = row.dataset.isNew === '1';
+                    var role = row.querySelector('.song-artist-role');
+                    artists.push({
+                        artist_id: isNew ? null : aid,
+                        is_main: role ? role.value === 'main' : true,
+                    });
+                });
                 album.songs.push({
                     name: name,
                     is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
                     is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
-                    artist_is_main: (songDiv.querySelector('[data-song="' + songNum + '"][data-field="artist_is_main"]') || {checked: true}).checked,
+                    artists: artists,
                 });
             }
         });
@@ -232,12 +310,7 @@ document.getElementById('add-artist-form').addEventListener('submit', function()
     document.getElementById('albums-data').value = JSON.stringify(albums);
 });
 
-// Slug preview: slugify the artist name as the user types
-document.getElementById('artist_name').addEventListener('input', function() {
-    const slug = this.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    document.getElementById('artist-slug-preview').value = slug;
-});
-// Initialise on page load (restoring form data after error)
+// Initialise slug preview on page load
 (function() {
     const nameVal = document.getElementById('artist_name').value;
     if (nameVal) {
@@ -324,18 +397,42 @@ window.addEventListener('beforeunload', function(e) {
                 const sNum = songCounters[num];
                 const sc = document.getElementById('songs-' + num);
                 const sdiv = document.createElement('div');
-                sdiv.className = 'flex gap-2 items-center';
+                sdiv.className = 'mb-3 p-2 border rounded';
+                sdiv.style.borderColor = 'var(--border)';
                 sdiv.id = 'song-' + num + '-' + sNum;
                 sdiv.innerHTML =
-                    '<span class="text-sm w-6">' + sNum + '.</span>' +
-                    '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
-                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
-                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
-                    '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="artist_is_main" class="song-check"' + (songData.artist_is_main !== false ? ' checked' : '') + '> Main</label>' +
-                    '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
-                    '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-                    '<button type="button" onclick="this.parentElement.remove(); renumberSongs(' + num + ')" class="text-red-500 text-sm">x</button>';
+                    '<div class="flex gap-2 items-center mb-1">' +
+                        '<span class="text-sm w-6 song-num">' + sNum + '.</span>' +
+                        '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
+                        '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
+                        '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                        '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
+                        '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
+                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + ')" class="text-red-500 text-sm">x</button>' +
+                    '</div>' +
+                    '<div class="flex items-center gap-2 ml-6">' +
+                        '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
+                        '<div id="song-artists-' + num + '-' + sNum + '" class="flex flex-wrap gap-2"></div>' +
+                        '<select class="add-artist-select text-xs px-1 border rounded" style="border-color: var(--border);" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
+                            artistSelectOptions([]) +
+                        '</select>' +
+                    '</div>';
                 sc.appendChild(sdiv);
+
+                // Restore artist rows
+                var songArtists = songData.artists || [];
+                if (songArtists.length) {
+                    songArtists.forEach(function(sa) {
+                        if (sa.artist_id === null) {
+                            addSongArtist(num, sNum, null, getNewArtistName(), sa.is_main !== false, true);
+                        } else {
+                            var found = allArtists.find(function(a) { return a.id === sa.artist_id; });
+                            addSongArtist(num, sNum, sa.artist_id, found ? found.name : 'Artist #' + sa.artist_id, sa.is_main !== false, false);
+                        }
+                    });
+                } else {
+                    addSongArtist(num, sNum, null, getNewArtistName(), songData.artist_is_main !== false, true);
+                }
             });
         });
     } catch(e) {

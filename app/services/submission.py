@@ -89,11 +89,30 @@ def create_submission(user, artist_data, albums_data):
                 song_id=song.id,
                 track_number=track_num,
             ))
-            db.session.add(ArtistSong(
-                artist_id=artist_id,
-                song_id=song.id,
-                artist_is_main=song_data.get('artist_is_main', True),
-            ))
+
+            # Artist-song links: support multiple artists per song
+            song_artists = song_data.get('artists')
+            if song_artists:
+                seen_artist_ids = set()
+                for sa in song_artists:
+                    sa_artist_id = sa.get('artist_id')
+                    if sa_artist_id is None:
+                        sa_artist_id = artist_id
+                    if sa_artist_id in seen_artist_ids:
+                        continue
+                    seen_artist_ids.add(sa_artist_id)
+                    db.session.add(ArtistSong(
+                        artist_id=sa_artist_id,
+                        song_id=song.id,
+                        artist_is_main=sa.get('is_main', True),
+                    ))
+            else:
+                # Backwards compat: single artist_is_main flag
+                db.session.add(ArtistSong(
+                    artist_id=artist_id,
+                    song_id=song.id,
+                    artist_is_main=song_data.get('artist_is_main', True),
+                ))
 
     db.session.commit()
     return submission

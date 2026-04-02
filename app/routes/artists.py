@@ -80,6 +80,10 @@ def artist_detail(artist_slug):
                                soloist_parent=soloist_parent)
 
     navbar = _get_filtered_navbar()
+    # Ensure current artist always appears in navbar regardless of filters
+    if artist.id not in {a.id for a in navbar}:
+        navbar.append(artist)
+        navbar.sort(key=lambda a: a.name.lower())
     return render_template('artists.html',
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,

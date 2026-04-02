@@ -112,11 +112,13 @@ def add_artist_form():
     artists = Artist.query.order_by(Artist.name).all()
     album_types_js = [{'id': t.id, 'type': t.type} for t in album_types]
     genres_js = [{'id': g.id, 'genre': g.genre} for g in genres]
+    artists_js = [{'id': a.id, 'name': a.name} for a in artists]
     return render_template('add_artist.html',
                            countries=countries, genres=genres,
                            album_types=album_types, genders=genders,
                            artists=artists, errors={}, form_data={},
-                           album_types_js=album_types_js, genres_js=genres_js)
+                           album_types_js=album_types_js, genres_js=genres_js,
+                           artists_js=artists_js)
 
 
 @edit_bp.route('/add-artist', methods=['POST'])
@@ -164,6 +166,13 @@ def add_artist_submit():
             if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', release_date):
                 errors['albums'] = 'Release date must be in YYYY-MM-DD format.'
                 break
+            for song in album.get('songs', []):
+                artists_list = song.get('artists', [])
+                if artists_list and not any(a.get('is_main') for a in artists_list):
+                    errors['albums'] = 'Each song must have at least one main artist.'
+                    break
+            if errors:
+                break
 
     if errors:
         countries = Country.query.order_by(Country.id).all()
@@ -173,6 +182,7 @@ def add_artist_submit():
         artists = Artist.query.order_by(Artist.name).all()
         album_types_js = [{'id': t.id, 'type': t.type} for t in album_types]
         genres_js = [{'id': g.id, 'genre': g.genre} for g in genres]
+        artists_js = [{'id': a.id, 'name': a.name} for a in artists]
         form_data = {
             'artist_name': name,
             'gender_id': gender_id,
@@ -184,7 +194,8 @@ def add_artist_submit():
                                album_types=album_types, genders=genders,
                                artists=artists, errors=errors,
                                form_data=form_data,
-                               album_types_js=album_types_js, genres_js=genres_js), 422
+                               album_types_js=album_types_js, genres_js=genres_js,
+                               artists_js=artists_js), 422
 
     # Generate unique slug
     existing_slugs = {a.slug for a in Artist.query.filter(Artist.slug.isnot(None)).all()}
