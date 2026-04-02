@@ -9,7 +9,7 @@
         {% include "fragments/rules_display.html" %}
     </div>
 
-    <hr class="my-8" style="border-color: var(--border);">
+    <hr style="border-color: var(--border); margin: 2rem 0;">
 
     <h1 class="text-2xl font-bold mb-2">How It Works</h1>
     <p class="text-sm mb-6" style="color: var(--text-secondary);">A quick guide to getting the most out of A.R.I.M.A.</p>
@@ -106,4 +106,22 @@
 
     </div>
 </div>
+<script>
+(function() {
+    var form = document.getElementById('edit-mode-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var csrf = form.querySelector('[name=csrf_token]');
+        fetch(form.action, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrf ? csrf.value : ''),
+            redirect: 'manual',
+        }).then(function() {
+            window.location.reload();
+        });
+    });
+})();
+</script>
 {% endblock %}

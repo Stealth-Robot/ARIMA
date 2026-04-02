@@ -7,7 +7,7 @@
     {% if rule.last_edited_at %} on {{ rule.last_edited_at[:10] }}{% endif %}
 </p>
 {% endif %}
-{% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+{% if current_user.is_authenticated and current_user.is_editor_or_admin and session.get('edit_mode') %}
 <button hx-get="{{ url_for('rules.rules_edit') }}"
         hx-target="#rules-content"
         hx-swap="innerHTML"
