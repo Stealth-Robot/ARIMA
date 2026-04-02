@@ -11,5 +11,8 @@ module.exports = {
     'hover:opacity-80',
     'hover:underline',
     'hover:bg-red-700',
+    'lg:flex-row',
+    'lg:w-5/12',
+    'lg:w-7/12',
   ],
 };
