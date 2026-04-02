@@ -8,7 +8,7 @@ from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug
-from app.services.submission import create_submission
+from app.services.audit import log_change
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 edit_bp = Blueprint('edit', __name__, url_prefix='/edit')
@@ -30,7 +30,9 @@ def album_name(album_id):
     name = request.form.get('value', '').strip()
     if not name:
         abort(400)
+    old_name = album.name
     album.name = name
+    log_change(current_user, f'Renamed album from "{old_name}" to "{name}"', album=album)
     db.session.commit()
     return name
 
@@ -50,6 +52,7 @@ def album_release_date(album_id):
         album.release_date = value
     else:
         abort(400)
+    log_change(current_user, f'Changed release date to {value or "none"}', album=album)
     db.session.commit()
     return value
 
@@ -69,9 +72,9 @@ def album_genres_edit(album_id):
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     for gid in genre_ids:
         db.session.execute(album_genres.insert().values(album_id=album_id, genre_id=gid))
-    db.session.commit()
-    # Return updated genre names as JSON
     names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    log_change(current_user, f'Set genres to {", ".join(names) or "none"}', album=album)
+    db.session.commit()
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
@@ -90,6 +93,7 @@ def artist_country(artist_id):
     if country is None:
         abort(400)
     artist.country_id = country.id
+    log_change(current_user, f'Changed country to {country.country}', artist=artist)
     db.session.commit()
     return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
 
@@ -127,6 +131,7 @@ def song_move_album(song_id):
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == old_id))
             db.session.query(Album).filter_by(id=old_id).delete()
 
+    log_change(current_user, f'Moved song "{song.name}" to album "{new_album.name}"', song=song, album=new_album)
     db.session.commit()
 
     return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}
@@ -160,15 +165,44 @@ def add_album_to_artist(artist_id):
     if not songs:
         abort(400)
 
-    albums_data = [{
-        'name': album_name,
-        'release_date': release_date or None,
-        'album_type_id': int(album_type_id),
-        'genre_ids': [int(gid) for gid in genre_ids],
-        'songs': songs,
-    }]
+    album = Album(
+        name=album_name,
+        release_date=release_date or None,
+        album_type_id=int(album_type_id),
+        submitted_by_id=current_user.id,
+    )
+    db.session.add(album)
+    db.session.flush()
 
-    create_submission(current_user, {'id': artist_id}, albums_data)
+    for gid in genre_ids:
+        db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=int(gid)))
+
+    for track_num, song_data in enumerate(songs, 1):
+        song = Song(
+            name=song_data['name'],
+            submitted_by_id=current_user.id,
+            is_promoted=song_data.get('is_promoted', False),
+            is_remix=song_data.get('is_remix', False),
+        )
+        db.session.add(song)
+        db.session.flush()
+
+        db.session.add(AlbumSong(album_id=album.id, song_id=song.id, track_number=track_num))
+
+        song_artists = song_data.get('artists')
+        if song_artists:
+            seen = set()
+            for sa in song_artists:
+                sa_id = sa.get('artist_id') or artist_id
+                if sa_id in seen:
+                    continue
+                seen.add(sa_id)
+                db.session.add(ArtistSong(artist_id=sa_id, song_id=song.id, artist_is_main=sa.get('is_main', True)))
+        else:
+            db.session.add(ArtistSong(artist_id=artist_id, song_id=song.id, artist_is_main=song_data.get('artist_is_main', True)))
+
+    log_change(current_user, f'Added album "{album_name}" with {len(songs)} songs', artist=artist, album=album)
+    db.session.commit()
 
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
 
@@ -184,7 +218,9 @@ def song_name(song_id):
     name = request.form.get('value', '').strip()
     if not name:
         abort(400)
+    old_name = song.name
     song.name = name
+    log_change(current_user, f'Renamed song from "{old_name}" to "{name}"', song=song)
     db.session.commit()
     return name
 
@@ -198,6 +234,8 @@ def song_is_remix(song_id):
     if song is None:
         abort(404)
     song.is_remix = not song.is_remix
+    label = 'Marked' if song.is_remix else 'Unmarked'
+    log_change(current_user, f'{label} "{song.name}" as remix', song=song)
     db.session.commit()
     checked = 'checked' if song.is_remix else ''
     return f'<input type="checkbox" {checked} hx-post="/edit/song/{song_id}/is-remix" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
@@ -212,6 +250,8 @@ def song_is_promoted(song_id):
     if song is None:
         abort(404)
     song.is_promoted = not song.is_promoted
+    label = 'Marked' if song.is_promoted else 'Unmarked'
+    log_change(current_user, f'{label} "{song.name}" as promoted', song=song)
     db.session.commit()
     checked = 'checked' if song.is_promoted else ''
     return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
@@ -323,14 +363,57 @@ def add_artist_submit():
     existing_slugs = {a.slug for a in Artist.query.filter(Artist.slug.isnot(None)).all()}
     slug = generate_unique_slug(name, existing_slugs)
 
-    artist_data = {
-        'name': name,
-        'gender_id': int(gender_id),
-        'country_id': int(country_id),
-        'slug': slug,
-    }
+    artist = Artist(
+        name=name,
+        gender_id=int(gender_id),
+        country_id=int(country_id),
+        slug=slug,
+        submitted_by_id=current_user.id,
+    )
+    db.session.add(artist)
+    db.session.flush()
 
-    create_submission(current_user, artist_data, albums_data)
+    total_songs = 0
+    for album_data in albums_data:
+        album = Album(
+            name=album_data['name'],
+            release_date=album_data.get('release_date') or None,
+            album_type_id=album_data['album_type_id'],
+            submitted_by_id=current_user.id,
+        )
+        db.session.add(album)
+        db.session.flush()
+
+        for gid in album_data.get('genre_ids', []):
+            db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=gid))
+
+        for track_num, song_data in enumerate(album_data.get('songs', []), 1):
+            song_obj = Song(
+                name=song_data['name'],
+                submitted_by_id=current_user.id,
+                is_promoted=song_data.get('is_promoted', False),
+                is_remix=song_data.get('is_remix', False),
+            )
+            db.session.add(song_obj)
+            db.session.flush()
+            total_songs += 1
+
+            db.session.add(AlbumSong(album_id=album.id, song_id=song_obj.id, track_number=track_num))
+
+            song_artists = song_data.get('artists')
+            if song_artists:
+                seen = set()
+                for sa in song_artists:
+                    sa_id = sa.get('artist_id') or artist.id
+                    if sa_id in seen:
+                        continue
+                    seen.add(sa_id)
+                    db.session.add(ArtistSong(artist_id=sa_id, song_id=song_obj.id, artist_is_main=sa.get('is_main', True)))
+            else:
+                db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
+
+    log_change(current_user, f'Added artist "{name}" with {len(albums_data)} albums, {total_songs} songs', artist=artist)
+    db.session.commit()
 
     return redirect(url_for('artists.artist_detail', artist_slug=slug))
 
@@ -380,8 +463,10 @@ def delete_artist(artist_id):
         db.or_(ArtistArtist.artist_1 == artist_id, ArtistArtist.artist_2 == artist_id)
     ).delete(synchronize_session=False)
 
-    # Delete the artist
+    # Log before deleting (artist FK will be gone after delete)
+    artist_name = artist.name
     db.session.delete(artist)
+    log_change(current_user, f'Deleted artist "{artist_name}"')
     db.session.commit()
 
     return redirect(url_for('artists.artists_list'))
@@ -413,6 +498,7 @@ def delete_song(song_id):
     # Get album links before deleting
     album_song_rows = AlbumSong.query.filter_by(song_id=song_id).all()
 
+    song_name_val = song.name
     ArtistSong.query.filter_by(song_id=song_id).delete()
     Rating.query.filter_by(song_id=song_id).delete()
     AlbumSong.query.filter_by(song_id=song_id).delete()
@@ -425,6 +511,7 @@ def delete_song(song_id):
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
             db.session.query(Album).filter_by(id=row.album_id).delete()
 
+    log_change(current_user, f'Deleted song "{song_name_val}"')
     db.session.commit()
     return '', 204
 
@@ -454,7 +541,9 @@ def delete_album(album_id):
         Rating.query.filter_by(song_id=song_id).delete()
         db.session.query(Song).filter_by(id=song_id).delete()
 
+    album_name_val = album.name
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
+    log_change(current_user, f'Deleted album "{album_name_val}" ({len(song_ids)} songs)')
     db.session.commit()
     return '', 204

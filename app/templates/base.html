@@ -50,9 +50,6 @@
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
         {% endif %}
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('submissions.submissions_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
-        {% endif %}
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
         {% endif %}

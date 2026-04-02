@@ -60,13 +60,11 @@ var _currentArtistId = {{ artist.id }};
         {% set songs = entry.songs %}
         {% set ratings = entry.ratings %}
         {% set collab_labels = entry.collab_labels %}
-        {% set is_pending = entry.is_pending %}
 
         <!-- Album header row -->
         <tr style="border: 1px solid var(--grid-line);">
             <td class="px-2 py-1 font-bold"
-                style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg);
-                {% if is_pending %}opacity: 0.7;{% endif %}">
+                style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg);">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
@@ -78,7 +76,6 @@ var _currentArtistId = {{ artist.id }};
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
-                {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
             {% if edit_mode %}
             <td style="border: 1px solid var(--grid-line);">&nbsp;</td>
@@ -88,11 +85,9 @@ var _currentArtistId = {{ artist.id }};
         </tr>
 
         {% for song, track_num in songs %}
-        {% set song_pending = song.submission.status == 'pending' if song.submission else false %}
 
         <tr id="song-{{ song.id }}" style="border: 1px solid var(--grid-line);
-                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}
-                   {% if song_pending %}opacity: 0.7;{% endif %}">
+                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <!-- Song name (no track number) -->
             <td class="px-2 py-1" style="border: 1px solid var(--grid-line);
                 {% if song.is_promoted %}background-color: var(--promoted-song);{% endif %}">
@@ -106,7 +101,6 @@ var _currentArtistId = {{ artist.id }};
                 {{ song.name }}
                 {% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
-                {% if song_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
 
             <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
@@ -174,7 +168,6 @@ var _currentArtistId = {{ artist.id }};
         {% set songs = entry.songs %}
         {% set ratings = entry.ratings %}
         {% set collab_labels = entry.collab_labels %}
-        {% set is_pending = entry.is_pending %}
 
         {# Album header — same as main discography #}
         <tr style="border: 1px solid var(--grid-line);">

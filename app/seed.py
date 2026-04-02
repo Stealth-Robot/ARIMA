@@ -6,7 +6,6 @@ from app.extensions import bcrypt
 from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship
 from app.models.user import Role, User
 from app.models.theme import Theme
-from app.models.submission import Submission
 from app.models.rules import Rules
 
 
@@ -34,7 +33,6 @@ CLASSIC_THEME = {
     'gender_male': '#3B82F6',
     'gender_mixed': '#00FF00',
     'album_name': '#059669',
-    'pending_item': '#FEF3C7',
     'link': '#2563EB',
     'button_primary': '#2563EB',
     'button_secondary': '#6B7280',
@@ -97,7 +95,6 @@ DARK_THEME = {
     'gender_male': '#60A5FA',
     'gender_mixed': '#00CC00',
     'album_name': '#34D399',
-    'pending_item': '#78350F',
     'link': '#60A5FA',
     'button_primary': '#3B82F6',
     'button_secondary': '#4B5563',
@@ -186,7 +183,7 @@ def seed(db):
         # Flush lookups so FK references resolve
         db.session.flush()
 
-        # 2. Reserved Users (needed before Submission FK)
+        # 2. Reserved Users
         db.session.merge(User(
             id=0, username='System', email=None, password=None,
             role_id=4, created_at=_now(), sort_order=None,
@@ -207,16 +204,10 @@ def seed(db):
         if existing_globe and not existing_globe.password:
             existing_globe.password = _hash('admin')
 
-        # Flush users so Submission FK to user.id resolves
+        # Flush users so theme FK resolves
         db.session.flush()
 
-        # 3. Seed Submission (id=0) — references User 0
-        db.session.merge(Submission(
-            id=0, submitted_by_id=0, submitted_at=_now(),
-            status='approved', approved_by_id=0, approved_at=_now(),
-        ))
-
-        # 4. Themes — Classic (id=0) and Dark (id=1)
+        # 3. Themes — Classic (id=0) and Dark (id=1)
         db.session.merge(Theme(id=0, name='Classic', user_id=None, **CLASSIC_THEME))
         db.session.merge(Theme(id=1, name='Dark', user_id=None, **DARK_THEME))
         db.session.flush()
@@ -225,7 +216,7 @@ def seed(db):
         _validate_theme(db.session.get(Theme, 0), 'Classic')
         _validate_theme(db.session.get(Theme, 1), 'Dark')
 
-        # 5. Rules — single row (only create if missing, don't overwrite edits)
+        # 4. Rules — single row (only create if missing, don't overwrite edits)
         if not db.session.get(Rules, 1):
             db.session.add(Rules(id=1, content='Rules have not been set yet.'))
 
@@ -238,7 +229,7 @@ def seed(db):
         "SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
     )).fetchone()
     if result:
-        for table, seq in [('user', 2), ('theme', 1), ('submission', 0)]:
+        for table, seq in [('user', 2), ('theme', 1)]:
             db.session.execute(db.text(
                 "INSERT OR REPLACE INTO sqlite_sequence (name, seq) VALUES (:name, :seq)"
             ), {'name': table, 'seq': seq})

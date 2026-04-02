@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, abort, session
 from flask_login import login_required, current_user
 
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, album_genres
@@ -159,10 +159,8 @@ def _build_discography(artist):
         order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.asc()
     else:
         order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.desc()
-    # Eager-load genres and submission to avoid lazy loads per album
     albums = db.session.query(Album).options(
         selectinload(Album.genres),
-        joinedload(Album.submission),
     ).join(
         AlbumSong, Album.id == AlbumSong.album_id
     ).filter(
@@ -217,14 +215,12 @@ def _build_discography(artist):
             song_obj_ids = [s.id for s, _ in album_songs]
             ratings_map = {sid: all_ratings_map.get(sid, {}) for sid in song_obj_ids}
             collab_labels = {sid: all_collab_labels[sid] for sid in song_obj_ids if sid in all_collab_labels}
-            is_pending = album.submission.status == 'pending' if album.submission else False
 
             discography.append({
                 'album': album,
                 'songs': album_songs,
                 'ratings': ratings_map,
                 'collab_labels': collab_labels,
-                'is_pending': is_pending,
             })
 
     return discography

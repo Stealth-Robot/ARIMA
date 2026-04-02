@@ -3,9 +3,10 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models.music import Rating
+from app.models.music import Rating, Song
 from app.decorators import role_required, USER_OR_ABOVE
 from app.services.events import publish
+from app.services.audit import log_change
 
 ratings_bp = Blueprint('ratings', __name__)
 
@@ -61,6 +62,11 @@ def rate():
         db.session.delete(existing)
         existing = None
 
+    if rating_value is not None:
+        song_obj = db.session.get(Song, song_id)
+        if song_obj:
+            log_change(current_user, f'Rated "{song_obj.name}" {rating_value}/5', song=song_obj)
+
     try:
         db.session.commit()
     except IntegrityError:
@@ -94,6 +100,9 @@ def delete_rating():
 
     existing = db.session.get(Rating, (song_id, target_user_id))
     if existing:
+        song_obj = db.session.get(Song, song_id)
+        if song_obj:
+            log_change(current_user, f'Cleared rating for "{song_obj.name}"', song=song_obj)
         db.session.delete(existing)
         db.session.commit()
         publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})

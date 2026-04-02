@@ -162,7 +162,6 @@ def create_app():
             for idx_sql in [
                 'CREATE INDEX IF NOT EXISTS ix_artist_artist_relationship ON artist_artist (relationship)',
                 'CREATE INDEX IF NOT EXISTS ix_rating_user_id ON rating (user_id)',
-                'CREATE INDEX IF NOT EXISTS ix_submission_status ON submission (status)',
             ]:
                 db.session.execute(db.text(idx_sql))
             db.session.commit()
