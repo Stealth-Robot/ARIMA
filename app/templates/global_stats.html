@@ -3,7 +3,7 @@
 {% block title %}A.R.I.M.A. — Global Stats{% endblock %}
 
 {% block content %}
-<div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px;">
+<div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px; display: flex; gap: 12px; align-items: flex-start;">
 <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
     <!-- Sticky header -->
     <thead>
@@ -13,22 +13,12 @@
             {% for u in users %}
             <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
             {% endfor %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Key (Standard)</th>
         </tr>
     </thead>
     <tbody>
-        {% set key_cycle = [0] %}
-        {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
-        {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
-
         {% for row in artist_rows %}
         {% set a = row.artist %}
         {% set scores = row.scores %}
-
-        {# Key column position #}
-        {% set key_pos = key_cycle[0] % 7 %}
-        {% set key_set_idx = (key_cycle[0] // 7) % 2 %}
-        {% set current_key = key_labels[key_set_idx] %}
 
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
@@ -54,28 +44,37 @@
                 {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% endif %}
             </td>
             {% endfor %}
-            {# Key column #}
-            {% if key_pos == 0 %}
-            <td class="px-1 py-1 text-center font-bold"
-                style="border: 1px solid var(--grid-line);
-                       background-color: var(--bg-primary);">
-                {{ key_names[key_set_idx] }}
-            </td>
-            {% else %}
-            {% set key_score = 5 - (key_pos - 1) %}
-            {% set key_style = rating_cell_style(key_score) %}
-            <td class="px-1 py-1"
-                style="border: 1px solid var(--grid-line); white-space: nowrap;
-                       {% if key_style %}background-color: {{ key_style.bg }}; color: {{ key_style.text }};{% endif %}">
-                {{ key_score }}.0 {{ current_key[key_score] }}
-            </td>
-            {% endif %}
         </tr>
-
-        {% if key_cycle.append(key_cycle.pop() + 1) %}{% endif %}
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Key table — sticky sidebar -->
+<div style="position: sticky; top: 44px; align-self: flex-start;">
+    {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
+    {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
+    {% for ki in range(2) %}
+    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if ki == 1 %} margin-top: 8px;{% endif %}">
+        <thead>
+            <tr>
+                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ key_names[ki] }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in range(5, -1, -1) %}
+            {% set kstyle = rating_cell_style(score) %}
+            <tr>
+                <td class="px-1 py-1"
+                    style="border: 1px solid var(--grid-line); white-space: nowrap;
+                           {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                    {{ score }}.0 {{ key_labels[ki][score] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</div>
 </div>
 {% include "fragments/artist_navbar.html" %}
 {% endblock %}
