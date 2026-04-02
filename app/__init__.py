@@ -6,6 +6,8 @@ from flask import Flask, session
 from flask_login import current_user
 from sqlalchemy import event
 
+from flask_compress import Compress
+
 from app.config import Config, ProdConfig
 from app.extensions import db, login_manager, bcrypt, csrf
 
@@ -23,6 +25,7 @@ def create_app():
     login_manager.init_app(flask_app)
     bcrypt.init_app(flask_app)
     csrf.init_app(flask_app)
+    Compress(flask_app)
 
     login_manager.login_view = 'auth.login'
 
