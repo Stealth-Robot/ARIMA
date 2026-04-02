@@ -1,11 +1,13 @@
-{% if edit_mode %}
-<script>var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];</script>
-{% endif %}
 <!-- Artist header -->
 <div class="mb-3" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); padding-left: 12px;">
     <h2 class="text-2xl font-bold" style="color: var(--text-primary); margin: 0; line-height: 1.2;">
         {{ artist.name }}
         {% if artist.is_disbanded %}<span class="text-sm font-normal" style="color: var(--text-secondary);">(disbanded)</span>{% endif %}
+        {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
+        <span class="text-sm font-normal edit-inline" style="cursor: pointer; color: var(--text-secondary);"
+              data-country-id="{{ artist.country_id }}"
+              onclick="showCountryEdit(event, {{ artist.id }}, this, _allCountries, {{ artist.country_id }})">{{ artist.country.country if artist.country else 'country' }}</span>
+        {% endif %}
     </h2>
     {% if soloist_parent %}
     <span class="text-xs" style="color: var(--text-secondary);">
@@ -21,6 +23,13 @@
 
 {% set is_editable = current_user.can_rate %}
 {% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
+
+{% if edit_mode %}
+<script>
+var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.country | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+</script>
+{% endif %}
 
 {% if not discography %}
 <p style="color: var(--text-secondary);">No albums found.</p>
@@ -69,7 +78,7 @@
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
                 {% else %}
-                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} — <span class="text-xs" style="font-weight: normal;">{{ album.genres | map(attribute='genre') | join(', ') }}</span>{% endif %}
+                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
                 {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
@@ -229,7 +238,7 @@
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
                 {% else %}
-                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} — <span class="text-xs" style="font-weight: normal;">{{ album.genres | map(attribute='genre') | join(', ') }}</span>{% endif %}
+                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
             </td>
             {% if edit_mode %}

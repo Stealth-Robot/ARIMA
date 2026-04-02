@@ -75,6 +75,25 @@ def album_genres_edit(album_id):
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/country', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_country(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    country_id = request.form.get('country_id', '').strip()
+    if not country_id:
+        abort(400)
+    country = db.session.get(Country, int(country_id))
+    if country is None:
+        abort(400)
+    artist.country_id = country.id
+    db.session.commit()
+    return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/name', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

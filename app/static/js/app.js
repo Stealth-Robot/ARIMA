@@ -480,6 +480,70 @@ document.addEventListener('click', function(e) {
     }
 });
 
+/* Inline country edit — dropdown popover */
+
+var activeCountryPopover = null;
+
+function closeCountryPopover() {
+    if (activeCountryPopover) {
+        activeCountryPopover.remove();
+        activeCountryPopover = null;
+    }
+}
+
+function showCountryEdit(event, artistId, span, allCountries, currentId) {
+    event.stopPropagation();
+    closeCountryPopover();
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
+
+    allCountries.forEach(function(c) {
+        var btn = document.createElement('div');
+        btn.textContent = c.name;
+        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
+        if (c.id === currentId) btn.style.fontWeight = 'bold';
+        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+        btn.addEventListener('click', function() {
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/artist/' + artistId + '/country', {
+                method: 'POST',
+                headers: headers,
+                body: 'country_id=' + c.id,
+            }).then(function(r) {
+                if (!r.ok) throw new Error('save failed');
+                return r.json();
+            }).then(function(data) {
+                span.textContent = data.country;
+                span.setAttribute('data-country-id', data.id);
+                closeCountryPopover();
+            }).catch(function() {
+                showToast('Failed to save country — try again');
+                closeCountryPopover();
+            });
+        });
+        popover.appendChild(btn);
+    });
+
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeCountryPopover = popover;
+}
+
+document.addEventListener('click', function(e) {
+    if (activeCountryPopover && !activeCountryPopover.contains(e.target)) {
+        closeCountryPopover();
+    }
+});
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
