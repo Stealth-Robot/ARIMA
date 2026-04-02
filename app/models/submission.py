@@ -12,6 +12,10 @@ class Submission(db.Model):
     rejected_at = db.Column(db.Text)
     rejected_reason = db.Column(db.Text)
 
+    __table_args__ = (
+        db.Index('ix_submission_status', 'status'),
+    )
+
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     approved_by = db.relationship('User', foreign_keys=[approved_by_id])
     rejected_by = db.relationship('User', foreign_keys=[rejected_by_id])
