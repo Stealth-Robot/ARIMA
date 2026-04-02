@@ -1,3 +1,17 @@
+/* Zoom-aware bounding rect — corrects for non-standard CSS zoom on html element */
+function getZoomedRect(el) {
+    var rect = el.getBoundingClientRect();
+    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
+    return {
+        top: rect.top / zoom,
+        bottom: rect.bottom / zoom,
+        left: rect.left / zoom,
+        right: rect.right / zoom,
+        width: rect.width / zoom,
+        height: rect.height / zoom,
+    };
+}
+
 /* CSRF — inject X-CSRFToken header on every HTMX request */
 
 document.body.addEventListener('htmx:configRequest', function (e) {
@@ -14,7 +28,7 @@ function openSearchOverlay() {
     var input = document.getElementById('global-search');
     var trigger = document.getElementById('search-trigger');
     if (overlay && trigger) {
-        var rect = trigger.getBoundingClientRect();
+        var rect = getZoomedRect(trigger);
         overlay.style.top = (rect.bottom + 4) + 'px';
         // Align right edge with trigger button, but don't go off left edge
         var left = rect.right - 320;
@@ -575,7 +589,7 @@ function showNoteInput(cell, songId) {
     overlay.appendChild(btnRow);
 
     // Position: right of cell, top-aligned. Flip left if near right edge.
-    const rect = cell.getBoundingClientRect();
+    const rect = getZoomedRect(cell);
     const overlayWidth = 240;
     const gap = 4;
     overlay.style.top = rect.top + 'px';
@@ -663,7 +677,7 @@ document.addEventListener('click', (e) => {
         const note = td.getAttribute('data-note');
         if (!note) return;
         tooltip.textContent = note;
-        const rect = td.getBoundingClientRect();
+        const rect = getZoomedRect(td);
         tooltip.style.left = rect.left + rect.width / 2 + 'px';
         tooltip.style.transform = 'translateX(-50%)';
         // Position above cell; if too close to top, show below

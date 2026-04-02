@@ -71,7 +71,7 @@ CLASSIC_THEME = {
     # Artist navbar
     'artist_button_text': '#000000',
     # Top navbar active indicator
-    'navbar_active': '#FFD700',
+    'navbar_active': '#818CF8',
     # Search overlay section headers
     'search_section_bg': '#E5E7EB',
     'search_section_text': '#374151',
@@ -134,7 +134,7 @@ DARK_THEME = {
     # Artist navbar
     'artist_button_text': '#000000',
     # Top navbar active indicator
-    'navbar_active': '#FFD700',
+    'navbar_active': '#818CF8',
     # Search overlay section headers
     'search_section_bg': '#374151',
     'search_section_text': '#9CA3AF',
