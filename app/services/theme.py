@@ -31,7 +31,7 @@ def get_resolved_theme(user):
     if user.is_authenticated and not user.is_system_or_guest:
         selected_theme_id = user.settings.theme if user.settings else 0
     else:
-        selected_theme_id = session.get('theme', 0)
+        selected_theme_id = session.get('theme', 1)
 
     # Load selected theme (fall back to Classic if missing)
     if selected_theme_id == 0:

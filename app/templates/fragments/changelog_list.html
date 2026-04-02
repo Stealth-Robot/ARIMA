@@ -33,7 +33,7 @@
                         hx-target="closest tr"
                         hx-swap="outerHTML"
                         hx-confirm="Delete this changelog entry?"
-                        style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 13px;"
+                        style="background: none; border: none; color: #DC2626; cursor: pointer; font-size: inherit;"
                         title="Delete entry">&times;</button>
             </td>
             {% endif %}
@@ -41,4 +41,10 @@
         {% endfor %}
     </tbody>
 </table>
+{% endif %}
+{% if shown is defined %}
+<div id="filter-summary" hx-swap-oob="true" class="text-xs mb-4" style="color: var(--text-secondary);">
+    Showing: {{ shown | join(', ') or 'None' }}
+    {% if hidden %}<span style="margin-left: 16px;">Hiding: {{ hidden | join(', ') }}</span>{% endif %}
+</div>
 {% endif %}

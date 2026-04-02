@@ -6,7 +6,7 @@
 <div class="max-w-5xl mx-auto">
     <h1 class="text-2xl font-bold mb-4">Changelog</h1>
 
-    <div class="flex gap-2 mb-4" id="changelog-filters">
+    <div class="flex gap-2 mb-2 flex-wrap" id="changelog-filters">
         <input type="text" placeholder="Search by artist, album, or description..."
                value="{{ search or '' }}"
                name="q" id="changelog-search"
@@ -15,7 +15,7 @@
                hx-target="#changelog-list"
                hx-swap="innerHTML"
                hx-include="#changelog-filters"
-               class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border);">
+               class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border); min-width: 200px;">
         <select name="user_id" id="changelog-user-filter"
                 hx-get="{{ url_for('changelog.changelog') }}"
                 hx-trigger="change"
@@ -28,23 +28,56 @@
             <option value="{{ u.id }}" {% if user_id == u.id|string %}selected{% endif %}>{{ u.username }}</option>
             {% endfor %}
         </select>
-        <select name="type" id="changelog-type-filter"
-                hx-get="{{ url_for('changelog.changelog') }}"
-                hx-trigger="change"
-                hx-target="#changelog-list"
-                hx-swap="innerHTML"
-                hx-include="#changelog-filters"
-                class="px-3 py-2 border rounded" style="border-color: var(--border);">
-            <option value="">All types</option>
-            <option value="Song" {% if change_type == 'Song' %}selected{% endif %}>Song</option>
-            <option value="Album" {% if change_type == 'Album' %}selected{% endif %}>Album</option>
-            <option value="Artist" {% if change_type == 'Artist' %}selected{% endif %}>Artist</option>
-            <option value="Legacy" {% if change_type == 'Legacy' %}selected{% endif %}>Legacy</option>
-        </select>
+
+        <!-- Include types dropdown -->
+        <div style="position: relative; display: inline-block;">
+            <button type="button" id="include-toggle"
+                    onclick="toggleDropdown('include-dropdown')"
+                    class="px-3 py-2 border rounded" style="border-color: var(--border); background: var(--bg-secondary); cursor: pointer; white-space: nowrap;">
+                Type{% if include %} ({{ include|length }}){% endif %} ▾
+            </button>
+            <div id="include-dropdown" class="filter-dropdown" style="display: none; position: absolute; top: 100%; right: 0; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; margin-top: 2px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                {% for t in all_types %}
+                <label style="display: block; padding: 2px 0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" name="include" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}
+                           hx-get="{{ url_for('changelog.changelog') }}"
+                           hx-trigger="change"
+                           hx-target="#changelog-list"
+                           hx-swap="innerHTML"
+                           hx-include="#changelog-filters"
+                           style="margin-right: 4px;">
+                    {{ t.type }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Filter summary -->
+    <div id="filter-summary" class="text-xs mb-4" style="color: var(--text-secondary);">
+        Showing: {{ shown | join(', ') or 'None' }}
+        {% if hidden %}<span style="margin-left: 16px;">Hiding: {{ hidden | join(', ') }}</span>{% endif %}
     </div>
 
     <div id="changelog-list">
         {% include "fragments/changelog_list.html" %}
     </div>
 </div>
+<script>
+function toggleDropdown(id) {
+    document.querySelectorAll('.filter-dropdown').forEach(function(d) {
+        if (d.id !== id) d.style.display = 'none';
+    });
+    var d = document.getElementById(id);
+    d.style.display = d.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+    var inDropdown = e.target.closest('.filter-dropdown') || e.target.id === 'include-toggle';
+    if (!inDropdown) {
+        document.querySelectorAll('.filter-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    }
+});
+</script>
 {% endblock %}

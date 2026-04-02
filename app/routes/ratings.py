@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models.music import Rating, Song
+from app.models.user import User
 from app.decorators import role_required, USER_OR_ABOVE
 from app.services.events import publish
 from app.services.audit import log_change
@@ -64,10 +65,14 @@ def rate():
 
     song_obj = db.session.get(Song, song_id)
     if song_obj:
+        on_behalf = ''
+        if target_user_id != current_user.id:
+            target_user = db.session.get(User, target_user_id)
+            on_behalf = f' for {target_user.username}' if target_user else f' for user {target_user_id}'
         if rating_value is not None:
-            log_change(current_user, f'Rated "{song_obj.name}" song {rating_value}/5', song=song_obj)
+            log_change(current_user, f'Rated "{song_obj.name}" song {rating_value}/5{on_behalf}', song=song_obj, change_type='rating')
         elif note_sent:
-            log_change(current_user, f'Updated note on "{song_obj.name}" song', song=song_obj)
+            log_change(current_user, f'Updated note on "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
     try:
         db.session.commit()
@@ -104,7 +109,11 @@ def delete_rating():
     if existing:
         song_obj = db.session.get(Song, song_id)
         if song_obj:
-            log_change(current_user, f'Cleared rating for "{song_obj.name}" song', song=song_obj)
+            on_behalf = ''
+            if target_user_id != current_user.id:
+                target_user = db.session.get(User, target_user_id)
+                on_behalf = f' for {target_user.username}' if target_user else f' for user {target_user_id}'
+            log_change(current_user, f'Cleared rating for "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
         db.session.delete(existing)
         db.session.commit()
         publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})

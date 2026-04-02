@@ -579,8 +579,12 @@ def delete_artist(artist_id):
     if not current_user.password or not _check_password(current_user.password, password):
         return '<script>alert("Incorrect password");history.back();</script>', 403
 
-    # Collect all song IDs linked to this artist
+    # Collect counts before deleting
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist_id).all()}
+    album_ids = {row.album_id for row in AlbumSong.query.filter(AlbumSong.song_id.in_(song_ids)).all()} if song_ids else set()
+    rating_count = Rating.query.filter(Rating.song_id.in_(song_ids)).count() if song_ids else 0
+    song_count = len(song_ids)
+    album_count = len(album_ids)
 
     # Remove this artist's links; only delete songs that have no other artists
     for song_id in song_ids:
@@ -609,7 +613,7 @@ def delete_artist(artist_id):
     # Log before deleting (artist FK will be gone after delete)
     artist_name = artist.name
     db.session.delete(artist)
-    log_change(current_user, f'Deleted "{artist_name}" artist')
+    log_change(current_user, f'Deleted "{artist_name}" artist with {album_count} albums, {song_count} songs, {rating_count} ratings', change_type='artist')
     db.session.commit()
 
     return redirect(url_for('artists.artists_list'))
@@ -654,7 +658,7 @@ def delete_song(song_id):
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
             db.session.query(Album).filter_by(id=row.album_id).delete()
 
-    log_change(current_user, f'Deleted "{song_name_val}" song')
+    log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()
     return '', 204
 
@@ -687,6 +691,6 @@ def delete_album(album_id):
     album_name_val = album.name
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
-    log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)')
+    log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)', change_type='album')
     db.session.commit()
     return '', 204

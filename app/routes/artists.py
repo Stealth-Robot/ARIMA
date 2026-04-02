@@ -122,12 +122,11 @@ def _render_artist(artist, htmx=False, push_url=None):
     soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
         child_disco = _build_discography(child)
-        if child_disco:
-            children_sections.append({
-                'artist': child,
-                'discography': child_disco,
-                'is_soloist': child.id in soloist_ids,
-            })
+        children_sections.append({
+            'artist': child,
+            'discography': child_disco,
+            'is_soloist': child.id in soloist_ids,
+        })
 
     # All artists list for edit mode (song artist picker)
     all_artists = []
@@ -203,17 +202,18 @@ def _build_discography(artist):
     if not song_ids:
         return []
 
-    # Get filter settings
+    # Get filter settings — edit mode bypasses remix/featured filters
     from flask import session
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
         genre_id = current_user.settings.genre
-        include_remixes = current_user.settings.include_remixes
-        include_featured = current_user.settings.include_featured
+        include_remixes = True if edit_mode else current_user.settings.include_remixes
+        include_featured = True if edit_mode else current_user.settings.include_featured
         album_sort_order = current_user.settings.album_sort_order or 'desc'
     else:
         genre_id = session.get('genre')
-        include_remixes = False
-        include_featured = False
+        include_remixes = True if edit_mode else False
+        include_featured = True if edit_mode else False
         album_sort_order = session.get('album_sort_order', 'desc')
 
     # Get all albums containing these songs (NULLs sort last)

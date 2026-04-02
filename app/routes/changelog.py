@@ -17,7 +17,11 @@ def changelog():
     """Changelog page with HTMX search and user filter."""
     search = request.args.get('q', '').strip()
     user_id = request.args.get('user_id', '').strip()
-    change_type = request.args.get('type', '').strip()
+    include = request.args.getlist('include')
+
+    _type_order = {'Album': 0, 'Artist': 1, 'Rating': 2, 'Song': 3, 'Legacy': 99}
+    all_types = sorted(ChangelogType.query.all(), key=lambda t: _type_order.get(t.type, 50))
+    all_type_names = [t.type for t in all_types]
 
     query = Changelog.query.order_by(Changelog.date.desc(), Changelog.id.desc())
 
@@ -25,21 +29,30 @@ def changelog():
         query = query.filter(Changelog.description.ilike(f'%{search}%'))
     if user_id:
         query = query.filter(Changelog.user_id == int(user_id))
-    if change_type:
-        ct = ChangelogType.query.filter_by(type=change_type).first()
-        if ct:
-            query = query.filter(Changelog.change_type_id == ct.id)
-
+    if include:
+        include_ids = [ct.id for ct in all_types if ct.type in include]
+        if include_ids:
+            query = query.filter(Changelog.change_type_id.in_(include_ids))
     entries = query.all()
 
+    # Compute shown/hidden types for summary
+    if include:
+        shown = [t for t in all_type_names if t in include]
+    else:
+        shown = list(all_type_names)
+    hidden = [t for t in all_type_names if t not in shown]
+
     if request.headers.get('HX-Request'):
-        return render_template('fragments/changelog_list.html', entries=entries)
+        return render_template('fragments/changelog_list.html', entries=entries,
+                               shown=shown, hidden=hidden)
 
     # Get distinct users who have changelog entries
     user_ids = [r[0] for r in Changelog.query.with_entities(distinct(Changelog.user_id)).all() if r[0]]
     users = User.query.filter(User.id.in_(user_ids)).order_by(User.username).all()
 
-    return render_template('changelog.html', entries=entries, search=search, user_id=user_id, users=users, change_type=change_type)
+    return render_template('changelog.html', entries=entries, search=search, user_id=user_id,
+                           users=users, all_types=all_types, include=include,
+                           shown=shown, hidden=hidden)
 
 
 @changelog_bp.route('/changelog/<int:entry_id>', methods=['DELETE'])

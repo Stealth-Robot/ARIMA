@@ -180,7 +180,7 @@ def seed(db):
         for id_, name in [(0, 'Subunit'), (1, 'Soloist')]:
             db.session.merge(ArtistRelationship(id=id_, relationship=name))
 
-        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy')]:
+        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating')]:
             db.session.merge(ChangelogType(id=id_, type=name))
 
         # Flush lookups so FK references resolve

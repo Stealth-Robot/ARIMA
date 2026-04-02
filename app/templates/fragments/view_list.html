@@ -1,0 +1,9 @@
+{% if items %}
+<ul class="text-sm space-y-1">
+    {% for item in items %}
+    <li>{{ item.label }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm" style="color: var(--text-secondary);">None found.</p>
+{% endif %}

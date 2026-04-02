@@ -27,7 +27,7 @@ def profile():
     # Current settings
     if current_user.is_system_or_guest:
         settings = {
-            'theme': session.get('theme', 0),
+            'theme': session.get('theme', 1),
             'include_featured': session.get('include_featured', False),
             'include_remixes': session.get('include_remixes', False),
             'album_sort_order': session.get('album_sort_order', 'desc'),

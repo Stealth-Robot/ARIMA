@@ -59,11 +59,18 @@ def _build_context(song=None, album=None):
     return ''
 
 
-def log_change(user, description, artist=None, album=None, song=None):
-    """Write a single changelog entry. Call before db.session.commit()."""
+def log_change(user, description, artist=None, album=None, song=None, change_type=None):
+    """Write a single changelog entry. Call before db.session.commit().
+
+    change_type can be 'song', 'album', or 'artist' to explicitly set the type
+    (useful for deletes where the entity is already gone).
+    """
     context = _build_context(song=song, album=album)
     # Resolve change type: song=0, album=1, artist=2
-    if song:
+    _type_map = {'song': 0, 'album': 1, 'artist': 2, 'rating': 4}
+    if change_type and change_type in _type_map:
+        change_type_id = _type_map[change_type]
+    elif song:
         change_type_id = 0
     elif album:
         change_type_id = 1
