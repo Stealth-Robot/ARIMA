@@ -506,7 +506,7 @@ function showNoteInput(cell, songId) {
     closeNoteInput();
     closeRatingInput();
 
-    const existingNote = cell.getAttribute('title') || '';
+    const existingNote = cell.getAttribute('data-note') || '';
 
     // Get song name from first cell in the same row
     const row = cell.parentElement;
@@ -560,6 +560,15 @@ function showNoteInput(cell, songId) {
     `;
     cancelBtn.onclick = () => closeNoteInput();
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.style.cssText = `
+        padding: 2px 10px; font-size: 12px; background: #DC2626;
+        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+    `;
+    deleteBtn.onclick = () => submitNote(cell, songId, '');
+
+    btnRow.appendChild(deleteBtn);
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(saveBtn);
     overlay.appendChild(textarea);
