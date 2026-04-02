@@ -119,7 +119,7 @@ function switchStatMode(val) {
     }
 })();
 
-/* Artist navbar — convert vertical wheel scroll to horizontal */
+/* Artist navbar — convert vertical wheel scroll to horizontal + center active */
 (function () {
     var nav = document.querySelector('.artist-nav');
     if (!nav) return;
@@ -130,6 +130,11 @@ function switchStatMode(val) {
         e.preventDefault();
         nav.scrollLeft += e.deltaY;
     }, { passive: false });
+    // Scroll active artist to center on page load
+    var active = nav.querySelector('a[style*="font-weight: bold"]');
+    if (active) {
+        nav.scrollLeft = active.offsetLeft - nav.offsetWidth / 2 + active.offsetWidth / 2;
+    }
 })();
 
 /* Hamburger artist menu — toggle, outside-click, Escape */
@@ -376,6 +381,104 @@ function showInlineEdit(event, endpoint, span) {
         }, 150);
     });
 }
+
+/* Inline genre edit — checkbox popover */
+
+var activeGenrePopover = null;
+
+function closeGenrePopover() {
+    if (activeGenrePopover) {
+        activeGenrePopover.remove();
+        activeGenrePopover = null;
+    }
+}
+
+function showGenreEdit(event, albumId, span, allGenres, currentIds) {
+    event.stopPropagation();
+    closeGenrePopover();
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
+
+    var selected = currentIds.slice();
+
+    allGenres.forEach(function(g) {
+        var label = document.createElement('label');
+        label.style.cssText = 'display:block; font-size:12px; padding:2px 0; cursor:pointer;';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = g.id;
+        cb.checked = selected.indexOf(g.id) !== -1;
+        cb.style.marginRight = '4px';
+        cb.addEventListener('change', function() {
+            if (this.checked) { selected.push(g.id); }
+            else { selected = selected.filter(function(x) { return x !== g.id; }); }
+        });
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(g.name));
+        popover.appendChild(label);
+    });
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:4px; margin-top:6px; justify-content:flex-end;';
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:2px 10px; font-size:12px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    saveBtn.onclick = function() {
+        var csrfToken = document.querySelector('meta[name="csrf-token"]');
+        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        // Re-read checkboxes for current state
+        var ids = [];
+        popover.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
+            ids.push(parseInt(cb.value));
+        });
+        fetch('/edit/album/' + albumId + '/genres', {
+            method: 'POST',
+            headers: headers,
+            body: 'genre_ids=' + encodeURIComponent(ids.join(',')),
+        }).then(function(r) {
+            if (!r.ok) throw new Error('save failed');
+            return r.json();
+        }).then(function(names) {
+            span.textContent = names.length ? names.join(', ') : 'genres';
+            if (!names.length) span.style.color = 'var(--text-secondary)';
+            else span.style.color = '';
+            span.setAttribute('data-genre-ids', JSON.stringify(ids));
+            closeGenrePopover();
+        }).catch(function() {
+            showToast('Failed to save genres — try again');
+            closeGenrePopover();
+        });
+    };
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:2px 10px; font-size:12px; background:#6B7280; color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    cancelBtn.onclick = closeGenrePopover;
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    popover.appendChild(btnRow);
+
+    // Position below the span
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeGenrePopover = popover;
+}
+
+// Close genre popover on outside click
+document.addEventListener('click', function(e) {
+    if (activeGenrePopover && !activeGenrePopover.contains(e.target)) {
+        closeGenrePopover();
+    }
+});
 
 /* Inline rating — spreadsheet-style type-and-go */
 

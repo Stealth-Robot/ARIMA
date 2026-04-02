@@ -1,3 +1,6 @@
+{% if edit_mode %}
+<script>var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];</script>
+{% endif %}
 <!-- Artist header -->
 <div class="mb-3" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); padding-left: 12px;">
     <h2 class="text-2xl font-bold" style="color: var(--text-primary); margin: 0; line-height: 1.2;">
@@ -61,8 +64,12 @@
                 {% if is_pending %}opacity: 0.7;{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
+                — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
+                       data-album-id="{{ album.id }}"
+                       data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
+                       onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
                 {% else %}
-                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
+                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} — <span class="text-xs" style="font-weight: normal;">{{ album.genres | map(attribute='genre') | join(', ') }}</span>{% endif %}
                 {% endif %}
                 {% if is_pending %}<a href="#" class="text-xs underline" style="color: var(--link);">[pending]</a>{% endif %}
             </td>
@@ -217,8 +224,12 @@
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg);">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
+                — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
+                       data-album-id="{{ album.id }}"
+                       data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
+                       onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
                 {% else %}
-                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
+                {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} — <span class="text-xs" style="font-weight: normal;">{{ album.genres | map(attribute='genre') | join(', ') }}</span>{% endif %}
                 {% endif %}
             </td>
             {% if edit_mode %}
@@ -327,5 +338,46 @@
 
     </tbody>
 </table>
+</div>
+{% endif %}
+
+{% if edit_mode %}
+<!-- Delete artist button (edit mode only) -->
+<div class="mt-8 mb-4">
+    <button type="button" onclick="document.getElementById('delete-artist-modal').style.display='flex'"
+            class="px-4 py-2 rounded text-sm text-white"
+            style="background-color: #DC2626;">
+        Delete Artist
+    </button>
+</div>
+
+<!-- Delete artist confirmation modal -->
+<div id="delete-artist-modal" style="display:none; position:fixed; inset:0; z-index:100;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:340px; max-width:90vw;">
+        <h3 class="text-lg font-bold mb-2" style="color:var(--text-primary);">Delete {{ artist.name }}?</h3>
+        <p class="text-sm mb-4" style="color:var(--text-secondary);">
+            This will permanently delete this artist, all their albums, songs, and ratings. This cannot be undone.
+        </p>
+        <form method="POST" action="{{ url_for('edit.delete_artist', artist_id=artist.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
+            <input type="password" name="password" required autocomplete="current-password"
+                   class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('delete-artist-modal').style.display='none'"
+                        class="px-4 py-2 rounded text-sm"
+                        style="background-color:var(--button-secondary); color:var(--text-primary);">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
+                        style="background-color:#DC2626;">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endif %}

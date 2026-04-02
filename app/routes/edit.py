@@ -5,7 +5,7 @@ from flask import Blueprint, request, session, abort, render_template, redirect,
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug
 from app.services.submission import create_submission
@@ -52,6 +52,27 @@ def album_release_date(album_id):
         abort(400)
     db.session.commit()
     return value
+
+
+@edit_bp.route('/album/<int:album_id>/genres', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_genres_edit(album_id):
+    """Set genres for an album. Expects genre_ids as comma-separated list."""
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    raw = request.form.get('genre_ids', '').strip()
+    genre_ids = [int(x) for x in raw.split(',') if x.strip()] if raw else []
+    # Replace all genre associations
+    db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
+    for gid in genre_ids:
+        db.session.execute(album_genres.insert().values(album_id=album_id, genre_id=gid))
+    db.session.commit()
+    # Return updated genre names as JSON
+    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
 @edit_bp.route('/song/<int:song_id>/name', methods=['POST'])
@@ -214,3 +235,55 @@ def add_artist_submit():
     create_submission(current_user, artist_data, albums_data)
 
     return redirect(url_for('artists.artist_detail', artist_slug=slug))
+
+
+@edit_bp.route('/artist/<int:artist_id>/delete', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def delete_artist(artist_id):
+    """Delete an artist and all related data. Requires edit mode + password confirmation."""
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+
+    # Verify password
+    password = request.form.get('password', '')
+    if not password:
+        abort(400)
+    from app.routes.auth import _check_password
+    if not current_user.password or not _check_password(current_user.password, password):
+        return '<script>alert("Incorrect password");history.back();</script>', 403
+
+    # Collect all song IDs linked to this artist
+    song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist_id).all()}
+
+    # Remove this artist's links; only delete songs that have no other artists
+    for song_id in song_ids:
+        ArtistSong.query.filter_by(artist_id=artist_id, song_id=song_id).delete()
+        other_artists = ArtistSong.query.filter_by(song_id=song_id).count()
+        if other_artists > 0:
+            continue  # shared song — leave it for the other artist(s)
+
+        Rating.query.filter_by(song_id=song_id).delete()
+        album_song_rows = AlbumSong.query.filter_by(song_id=song_id).all()
+        AlbumSong.query.filter_by(song_id=song_id).delete()
+        db.session.query(Song).filter_by(id=song_id).delete()
+
+        # Clean up albums that are now empty
+        for row in album_song_rows:
+            remaining = AlbumSong.query.filter_by(album_id=row.album_id).count()
+            if remaining == 0:
+                db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
+                db.session.query(Album).filter_by(id=row.album_id).delete()
+
+    # Delete artist relationships (subunits/soloists)
+    ArtistArtist.query.filter(
+        db.or_(ArtistArtist.artist_1 == artist_id, ArtistArtist.artist_2 == artist_id)
+    ).delete(synchronize_session=False)
+
+    # Delete the artist
+    db.session.delete(artist)
+    db.session.commit()
+
+    return redirect(url_for('artists.artists_list'))
