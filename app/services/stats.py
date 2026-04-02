@@ -19,9 +19,15 @@ def get_display_users():
 class _BulkData:
     """Pre-loaded data for batch stats computation (~5 queries total)."""
 
-    def __init__(self, include_featured, include_remixes):
-        # 1. All artist-song mappings
-        all_as = ArtistSong.query.all()
+    def __init__(self, include_featured, include_remixes, artist_ids=None):
+        """Load bulk data. If artist_ids is given, scope to only those artists."""
+        scoped = artist_ids is not None
+
+        # 1. Artist-song mappings
+        if scoped:
+            all_as = ArtistSong.query.filter(ArtistSong.artist_id.in_(artist_ids)).all()
+        else:
+            all_as = ArtistSong.query.all()
         self.artist_songs = defaultdict(set)        # artist_id → {song_id, ...}
         self.artist_main_songs = defaultdict(set)    # artist_id → {song_id where main}
         for row in all_as:
@@ -29,8 +35,14 @@ class _BulkData:
             if row.artist_is_main:
                 self.artist_main_songs[row.artist_id].add(row.song_id)
 
-        # 2. All artist-artist relationships (only subunits)
-        all_rels = ArtistArtist.query.filter_by(relationship=SUBUNIT).all()
+        # 2. Artist-artist relationships (only subunits)
+        if scoped:
+            all_rels = ArtistArtist.query.filter(
+                ArtistArtist.relationship == SUBUNIT,
+                db.or_(ArtistArtist.artist_1.in_(artist_ids), ArtistArtist.artist_2.in_(artist_ids))
+            ).all()
+        else:
+            all_rels = ArtistArtist.query.filter_by(relationship=SUBUNIT).all()
         self.subunit_ids = set()                     # all IDs that are subunits
         self.children = defaultdict(list)             # parent_id → [child_id, ...]
         for rel in all_rels:
@@ -39,12 +51,29 @@ class _BulkData:
 
         # 3. Remix song IDs
         if not include_remixes:
-            self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True).all()}
+            all_song_ids = set()
+            for song_ids in self.artist_songs.values():
+                all_song_ids |= song_ids
+            if scoped and all_song_ids:
+                self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True, Song.id.in_(all_song_ids)).all()}
+            elif scoped:
+                self.remix_ids = set()
+            else:
+                self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True).all()}
         else:
             self.remix_ids = set()
 
-        # 4. All ratings
-        all_ratings = Rating.query.all()
+        # 4. Ratings (scoped to relevant songs only)
+        if scoped:
+            all_song_ids_flat = set()
+            for song_ids in self.artist_songs.values():
+                all_song_ids_flat |= song_ids
+            if all_song_ids_flat:
+                all_ratings = Rating.query.filter(Rating.song_id.in_(all_song_ids_flat)).all()
+            else:
+                all_ratings = []
+        else:
+            all_ratings = Rating.query.all()
         self.song_ratings = defaultdict(dict)        # song_id → {user_id: rating_value}
         self.song_rated_by = defaultdict(set)         # song_id → {user_id, ...}
         for r in all_ratings:
@@ -61,12 +90,21 @@ class _BulkData:
             self.all_main_song_ids = None
 
         # 6. All song IDs (for total count)
-        all_songs_query = Song.query
-        if not include_remixes:
-            all_songs_query = all_songs_query.filter(Song.is_remix == False)
-        self.all_song_ids = {s.id for s in all_songs_query.all()}
-        if not include_featured and self.all_main_song_ids is not None:
-            self.all_song_ids &= self.all_main_song_ids
+        if scoped:
+            self.all_song_ids = set()
+            for song_ids in self.artist_songs.values():
+                self.all_song_ids |= song_ids
+            if not include_remixes:
+                self.all_song_ids -= self.remix_ids
+            if not include_featured and self.all_main_song_ids is not None:
+                self.all_song_ids &= self.all_main_song_ids
+        else:
+            all_songs_query = Song.query
+            if not include_remixes:
+                all_songs_query = all_songs_query.filter(Song.is_remix == False)
+            self.all_song_ids = {s.id for s in all_songs_query.all()}
+            if not include_featured and self.all_main_song_ids is not None:
+                self.all_song_ids &= self.all_main_song_ids
 
         self.include_featured = include_featured
         self.include_remixes = include_remixes
@@ -177,9 +215,9 @@ def _artist_score_stats(artist_id, users, bulk):
 
 # --- Public API (used by routes) ---
 
-def load_bulk_data(include_featured=False, include_remixes=False):
-    """Load all data needed for stats pages in ~5 queries."""
-    return _BulkData(include_featured, include_remixes)
+def load_bulk_data(include_featured=False, include_remixes=False, artist_ids=None):
+    """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
+    return _BulkData(include_featured, include_remixes, artist_ids=artist_ids)
 
 
 def get_artist_stats(artist_id, users, bulk):

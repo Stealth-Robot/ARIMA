@@ -11,7 +11,7 @@ import time
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
 
-_filter_cache = {'countries': None, 'genres': None, 'ts': 0.0}
+_filter_cache = {'countries': [], 'genres': [], 'ts': 0.0}
 _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():
@@ -20,9 +20,12 @@ def get_cached_filters():
 
     now = time.monotonic()
     if now - _filter_cache['ts'] > _FILTER_TTL:
-        _filter_cache['countries'] = Country.query.order_by(Country.id).all()
-        _filter_cache['genres'] = Genre.query.order_by(Genre.id).all()
-        _filter_cache['ts'] = now
+        try:
+            _filter_cache['countries'] = Country.query.order_by(Country.id).all()
+            _filter_cache['genres'] = Genre.query.order_by(Genre.id).all()
+            _filter_cache['ts'] = now
+        except Exception:
+            pass  # return stale/empty lists rather than None
     return _filter_cache['countries'], _filter_cache['genres']
 
 

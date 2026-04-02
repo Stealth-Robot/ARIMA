@@ -50,10 +50,14 @@ SOLOIST = 1
 def get_children(artist_id):
     """Return (subunits, soloists) as lists of Artist objects."""
     rels = ArtistArtist.query.filter_by(artist_1=artist_id).all()
+    if not rels:
+        return [], []
+    child_ids = [rel.artist_2 for rel in rels]
+    children_by_id = {a.id: a for a in Artist.query.filter(Artist.id.in_(child_ids)).all()}
     subunits = []
     soloists = []
     for rel in rels:
-        child = db.session.get(Artist, rel.artist_2)
+        child = children_by_id.get(rel.artist_2)
         if child:
             if rel.relationship == SUBUNIT:
                 subunits.append(child)
@@ -84,16 +88,12 @@ def get_songs_for_artist(artist_id, include_subunit_songs=True):
     If include_subunit_songs is True, unions subunit songs into the set.
     Soloist songs are never included in the parent's set.
     """
-    # Artist's own songs
-    own = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist_id).all()}
-
     if include_subunit_songs:
         subunits, _ = get_children(artist_id)
-        for sub in subunits:
-            sub_songs = {row.song_id for row in ArtistSong.query.filter_by(artist_id=sub.id).all()}
-            own |= sub_songs
-
-    return own
+        all_ids = [artist_id] + [s.id for s in subunits]
+    else:
+        all_ids = [artist_id]
+    return {row.song_id for row in ArtistSong.query.filter(ArtistSong.artist_id.in_(all_ids)).all()}
 
 
 def get_discography_songs(artist_id):
@@ -102,12 +102,9 @@ def get_discography_songs(artist_id):
     Includes subunit songs AND soloist songs (for browsing only).
     Stats pages should use get_songs_for_artist() instead.
     """
-    own = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist_id).all()}
     subunits, soloists = get_children(artist_id)
-    for child in subunits + soloists:
-        child_songs = {row.song_id for row in ArtistSong.query.filter_by(artist_id=child.id).all()}
-        own |= child_songs
-    return own
+    all_ids = [artist_id] + [c.id for c in subunits + soloists]
+    return {row.song_id for row in ArtistSong.query.filter(ArtistSong.artist_id.in_(all_ids)).all()}
 
 
 def is_subunit(artist_id):
@@ -156,22 +153,32 @@ def get_filtered_navbar():
         artists = [a for a in artists if a.country_id == country_id]
 
     if genre_id is not None:
-        filtered = []
-        for a in artists:
-            song_ids = get_discography_songs(a.id)
-            if not song_ids:
-                continue
-            has_genre = db.session.query(Album).join(
-                AlbumSong, Album.id == AlbumSong.album_id
-            ).join(
-                album_genres, Album.id == album_genres.c.album_id
-            ).filter(
-                AlbumSong.song_id.in_(song_ids),
-                album_genres.c.genre_id == genre_id
-            ).first() is not None
-            if has_genre:
-                filtered.append(a)
-        artists = filtered
+        # Single query: find all artist IDs that have at least one song in an album with this genre
+        # Include children (subunits + soloists) mapped back to their parent
+        artist_ids = {a.id for a in artists}
+        # Build mapping: child_id → parent artist (for artists in navbar)
+        child_rels = ArtistArtist.query.filter(ArtistArtist.artist_1.in_(artist_ids)).all()
+        child_to_parent = {rel.artist_2: rel.artist_1 for rel in child_rels}
+        all_relevant_ids = artist_ids | set(child_to_parent.keys())
+
+        # Find which of these artist IDs have songs in albums with the target genre
+        matching_artist_ids = {row[0] for row in db.session.query(ArtistSong.artist_id).join(
+            AlbumSong, ArtistSong.song_id == AlbumSong.song_id
+        ).join(
+            album_genres, AlbumSong.album_id == album_genres.c.album_id
+        ).filter(
+            ArtistSong.artist_id.in_(all_relevant_ids),
+            album_genres.c.genre_id == genre_id
+        ).distinct().all()}
+
+        # Map child matches back to parent
+        valid_ids = set()
+        for aid in matching_artist_ids:
+            if aid in artist_ids:
+                valid_ids.add(aid)
+            elif aid in child_to_parent:
+                valid_ids.add(child_to_parent[aid])
+        artists = [a for a in artists if a.id in valid_ids]
 
     misc = [a for a in artists if a.name == 'Misc. Artists']
     rest = [a for a in artists if a.name != 'Misc. Artists']

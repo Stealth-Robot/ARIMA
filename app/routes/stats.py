@@ -53,9 +53,11 @@ def expand_subunit(artist_id):
     """HTMX endpoint: return stats rows for subunits of an artist."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = load_bulk_data(**settings)
 
     subunits, _ = get_children(artist_id)
+    subunit_ids = [sub.id for sub in subunits]
+    bulk = load_bulk_data(**settings, artist_ids=subunit_ids)
+
     rows = []
     for sub in subunits:
         stats = get_artist_stats(sub.id, users, bulk)
@@ -95,9 +97,11 @@ def expand_subunit_scores(artist_id):
     """HTMX endpoint: return score rows for subunits of an artist."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = load_bulk_data(**settings)
 
     subunits, _ = get_children(artist_id)
+    subunit_ids = [sub.id for sub in subunits]
+    bulk = load_bulk_data(**settings, artist_ids=subunit_ids)
+
     rows = []
     for sub in subunits:
         scores = get_artist_score_stats(sub.id, users, bulk)
