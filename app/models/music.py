@@ -89,6 +89,7 @@ class Song(db.Model):
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     is_promoted = db.Column(db.Boolean, nullable=False, default=False)
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
+    last_updated = db.Column(db.Text)
 
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     artists = db.relationship('Artist', secondary=ArtistSong.__table__, back_populates='songs',
@@ -104,6 +105,7 @@ class Album(db.Model):
     release_date = db.Column(db.Text, nullable=True)
     album_type_id = db.Column(db.Integer, db.ForeignKey('album_type.id'), nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+    last_updated = db.Column(db.Text)
 
     album_type = db.relationship('AlbumType')
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])

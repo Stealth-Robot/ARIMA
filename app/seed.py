@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from flask import current_app
 
 from app.extensions import bcrypt
-from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship
+from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship, ChangelogType
 from app.models.user import Role, User
 from app.models.theme import Theme
 from app.models.rules import Rules
@@ -122,7 +122,7 @@ DARK_THEME = {
     'pct_mid': '#B76D7D',
     'pct_low': '#833AB4',
     # Structural (6) — dark variants
-    'album_header_bg': '#5C2A4A',
+    'album_header_bg': '#B05A7A',
     'row_alternate': '#16213E',
     'grid_line': '#444444',
     'key_bg_standard': '#FF8E1E',
@@ -179,6 +179,9 @@ def seed(db):
 
         for id_, name in [(0, 'Subunit'), (1, 'Soloist')]:
             db.session.merge(ArtistRelationship(id=id_, relationship=name))
+
+        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy')]:
+            db.session.merge(ChangelogType(id=id_, type=name))
 
         # Flush lookups so FK references resolve
         db.session.flush()

@@ -8,6 +8,7 @@ class Changelog(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete='SET NULL'))
     album_id = db.Column(db.Integer, db.ForeignKey('album.id', ondelete='SET NULL'))
     song_id = db.Column(db.Integer, db.ForeignKey('song.id', ondelete='SET NULL'))
+    change_type_id = db.Column(db.Integer, db.ForeignKey('changelog_type.id'))
     description = db.Column(db.Text, nullable=False)
     justification = db.Column(db.Text)
 
@@ -15,9 +16,11 @@ class Changelog(db.Model):
     artist = db.relationship('Artist')
     album = db.relationship('Album')
     song = db.relationship('Song')
+    change_type = db.relationship('ChangelogType')
 
     __table_args__ = (
         db.Index('ix_changelog_artist_id', 'artist_id'),
         db.Index('ix_changelog_album_id', 'album_id'),
         db.Index('ix_changelog_song_id', 'song_id'),
+        db.Index('ix_changelog_change_type_id', 'change_type_id'),
     )

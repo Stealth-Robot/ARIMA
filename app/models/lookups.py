@@ -28,3 +28,9 @@ class ArtistRelationship(db.Model):
     __tablename__ = 'artist_relationship'
     id = db.Column(db.Integer, primary_key=True)
     relationship = db.Column(db.Text, nullable=False, unique=True)
+
+
+class ChangelogType(db.Model):
+    __tablename__ = 'changelog_type'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.Text, nullable=False, unique=True)

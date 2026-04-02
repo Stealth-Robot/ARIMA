@@ -342,6 +342,7 @@ def _import_changelog(changelog_data, user_map):
             date=entry['date'] or '2020-01-01',
             user_id=user_id,
             description=entry['description'],
+            change_type_id=3,  # Legacy
         ))
         count += 1
 

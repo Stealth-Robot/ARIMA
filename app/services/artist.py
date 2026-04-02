@@ -17,19 +17,39 @@ from app.extensions import db
 from app.models.music import Artist, ArtistArtist, ArtistSong, Song, Album, AlbumSong, album_genres
 
 
+_SYMBOL_MAP = {
+    '%': 'pct',
+    '&': 'and',
+    '+': 'plus',
+    '@': 'at',
+    '#': 'num',
+    '$': 'dollar',
+    '!': 'excl',
+    '?': 'q',
+    '*': 'star',
+    '=': 'eq',
+}
+
+
 def slugify(name):
     """Convert an artist name to a URL-safe slug.
 
+    Symbols are converted to readable equivalents instead of being stripped.
+    Spaces are preserved (URL-encoded as %20 in links).
+
     Examples:
         'TWICE'         → 'twice'
-        '(G)I-DLE'      → 'gi-dle'
-        'Misc. Artists' → 'misc-artists'
+        '(G)I-DLE'      → '(g)i-dle'
+        'Misc. Artists' → 'misc. artists'
+        '100%'          → '100pct'
+        'GD & TOP'      → 'gd and top'
     """
     s = name.lower()
-    s = re.sub(r'\s+', '-', s)           # spaces → hyphens
-    s = re.sub(r'[^a-z0-9-]', '', s)    # strip non-alphanumeric except hyphens
-    s = re.sub(r'-{2,}', '-', s)        # collapse multiple hyphens
-    s = s.strip('-')
+    for symbol, replacement in _SYMBOL_MAP.items():
+        s = s.replace(symbol, replacement)
+    s = re.sub(r'[^a-z0-9() .-]', '', s)  # keep alphanumeric, parens, spaces, dots, hyphens
+    s = re.sub(r'\s+', ' ', s)             # collapse multiple spaces
+    s = s.strip()
     return s
 
 

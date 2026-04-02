@@ -169,11 +169,25 @@ def create_app():
             db.session.rollback()
             pass  # DB may not exist yet
 
+    def _create_last_updated_triggers(database):
+        """Create SQLite triggers that auto-set last_updated on row updates."""
+        for table in ('artist', 'song', 'album', 'user'):
+            database.session.execute(database.text(f"""
+                CREATE TRIGGER IF NOT EXISTS trg_{table}_last_updated
+                AFTER UPDATE ON {table}
+                BEGIN
+                    UPDATE {table} SET last_updated = strftime('%Y-%m-%dT%H:%M:%S', 'now')
+                    WHERE id = NEW.id;
+                END;
+            """))
+        database.session.commit()
+
     # Flask CLI: seed command
     @flask_app.cli.command('seed')
     def seed_command():
         """Create all tables and insert seed data."""
         db.create_all()
+        _create_last_updated_triggers(db)
         from app.seed import seed
         seed(db)
         click.echo('Database seeded.')

@@ -65,9 +65,9 @@ def rate():
     song_obj = db.session.get(Song, song_id)
     if song_obj:
         if rating_value is not None:
-            log_change(current_user, f'Rated "{song_obj.name}" {rating_value}/5', song=song_obj)
+            log_change(current_user, f'Rated "{song_obj.name}" song {rating_value}/5', song=song_obj)
         elif note_sent:
-            log_change(current_user, f'Updated note on "{song_obj.name}"', song=song_obj)
+            log_change(current_user, f'Updated note on "{song_obj.name}" song', song=song_obj)
 
     try:
         db.session.commit()
@@ -104,7 +104,7 @@ def delete_rating():
     if existing:
         song_obj = db.session.get(Song, song_id)
         if song_obj:
-            log_change(current_user, f'Cleared rating for "{song_obj.name}"', song=song_obj)
+            log_change(current_user, f'Cleared rating for "{song_obj.name}" song', song=song_obj)
         db.session.delete(existing)
         db.session.commit()
         publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})

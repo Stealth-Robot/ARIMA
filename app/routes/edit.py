@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime, timezone
 
 from flask import Blueprint, request, session, abort, render_template, redirect, url_for
 from flask_login import login_required, current_user
@@ -12,6 +13,13 @@ from app.services.audit import log_change
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 edit_bp = Blueprint('edit', __name__, url_prefix='/edit')
+
+
+@edit_bp.route('/artist/<int:artist_id>')
+@login_required
+def artist_redirect(artist_id):
+    """Redirect /edit/artist/<id> to the artist detail page."""
+    return redirect(url_for('artists.artist_detail', artist_id=artist_id))
 
 
 def _require_edit_mode():
@@ -32,7 +40,7 @@ def album_name(album_id):
         abort(400)
     old_name = album.name
     album.name = name
-    log_change(current_user, f'Renamed album from "{old_name}" to "{name}"', album=album)
+    log_change(current_user, f'Renamed "{old_name}" album to "{name}"', album=album)
     db.session.commit()
     return name
 
@@ -52,7 +60,7 @@ def album_release_date(album_id):
         album.release_date = value
     else:
         abort(400)
-    log_change(current_user, f'Changed release date to {value or "none"}', album=album)
+    log_change(current_user, f'Changed release date of "{album.name}" album to {value or "none"}', album=album)
     db.session.commit()
     return value
 
@@ -73,7 +81,8 @@ def album_genres_edit(album_id):
     for gid in genre_ids:
         db.session.execute(album_genres.insert().values(album_id=album_id, genre_id=gid))
     names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
-    log_change(current_user, f'Set genres to {", ".join(names) or "none"}', album=album)
+    album.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Set genres of "{album.name}" album to {", ".join(names) or "none"}', album=album)
     db.session.commit()
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
@@ -93,7 +102,7 @@ def artist_country(artist_id):
     if country is None:
         abort(400)
     artist.country_id = country.id
-    log_change(current_user, f'Changed country to {country.country}', artist=artist)
+    log_change(current_user, f'Changed country of "{artist.name}" artist to {country.country}', artist=artist)
     db.session.commit()
     return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
 
@@ -131,7 +140,9 @@ def song_move_album(song_id):
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == old_id))
             db.session.query(Album).filter_by(id=old_id).delete()
 
-    log_change(current_user, f'Moved song "{song.name}" to album "{new_album.name}"', song=song, album=new_album)
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    new_album.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Moved "{song.name}" song to "{new_album.name}" album', song=song, album=new_album)
     db.session.commit()
 
     return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}
@@ -201,7 +212,7 @@ def add_album_to_artist(artist_id):
         else:
             db.session.add(ArtistSong(artist_id=artist_id, song_id=song.id, artist_is_main=song_data.get('artist_is_main', True)))
 
-    log_change(current_user, f'Added album "{album_name}" with {len(songs)} songs', artist=artist, album=album)
+    log_change(current_user, f'Added "{album_name}" album with {len(songs)} songs', artist=artist, album=album)
     db.session.commit()
 
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
@@ -220,7 +231,7 @@ def song_name(song_id):
         abort(400)
     old_name = song.name
     song.name = name
-    log_change(current_user, f'Renamed song from "{old_name}" to "{name}"', song=song)
+    log_change(current_user, f'Renamed "{old_name}" song to "{name}"', song=song)
     db.session.commit()
     return name
 
@@ -235,7 +246,7 @@ def song_is_remix(song_id):
         abort(404)
     song.is_remix = not song.is_remix
     label = 'Marked' if song.is_remix else 'Unmarked'
-    log_change(current_user, f'{label} "{song.name}" as remix', song=song)
+    log_change(current_user, f'{label} "{song.name}" song as remix', song=song)
     db.session.commit()
     checked = 'checked' if song.is_remix else ''
     return f'<input type="checkbox" {checked} hx-post="/edit/song/{song_id}/is-remix" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
@@ -251,10 +262,142 @@ def song_is_promoted(song_id):
         abort(404)
     song.is_promoted = not song.is_promoted
     label = 'Marked' if song.is_promoted else 'Unmarked'
-    log_change(current_user, f'{label} "{song.name}" as promoted', song=song)
+    log_change(current_user, f'{label} "{song.name}" song as promoted', song=song)
     db.session.commit()
     checked = 'checked' if song.is_promoted else ''
     return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
+
+
+@edit_bp.route('/artist/<int:artist_id>/convert', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def convert_artist(artist_id):
+    """Convert a standalone artist to a subunit or soloist of another artist."""
+    _require_edit_mode()
+    if not _verify_password():
+        return 'Incorrect password', 403
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    parent_id = request.form.get('parent_id', type=int)
+    rel_type = request.form.get('type', '').strip()
+    if parent_id is None or rel_type not in ('subunit', 'soloist'):
+        abort(400)
+    parent = db.session.get(Artist, parent_id)
+    if parent is None:
+        abort(400)
+    # Don't allow if artist already has children
+    existing_children = ArtistArtist.query.filter_by(artist_1=artist_id).count()
+    if existing_children > 0:
+        return 'Artist has subunits or soloists', 400
+    # Don't allow if already a child
+    existing_link = ArtistArtist.query.filter_by(artist_2=artist_id).first()
+    if existing_link:
+        return 'Artist is already a subunit or soloist', 400
+    rel_id = 0 if rel_type == 'subunit' else 1
+    db.session.add(ArtistArtist(artist_1=parent_id, artist_2=artist_id, relationship=rel_id))
+    artist.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Converted "{artist.name}" to {rel_type} of "{parent.name}" artist', artist=artist)
+    db.session.commit()
+    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/artist/<int:artist_id>/unlink', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def unlink_artist(artist_id):
+    """Remove a subunit/soloist relationship, converting the child to a standalone artist."""
+    _require_edit_mode()
+    if not _verify_password():
+        return 'Incorrect password', 403
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    link = ArtistArtist.query.filter_by(artist_2=artist_id).first()
+    if link is None:
+        return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+    parent = db.session.get(Artist, link.artist_1)
+    parent_name = parent.name if parent else 'Unknown'
+    rel_type = 'soloist' if link.relationship == 1 else 'subunit'
+    db.session.delete(link)
+    artist.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Unlinked "{artist.name}" as {rel_type} from "{parent_name}" artist', artist=artist)
+    db.session.commit()
+    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:song_id>/artists', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_artists_update(song_id):
+    """Add an artist to a song. Expects artist_id and is_main."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    artist_id = request.form.get('artist_id', type=int)
+    is_main = request.form.get('is_main', 'true') == 'true'
+    if artist_id is None:
+        abort(400)
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(400)
+    existing = db.session.get(ArtistSong, (artist_id, song_id))
+    if existing:
+        return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+    db.session.add(ArtistSong(artist_id=artist_id, song_id=song_id, artist_is_main=is_main))
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    label = 'main' if is_main else 'featured'
+    log_change(current_user, f'Added "{artist.name}" as {label} artist on "{song.name}" song', song=song)
+    db.session.commit()
+    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:song_id>/artists/<int:artist_id>', methods=['DELETE'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_artist_remove(song_id, artist_id):
+    """Remove an artist from a song."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    # Don't allow removing the last artist
+    count = ArtistSong.query.filter_by(song_id=song_id).count()
+    if count <= 1:
+        return 'Cannot remove the only artist', 400
+    existing = db.session.get(ArtistSong, (artist_id, song_id))
+    if existing is None:
+        abort(404)
+    artist = db.session.get(Artist, artist_id)
+    artist_name = artist.name if artist else 'Unknown'
+    db.session.delete(existing)
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Removed "{artist_name}" from "{song.name}" song', song=song)
+    db.session.commit()
+    return '', 204
+
+
+@edit_bp.route('/song/<int:song_id>/artists/<int:artist_id>/role', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_artist_role(song_id, artist_id):
+    """Toggle an artist's role (main/featured) on a song."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    existing = db.session.get(ArtistSong, (artist_id, song_id))
+    if existing is None:
+        abort(404)
+    existing.artist_is_main = not existing.artist_is_main
+    artist = db.session.get(Artist, artist_id)
+    artist_name = artist.name if artist else 'Unknown'
+    label = 'main' if existing.artist_is_main else 'featured'
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Changed "{artist_name}" to {label} on "{song.name}" song', song=song)
+    db.session.commit()
+    return json.dumps({'is_main': existing.artist_is_main}), 200, {'Content-Type': 'application/json'}
 
 
 @edit_bp.route('/add-artist', methods=['GET'])
@@ -412,10 +555,10 @@ def add_artist_submit():
             else:
                 db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
 
-    log_change(current_user, f'Added artist "{name}" with {len(albums_data)} albums, {total_songs} songs', artist=artist)
+    log_change(current_user, f'Added "{name}" artist with {len(albums_data)} albums, {total_songs} songs', artist=artist)
     db.session.commit()
 
-    return redirect(url_for('artists.artist_detail', artist_slug=slug))
+    return redirect(url_for('artists.artist_detail', artist_id=artist.id))
 
 
 @edit_bp.route('/artist/<int:artist_id>/delete', methods=['POST'])
@@ -466,7 +609,7 @@ def delete_artist(artist_id):
     # Log before deleting (artist FK will be gone after delete)
     artist_name = artist.name
     db.session.delete(artist)
-    log_change(current_user, f'Deleted artist "{artist_name}"')
+    log_change(current_user, f'Deleted "{artist_name}" artist')
     db.session.commit()
 
     return redirect(url_for('artists.artists_list'))
@@ -511,7 +654,7 @@ def delete_song(song_id):
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
             db.session.query(Album).filter_by(id=row.album_id).delete()
 
-    log_change(current_user, f'Deleted song "{song_name_val}"')
+    log_change(current_user, f'Deleted "{song_name_val}" song')
     db.session.commit()
     return '', 204
 
@@ -544,6 +687,6 @@ def delete_album(album_id):
     album_name_val = album.name
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
-    log_change(current_user, f'Deleted album "{album_name_val}" ({len(song_ids)} songs)')
+    log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)')
     db.session.commit()
     return '', 204

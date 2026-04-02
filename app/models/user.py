@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     sort_order = db.Column(db.Integer, unique=True)
     profile_image = db.Column(db.Text)
     home_page_image = db.Column(db.Text)
+    last_updated = db.Column(db.Text)
 
     role = db.relationship('Role')
     settings = db.relationship('UserSettings', uselist=False, back_populates='user',

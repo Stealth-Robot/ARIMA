@@ -615,7 +615,180 @@ document.addEventListener('click', function(e) {
     if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
         closeAlbumMovePopover();
     }
+    if (activeSongArtistPopover && !activeSongArtistPopover.contains(e.target)) {
+        closeSongArtistPopover();
+    }
 });
+
+/* Song artist management popover */
+
+var activeSongArtistPopover = null;
+
+function closeSongArtistPopover() {
+    if (activeSongArtistPopover) {
+        activeSongArtistPopover.remove();
+        activeSongArtistPopover = null;
+    }
+}
+
+function _csrfHeaders(extra) {
+    var h = extra || {};
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) h['X-CSRFToken'] = meta.content;
+    return h;
+}
+
+function _updateCollabLabel(songId, artists) {
+    var row = document.getElementById('song-' + songId);
+    if (!row) return;
+    var td = row.querySelector('td');
+    if (!td) return;
+    // Remove existing collab label span (italic span inside the td)
+    var existing = td.querySelector('span[style*="font-style: italic"]');
+    if (existing) existing.remove();
+    // Build new label from other main artists (excluding current page artist)
+    var currentId = (typeof _currentArtistId !== 'undefined') ? _currentArtistId : null;
+    var otherMain = artists.filter(function(a) { return a.is_main && a.artist_id !== currentId; });
+    if (otherMain.length > 0) {
+        var label = document.createElement('span');
+        label.style.cssText = 'color: var(--text-secondary); font-style: italic;';
+        label.textContent = '(feat. ' + otherMain.map(function(a) { return a.name; }).join(', ') + ')';
+        td.appendChild(document.createTextNode(' '));
+        td.appendChild(label);
+    }
+}
+
+function showSongArtists(event, songId, span) {
+    event.stopPropagation();
+    closeSongArtistPopover();
+    closeAlbumMovePopover();
+
+    var artists = (typeof _songArtists !== 'undefined' && _songArtists[songId]) ? _songArtists[songId] : [];
+    var allArtists = (typeof _allArtists !== 'undefined') ? _allArtists : [];
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:260px; max-height:320px; overflow-y:auto;';
+
+    var title = document.createElement('div');
+    title.textContent = 'Song artists:';
+    title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:6px; color:var(--text-secondary);';
+    popover.appendChild(title);
+
+    var listContainer = document.createElement('div');
+    listContainer.id = 'song-artist-list-' + songId;
+
+    function renderList() {
+        listContainer.innerHTML = '';
+        artists.forEach(function(a) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0;';
+
+            var name = document.createElement('span');
+            name.textContent = a.name;
+            name.style.cssText = 'font-size:12px; flex:1;';
+            row.appendChild(name);
+
+            var roleBtn = document.createElement('button');
+            roleBtn.textContent = a.is_main ? 'Main' : 'Feat';
+            roleBtn.style.cssText = 'font-size:10px; padding:1px 6px; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:' + (a.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (a.is_main ? '#fff' : 'var(--text-secondary)') + ';';
+            roleBtn.addEventListener('click', function() {
+                fetch('/edit/song/' + songId + '/artists/' + a.artist_id + '/role', {
+                    method: 'POST',
+                    headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+                }).then(function(r) {
+                    if (!r.ok) throw new Error('failed');
+                    return r.json();
+                }).then(function(data) {
+                    a.is_main = data.is_main;
+                    renderList();
+                    _updateCollabLabel(songId, artists);
+                });
+            });
+            row.appendChild(roleBtn);
+
+            if (artists.length > 1) {
+                var removeBtn = document.createElement('button');
+                removeBtn.textContent = '\u00d7';
+                removeBtn.style.cssText = 'font-size:13px; color:#DC2626; background:none; border:none; cursor:pointer; padding:0 2px;';
+                removeBtn.addEventListener('click', function() {
+                    fetch('/edit/song/' + songId + '/artists/' + a.artist_id, {
+                        method: 'DELETE',
+                        headers: _csrfHeaders({}),
+                    }).then(function(r) {
+                        if (!r.ok) throw new Error('failed');
+                        artists = artists.filter(function(x) { return x.artist_id !== a.artist_id; });
+                        _songArtists[songId] = artists;
+                        renderList();
+                        rebuildOptions();
+                        _updateCollabLabel(songId, artists);
+                    });
+                });
+                row.appendChild(removeBtn);
+            }
+
+            listContainer.appendChild(row);
+        });
+    }
+
+    renderList();
+    popover.appendChild(listContainer);
+
+    // Add artist dropdown
+    var addRow = document.createElement('div');
+    addRow.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+
+    var select = document.createElement('select');
+    select.style.cssText = 'font-size:11px; width:100%; padding:2px 4px; border:1px solid var(--border); border-radius:3px;';
+
+    function rebuildOptions() {
+        select.innerHTML = '';
+        var opt0 = document.createElement('option');
+        opt0.value = '';
+        opt0.textContent = '+ Add artist...';
+        select.appendChild(opt0);
+        var usedIds = artists.map(function(a) { return a.artist_id; });
+        allArtists.forEach(function(a) {
+            if (usedIds.indexOf(a.id) === -1) {
+                var opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                select.appendChild(opt);
+            }
+        });
+    }
+    rebuildOptions();
+
+    select.addEventListener('change', function() {
+        var artistId = parseInt(select.value);
+        if (!artistId) return;
+        var artist = allArtists.find(function(a) { return a.id === artistId; });
+        if (!artist) return;
+        fetch('/edit/song/' + songId + '/artists', {
+            method: 'POST',
+            headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+            body: 'artist_id=' + artistId + '&is_main=false',
+        }).then(function(r) {
+            if (!r.ok) throw new Error('failed');
+            artists.push({ artist_id: artistId, name: artist.name, is_main: false });
+            _songArtists[songId] = artists;
+            renderList();
+            rebuildOptions();
+            _updateCollabLabel(songId, artists);
+        });
+    });
+
+    addRow.appendChild(select);
+    popover.appendChild(addRow);
+
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeSongArtistPopover = popover;
+}
 
 /* Add album modal helpers */
 
@@ -837,12 +1010,16 @@ if (_addAlbumModal) {
 
 var _deleteIsAjax = false;
 
-function showDeleteConfirm(title, msg, action, ajax) {
+var _deleteRedirectUrl = null;
+
+function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     _deleteIsAjax = !!ajax;
+    _deleteRedirectUrl = redirectUrl || null;
     document.getElementById('confirm-delete-title').textContent = title;
     document.getElementById('confirm-delete-msg').textContent = msg;
     document.getElementById('confirm-delete-form').action = action;
     document.getElementById('confirm-delete-pw').value = '';
+    document.getElementById('confirm-delete-btn').textContent = btnLabel || 'Delete';
     document.getElementById('confirm-delete-modal').style.display = 'flex';
 }
 
@@ -862,11 +1039,15 @@ function showDeleteConfirm(title, msg, action, ajax) {
             body: 'password=' + encodeURIComponent(pw),
         }).then(function(r) {
             if (r.status === 403) { alert('Incorrect password'); return; }
-            if (!r.ok) throw new Error('delete failed');
+            if (!r.ok) throw new Error('failed');
             document.getElementById('confirm-delete-modal').style.display = 'none';
-            window.location.reload();
+            if (_deleteRedirectUrl) {
+                window.location.href = _deleteRedirectUrl;
+            } else {
+                window.location.reload();
+            }
         }).catch(function() {
-            showToast('Delete failed — try again');
+            showToast('Action failed — try again');
         });
     });
 })();
