@@ -225,8 +225,9 @@ def seed(db):
         _validate_theme(db.session.get(Theme, 0), 'Classic')
         _validate_theme(db.session.get(Theme, 1), 'Dark')
 
-        # 5. Rules — single row
-        db.session.merge(Rules(id=1, content='Rules have not been set yet.'))
+        # 5. Rules — single row (only create if missing, don't overwrite edits)
+        if not db.session.get(Rules, 1):
+            db.session.add(Rules(id=1, content='Rules have not been set yet.'))
 
         db.session.flush()
 
