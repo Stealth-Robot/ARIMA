@@ -12,6 +12,7 @@
                 <th class="px-3 py-2">Order</th>
                 <th class="text-left px-3 py-2">Username</th>
                 <th class="text-left px-3 py-2">Role</th>
+                <th class="px-3 py-2">PW</th>
                 <th class="text-left px-3 py-2">Email</th>
                 <th class="text-left px-3 py-2">Join Date</th>
                 <th class="text-left px-3 py-2">Last Seen</th>
@@ -37,7 +38,7 @@
                 </td>
                 <td class="px-3 py-2 font-medium">
                     {{ u.username }}
-                    {% if not u.password %}
+                    {% if not u.password and not u.email.endswith('arima.app') %}
                     <span class="text-xs" style="color: var(--text-secondary);">(invited)</span>
                     {% endif %}
                 </td>
@@ -55,6 +56,7 @@
                         </select>
                     </form>
                 </td>
+                <td class="px-3 py-2 text-xs text-center">{{ 'Y' if u.password else '' }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.email }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.created_at[:10] if u.created_at else '-' }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>

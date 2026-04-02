@@ -26,22 +26,6 @@ export FLASK_APP=app:create_app
 echo "Seeding database..."
 flask seed
 
-# Set admin password if not already set
-python3 -c "
-from app import create_app
-from app.extensions import db
-from app.models.user import User
-from app.routes.auth import _hash_password
-
-app = create_app()
-with app.app_context():
-    admin = db.session.get(User, 2)
-    if admin:
-        admin.password = _hash_password('admin')
-        db.session.commit()
-        print('Admin password set to: admin')
-"
-
 echo ""
 echo "==================================="
 echo "  ARIMA running on http://127.0.0.1:5000"

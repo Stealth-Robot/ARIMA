@@ -200,10 +200,6 @@ def seed(db):
                 profile_image='https://i.imgur.com/Nux0Yn7.png',
             ))
 
-        existing_globe = User.query.filter_by(username='Globe').first()
-        if existing_globe and not existing_globe.password:
-            existing_globe.password = _hash('admin')
-
         # Flush users so theme FK resolves
         db.session.flush()
 

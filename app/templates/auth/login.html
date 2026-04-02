@@ -157,10 +157,28 @@
 
         function validateForm() {
             const usernameValid = createUsername.value.trim() !== '';
-            const passwordValid = createPassword.value.length >= 8;
+            const passwordValid = createPassword.value.length >= 5;
             const passwordsMatch = createPassword.value === createConfirm.value;
             createSubmit.disabled = !(usernameValid && passwordValid && passwordsMatch);
         }
+
+        const createEmail = document.getElementById('create-email');
+
+        createEmail.addEventListener('blur', () => {
+            const email = createEmail.value.trim();
+            if (!email) return;
+            const body = new FormData();
+            body.append('email', email);
+            body.append('csrf_token', createForm.querySelector('[name=csrf_token]').value);
+            fetch('{{ url_for("auth.lookup_invite") }}', { method: 'POST', body: body })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.username) {
+                        createUsername.value = data.username;
+                        validateForm();
+                    }
+                });
+        });
 
         createUsername.addEventListener('input', validateForm);
         createPassword.addEventListener('input', validateForm);

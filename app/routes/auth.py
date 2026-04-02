@@ -50,6 +50,18 @@ def guest_login():
     return redirect(url_for('home.home'))
 
 
+@auth_bp.route('/lookup-invite', methods=['POST'])
+def lookup_invite():
+    """Return the username for an invited (password-less) user by email."""
+    email = request.form.get('email', '').strip().lower()
+    if not email:
+        return {'username': None}
+    user = User.query.filter_by(email=email).first()
+    if user and user.password is None:
+        return {'username': user.username}
+    return {'username': None}
+
+
 @auth_bp.route('/create-account', methods=['POST'])
 def create_account():
     email = request.form.get('email', '').strip().lower()
@@ -95,13 +107,11 @@ def create_account():
     user.password = _hash_password(password)
     user.created_at = datetime.now(timezone.utc).isoformat()
 
-    # Create UserSettings with defaults
-    settings = UserSettings(user_id=user.id)
-    db.session.add(settings)
-
-    # Create personal Theme row (all NULLs — renders as Classic via fallback)
-    personal_theme = Theme(user_id=user.id)
-    db.session.add(personal_theme)
+    # Create UserSettings and Theme if they don't already exist (reinvited users keep theirs)
+    if not user.settings:
+        db.session.add(UserSettings(user_id=user.id))
+    if not Theme.query.filter_by(user_id=user.id).first():
+        db.session.add(Theme(user_id=user.id))
 
     db.session.commit()
 
