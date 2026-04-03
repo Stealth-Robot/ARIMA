@@ -23,10 +23,6 @@ def create_app():
     config = ProdConfig if os.environ.get('FLASK_ENV') == 'production' else Config
     flask_app.config.from_object(config)
 
-    # Debug: log config on startup
-    logging.basicConfig(level=logging.INFO)
-    logger.info('FLASK_ENV=%s, using %s', os.environ.get('FLASK_ENV'), config.__name__)
-    logger.info('DB URI: %s', flask_app.config['SQLALCHEMY_DATABASE_URI'])
 
     # Initialise extensions
     db.init_app(flask_app)
@@ -127,29 +123,6 @@ def create_app():
                 from app.seed import seed
                 seed(db)
                 logger.info('Seeded new database at %s', db_path)
-
-    # Temporary upload endpoint — remove after initial deploy
-    @flask_app.route('/upload-db', methods=['GET', 'POST'])
-    @csrf.exempt
-    def upload_db():
-        from flask import request
-        upload_secret = os.environ.get('UPLOAD_SECRET')
-        if not upload_secret:
-            return 'UPLOAD_SECRET env var not set', 403
-        if request.args.get('key') != upload_secret:
-            return 'Forbidden', 403
-        if request.method == 'GET':
-            return '''<form method="post" enctype="multipart/form-data">
-                <input type="file" name="db" accept=".db">
-                <button type="submit">Upload</button>
-            </form>'''
-        f = request.files.get('db')
-        if not f:
-            return 'No file', 400
-        target = flask_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        f.save(target)
-        return f'Database uploaded to {target} ({os.path.getsize(target)} bytes)'
 
     # Register routes
     from app.routes import register_routes
