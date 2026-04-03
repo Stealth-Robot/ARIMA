@@ -7,3 +7,4 @@ Flask-Compress==1.*
 gunicorn==23.*
 python-dotenv==1.*
 markdown==3.*
+resend
