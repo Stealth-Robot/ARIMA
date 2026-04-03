@@ -125,6 +125,7 @@ def create_app():
 
     # Temporary upload endpoint — remove after initial deploy
     @flask_app.route('/upload-db', methods=['GET', 'POST'])
+    @csrf.exempt
     def upload_db():
         from flask import request
         upload_secret = os.environ.get('UPLOAD_SECRET')
