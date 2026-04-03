@@ -74,4 +74,14 @@ class Theme(db.Model):
     search_section_bg = db.Column(db.Text)
     search_section_text = db.Column(db.Text)
 
+    # Action button colours
+    delete_button = db.Column(db.Text)
+    edit_on_button = db.Column(db.Text)
+    edit_off_button = db.Column(db.Text)
+    button_text = db.Column(db.Text)
+
+    # Discography header
+    discography_background = db.Column(db.Text)
+    discography_text = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])

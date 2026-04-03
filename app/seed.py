@@ -78,9 +78,17 @@ CLASSIC_THEME = {
     'unrated_low_bg': '#B6D7A8',
     'unrated_mid_bg': '#FFE599',
     'unrated_high_bg': '#EA9999',
+    # Action buttons
+    'delete_button': '#DC2626',
+    'edit_on_button': '#16a34a',
+    'edit_off_button': '#6B7280',
+    'button_text': '#FFFFFF',
+    # Discography header
+    'discography_background': '#000000',
+    'discography_text': '#FFFFFF',
 }
 
-# Dark theme — all 44 columns populated, no NULLs
+# Dark theme — all columns populated, no NULLs
 DARK_THEME = {
     # UI chrome (17)
     'bg_primary': '#1A1A2E',
@@ -140,6 +148,14 @@ DARK_THEME = {
     'unrated_low_bg': '#B6D7A8',
     'unrated_mid_bg': '#FFE599',
     'unrated_high_bg': '#EA9999',
+    # Action buttons
+    'delete_button': '#DC2626',
+    'edit_on_button': '#16a34a',
+    'edit_off_button': '#6B7280',
+    'button_text': '#FFFFFF',
+    # Discography header
+    'discography_background': '#000000',
+    'discography_text': '#FFFFFF',
 }
 
 

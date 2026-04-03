@@ -49,7 +49,7 @@ var _songArtists = {
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 44px; z-index: 10;">
-            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: #000000; color: #FFFFFF;">DISCOGRAPHY</th>
+            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">DISCOGRAPHY</th>
             {% if edit_mode %}
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Remix</th>
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Promoted</th>
@@ -77,7 +77,7 @@ var _songArtists = {
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
-                <span style="cursor: pointer; color: #DC2626; position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
+                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
                       onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} will be permanently deleted. All songs and ratings not on another album will also be deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
@@ -106,7 +106,7 @@ var _songArtists = {
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
-                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: inherit; margin-left: 2px;" title="Delete song"
+                <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
                       onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
@@ -163,15 +163,15 @@ var _songArtists = {
         {# Gap row #}
         <tr><td colspan="100" style="height: 12px; border: none;"></td></tr>
         {# Child name header — black bg, white text, full width #}
-        <tr style="background-color: #000000; border: 1px solid var(--grid-line);">
-            <td colspan="100" style="padding: 0; font-weight: bold; font-size: 13px; color: #FFFFFF; position: relative;">
+        <tr style="background-color: var(--discography-background); border: 1px solid var(--grid-line);">
+            <td colspan="100" style="padding: 0; font-weight: bold; font-size: 13px; color: var(--discography-text); position: relative;">
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--link); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
                       onclick="showDeleteConfirm('Unlink {{ child.artist.name | e }}?', 'This will remove {{ child.artist.name | e }} as a {{ 'soloist' if child.is_soloist else 'subunit' }} and convert them to a standalone artist. Their songs and albums will not be affected.', '/edit/artist/{{ child.artist.id }}/unlink', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}')">&#128279;</span>
                 {% endif %}
                 {% if child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
-                   style="display: block; padding: 4px 8px; color: #FFFFFF; text-decoration: none; cursor: pointer;"
+                   style="display: block; padding: 4px 8px; color: var(--discography-text); text-decoration: none; cursor: pointer;"
                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
                     {{ child.artist.name }}
                 </a>
@@ -197,7 +197,7 @@ var _songArtists = {
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
-                <span style="cursor: pointer; color: #DC2626; position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
+                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
                       onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} will be permanently deleted. All songs and ratings not on another album will also be deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
@@ -224,7 +224,7 @@ var _songArtists = {
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
-                <span class="edit-inline" style="cursor: pointer; color: #DC2626; font-size: inherit; margin-left: 2px;" title="Delete song"
+                <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
                       onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
@@ -309,8 +309,8 @@ var _songArtists = {
 <!-- Add album + Delete artist buttons (edit mode only) -->
 <div class="mt-8 mb-4 flex gap-3">
     <button type="button" onclick="resetAddAlbumModal();document.getElementById('add-album-modal').style.display='flex'"
-            class="px-4 py-2 rounded text-sm text-white"
-            style="background-color: #16a34a;">
+            class="px-4 py-2 rounded text-sm"
+            style="background-color: var(--edit-on-button); color: var(--button-text);">
         Add Album
     </button>
     {% set has_children = children | length > 0 %}
@@ -319,20 +319,20 @@ var _songArtists = {
     <button type="button"
             {% if can_convert %}onclick="showConvertArtist('subunit')"{% endif %}
             class="px-4 py-2 rounded text-sm"
-            style="background-color: {% if can_convert %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert %}#FFFFFF{% else %}var(--text-secondary){% endif %}; {% if not can_convert %}cursor: not-allowed; opacity: 0.6;{% endif %}"
+            style="background-color: {% if can_convert %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert %}var(--button-text){% else %}var(--text-secondary){% endif %}; {% if not can_convert %}cursor: not-allowed; opacity: 0.6;{% endif %}"
             {% if not can_convert %}title="Cannot convert an artist that already has subunits or soloists"{% endif %}>
         Convert to Subunit
     </button>
     <button type="button"
             {% if can_convert %}onclick="showConvertArtist('soloist')"{% endif %}
             class="px-4 py-2 rounded text-sm"
-            style="background-color: {% if can_convert %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert %}#FFFFFF{% else %}var(--text-secondary){% endif %}; {% if not can_convert %}cursor: not-allowed; opacity: 0.6;{% endif %}"
+            style="background-color: {% if can_convert %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert %}var(--button-text){% else %}var(--text-secondary){% endif %}; {% if not can_convert %}cursor: not-allowed; opacity: 0.6;{% endif %}"
             {% if not can_convert %}title="Cannot convert an artist that already has subunits or soloists"{% endif %}>
         Convert to Soloist
     </button>
     <button type="button" onclick="showDeleteConfirm('Delete {{ artist.name }}?', 'This will permanently delete this artist, all their albums, songs, and ratings. This cannot be undone.', '{{ url_for('edit.delete_artist', artist_id=artist.id) }}')"
-            class="px-4 py-2 rounded text-sm text-white"
-            style="background-color: #DC2626;">
+            class="px-4 py-2 rounded text-sm"
+            style="background-color: var(--delete-button); color: var(--button-text);">
         Delete Artist
     </button>
 </div>
@@ -404,7 +404,7 @@ function submitConvertArtist() {
                 padding:24px; width:420px; max-width:90vw; max-height:80vh; overflow-y:auto;">
         <h3 class="text-lg font-bold mb-3" style="color:var(--text-primary);">Add Album to {{ artist.name }}</h3>
 
-        <label class="block text-sm mb-1" style="color:var(--text-primary);">Album Name <span style="color:#DC2626;">*</span></label>
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Album Name <span style="color:var(--delete-button);">*</span></label>
         <input type="text" id="new-album-name" class="w-full px-3 py-1 border rounded mb-3 text-sm" style="border-color:var(--border);">
 
         <div class="flex gap-3 mb-3">
@@ -413,7 +413,7 @@ function submitConvertArtist() {
                 <input type="date" id="new-album-date" class="w-full px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
             </div>
             <div class="flex-1">
-                <label class="block text-sm mb-1" style="color:var(--text-primary);">Type <span style="color:#DC2626;">*</span></label>
+                <label class="block text-sm mb-1" style="color:var(--text-primary);">Type <span style="color:var(--delete-button);">*</span></label>
                 <select id="new-album-type" class="w-full px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
                     <option value="0">Album</option>
                     <option value="1">EP</option>
@@ -429,7 +429,7 @@ function submitConvertArtist() {
             {% endfor %}
         </div>
 
-        <label class="block text-sm mb-1" style="color:var(--text-primary);">Songs <span style="color:#DC2626;">*</span></label>
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Songs <span style="color:var(--delete-button);">*</span></label>
         <div id="new-album-songs" class="mb-3"></div>
         <button type="button" onclick="addNewAlbumSong({{ artist.id }})" class="text-xs px-2 py-1 rounded mb-3" style="background:var(--button-secondary); color:var(--text-primary);">+ Add Song</button>
 
@@ -440,8 +440,8 @@ function submitConvertArtist() {
                 Cancel
             </button>
             <button type="button" id="add-album-submit-btn" onclick="submitNewAlbum({{ artist.id }})"
-                    class="px-4 py-2 rounded text-sm text-white" disabled
-                    style="background-color:#16a34a; opacity:0.5; cursor:not-allowed;">
+                    class="px-4 py-2 rounded text-sm" disabled
+                    style="background-color:var(--edit-on-button); color:var(--button-text); opacity:0.5; cursor:not-allowed;">
                 Add Album
             </button>
         </div>
@@ -468,7 +468,7 @@ function submitConvertArtist() {
                     Cancel
                 </button>
                 <button type="submit" id="confirm-delete-btn" class="px-4 py-2 rounded text-sm text-white"
-                        style="background-color:#DC2626;">
+                        style="background-color:var(--delete-button);">
                     Delete
                 </button>
             </div>

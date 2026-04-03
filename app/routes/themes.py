@@ -63,6 +63,51 @@ def theme_save(theme_id):
     return redirect(url_for('themes.themes_list'))
 
 
+@themes_bp.route('/themes/reset', methods=['POST'])
+@login_required
+def theme_reset():
+    """Reset the current user's personal theme (set all colours to null)."""
+    password = request.form.get('password', '')
+    if not password:
+        return 'Password required', 400
+    from app.routes.auth import _check_password
+    if not current_user.password or not _check_password(current_user.password, password):
+        return '<script>alert("Incorrect password");history.back();</script>', 403
+
+    personal = Theme.query.filter_by(user_id=current_user.id).first()
+    if personal:
+        for col in COLOUR_COLS:
+            setattr(personal, col, None)
+        db.session.commit()
+        from app.cache import clear_theme_cache_for_theme
+        clear_theme_cache_for_theme(personal.id)
+    return redirect(url_for('themes.themes_list'))
+
+
+@themes_bp.route('/themes/<int:theme_id>/copy', methods=['POST'])
+@login_required
+def theme_copy(theme_id):
+    """Copy a theme's colour values to the current user's personal theme."""
+    source = db.session.get(Theme, theme_id)
+    if not source:
+        return 'Theme not found', 404
+
+    # Find the user's personal theme
+    personal = Theme.query.filter_by(user_id=current_user.id).first()
+    if not personal:
+        personal = Theme(user_id=current_user.id)
+        db.session.add(personal)
+        db.session.flush()
+
+    for col in COLOUR_COLS:
+        setattr(personal, col, getattr(source, col))
+
+    db.session.commit()
+    from app.cache import clear_theme_cache_for_theme
+    clear_theme_cache_for_theme(personal.id)
+    return redirect(url_for('themes.themes_list'))
+
+
 def _can_edit(theme):
     """Check if current user can edit this theme."""
     if theme.id in (0, 1):

@@ -60,14 +60,14 @@
             <button id="edit-mode-btn" type="submit"
                     style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
                            border-radius:3px; cursor:pointer;
-                           {% if session.get('edit_mode') %}background:#16a34a; color:#fff;{% else %}background:#6B7280; color:#fff;{% endif %}">
+                           {% if session.get('edit_mode') %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--edit-off-button); color:var(--button-text);{% endif %}">
                 &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
             </button>
         </form>
         {% if session.get('edit_mode') %}
         <a id="add-artist-link" href="{{ url_for('edit.add_artist_form') }}"
            style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
-                  background:#16a34a; color:#fff; text-decoration:none;">
+                  background:var(--edit-on-button); color:var(--button-text); text-decoration:none;">
             + Artist
         </a>
         {% endif %}
@@ -163,7 +163,8 @@
             var csrfToken = form.querySelector('[name=csrf_token]').value;
             fetch(form.action, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + encodeURIComponent(csrfToken), redirect: 'manual'}).then(function() {
                 var isOn = btn.textContent.indexOf('ON') !== -1;
-                btn.style.background = isOn ? '#6B7280' : '#16a34a';
+                var styles = getComputedStyle(document.documentElement);
+                btn.style.background = isOn ? styles.getPropertyValue('--edit-off-button') : styles.getPropertyValue('--edit-on-button');
                 btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
                 var addLink = document.getElementById('add-artist-link');
                 if (isOn) {
@@ -175,7 +176,7 @@
                         addLink = document.createElement('a');
                         addLink.id = 'add-artist-link';
                         addLink.href = '{{ url_for("edit.add_artist_form") }}';
-                        addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:#16a34a; color:#fff; text-decoration:none;';
+                        addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button); color:var(--button-text); text-decoration:none;';
                         addLink.textContent = '+ Artist';
                         form.parentNode.insertBefore(addLink, form.nextSibling);
                     }

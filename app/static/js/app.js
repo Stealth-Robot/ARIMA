@@ -711,7 +711,7 @@ function showSongArtists(event, songId, span) {
             if (artists.length > 1) {
                 var removeBtn = document.createElement('button');
                 removeBtn.textContent = '\u00d7';
-                removeBtn.style.cssText = 'font-size:13px; color:#DC2626; background:none; border:none; cursor:pointer; padding:0 2px;';
+                removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
                 removeBtn.addEventListener('click', function() {
                     fetch('/edit/song/' + songId + '/artists/' + a.artist_id, {
                         method: 'DELETE',
@@ -848,7 +848,7 @@ function addNewAlbumSong(currentArtistId) {
             '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);">' +
             '<label class="text-xs"><input type="checkbox" class="new-song-promoted"> Promoted</label>' +
             '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
-            '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:#DC2626;">&times;</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
         '</div>' +
         '<div class="flex items-center gap-2 ml-2">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Artists:</span>' +
@@ -1252,7 +1252,7 @@ function showNoteInput(cell, songId) {
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
     deleteBtn.style.cssText = `
-        padding: 2px 10px; font-size: 12px; background: #DC2626;
+        padding: 2px 10px; font-size: 12px; background: var(--delete-button,#DC2626);
         color: #fff; border: none; border-radius: 3px; cursor: pointer;
     `;
     deleteBtn.onclick = () => submitNote(cell, songId, '');

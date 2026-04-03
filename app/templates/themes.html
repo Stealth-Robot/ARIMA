@@ -6,34 +6,112 @@
 <div class="max-w-5xl mx-auto">
     <h1 class="text-2xl font-bold mb-6">Themes</h1>
 
+    {% set preview_cols = [
+        'bg_primary', 'bg_secondary', 'navbar_bg', 'text_primary', 'text_secondary',
+        'link', 'border', 'button_primary', 'delete_button',
+        'discography_background', 'album_header_bg', 'header_row',
+        'gender_female', 'gender_male', 'gender_mixed',
+        'rating_5_bg', 'rating_4_bg', 'rating_3_bg',
+        'rating_2_bg', 'rating_1_bg', 'rating_0_bg',
+    ] %}
+
     <div class="space-y-6">
     {% for data in themes %}
     <div class="p-4 border rounded" style="border-color: var(--border);">
+        <!-- Header: name + actions -->
         <div class="flex items-center justify-between mb-3">
-            <h2 class="font-semibold">{{ data.display_name }}</h2>
-            {% if data.can_edit %}
-            <a href="{{ url_for('themes.theme_edit', theme_id=data.theme.id) }}"
-               class="text-sm px-3 py-1 rounded"
-               style="background-color: var(--button-primary); color: white;">
-                Edit
-            </a>
-            {% endif %}
+            <div class="flex items-center gap-3">
+                <h2 class="font-semibold">{{ data.display_name }}</h2>
+                {% if data.theme.user_id != current_user.id %}
+                <form method="POST" action="{{ url_for('themes.theme_copy', theme_id=data.theme.id) }}" style="margin: 0;"
+                      onsubmit="return confirm('This will overwrite your personal theme colours. This cannot be undone. Continue?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="text-xs px-2 py-1 rounded"
+                            style="background: var(--button-secondary); color: var(--text-primary); cursor: pointer; border: none;">
+                        Copy to mine
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+                {% if data.theme.user_id == current_user.id %}
+                <button type="button" class="text-sm px-3 py-1 rounded"
+                        style="background-color: var(--delete-button); color: var(--button-text); border: none; cursor: pointer;"
+                        onclick="document.getElementById('theme-reset-modal').style.display='flex';">
+                    Reset
+                </button>
+                {% endif %}
+                {% if data.can_edit %}
+                <a href="{{ url_for('themes.theme_edit', theme_id=data.theme.id) }}"
+                   class="text-sm px-3 py-1 rounded"
+                   style="background-color: var(--button-primary); color: var(--button-text); text-decoration: none;">
+                    Edit
+                </a>
+                {% endif %}
+            </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-            {% for col in colour_cols %}
+
+        <!-- Colour preview strip — key colours at a glance -->
+        <div style="display: flex; gap: 3px; height: 40px; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+            {% for col in preview_cols %}
             {% set val = data.colours[col] %}
             {% if val %}
-            <div class="text-center">
-                <div class="w-8 h-8 rounded border"
-                     style="background-color: {{ val }}; border-color: var(--grid-line);"
-                     title="{{ col }}: {{ val }}"></div>
-                <span class="text-xs" style="color: var(--text-secondary);">{{ col[:8] }}</span>
-            </div>
+            <div style="flex: 1; background-color: {{ val }};" title="{{ col }}: {{ val }}"></div>
             {% endif %}
             {% endfor %}
         </div>
+
+        <!-- Expandable full grid -->
+        <div>
+            <button type="button" class="text-xs mb-2"
+                    style="background: none; border: none; cursor: pointer; color: var(--text-secondary);"
+                    onclick="var d=this.nextElementSibling;d.style.display=d.style.display==='none'?'grid':'none';this.textContent=d.style.display==='none'?'▸ Show all colours':'▾ Hide colours';">
+                ▸ Show all colours
+            </button>
+            <div style="display: none; grid-template-columns: repeat(auto-fill, 60px); gap: 6px; justify-content: center;">
+                {% for col in colour_cols %}
+                {% set val = data.colours[col] %}
+                {% if val %}
+                <div style="text-align: center;">
+                    <span style="font-size: 9px; color: var(--text-secondary); display: block; font-family: monospace;">{{ val }}</span>
+                    <div style="width: 100%; height: 28px; border-radius: 3px; border: 1px solid var(--grid-line); background-color: {{ val }};"
+                         title="{{ col }}: {{ val }}"></div>
+                    <span style="font-size: 9px; color: var(--text-secondary); display: block; line-height: 1.2; margin-top: 1px;">{{ col[:10] }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
     </div>
     {% endfor %}
+    </div>
+</div>
+
+<!-- Reset theme modal -->
+<div id="theme-reset-modal" style="display:none; position:fixed; inset:0; z-index:100;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:340px; max-width:90vw;">
+        <h3 class="text-lg font-bold mb-2" style="color:var(--text-primary);">Reset Theme</h3>
+        <p class="text-sm mb-4" style="color:var(--text-secondary);">This will reset all colours in your personal theme to default.</p>
+        <form method="POST" action="{{ url_for('themes.theme_reset') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
+            <input type="password" name="password" required autocomplete="current-password"
+                   class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('theme-reset-modal').style.display='none'"
+                        class="px-4 py-2 rounded text-sm"
+                        style="background-color:var(--button-secondary); color:var(--text-primary);">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background-color:var(--delete-button); color:var(--button-text);">
+                    Reset
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

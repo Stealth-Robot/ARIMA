@@ -27,8 +27,8 @@
             <form method="POST" action="{{ url_for('profile.update_image') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="profile_image" value="">
-                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
-                        style="background-color: #DC2626;">Delete</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background-color: var(--delete-button); color: var(--button-text);">Delete</button>
             </form>
             {% endif %}
         </div>
@@ -44,13 +44,19 @@
         <!-- Theme -->
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Theme</label>
-            <select name="theme" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
-                {% for t in themes %}
-                <option value="{{ t.id }}" {% if t.id == settings.theme %}selected{% endif %}>
-                    {{ t.name }}
-                </option>
-                {% endfor %}
-            </select>
+            <div class="flex gap-2">
+                <select name="theme" class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border);">
+                    {% for t in themes %}
+                    <option value="{{ t.id }}" {% if t.id == settings.theme %}selected{% endif %}>
+                        {{ t.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <a href="{{ url_for('themes.themes_list') }}" class="px-3 py-2 rounded text-sm"
+                   style="background-color: var(--button-primary); color: white; text-decoration: none; white-space: nowrap;">
+                    Browse Themes
+                </a>
+            </div>
         </div>
 
         <!-- Toggles -->
