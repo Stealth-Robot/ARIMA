@@ -18,6 +18,7 @@ class Theme(db.Model):
     gender_female = db.Column(db.Text)
     gender_male = db.Column(db.Text)
     gender_mixed = db.Column(db.Text)
+    gender_anime = db.Column(db.Text)
     album_name = db.Column(db.Text)
     link = db.Column(db.Text)
     button_primary = db.Column(db.Text)

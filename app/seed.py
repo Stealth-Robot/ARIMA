@@ -32,6 +32,7 @@ CLASSIC_THEME = {
     'gender_female': '#EC4899',
     'gender_male': '#3B82F6',
     'gender_mixed': '#00FF00',
+    'gender_anime': '#F59E0B',
     'album_name': '#059669',
     'link': '#2563EB',
     'button_primary': '#2563EB',
@@ -103,6 +104,7 @@ DARK_THEME = {
     'gender_female': '#F472B6',
     'gender_male': '#60A5FA',
     'gender_mixed': '#00CC00',
+    'gender_anime': '#FBBF24',
     'album_name': '#34D399',
     'link': '#60A5FA',
     'button_primary': '#3B82F6',
@@ -182,7 +184,7 @@ def seed(db):
         for id_, name in [(0, 'Korean'), (1, 'Japanese'), (2, 'Canadian'), (3, 'American'), (4, 'Latin')]:
             db.session.merge(Country(id=id_, country=name))
 
-        for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (6, 'Anime')]:
+        for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (7, 'VTuber')]:
             db.session.merge(Genre(id=id_, genre=name))
 
         for id_, type_, desc in [
@@ -192,7 +194,7 @@ def seed(db):
         ]:
             db.session.merge(AlbumType(id=id_, type=type_, description=desc))
 
-        for id_, name in [(0, 'Female'), (1, 'Male'), (2, 'Mixed')]:
+        for id_, name in [(0, 'Female'), (1, 'Male'), (2, 'Mixed'), (3, 'Anime')]:
             db.session.merge(GroupGender(id=id_, gender=name))
 
         for id_, name in [(0, 'Subunit'), (1, 'Soloist')]:

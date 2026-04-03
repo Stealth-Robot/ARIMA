@@ -11,22 +11,23 @@ import time
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
 
-_filter_cache = {'countries': [], 'genres': [], 'ts': -9999.0}
+_filter_cache = {'countries': [], 'genres': [], 'genders': [], 'ts': -9999.0}
 _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():
-    """Return (countries, genres) lists, refreshing at most once per TTL."""
-    from app.models.lookups import Country, Genre
+    """Return (countries, genres, genders) lists, refreshing at most once per TTL."""
+    from app.models.lookups import Country, Genre, GroupGender
 
     now = time.monotonic()
     if now - _filter_cache['ts'] > _FILTER_TTL:
         try:
             _filter_cache['countries'] = Country.query.order_by(Country.id).all()
             _filter_cache['genres'] = Genre.query.order_by(Genre.id).all()
+            _filter_cache['genders'] = GroupGender.query.order_by(GroupGender.id).all()
             _filter_cache['ts'] = now
         except Exception:
             pass  # return stale/empty lists rather than None
-    return _filter_cache['countries'], _filter_cache['genres']
+    return _filter_cache['countries'], _filter_cache['genres'], _filter_cache['genders']
 
 
 def clear_filter_cache():

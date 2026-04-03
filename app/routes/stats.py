@@ -10,7 +10,7 @@ from app.services.artist import get_top_level_artists, get_children, get_filtere
 
 stats_bp = Blueprint('stats', __name__)
 
-GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed'}
+GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: '--gender-anime'}
 
 
 def _get_viewer_settings():

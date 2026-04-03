@@ -10,7 +10,7 @@ from app.services.artist import get_filtered_navbar, get_children, is_subunit, g
 
 artists_bp = Blueprint('artists', __name__)
 
-GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed'}
+GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: '--gender-anime'}
 
 
 @artists_bp.route('/artists', strict_slashes=False)
@@ -295,7 +295,7 @@ def _build_discography(artist):
             album_songs = [(s, tn) for s, tn in album_songs
                            if s.id in main_song_ids]
 
-        if album_songs:
+        if album_songs or edit_mode:
             song_obj_ids = [s.id for s, _ in album_songs]
             ratings_map = {sid: all_ratings_map.get(sid, {}) for sid in song_obj_ids}
             collab_labels = {sid: all_collab_labels[sid] for sid in song_obj_ids if sid in all_collab_labels}

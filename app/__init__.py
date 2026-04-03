@@ -82,14 +82,15 @@ def create_app():
             else:
                 country_id = session.get('country')
                 genre_id = session.get('genre')
-            countries, genres = get_cached_filters()
+            countries, genres, genders = get_cached_filters()
             return {
                 'current_country': country_id,
                 'current_genre': genre_id,
                 'countries': countries,
                 'genres': genres,
+                'genders': genders,
             }
-        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': []}
+        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': []}
 
     # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
@@ -205,5 +206,40 @@ def create_app():
         from app.seed import seed
         seed(db)
         click.echo('Database seeded.')
+
+    @flask_app.cli.command('import-jpop')
+    def import_jpop_command():
+        """Import JPOP data from 'lettuce jpop.xlsx'."""
+        from scripts.import_jpop_data import import_jpop
+        import_jpop()
+        click.echo('JPOP import complete.')
+
+    @flask_app.cli.command('import-kpop-notes')
+    def import_kpop_notes_command():
+        """Import cell comment notes from 'lettuce kpop.xlsx'."""
+        from scripts.import_kpop_notes import import_kpop_notes
+        import_kpop_notes()
+        click.echo('Kpop notes import complete.')
+
+    @flask_app.cli.command('fix-missing-songs')
+    def fix_missing_songs_command():
+        """Import Q=False songs that were missed inside album contexts."""
+        from scripts.fix_missing_songs import fix_missing_songs
+        fix_missing_songs()
+        click.echo('Fix complete.')
+
+    @flask_app.cli.command('fetch-album-dates')
+    def fetch_album_dates_command():
+        """Fetch exact release dates for albums from MusicBrainz."""
+        from scripts.fetch_album_dates import fetch_album_dates
+        fetch_album_dates()
+        click.echo('Album date fetch complete.')
+
+    @flask_app.cli.command('import-rock')
+    def import_rock_command():
+        """Import data from 'lettuce billy joel.xlsx'."""
+        from scripts.import_rock_data import import_rock
+        import_rock()
+        click.echo('Rock import complete.')
 
     return flask_app
