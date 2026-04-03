@@ -10,9 +10,18 @@ from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, ArtistA
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug
 from app.services.audit import log_change
+from app.cache import clear_stats_cache
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 edit_bp = Blueprint('edit', __name__, url_prefix='/edit')
+
+
+@edit_bp.after_request
+def _clear_stats_after_edit(response):
+    """Clear stats cache after any successful edit operation."""
+    if response.status_code < 400:
+        clear_stats_cache()
+    return response
 
 
 @edit_bp.route('/artist/<int:artist_id>')

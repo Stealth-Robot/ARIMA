@@ -2,6 +2,7 @@ import logging
 import os
 import smtplib
 from email.mime.text import MIMEText
+from email.utils import formataddr
 
 logger = logging.getLogger(__name__)
 
@@ -13,21 +14,30 @@ def send_invite_email(to_email, username, app_url):
     user = os.environ.get('SMTP_USER')
     password = os.environ.get('SMTP_PASSWORD')
     from_addr = os.environ.get('SMTP_FROM', user)
+    from_name = os.environ.get('SMTP_FROM_NAME', 'A.R.I.M.A.')
 
     if not all([host, user, password]):
         logger.warning('SMTP not configured — skipping invite email to %s', to_email)
         return False
 
     body = (
-        f"Hi {username},\n\n"
-        f"You've been invited to A.R.I.M.A.!\n\n"
-        f"Create your account here: {app_url}\n\n"
-        f"Use the email address this was sent to when creating your account."
+        "  ______       _______       ______      __       __       ______\n"
+        " /      \\     |       \\     |      \\    |  \\     /  \\     /      \\\n"
+        "|  $$$$$$\\    | $$$$$$$\\     \\$$$$$$    | $$\\   /  $$    |  $$$$$$\\\n"
+        "| $$__| $$    | $$__| $$      | $$      | $$$\\ /  $$$    | $$__| $$\n"
+        "| $$    $$    | $$    $$      | $$      | $$$$\\  $$$$    | $$    $$\n"
+        "| $$$$$$$$    | $$$$$$$\\      | $$      | $$\\$$ $$ $$    | $$$$$$$$\n"
+        "| $$  | $$ __ | $$  | $$ __  _| $$_  __ | $$ \\$$$| $$ __ | $$  | $$ __\n"
+        "| $$  | $$|  \\| $$  | $$|  \\|   $$ \\|  \\| $$  \\$ | $$|  \\| $$  | $$|  \\\n"
+        " \\$$   \\$$ \\$$ \\$$   \\$$ \\$$ \\$$$$$$ \\$$ \\$$      \\$$ \\$$ \\$$   \\$$ \\$$\n"
+        "\n\n"
+        f"{username}, you're in.\n\n"
+        f"{app_url}\n"
     )
 
     msg = MIMEText(body)
-    msg['Subject'] = 'A.R.I.M.A. — You\'ve been invited'
-    msg['From'] = from_addr
+    msg['Subject'] = 'A.R.I.M.A.'
+    msg['From'] = formataddr((from_name, from_addr))
     msg['To'] = to_email
 
     try:

@@ -1,10 +1,10 @@
-"""Stats calculation service — all computed live, viewer-relative."""
+"""Stats calculation service — SQL-aggregated, viewer-relative."""
 
 import math
 from collections import defaultdict
 
 from app.extensions import db
-from app.models.music import Rating, ArtistSong, Song, ArtistArtist
+from app.models.music import Rating, ArtistSong, Song, ArtistArtist, AlbumSong
 from app.models.user import User
 
 SCORED_GROUP_THRESHOLD = 0.80
@@ -17,25 +17,24 @@ def get_display_users():
 
 
 class _BulkData:
-    """Pre-loaded data for batch stats computation (~5 queries total)."""
+    """Pre-loaded stats via SQL aggregation (~5 queries, but returns aggregated rows)."""
 
     def __init__(self, include_featured, include_remixes, artist_ids=None):
-        """Load bulk data. If artist_ids is given, scope to only those artists."""
         scoped = artist_ids is not None
 
-        # 1. Artist-song mappings
+        # 1. Artist-song mappings (still needed for song_id resolution)
         if scoped:
             all_as = ArtistSong.query.filter(ArtistSong.artist_id.in_(artist_ids)).all()
         else:
             all_as = ArtistSong.query.all()
-        self.artist_songs = defaultdict(set)        # artist_id → {song_id, ...}
-        self.artist_main_songs = defaultdict(set)    # artist_id → {song_id where main}
+        self.artist_songs = defaultdict(set)
+        self.artist_main_songs = defaultdict(set)
         for row in all_as:
             self.artist_songs[row.artist_id].add(row.song_id)
             if row.artist_is_main:
                 self.artist_main_songs[row.artist_id].add(row.song_id)
 
-        # 2. Artist-artist relationships (only subunits)
+        # 2. Subunit relationships
         if scoped:
             all_rels = ArtistArtist.query.filter(
                 ArtistArtist.relationship == SUBUNIT,
@@ -43,8 +42,8 @@ class _BulkData:
             ).all()
         else:
             all_rels = ArtistArtist.query.filter_by(relationship=SUBUNIT).all()
-        self.subunit_ids = set()                     # all IDs that are subunits
-        self.children = defaultdict(list)             # parent_id → [child_id, ...]
+        self.subunit_ids = set()
+        self.children = defaultdict(list)
         for rel in all_rels:
             self.subunit_ids.add(rel.artist_2)
             self.children[rel.artist_1].append(rel.artist_2)
@@ -63,25 +62,42 @@ class _BulkData:
         else:
             self.remix_ids = set()
 
-        # 4. Ratings (scoped to relevant songs only)
+        # 4. SQL-aggregated ratings: per song_id per user_id → count and sum
+        #    Returns (song_id, user_id, rating_count, rating_sum)
         if scoped:
             all_song_ids_flat = set()
             for song_ids in self.artist_songs.values():
                 all_song_ids_flat |= song_ids
             if all_song_ids_flat:
-                all_ratings = Rating.query.filter(Rating.song_id.in_(all_song_ids_flat)).all()
+                agg_rows = db.session.query(
+                    Rating.song_id,
+                    Rating.user_id,
+                    db.func.count(Rating.rating),
+                    db.func.sum(Rating.rating),
+                ).filter(
+                    Rating.song_id.in_(all_song_ids_flat),
+                    Rating.rating.isnot(None),
+                ).group_by(Rating.song_id, Rating.user_id).all()
             else:
-                all_ratings = []
+                agg_rows = []
         else:
-            all_ratings = Rating.query.all()
-        self.song_ratings = defaultdict(dict)        # song_id → {user_id: rating_value}
-        self.song_rated_by = defaultdict(set)         # song_id → {user_id, ...}
-        for r in all_ratings:
-            if r.rating is not None:
-                self.song_ratings[r.song_id][r.user_id] = r.rating
-                self.song_rated_by[r.song_id].add(r.user_id)
+            agg_rows = db.session.query(
+                Rating.song_id,
+                Rating.user_id,
+                db.func.count(Rating.rating),
+                db.func.sum(Rating.rating),
+            ).filter(
+                Rating.rating.isnot(None),
+            ).group_by(Rating.song_id, Rating.user_id).all()
 
-        # 5. All main song IDs (for summary total)
+        # Build lookup: song_id → {user_id: {'count': n, 'sum': s}}
+        self.song_user_stats = defaultdict(dict)
+        self.song_rated_by = defaultdict(set)
+        for song_id, user_id, cnt, total in agg_rows:
+            self.song_user_stats[song_id][user_id] = {'count': cnt, 'sum': total}
+            self.song_rated_by[song_id].add(user_id)
+
+        # 5. All main song IDs (for featured filter)
         if not include_featured:
             self.all_main_song_ids = set()
             for song_ids in self.artist_main_songs.values():
@@ -144,7 +160,7 @@ def _artist_completion_stats(artist_id, users, bulk):
             'global_avg_unrated': 0,
         }
 
-    # Count ratings per user from pre-loaded data
+    # Count ratings per user from pre-aggregated data
     user_rated = defaultdict(int)
     for sid in song_ids:
         for uid in bulk.song_rated_by.get(sid, set()):
@@ -187,18 +203,20 @@ def _artist_score_stats(artist_id, users, bulk):
             'global_avg': None,
         }
 
-    # Collect scores per user from pre-loaded data
-    user_scores = defaultdict(list)
+    # Collect scores per user from pre-aggregated data
+    user_sum = defaultdict(float)
+    user_count = defaultdict(int)
     for sid in song_ids:
-        for uid, score in bulk.song_ratings.get(sid, {}).items():
-            user_scores[uid].append(score)
+        for uid, stats in bulk.song_user_stats.get(sid, {}).items():
+            user_sum[uid] += stats['sum']
+            user_count[uid] += stats['count']
 
     per_user = {}
     user_avgs = []
     for u in users:
-        scores = user_scores.get(u.id, [])
-        if scores:
-            avg = round(sum(scores) / len(scores), 2)
+        cnt = user_count.get(u.id, 0)
+        if cnt > 0:
+            avg = round(user_sum[u.id] / cnt, 2)
             per_user[u.id] = avg
             user_avgs.append(avg)
         else:
@@ -240,7 +258,7 @@ def get_summary_stats(users, bulk):
         for uid in bulk.song_rated_by.get(sid, set()):
             user_total_rated[uid] += 1
 
-    # Scored group counts per user (reuses bulk data, no extra queries)
+    # Scored group counts per user
     from app.services.artist import get_top_level_artists
     top_artists = get_top_level_artists(bulk)
 

@@ -5,7 +5,19 @@
     {% if current_user.home_page_image %}
     <img src="{{ current_user.home_page_image }}" alt="Home" class="max-w-full max-h-full m-8">
     {% else %}
-    <p style="color: var(--text-secondary);">Welcome to A.R.I.M.A.</p>
+    <div style="text-align: center;">
+        <pre style="color: var(--text-secondary); font-size: 10px; line-height: 1.2; user-select: none; display: inline-block; text-align: left;">
+  ______       _______       ______      __       __       ______
+ /      \     |       \     |      \    |  \     /  \     /      \
+|  $$$$$$\    | $$$$$$$\     \$$$$$$    | $$\   /  $$    |  $$$$$$\
+| $$__| $$    | $$__| $$      | $$      | $$$\ /  $$$    | $$__| $$
+| $$    $$    | $$    $$      | $$      | $$$$\  $$$$    | $$    $$
+| $$$$$$$$    | $$$$$$$\      | $$      | $$\$$ $$ $$    | $$$$$$$$
+| $$  | $$ __ | $$  | $$ __  _| $$_  __ | $$ \$$$| $$ __ | $$  | $$ __
+| $$  | $$|  \| $$  | $$|  \|   $$ \|  \| $$  \$ | $$|  \| $$  | $$|  \
+ \$$   \$$ \$$ \$$   \$$ \$$ \$$$$$$ \$$ \$$      \$$ \$$ \$$   \$$ \$$
+</pre>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

@@ -63,3 +63,30 @@ def clear_theme_cache_for_theme(theme_id):
     keys = [k for k in _theme_cache if k[1] == theme_id]
     for k in keys:
         _theme_cache.pop(k, None)
+
+
+# ---------------------------------------------------------------------------
+# Part C — Stats bulk data cache, keyed by (include_featured, include_remixes)
+# ---------------------------------------------------------------------------
+
+_stats_cache = {}
+_STATS_TTL = 300  # 5 minutes
+
+def get_cached_bulk_data(include_featured, include_remixes):
+    """Return cached BulkData, refreshing at most once per TTL."""
+    from app.services.stats import load_bulk_data
+
+    key = (include_featured, include_remixes)
+    now = time.monotonic()
+    entry = _stats_cache.get(key)
+    if entry and now - entry['ts'] < _STATS_TTL:
+        return entry['data']
+
+    data = load_bulk_data(include_featured=include_featured, include_remixes=include_remixes)
+    _stats_cache[key] = {'data': data, 'ts': now}
+    return data
+
+
+def clear_stats_cache():
+    """Invalidate all stats cache entries (e.g. after a rating change or data edit)."""
+    _stats_cache.clear()

@@ -8,6 +8,7 @@ from app.models.user import User
 from app.decorators import role_required, USER_OR_ABOVE
 from app.services.events import publish
 from app.services.audit import log_change
+from app.cache import clear_stats_cache
 
 ratings_bp = Blueprint('ratings', __name__)
 
@@ -81,6 +82,7 @@ def rate():
         return 'Invalid song or user', 400
 
     publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})
+    clear_stats_cache()
 
     return render_template('fragments/rating_cell.html',
                            rating=existing, song_id=song_id, user_id=target_user_id)
@@ -117,6 +119,7 @@ def delete_rating():
         db.session.delete(existing)
         db.session.commit()
         publish('rating-update', {'song_id': song_id, 'user_id': target_user_id})
+        clear_stats_cache()
 
     return render_template('fragments/rating_cell.html',
                            rating=None, song_id=song_id, user_id=target_user_id)

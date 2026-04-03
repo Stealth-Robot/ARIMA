@@ -5,6 +5,7 @@ from app.services.stats import (
     get_display_users, get_artist_stats, get_summary_stats,
     get_artist_score_stats, load_bulk_data,
 )
+from app.cache import get_cached_bulk_data
 from app.services.artist import get_top_level_artists, get_children, get_filtered_navbar
 
 stats_bp = Blueprint('stats', __name__)
@@ -28,7 +29,7 @@ def artist_stats():
     """Artist Stats page — rating completion percentages."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = load_bulk_data(**settings)
+    bulk = get_cached_bulk_data(**settings)
 
     summary = get_summary_stats(users, bulk)
 
@@ -74,7 +75,7 @@ def global_stats():
     """Global Stats page — average scores per artist per user."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = load_bulk_data(**settings)
+    bulk = get_cached_bulk_data(**settings)
 
     artists = get_top_level_artists(bulk)
     artist_rows = []
