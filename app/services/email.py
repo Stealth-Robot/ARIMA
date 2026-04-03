@@ -8,21 +8,6 @@ import resend
 
 logger = logging.getLogger(__name__)
 
-BODY_TEMPLATE = (
-    "  ______       _______       ______      __       __       ______\n"
-    " /      \\     |       \\     |      \\    |  \\     /  \\     /      \\\n"
-    "|  $$$$$$\\    | $$$$$$$\\     \\$$$$$$    | $$\\   /  $$    |  $$$$$$\\\n"
-    "| $$__| $$    | $$__| $$      | $$      | $$$\\ /  $$$    | $$__| $$\n"
-    "| $$    $$    | $$    $$      | $$      | $$$$\\  $$$$    | $$    $$\n"
-    "| $$$$$$$$    | $$$$$$$\\      | $$      | $$\\$$ $$ $$    | $$$$$$$$\n"
-    "| $$  | $$ __ | $$  | $$ __  _| $$_  __ | $$ \\$$$| $$ __ | $$  | $$ __\n"
-    "| $$  | $$|  \\| $$  | $$|  \\|   $$ \\|  \\| $$  \\$ | $$|  \\| $$  | $$|  \\\n"
-    " \\$$   \\$$ \\$$ \\$$   \\$$ \\$$ \\$$$$$$ \\$$ \\$$      \\$$ \\$$ \\$$   \\$$ \\$$\n"
-    "\n\n"
-    "{username}, you're in.\n\n"
-    "{app_url}\n"
-)
-
 
 def _send_via_resend(to_email, body, from_name, from_addr):
     resend.api_key = os.environ['RESEND_API_KEY']
@@ -30,7 +15,8 @@ def _send_via_resend(to_email, body, from_name, from_addr):
         'from': f'{from_name} <{from_addr}>',
         'to': [to_email],
         'subject': 'A.R.I.M.A.',
-        'text': body,
+        'text': body['text'],
+        'html': body['html'],
     })
 
 
@@ -40,7 +26,7 @@ def _send_via_smtp(to_email, body, from_name, from_addr):
     user = os.environ.get('SMTP_USER')
     password = os.environ.get('SMTP_PASSWORD')
 
-    msg = MIMEText(body)
+    msg = MIMEText(body['html'], 'html')
     msg['Subject'] = 'A.R.I.M.A.'
     msg['From'] = formataddr((from_name, from_addr))
     msg['To'] = to_email
@@ -55,16 +41,15 @@ def send_invite_email(to_email, username, app_url):
     """Send a reinvite / invite email with a link to create an account."""
     from_name = os.environ.get('SMTP_FROM_NAME', 'A.R.I.M.A.')
     from_addr = os.environ.get('SMTP_FROM', 'onboarding@resend.dev')
-    body = BODY_TEMPLATE.format(username=username, app_url=app_url)
+    text = f"{username}, you're in.\n\n{app_url}\n"
+    html = f'<p>{username}, you\'re in.</p><p><a href="{app_url}">{app_url}</a></p>'
+    body = {'text': text, 'html': html}
 
     try:
-        if os.environ.get('RESEND_API_KEY'):
+        if os.environ.get('FLASK_ENV') == 'production':
             _send_via_resend(to_email, body, from_name, from_addr)
-        elif os.environ.get('SMTP_HOST'):
-            _send_via_smtp(to_email, body, from_name, from_addr)
         else:
-            logger.warning('No email provider configured — skipping invite email to %s', to_email)
-            return False
+            _send_via_smtp(to_email, body, from_name, from_addr)
         logger.info('Invite email sent to %s', to_email)
         return True
     except Exception:

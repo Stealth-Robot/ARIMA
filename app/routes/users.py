@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, render_template, redirect, url_for, Response
@@ -66,6 +67,8 @@ def invite_user():
     db.session.commit()
 
     app_url = request.url_root.rstrip('/')
+    if os.environ.get('FLASK_ENV') != 'production':
+        app_url = os.environ.get('APP_URL') or app_url
     send_invite_email(email, username, app_url)
 
     return redirect(url_for('users.user_list'))
@@ -130,6 +133,8 @@ def reinvite(user_id):
     db.session.commit()
 
     app_url = request.url_root.rstrip('/')
+    if os.environ.get('FLASK_ENV') != 'production':
+        app_url = os.environ.get('APP_URL') or app_url
     send_invite_email(email, user.username, app_url)
 
     return redirect(url_for('users.user_list'))

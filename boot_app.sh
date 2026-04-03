@@ -33,4 +33,4 @@ echo "  Login: Stealth / admin"
 echo "  Or click 'Login as Guest'"
 echo "==================================="
 echo ""
-flask run
+flask run --debug
