@@ -106,6 +106,45 @@ def create_app():
         from flask import render_template
         return render_template('404.html'), 404
 
+    # First-deploy: copy bundled DB to persistent volume, or seed if no DB exists
+    db_path = flask_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    if db_path.startswith('/') and not os.path.exists(db_path):
+        bundled = os.path.join(flask_app.root_path, '..', 'arima_seed.db')
+        if os.path.exists(bundled):
+            import shutil
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            shutil.copy2(bundled, db_path)
+            logger.info('Copied bundled database to %s', db_path)
+        else:
+            with flask_app.app_context():
+                db.create_all()
+                _create_last_updated_triggers(db)
+                from app.seed import seed
+                seed(db)
+                logger.info('Seeded new database at %s', db_path)
+
+    # Temporary upload endpoint — remove after initial deploy
+    @flask_app.route('/upload-db', methods=['GET', 'POST'])
+    def upload_db():
+        from flask import request
+        upload_secret = os.environ.get('UPLOAD_SECRET')
+        if not upload_secret:
+            return 'UPLOAD_SECRET env var not set', 403
+        if request.args.get('key') != upload_secret:
+            return 'Forbidden', 403
+        if request.method == 'GET':
+            return '''<form method="post" enctype="multipart/form-data">
+                <input type="file" name="db" accept=".db">
+                <button type="submit">Upload</button>
+            </form>'''
+        f = request.files.get('db')
+        if not f:
+            return 'No file', 400
+        target = flask_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        f.save(target)
+        return f'Database uploaded to {target} ({os.path.getsize(target)} bytes)'
+
     # Register routes
     from app.routes import register_routes
     register_routes(flask_app)
