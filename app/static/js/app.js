@@ -595,16 +595,15 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
             if (!grouped[a.artist]) { grouped[a.artist] = []; artistOrder.push(a.artist); }
             grouped[a.artist].push(a);
         });
-        // Sort current artist's albums to the top
+        // Sort: current artist first, Misc. Artists second, rest alphabetical
         var currentArtistName = null;
         others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = a.artist; });
-        if (currentArtistName) {
-            artistOrder.sort(function(a, b) {
-                if (a === currentArtistName) return -1;
-                if (b === currentArtistName) return 1;
-                return 0;
-            });
-        }
+        artistOrder.sort(function(a, b) {
+            var aRank = a === currentArtistName ? 0 : a === 'Misc. Artists' ? 1 : 2;
+            var bRank = b === currentArtistName ? 0 : b === 'Misc. Artists' ? 1 : 2;
+            if (aRank !== bRank) return aRank - bRank;
+            return 0;
+        });
         artistOrder.forEach(function(artist) {
             var header = document.createElement('div');
             header.textContent = artist;
