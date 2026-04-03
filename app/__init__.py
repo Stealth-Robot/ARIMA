@@ -23,6 +23,11 @@ def create_app():
     config = ProdConfig if os.environ.get('FLASK_ENV') == 'production' else Config
     flask_app.config.from_object(config)
 
+    # Debug: log config on startup
+    logging.basicConfig(level=logging.INFO)
+    logger.info('FLASK_ENV=%s, using %s', os.environ.get('FLASK_ENV'), config.__name__)
+    logger.info('DB URI: %s', flask_app.config['SQLALCHEMY_DATABASE_URI'])
+
     # Initialise extensions
     db.init_app(flask_app)
     login_manager.init_app(flask_app)
