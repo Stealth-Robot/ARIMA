@@ -69,6 +69,7 @@ class Theme(db.Model):
     unrated_low_bg = db.Column(db.Text)
     unrated_mid_bg = db.Column(db.Text)
     unrated_high_bg = db.Column(db.Text)
+    unrated_text = db.Column(db.Text)
 
     # Search overlay section headers
     search_section_bg = db.Column(db.Text)

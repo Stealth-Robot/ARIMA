@@ -28,7 +28,7 @@
 <script>
 var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.country | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allAlbums = [{% for entry in discography %}{ id: {{ entry.album.id }}, name: "{{ entry.album.name | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: "{{ row[1] | e }}", artist: "{{ row[2] | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: "{{ a.name | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
 var _songArtists = {

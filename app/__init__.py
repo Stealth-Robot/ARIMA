@@ -109,6 +109,20 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
+    # One-time migration: add any new theme colour columns to existing DB
+    with flask_app.app_context():
+        try:
+            from app.models.theme import Theme
+            existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
+            for col in Theme.__table__.columns:
+                if col.name not in existing and col.name not in ('id', 'name', 'user_id'):
+                    db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
+                    logger.info('Added missing theme column: %s', col.name)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            pass  # DB may not exist yet
+
     # Validate system themes on startup
     with flask_app.app_context():
         try:

@@ -78,6 +78,7 @@ CLASSIC_THEME = {
     'unrated_low_bg': '#B6D7A8',
     'unrated_mid_bg': '#FFE599',
     'unrated_high_bg': '#EA9999',
+    'unrated_text': '#000000',
     # Action buttons
     'delete_button': '#DC2626',
     'edit_on_button': '#16a34a',
@@ -148,6 +149,7 @@ DARK_THEME = {
     'unrated_low_bg': '#B6D7A8',
     'unrated_mid_bg': '#FFE599',
     'unrated_high_bg': '#EA9999',
+    'unrated_text': '#000000',
     # Action buttons
     'delete_button': '#DC2626',
     'edit_on_button': '#16a34a',
@@ -180,7 +182,7 @@ def seed(db):
         for id_, name in [(0, 'Korean'), (1, 'Japanese'), (2, 'Canadian'), (3, 'American'), (4, 'Latin')]:
             db.session.merge(Country(id=id_, country=name))
 
-        for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal')]:
+        for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (6, 'Anime')]:
             db.session.merge(Genre(id=id_, genre=name))
 
         for id_, type_, desc in [

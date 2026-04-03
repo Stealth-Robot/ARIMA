@@ -128,10 +128,20 @@ def _render_artist(artist, htmx=False, push_url=None):
             'is_soloist': child.id in soloist_ids,
         })
 
-    # All artists list for edit mode (song artist picker)
+    # All artists list + all albums for edit mode (song artist picker, cross-artist move)
     all_artists = []
+    all_albums_by_artist = []
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(Artist.name).all()
+        all_albums_by_artist = db.session.execute(db.text(
+            'SELECT a.id, a.name, ar.name AS artist_name '
+            'FROM album a '
+            'JOIN album_song als ON als.album_id = a.id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'GROUP BY a.id '
+            'ORDER BY ar.name, a.name'
+        )).fetchall()
 
     if htmx:
         resp = make_response(render_template(
@@ -139,6 +149,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             artist=artist, discography=discography, users=users,
             gender_css=GENDER_CSS, children=children_sections,
             soloist_parent=soloist_parent, all_artists=all_artists,
+            all_albums_by_artist=all_albums_by_artist,
             last_updated=last_updated))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url
@@ -154,6 +165,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            discography=discography, users=users,
                            gender_css=GENDER_CSS, children=children_sections,
                            soloist_parent=soloist_parent, all_artists=all_artists,
+                           all_albums_by_artist=all_albums_by_artist,
                            last_updated=last_updated)
 
 

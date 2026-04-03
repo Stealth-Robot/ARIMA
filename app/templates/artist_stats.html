@@ -144,7 +144,7 @@
             {% for u in users %}
             {% set uc = stats.per_user[u.id].unrated_count %}
             <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
-                {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }};{% endif %}">
+                {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }}; color: var(--unrated-text);{% endif %}">
                 {{ uc }}
             </td>
             {% endfor %}

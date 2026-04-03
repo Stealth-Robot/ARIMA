@@ -120,7 +120,7 @@ def artist_country(artist_id):
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def song_move_album(song_id):
-    """Move a song from one album to another."""
+    """Move a song to any album in the system (same-artist or cross-artist)."""
     _require_edit_mode()
     song = db.session.get(Song, song_id)
     if song is None:
@@ -128,30 +128,83 @@ def song_move_album(song_id):
     new_album_id = request.form.get('album_id', '').strip()
     if not new_album_id:
         abort(400)
-    new_album = db.session.get(Album, int(new_album_id))
+    new_album_id = int(new_album_id)
+    new_album = db.session.get(Album, new_album_id)
     if new_album is None:
         abort(400)
 
-    # Remove from current album(s)
-    old_album_ids = [r.album_id for r in AlbumSong.query.filter_by(song_id=song_id).all()]
-    AlbumSong.query.filter_by(song_id=song_id).delete()
+    now = datetime.now(timezone.utc).isoformat()
 
-    # Append to end of new album
-    max_track = db.session.query(db.func.max(AlbumSong.track_number)).filter_by(album_id=int(new_album_id)).scalar() or 0
-    db.session.add(AlbumSong(album_id=int(new_album_id), song_id=song_id, track_number=max_track + 1))
+    # Capture old album IDs and source artist IDs before the move
+    old_album_ids = [r[0] for r in db.session.execute(
+        db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
+        {'sid': song_id}).fetchall()]
+    source_artist_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT artist_id FROM artist_song WHERE song_id = :sid'),
+        {'sid': song_id}).fetchall()}
 
-    # Clean up albums that are now empty
+    # Find the main artist of the target album (via its existing songs)
+    target_artist_id = db.session.execute(db.text(
+        'SELECT ars.artist_id FROM artist_song ars '
+        'JOIN album_song als ON als.song_id = ars.song_id '
+        'WHERE als.album_id = :aid AND ars.artist_is_main = 1 '
+        'LIMIT 1'
+    ), {'aid': new_album_id}).scalar()
+
+    # Move the song: delete old album links, insert new one
+    db.session.execute(
+        db.text('DELETE FROM album_song WHERE song_id = :sid'),
+        {'sid': song_id})
+    next_track = (db.session.execute(db.text(
+        'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+    ), {'aid': new_album_id}).scalar())
+    db.session.execute(db.text(
+        'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
+    ), {'aid': new_album_id, 'sid': song_id, 'tn': next_track})
+
+    # Cross-artist handling: update ArtistSong links
+    if target_artist_id and target_artist_id not in source_artist_ids:
+        # Add link to target artist as main
+        db.session.execute(db.text(
+            'INSERT OR IGNORE INTO artist_song (artist_id, song_id, artist_is_main) '
+            'VALUES (:aid, :sid, 1)'
+        ), {'aid': target_artist_id, 'sid': song_id})
+
+        # Remove source artist links — the song now belongs to the target artist
+        for src_id in source_artist_ids:
+            if src_id != target_artist_id:
+                db.session.execute(db.text(
+                    'DELETE FROM artist_song WHERE artist_id = :aid AND song_id = :sid'
+                ), {'aid': src_id, 'sid': song_id})
+
+    # Clean up empty albums
     for old_id in old_album_ids:
-        if old_id == int(new_album_id):
+        if old_id == new_album_id:
             continue
-        remaining = AlbumSong.query.filter_by(album_id=old_id).count()
-        if remaining == 0:
+        is_empty = db.session.execute(db.text(
+            'SELECT 1 FROM album_song WHERE album_id = :aid LIMIT 1'
+        ), {'aid': old_id}).first() is None
+        if is_empty:
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == old_id))
-            db.session.query(Album).filter_by(id=old_id).delete()
+            db.session.execute(db.text('DELETE FROM album WHERE id = :aid'), {'aid': old_id})
 
-    song.last_updated = datetime.now(timezone.utc).isoformat()
-    new_album.last_updated = datetime.now(timezone.utc).isoformat()
-    log_change(current_user, f'Moved "{song.name}" song to "{new_album.name}" album', song=song, album=new_album)
+    song.last_updated = now
+    new_album.last_updated = now
+
+    # Build audit message
+    target_artist_name = ''
+    if target_artist_id and target_artist_id not in source_artist_ids:
+        target_artist_name = db.session.execute(
+            db.text('SELECT name FROM artist WHERE id = :aid'),
+            {'aid': target_artist_id}).scalar() or ''
+    if target_artist_name:
+        log_change(current_user,
+                   f'Moved "{song.name}" song to "{new_album.name}" album ({target_artist_name})',
+                   song=song, album=new_album)
+    else:
+        log_change(current_user,
+                   f'Moved "{song.name}" song to "{new_album.name}" album',
+                   song=song, album=new_album)
     db.session.commit()
 
     return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}

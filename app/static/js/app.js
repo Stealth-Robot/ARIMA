@@ -568,40 +568,76 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
     var popover = document.createElement('div');
     popover.style.cssText =
         'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:200px; max-height:240px; overflow-y:auto;';
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:280px; max-height:320px; display:flex; flex-direction:column;';
 
     var title = document.createElement('div');
     title.textContent = 'Move to album:';
     title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
     popover.appendChild(title);
 
-    others.forEach(function(a) {
-        var btn = document.createElement('div');
-        btn.textContent = a.name;
-        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
-        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
-        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-        btn.addEventListener('click', function() {
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/song/' + songId + '/move-album', {
-                method: 'POST',
-                headers: headers,
-                body: 'album_id=' + a.id,
-            }).then(function(r) {
-                if (!r.ok) throw new Error('move failed');
-                return r.json();
-            }).then(function() {
-                closeAlbumMovePopover();
-                window.location.reload();
-            }).catch(function() {
-                showToast('Failed to move song — try again');
-                closeAlbumMovePopover();
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search albums or artists...';
+    searchInput.style.cssText = 'width:100%; font-size:11px; padding:4px 6px; margin-bottom:6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
+    popover.appendChild(searchInput);
+
+    var listContainer = document.createElement('div');
+    listContainer.style.cssText = 'overflow-y:auto; flex:1;';
+    popover.appendChild(listContainer);
+
+    function renderList(filter) {
+        listContainer.innerHTML = '';
+        var lc = (filter || '').toLowerCase();
+        var grouped = {};
+        var artistOrder = [];
+        others.forEach(function(a) {
+            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1) return;
+            if (!grouped[a.artist]) { grouped[a.artist] = []; artistOrder.push(a.artist); }
+            grouped[a.artist].push(a);
+        });
+        artistOrder.forEach(function(artist) {
+            var header = document.createElement('div');
+            header.textContent = artist;
+            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+            listContainer.appendChild(header);
+            grouped[artist].forEach(function(a) {
+                var btn = document.createElement('div');
+                btn.textContent = a.name;
+                btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
+                btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+                btn.addEventListener('click', function() {
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+                    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+                    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+                    fetch('/edit/song/' + songId + '/move-album', {
+                        method: 'POST',
+                        headers: headers,
+                        body: 'album_id=' + a.id,
+                    }).then(function(r) {
+                        if (!r.ok) throw new Error('move failed');
+                        return r.json();
+                    }).then(function() {
+                        closeAlbumMovePopover();
+                        window.location.reload();
+                    }).catch(function() {
+                        showToast('Failed to move song — try again');
+                        closeAlbumMovePopover();
+                    });
+                });
+                listContainer.appendChild(btn);
             });
         });
-        popover.appendChild(btn);
-    });
+        if (!artistOrder.length) {
+            var empty = document.createElement('div');
+            empty.textContent = 'No matches';
+            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+            listContainer.appendChild(empty);
+        }
+    }
+
+    renderList('');
+    searchInput.addEventListener('input', function() { renderList(searchInput.value); });
 
     var rect = getZoomedRect(span);
     popover.style.top = rect.bottom + 2 + 'px';
@@ -609,6 +645,7 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
 
     document.body.appendChild(popover);
     activeAlbumMovePopover = popover;
+    searchInput.focus();
 }
 
 document.addEventListener('click', function(e) {
