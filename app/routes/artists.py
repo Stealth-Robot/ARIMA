@@ -131,16 +131,30 @@ def _render_artist(artist, htmx=False, push_url=None):
     # All artists list + all albums for edit mode (song artist picker, cross-artist move)
     all_artists = []
     all_albums_by_artist = []
+    artist_parent_map = {}
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(Artist.name).all()
+        # Build child→parent name map for grouping subunits under parents
+        parent_rows = db.session.execute(db.text(
+            'SELECT c.name, p.name FROM artist_artist aa '
+            'JOIN artist c ON c.id = aa.artist_2 '
+            'JOIN artist p ON p.id = aa.artist_1'
+        )).fetchall()
+        artist_parent_map = {r[0]: r[1] for r in parent_rows}
         all_albums_by_artist = db.session.execute(db.text(
-            'SELECT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
             'FROM album a '
             'JOIN album_song als ON als.album_id = a.id '
             'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
             'JOIN artist ar ON ar.id = ars.artist_id '
-            'GROUP BY a.id '
-            'ORDER BY ar.name, a.name'
+            'UNION '
+            'SELECT DISTINCT a.id, a.name, parent.name AS artist_name, parent.id AS artist_id '
+            'FROM album a '
+            'JOIN album_song als ON als.album_id = a.id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
+            'JOIN artist_artist aa ON aa.artist_2 = ars.artist_id '
+            'JOIN artist parent ON parent.id = aa.artist_1 '
+            'ORDER BY 3, 2'
         )).fetchall()
 
     if htmx:
@@ -150,6 +164,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             gender_css=GENDER_CSS, children=children_sections,
             soloist_parent=soloist_parent, all_artists=all_artists,
             all_albums_by_artist=all_albums_by_artist,
+            artist_parent_map=artist_parent_map,
             last_updated=last_updated))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url

@@ -162,6 +162,16 @@ document.addEventListener('click', function (e) {
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         closeArtistMenu();
+        closeAlbumMovePopover();
+        closeSongArtistPopover();
+        closeMergePopover();
+        closeSearchOverlay();
+        var deleteModal = document.getElementById('confirm-delete-modal');
+        if (deleteModal) deleteModal.style.display = 'none';
+        var addAlbumModal = document.getElementById('add-album-modal');
+        if (addAlbumModal) addAlbumModal.style.display = 'none';
+        var convertModal = document.getElementById('convert-artist-modal');
+        if (convertModal) convertModal.style.display = 'none';
     }
 });
 
@@ -660,30 +670,56 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
     function renderList(filter) {
         listContainer.innerHTML = '';
         var lc = (filter || '').toLowerCase();
+        var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
+        // Group albums: merge children into their parent group, dedup preferring child entry
         var grouped = {};
-        var artistOrder = [];
+        var groupOrder = [];
+        var entryMap = {};
         others.forEach(function(a) {
             if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1) return;
-            if (!grouped[a.artist]) { grouped[a.artist] = []; artistOrder.push(a.artist); }
-            grouped[a.artist].push(a);
+            var group = parentMap[a.artist] || a.artist;
+            var isChild = a.artist !== group;
+            var key = group + '::' + a.id;
+            if (entryMap[key] && !isChild) return;
+            var label = isChild ? a.name + ' (' + a.artist + ')' : a.name;
+            var entry = { id: a.id, label: label, subgroup: isChild ? a.artist : '' };
+            if (entryMap[key]) {
+                var arr = grouped[group];
+                for (var i = 0; i < arr.length; i++) { if (arr[i].id === a.id) { arr[i] = entry; break; } }
+            } else {
+                if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
+                grouped[group].push(entry);
+            }
+            entryMap[key] = true;
         });
         // Sort: current artist first, Misc. Artists second, rest alphabetical
         var currentArtistName = null;
         others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = a.artist; });
-        artistOrder.sort(function(a, b) {
+        // Also treat parent of current artist as current
+        if (!currentArtistName && parentMap[others[0] && others[0].artist]) {
+            others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
+        }
+        groupOrder.sort(function(a, b) {
             var aRank = a === currentArtistName ? 0 : a === 'Misc. Artists' ? 1 : 2;
             var bRank = b === currentArtistName ? 0 : b === 'Misc. Artists' ? 1 : 2;
             if (aRank !== bRank) return aRank - bRank;
-            return 0;
+            return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
         });
-        artistOrder.forEach(function(artist) {
+        groupOrder.forEach(function(group) {
             var header = document.createElement('div');
-            header.textContent = artist;
+            header.textContent = group;
             header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
             listContainer.appendChild(header);
-            grouped[artist].forEach(function(a) {
+            // Sort: parent albums first, then children grouped by subunit
+            grouped[group].sort(function(a, b) {
+                if (!a.subgroup && b.subgroup) return -1;
+                if (a.subgroup && !b.subgroup) return 1;
+                if (a.subgroup !== b.subgroup) return a.subgroup.toLowerCase() < b.subgroup.toLowerCase() ? -1 : 1;
+                return a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0;
+            });
+            grouped[group].forEach(function(item) {
                 var btn = document.createElement('div');
-                btn.textContent = a.name;
+                btn.textContent = item.label;
                 btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
                 btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
                 btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
@@ -694,7 +730,7 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
                     fetch('/edit/song/' + songId + '/move-album', {
                         method: 'POST',
                         headers: headers,
-                        body: 'album_id=' + a.id,
+                        body: 'album_id=' + item.id,
                     }).then(function(r) {
                         if (!r.ok) throw new Error('move failed');
                         return r.json();
@@ -709,7 +745,7 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
                 listContainer.appendChild(btn);
             });
         });
-        if (!artistOrder.length) {
+        if (!groupOrder.length) {
             var empty = document.createElement('div');
             empty.textContent = 'No matches';
             empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
@@ -752,7 +788,16 @@ function closeMergePopover() {
     }
 }
 
-function showMergePopover(event, songId, songName, span) {
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.merge-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    var songId = parseInt(btn.dataset.songId);
+    var songName = btn.dataset.songName;
+    _openMergePopover(songId, songName, btn);
+});
+
+function _openMergePopover(songId, songName, span) {
     event.stopPropagation();
     closeMergePopover();
 

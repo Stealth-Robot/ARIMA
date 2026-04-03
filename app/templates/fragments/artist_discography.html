@@ -35,6 +35,7 @@ var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | t
 var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
+var _artistParentMap = {{ artist_parent_map | default({}) | tojson }};
 var _songArtists = {
 {% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: "{{ a.name | e }}", is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}
@@ -82,7 +83,7 @@ var _songArtists = {
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} will be permanently deleted. All songs and ratings not on another album will also be deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
+                      onclick='showDeleteConfirm("Delete album?", {{ (album.name ~ " will be permanently deleted. All songs and ratings not on another album will also be deleted.") | tojson }}, "/edit/album/{{ album.id }}/delete", true)'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -111,11 +112,11 @@ var _songArtists = {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
-                      onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
+                      onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
-                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
-                      onclick="showMergePopover(event, {{ song.id }}, {{ song.name | tojson }}, this)">&#8726;&#8725;</span>
+                <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
+                      data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -204,7 +205,7 @@ var _songArtists = {
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick="showDeleteConfirm('Delete album?', '{{ album.name | e }} will be permanently deleted. All songs and ratings not on another album will also be deleted.', '/edit/album/{{ album.id }}/delete', true)">&#10005;</span>
+                      onclick='showDeleteConfirm("Delete album?", {{ (album.name ~ " will be permanently deleted. All songs and ratings not on another album will also be deleted.") | tojson }}, "/edit/album/{{ album.id }}/delete", true)'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -231,11 +232,11 @@ var _songArtists = {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
-                      onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
+                      onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
-                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
-                      onclick="showMergePopover(event, {{ song.id }}, {{ song.name | tojson }}, this)">&#8726;&#8725;</span>
+                <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
+                      data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
