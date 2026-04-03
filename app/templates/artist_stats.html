@@ -10,7 +10,7 @@
 {% set col_song = 90 %}
 {% set table_width = col_global + col_group + users|length * col_user + col_song %}
 
-<div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px; margin-top: -16px;">
+<div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px;">
 <div style="width: {{ table_width }}px;">
 
 <!-- TOP SUMMARY TABLE — always shows % data, unaffected by mode toggle -->
@@ -80,8 +80,8 @@
     </tbody>
 </table>
 
-<!-- DROPDOWN — left-aligned, labelled, generous vertical spacing -->
-<div style="padding: 20px 0 12px 0; display: flex; align-items: center; gap: 8px;">
+<!-- DROPDOWN — left-aligned, labelled -->
+<div style="padding: 12px 0; display: flex; align-items: center; gap: 8px;">
     <span style="font-size: 12px; color: var(--text-primary); font-weight: 600;">Per-artist breakdown:</span>
     <select id="stat-mode" onchange="switchStatMode(this.value)"
             style="font-size: 12px; padding: 2px 6px; border-radius: 3px;
