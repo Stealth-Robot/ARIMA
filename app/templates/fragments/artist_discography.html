@@ -5,6 +5,9 @@
         {% if artist.is_disbanded %}<span class="text-sm font-normal" style="color: var(--text-secondary);">(disbanded)</span>{% endif %}
         {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
         <span class="text-sm font-normal edit-inline" style="cursor: pointer; color: var(--text-secondary);"
+              data-gender-id="{{ artist.gender_id }}"
+              onclick="showGenderEdit(event, {{ artist.id }}, this, _allGenders, {{ artist.gender_id }})">{{ artist.gender.gender if artist.gender else 'gender' }}</span>
+        <span class="text-sm font-normal edit-inline" style="cursor: pointer; color: var(--text-secondary);"
               data-country-id="{{ artist.country_id }}"
               onclick="showCountryEdit(event, {{ artist.id }}, this, _allCountries, {{ artist.country_id }})">{{ artist.country.country if artist.country else 'country' }}</span>
         {% endif %}
@@ -26,10 +29,11 @@
 
 {% if edit_mode %}
 <script>
-var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: "{{ g.genre | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: "{{ c.country | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: "{{ row[1] | e }}", artist: "{{ row[2] | e }}", artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: "{{ a.name | e }}" }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
 var _songArtists = {
 {% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: "{{ a.name | e }}", is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
@@ -40,7 +44,7 @@ var _songArtists = {
 </script>
 {% endif %}
 
-{% if not discography %}
+{% if not discography and not children %}
 <p style="color: var(--text-secondary);">No albums found.</p>
 {% else %}
 
@@ -110,6 +114,8 @@ var _songArtists = {
                       onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
+                      onclick="showMergePopover(event, {{ song.id }}, {{ song.name | tojson }}, this)">&#8726;&#8725;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -228,6 +234,8 @@ var _songArtists = {
                       onclick="showDeleteConfirm('Delete song?', '{{ song.name | e }}', '/edit/song/{{ song.id }}/delete', true)">&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
+                      onclick="showMergePopover(event, {{ song.id }}, {{ song.name | tojson }}, this)">&#8726;&#8725;</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}

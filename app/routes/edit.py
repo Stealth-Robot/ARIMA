@@ -116,6 +116,26 @@ def artist_country(artist_id):
     return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/gender', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_gender(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    gender_id = request.form.get('gender_id', '').strip()
+    if not gender_id:
+        abort(400)
+    gender = db.session.get(GroupGender, int(gender_id))
+    if gender is None:
+        abort(400)
+    artist.gender_id = gender.id
+    log_change(current_user, f'Changed gender of "{artist.name}" artist to {gender.gender}', artist=artist)
+    db.session.commit()
+    return json.dumps({'id': gender.id, 'gender': gender.gender}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/move-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -756,3 +776,138 @@ def delete_album(album_id):
     log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)', change_type='album')
     db.session.commit()
     return '', 204
+
+
+@edit_bp.route('/song/<int:song_id>/merge-candidates')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def merge_candidates(song_id):
+    """Return songs matching the kept song's name (case-insensitive, exact or contains)."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    like = f'%{song.name}%'
+    rows = db.session.query(Song, Album, Artist).join(
+        AlbumSong, Song.id == AlbumSong.song_id
+    ).join(
+        Album, AlbumSong.album_id == Album.id
+    ).join(
+        ArtistSong, Song.id == ArtistSong.song_id
+    ).join(
+        Artist, ArtistSong.artist_id == Artist.id
+    ).filter(
+        Song.name.ilike(like),
+        Song.id != song_id,
+        ArtistSong.artist_is_main == True,
+    ).distinct().limit(50).all()
+    results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
+               for s, al, a in rows]
+    return json.dumps(results), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:song_id>/merge-search')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def merge_search(song_id):
+    """Search all songs in the database for merge candidates."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return json.dumps([]), 200, {'Content-Type': 'application/json'}
+    like = f'%{q}%'
+    rows = db.session.query(Song, Album, Artist).join(
+        AlbumSong, Song.id == AlbumSong.song_id
+    ).join(
+        Album, AlbumSong.album_id == Album.id
+    ).join(
+        ArtistSong, Song.id == ArtistSong.song_id
+    ).join(
+        Artist, ArtistSong.artist_id == Artist.id
+    ).filter(
+        Song.name.ilike(like),
+        Song.id != song_id,
+        ArtistSong.artist_is_main == True,
+    ).distinct().limit(20).all()
+    results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
+               for s, al, a in rows]
+    return json.dumps(results), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:kept_song_id>/merge', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def merge_song(kept_song_id):
+    """Merge an absorbed song into the kept song."""
+    _require_edit_mode()
+    kept = db.session.get(Song, kept_song_id)
+    if kept is None:
+        abort(404)
+
+    absorbed_song_id = request.form.get('absorbed_song_id', type=int)
+    if absorbed_song_id is None:
+        abort(400)
+    if absorbed_song_id == kept_song_id:
+        return 'Cannot merge a song with itself', 400
+    absorbed = db.session.get(Song, absorbed_song_id)
+    if absorbed is None:
+        return 'Absorbed song not found', 400
+
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    absorbed_name = absorbed.name
+
+    # Step 1: Merge ratings
+    kept_ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=kept_song_id).all()}
+    absorbed_ratings = Rating.query.filter_by(song_id=absorbed_song_id).all()
+    for ar in absorbed_ratings:
+        if ar.user_id not in kept_ratings:
+            # No conflict — move rating to kept song
+            db.session.execute(db.text(
+                'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
+            ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': ar.user_id})
+        # else: conflict — kept song's rating survives, absorbed rating will be deleted in step 4
+
+    # Step 2: Merge artist links
+    kept_artist_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT artist_id FROM artist_song WHERE song_id = :sid'),
+        {'sid': kept_song_id}).fetchall()}
+    absorbed_artist_links = ArtistSong.query.filter_by(song_id=absorbed_song_id).all()
+    for link in absorbed_artist_links:
+        if link.artist_id not in kept_artist_ids:
+            db.session.execute(db.text(
+                'UPDATE artist_song SET song_id = :kept WHERE artist_id = :aid AND song_id = :absorbed'
+            ), {'kept': kept_song_id, 'aid': link.artist_id, 'absorbed': absorbed_song_id})
+
+    # Step 3: Merge album links
+    kept_album_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
+        {'sid': kept_song_id}).fetchall()}
+    absorbed_album_links = AlbumSong.query.filter_by(song_id=absorbed_song_id).all()
+    for link in absorbed_album_links:
+        if link.album_id not in kept_album_ids:
+            next_track = db.session.execute(db.text(
+                'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+            ), {'aid': link.album_id}).scalar()
+            db.session.execute(db.text(
+                'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
+            ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': next_track})
+
+    # Step 4: Delete absorbed song and all remaining references
+    Rating.query.filter_by(song_id=absorbed_song_id).delete()
+    ArtistSong.query.filter_by(song_id=absorbed_song_id).delete()
+    AlbumSong.query.filter_by(song_id=absorbed_song_id).delete()
+    db.session.query(Song).filter_by(id=absorbed_song_id).delete()
+
+    # Step 5: Audit log
+    kept.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user,
+               f'Merged song "{absorbed_name}" (id={absorbed_song_id}) into "{kept.name}" (id={kept_song_id})',
+               song=kept)
+    db.session.commit()
+
+    return json.dumps({'ok': True, 'kept_song_id': kept_song_id}), 200, {'Content-Type': 'application/json'}

@@ -542,7 +542,79 @@ document.addEventListener('click', function(e) {
     if (activeCountryPopover && !activeCountryPopover.contains(e.target)) {
         closeCountryPopover();
     }
+    if (activeGenderPopover && !activeGenderPopover.contains(e.target)) {
+        closeGenderPopover();
+    }
 });
+
+/* Inline gender edit — pick gender popover */
+
+var activeGenderPopover = null;
+var GENDER_CSS_MAP = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: '--gender-anime'};
+
+function closeGenderPopover() {
+    if (activeGenderPopover) {
+        activeGenderPopover.remove();
+        activeGenderPopover = null;
+    }
+}
+
+function showGenderEdit(event, artistId, span, allGenders, currentId) {
+    event.stopPropagation();
+    closeGenderPopover();
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
+
+    allGenders.forEach(function(g) {
+        var btn = document.createElement('div');
+        btn.textContent = g.name;
+        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
+        if (g.id === currentId) btn.style.fontWeight = 'bold';
+        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+        btn.addEventListener('click', function() {
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/artist/' + artistId + '/gender', {
+                method: 'POST',
+                headers: headers,
+                body: 'gender_id=' + g.id,
+            }).then(function(r) {
+                if (!r.ok) throw new Error('save failed');
+                return r.json();
+            }).then(function(data) {
+                span.textContent = data.gender;
+                span.setAttribute('data-gender-id', data.id);
+                // Update the left border colour on the artist header
+                var cssVar = GENDER_CSS_MAP[data.id] || '--text-primary';
+                var headerDiv = span.closest('div[style*="border-left"]');
+                if (headerDiv) {
+                    headerDiv.style.borderLeftColor = 'var(' + cssVar + ')';
+                }
+                // Update navbar pills and menu items for this artist
+                document.querySelectorAll('[data-artist-id="' + artistId + '"]').forEach(function(el) {
+                    el.style.backgroundColor = 'var(' + cssVar + ')';
+                });
+                closeGenderPopover();
+            }).catch(function() {
+                showToast('Failed to save gender — try again');
+                closeGenderPopover();
+            });
+        });
+        popover.appendChild(btn);
+    });
+
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeGenderPopover = popover;
+}
 
 /* Inline album move — pick album popover */
 
@@ -664,7 +736,131 @@ document.addEventListener('click', function(e) {
     if (activeSongArtistPopover && !activeSongArtistPopover.contains(e.target)) {
         closeSongArtistPopover();
     }
+    if (activeMergePopover && !activeMergePopover.contains(e.target)) {
+        closeMergePopover();
+    }
 });
+
+/* Song merge popover */
+
+var activeMergePopover = null;
+
+function closeMergePopover() {
+    if (activeMergePopover) {
+        activeMergePopover.remove();
+        activeMergePopover = null;
+    }
+}
+
+function showMergePopover(event, songId, songName, span) {
+    event.stopPropagation();
+    closeMergePopover();
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:340px; max-height:360px; display:flex; flex-direction:column;';
+
+    var title = document.createElement('div');
+    title.textContent = 'Merge into "' + songName + '":';
+    title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
+    popover.appendChild(title);
+
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search songs...';
+    searchInput.style.cssText = 'width:100%; font-size:11px; padding:4px 6px; margin-bottom:6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
+    popover.appendChild(searchInput);
+
+    var listContainer = document.createElement('div');
+    listContainer.style.cssText = 'overflow-y:auto; flex:1;';
+    popover.appendChild(listContainer);
+
+    var searchMode = false;
+    var searchTimer = null;
+    var candidates = null;
+
+    function renderResults(items) {
+        listContainer.innerHTML = '';
+        if (!items || !items.length) {
+            var empty = document.createElement('div');
+            empty.textContent = 'No matching songs found.';
+            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+            listContainer.appendChild(empty);
+            return;
+        }
+        items.forEach(function(item) {
+            var btn = document.createElement('div');
+            btn.textContent = item.name + ' \u2014 ' + item.artist + ' (' + item.album + ')';
+            btn.style.cssText = 'padding:4px 6px; font-size:11px; cursor:pointer; border-radius:2px;';
+            btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+            btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+            btn.addEventListener('click', function() {
+                closeMergePopover();
+                showMergeConfirm(songId, songName, item.id, item.name, item.artist, item.album);
+            });
+            listContainer.appendChild(btn);
+        });
+    }
+
+    // Load default candidates
+    listContainer.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Loading...</div>';
+    fetch('/edit/song/' + songId + '/merge-candidates', {
+        headers: _csrfHeaders({})
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        candidates = data;
+        if (!searchMode) renderResults(candidates);
+    }).catch(function() {
+        listContainer.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Failed to load candidates</div>';
+    });
+
+    searchInput.addEventListener('input', function() {
+        var q = searchInput.value.trim();
+        if (!q) {
+            searchMode = false;
+            if (candidates) renderResults(candidates);
+            return;
+        }
+        searchMode = true;
+        if (q.length < 2) {
+            renderResults([]);
+            return;
+        }
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(function() {
+            fetch('/edit/song/' + songId + '/merge-search?q=' + encodeURIComponent(q), {
+                headers: _csrfHeaders({})
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (searchMode) renderResults(data);
+            }).catch(function() {
+                renderResults([]);
+            });
+        }, 300);
+    });
+
+    var rect = getZoomedRect(span);
+    popover.style.top = rect.bottom + 2 + 'px';
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    activeMergePopover = popover;
+    searchInput.focus();
+}
+
+function showMergeConfirm(keptId, keptName, absorbedId, absorbedName, absorbedArtist, absorbedAlbum) {
+    var msg = 'Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + ' (' + absorbedAlbum + ')" into "' + keptName + '"? The absorbed song will be deleted. Ratings and links will be combined.';
+    showDeleteConfirm('Merge songs?', msg, '/edit/song/' + keptId + '/merge', true, 'Merge');
+    // Override the form submit to include absorbed_song_id
+    var form = document.getElementById('confirm-delete-form');
+    // Remove any previous absorbed_song_id hidden input
+    var prev = form.querySelector('input[name="absorbed_song_id"]');
+    if (prev) prev.remove();
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'absorbed_song_id';
+    hidden.value = absorbedId;
+    form.appendChild(hidden);
+}
 
 /* Song artist management popover */
 
@@ -1063,7 +1259,11 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     _deleteRedirectUrl = redirectUrl || null;
     document.getElementById('confirm-delete-title').textContent = title;
     document.getElementById('confirm-delete-msg').textContent = msg;
-    document.getElementById('confirm-delete-form').action = action;
+    var form = document.getElementById('confirm-delete-form');
+    form.action = action;
+    // Clean up any leftover merge hidden input
+    var prev = form.querySelector('input[name="absorbed_song_id"]');
+    if (prev) prev.remove();
     document.getElementById('confirm-delete-pw').value = '';
     document.getElementById('confirm-delete-btn').textContent = btnLabel || 'Delete';
     document.getElementById('confirm-delete-modal').style.display = 'flex';
@@ -1079,10 +1279,13 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        var body = 'password=' + encodeURIComponent(pw);
+        var absorbedInput = form.querySelector('input[name="absorbed_song_id"]');
+        if (absorbedInput) body += '&absorbed_song_id=' + absorbedInput.value;
         fetch(form.action, {
             method: 'POST',
             headers: headers,
-            body: 'password=' + encodeURIComponent(pw),
+            body: body,
         }).then(function(r) {
             if (r.status === 403) { alert('Incorrect password'); return; }
             if (!r.ok) throw new Error('failed');
