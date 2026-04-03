@@ -134,7 +134,7 @@ def _render_artist(artist, htmx=False, push_url=None):
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(Artist.name).all()
         all_albums_by_artist = db.session.execute(db.text(
-            'SELECT a.id, a.name, ar.name AS artist_name '
+            'SELECT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
             'FROM album a '
             'JOIN album_song als ON als.album_id = a.id '
             'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '

@@ -595,6 +595,16 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
             if (!grouped[a.artist]) { grouped[a.artist] = []; artistOrder.push(a.artist); }
             grouped[a.artist].push(a);
         });
+        // Sort current artist's albums to the top
+        var currentArtistName = null;
+        others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = a.artist; });
+        if (currentArtistName) {
+            artistOrder.sort(function(a, b) {
+                if (a === currentArtistName) return -1;
+                if (b === currentArtistName) return 1;
+                return 0;
+            });
+        }
         artistOrder.forEach(function(artist) {
             var header = document.createElement('div');
             header.textContent = artist;
