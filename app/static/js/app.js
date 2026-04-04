@@ -1410,12 +1410,12 @@ function showRatingInput(event, songId, targetUserId) {
         }
     });
 
-    // Blur = cancel
+    // Blur = submit (save on click-off)
     input.addEventListener('blur', () => {
-        // Small delay to allow Enter handler to fire first
+        // Small delay to allow Enter/navigation handlers to fire first
         setTimeout(() => {
             if (activeInput && activeInput.cell === cell) {
-                cancelRating(cell);
+                submitAndNavigate(cell, songId, targetUserId, null);
             }
         }, 100);
     });
