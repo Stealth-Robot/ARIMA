@@ -30,7 +30,9 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter(
+            db.or_(User.username == username, User.email == username)
+        ).first()
 
         if user and user.password and _check_password(user.password, password):
             _do_login(user)
