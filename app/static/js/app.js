@@ -425,6 +425,19 @@ document.addEventListener('htmx:afterSettle', function(e) {
     e.detail.elt.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
 });
 
+// Force repaint on row after HTMX outerHTML swap to fix collapsed borders
+document.addEventListener('htmx:afterSettle', function(e) {
+    var elt = e.detail.elt;
+    if (!elt) return;
+    // For outerHTML swaps, elt is the parent — look for a rating cell inside it
+    var cell = (elt.id && elt.id.startsWith('rating-')) ? elt
+             : elt.querySelector('[id^="rating-"]');
+    if (cell) {
+        var row = cell.closest('tr');
+        if (row) { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
+    }
+});
+
 function showInlineDateEdit(event, endpoint, span, currentFullDate) {
     event.stopPropagation();
 
@@ -2416,6 +2429,10 @@ document.addEventListener('click', (e) => {
             .then(function (r) { return r.text(); })
             .then(function (html) {
                 cell.outerHTML = html;
+                // Force repaint to fix collapsed borders after outerHTML swap
+                var row = document.getElementById(cellId);
+                if (row) row = row.closest('tr');
+                if (row) { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
             });
     }
 

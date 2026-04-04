@@ -1,3 +1,5 @@
+from markupsafe import Markup, escape
+
 from app.extensions import db
 
 
@@ -17,6 +19,22 @@ class Changelog(db.Model):
     album = db.relationship('Album')
     song = db.relationship('Song')
     change_type = db.relationship('ChangelogType')
+
+    @property
+    def description_html(self):
+        """Description with artist/song names linked to artist page."""
+        desc = escape(self.description)
+        if self.artist and self.artist.slug:
+            artist_name = escape(self.artist.name)
+            link = Markup('<a href="/artists/{}" style="color: var(--link);">{}</a>').format(
+                self.artist.slug, self.artist.name)
+            desc = desc.replace(f'"{artist_name}"', f'"{link}"')
+        if self.song and self.artist and self.artist.slug and self.song.name != self.artist.name:
+            song_name = escape(self.song.name)
+            link = Markup('<a href="/artists/{}#song-{}" style="color: var(--link);">{}</a>').format(
+                self.artist.slug, self.song.id, self.song.name)
+            desc = desc.replace(f'"{song_name}"', f'"{link}"')
+        return Markup(desc)
 
     __table_args__ = (
         db.Index('ix_changelog_artist_id', 'artist_id'),

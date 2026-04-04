@@ -1,6 +1,7 @@
 from flask import Blueprint, request, render_template, abort, session
 from flask_login import login_required
 from sqlalchemy import distinct
+from sqlalchemy.orm import joinedload
 
 from app.extensions import db
 from app.models.changelog import Changelog
@@ -23,7 +24,10 @@ def changelog():
     all_types = sorted(ChangelogType.query.all(), key=lambda t: _type_order.get(t.type, 50))
     all_type_names = [t.type for t in all_types]
 
-    query = Changelog.query.order_by(Changelog.date.desc(), Changelog.id.desc())
+    query = Changelog.query.options(
+        joinedload(Changelog.artist), joinedload(Changelog.song),
+        joinedload(Changelog.user), joinedload(Changelog.change_type),
+    ).order_by(Changelog.date.desc(), Changelog.id.desc())
 
     if search:
         query = query.filter(Changelog.description.ilike(f'%{search}%'))
