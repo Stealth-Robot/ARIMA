@@ -1,3 +1,4 @@
+import base64
 import os
 
 from flask import Blueprint, request
@@ -21,5 +22,5 @@ def upload_db():
     db_path = '/data/arima.db'
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     with open(db_path, 'wb') as f:
-        f.write(request.get_data())
+        f.write(base64.b64decode(request.get_data()))
     return 'ok', 200
