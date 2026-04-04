@@ -1851,10 +1851,10 @@ function albumSongSearch(artistId) {
                     html += '<div style="border-top:1px solid var(--border); margin:2px 0;"></div>';
                 }
                 lastWasCurrent = s.is_current_artist;
-                html += '<div class="px-3 py-1 cursor-pointer" style="' +
+                html += '<div class="px-3 py-1 cursor-pointer album-song-result" style="' +
                     (s.is_current_artist ? 'font-weight:500;' : '') +
-                    '" onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'transparent\'" ' +
-                    'onclick="addExistingSongToAlbum(' + s.id + ',' + JSON.stringify(s.name).replace(/"/g, '&quot;') + ',' + JSON.stringify(s.artist).replace(/"/g, '&quot;') + ')">' +
+                    '" data-song-id="' + s.id + '" data-song-name="' + s.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '" data-artist-name="' + s.artist.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '"' +
+                    ' onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
                     '<span>' + s.name.replace(/</g, '&lt;') + '</span>' +
                     '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g, '&lt;') + ' (' + s.album.replace(/</g, '&lt;') + ')</span>' +
                     '</div>';
@@ -1898,8 +1898,18 @@ function addExistingSongToAlbum(songId, songName, artistName) {
     validateAddAlbum();
 }
 
-// Close search results when clicking outside
+// Delegated click handler for search results
 document.addEventListener('click', function(e) {
+    var item = e.target.closest('.album-song-result');
+    if (item) {
+        addExistingSongToAlbum(
+            parseInt(item.dataset.songId),
+            item.dataset.songName,
+            item.dataset.artistName
+        );
+        return;
+    }
+    // Close search results when clicking outside
     var results = document.getElementById('album-song-search-results');
     var input = document.getElementById('album-song-search');
     if (results && input && !results.contains(e.target) && e.target !== input) {
