@@ -402,19 +402,35 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
 
     const original = span.textContent.trim();
     const input = document.createElement('input');
-    input.type = 'date';
+    input.type = 'text';
     input.value = currentFullDate || '';
+    input.placeholder = 'yyyy-mm-dd';
+    input.maxLength = 10;
     input.style.cssText = `
         border: 1px solid var(--link, #2563EB); border-radius: 2px;
-        font-size: inherit; font-family: inherit; padding: 0 2px;
+        font-size: inherit; font-family: monospace; padding: 0 2px;
         background: var(--bg-primary); color: var(--text-primary);
+        width: 100px;
     `;
+
+    input.addEventListener('input', function() {
+        var v = this.value.replace(/[^0-9]/g, '');
+        if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+        if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
+        if (v.length > 10) v = v.slice(0, 10);
+        this.value = v;
+        this.style.borderColor = 'var(--link, #2563EB)';
+    });
 
     span.replaceWith(input);
     input.focus();
 
     function commit() {
         const val = input.value.trim();
+        if (val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+            input.style.borderColor = 'var(--delete-button, red)';
+            return;
+        }
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
