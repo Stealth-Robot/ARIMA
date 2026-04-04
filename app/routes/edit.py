@@ -291,6 +291,46 @@ def global_search_songs():
     return json.dumps(results[:30]), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/search-albums')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def global_search_albums():
+    """Search all albums in the database. Used by the Add Artist page."""
+    _require_edit_mode()
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return json.dumps([]), 200, {'Content-Type': 'application/json'}
+
+    like = f'%{q}%'
+    albums = Album.query.filter(Album.name.ilike(like)).limit(30).all()
+
+    results = []
+    for al in albums:
+        # Get the main artist for display
+        first_song_link = AlbumSong.query.filter_by(album_id=al.id).first()
+        artist_name = ''
+        if first_song_link:
+            artist_link = ArtistSong.query.filter_by(
+                song_id=first_song_link.song_id, artist_is_main=True
+            ).first()
+            if artist_link:
+                a = db.session.get(Artist, artist_link.artist_id)
+                if a:
+                    artist_name = a.name
+
+        song_count = AlbumSong.query.filter_by(album_id=al.id).count()
+        results.append({
+            'id': al.id,
+            'name': al.name,
+            'artist': artist_name,
+            'release_date': al.release_date or '',
+            'song_count': song_count,
+        })
+
+    results.sort(key=lambda r: r['name'].lower())
+    return json.dumps(results), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/artist/<int:artist_id>/search-songs')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -666,6 +706,8 @@ def add_artist_submit():
 
     if not errors:
         for album in albums_data:
+            if album.get('existing_album_id'):
+                continue
             if not album.get('name', '').strip():
                 errors['albums'] = 'Album name is required.'
                 break
@@ -731,6 +773,20 @@ def add_artist_submit():
 
     total_songs = 0
     for album_data in albums_data:
+        existing_album_id = album_data.get('existing_album_id')
+        if existing_album_id:
+            # Link all songs from existing album to the new artist
+            existing_album = db.session.get(Album, existing_album_id)
+            if existing_album is None:
+                continue
+            album_songs = AlbumSong.query.filter_by(album_id=existing_album_id).all()
+            for als in album_songs:
+                artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=als.song_id).first()
+                if not artist_link:
+                    db.session.add(ArtistSong(artist_id=artist.id, song_id=als.song_id, artist_is_main=True))
+                total_songs += 1
+            continue
+
         album = Album(
             name=album_data['name'],
             release_date=album_data.get('release_date') or None,
