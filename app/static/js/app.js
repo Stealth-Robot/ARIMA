@@ -1378,6 +1378,7 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
+let inputGeneration = 0;
 
 function showRatingInput(event, songId, targetUserId) {
     event.stopPropagation();
@@ -1410,6 +1411,7 @@ function showRatingInput(event, songId, targetUserId) {
     cell.appendChild(input);
     input.focus();
     input.select();
+    const gen = ++inputGeneration;
     activeInput = { input, cell };
 
     // Key handlers
@@ -1441,9 +1443,8 @@ function showRatingInput(event, songId, targetUserId) {
 
     // Blur = submit (save on click-off)
     input.addEventListener('blur', () => {
-        // Small delay to allow Enter/navigation handlers to fire first
         setTimeout(() => {
-            if (activeInput && activeInput.cell === cell) {
+            if (gen === inputGeneration && activeInput && activeInput.cell === cell) {
                 submitAndNavigate(cell, songId, targetUserId, null);
             }
         }, 100);
@@ -1476,6 +1477,15 @@ function submitRating(cell, songId, rating, targetUserId) {
     redoStack.length = 0;
 
     activeInput = null;
+
+    // Immediately restore cell content so re-entry before HTMX swap reads the correct value
+    if (rating !== null) {
+        cell.textContent = rating;
+    } else if (cell.dataset.original) {
+        cell.innerHTML = cell.dataset.original;
+    } else {
+        cell.textContent = '';
+    }
 
     const extraValues = targetUserId !== undefined ? { user_id: targetUserId } : {};
 
