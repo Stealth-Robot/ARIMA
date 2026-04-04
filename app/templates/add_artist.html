@@ -243,7 +243,10 @@ function addSong(albumNum) {
     div.innerHTML =
         '<div class="flex gap-2 items-center mb-1">' +
             '<span class="text-sm w-6 song-num">' + songNum + '.</span>' +
-            '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
+            '<div class="flex-1" style="position: relative;">' +
+                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
+                '<div id="song-search-results-' + albumNum + '-' + songNum + '" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; max-height:200px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>' +
+            '</div>' +
             '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> Promoted</label>' +
             '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
             '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
@@ -259,6 +262,83 @@ function addSong(albumNum) {
         '</div>';
     container.appendChild(div);
     addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
+}
+
+var songSearchTimers = {};
+function songSearchDebounce(input, albumNum, songNum) {
+    var key = albumNum + '-' + songNum;
+    clearTimeout(songSearchTimers[key]);
+    songSearchTimers[key] = setTimeout(function() { songSearch(input, albumNum, songNum); }, 250);
+}
+
+function songSearch(input, albumNum, songNum) {
+    var results = document.getElementById('song-search-results-' + albumNum + '-' + songNum);
+    var q = input.value.trim();
+    if (q.length < 2) { results.style.display = 'none'; return; }
+    // Don't search if this song slot is already linked to an existing song
+    var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
+    if (songDiv && songDiv.dataset.existingSongId) return;
+
+    fetch('/edit/search-songs?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(songs) {
+            if (!songs.length) { results.style.display = 'none'; return; }
+            results.innerHTML = '';
+            songs.forEach(function(s) {
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:6px 8px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--border);';
+                item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
+                item.onmouseleave = function() { this.style.background = 'none'; };
+                item.innerHTML = '<span style="color:var(--text-primary);">' + s.name.replace(/</g,'&lt;') + '</span>' +
+                    '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g,'&lt;') + ' (' + s.album.replace(/</g,'&lt;') + ')</span>';
+                item.onclick = function() { selectExistingSong(albumNum, songNum, s); };
+                results.appendChild(item);
+            });
+            results.style.display = 'block';
+        });
+}
+
+function selectExistingSong(albumNum, songNum, song) {
+    var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
+    var nameInput = songDiv.querySelector('[data-field="name"]');
+    nameInput.value = song.name;
+    nameInput.readOnly = true;
+    nameInput.style.opacity = '0.7';
+    songDiv.dataset.existingSongId = song.id;
+
+    // Show linked badge and clear button
+    var badge = document.createElement('span');
+    badge.className = 'existing-song-badge';
+    badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:3px; background:var(--button-primary); color:var(--button-text); margin-left:4px;';
+    badge.textContent = 'Linked: ' + song.artist + ' — ' + song.album;
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.style.cssText = 'font-size:10px; color:var(--link); margin-left:4px; background:none; border:none; cursor:pointer;';
+    clearBtn.textContent = 'Unlink';
+    clearBtn.onclick = function() {
+        delete songDiv.dataset.existingSongId;
+        nameInput.readOnly = false;
+        nameInput.style.opacity = '1';
+        nameInput.value = '';
+        badge.remove();
+        clearBtn.remove();
+        // Show artists row again
+        var artistsRow = songDiv.querySelector('.flex.items-center.gap-2.ml-6');
+        if (artistsRow) artistsRow.style.display = '';
+        validateForm();
+    };
+    nameInput.parentElement.appendChild(badge);
+    nameInput.parentElement.appendChild(clearBtn);
+
+    // Hide search results
+    var results = document.getElementById('song-search-results-' + albumNum + '-' + songNum);
+    results.style.display = 'none';
+
+    // Hide artists row for existing songs (they keep their original artists)
+    var artistsRow = songDiv.querySelector('.flex.items-center.gap-2.ml-6');
+    if (artistsRow) artistsRow.style.display = 'none';
+
+    validateForm();
 }
 
 // Keep "new artist" labels in sync with the artist name input
@@ -288,27 +368,41 @@ document.getElementById('add-artist-form').addEventListener('submit', function()
             const songNum = songDiv.id.split('-')[2];
             const name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
             if (name.trim()) {
-                var artists = [];
-                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
-                    var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
-                    var isNew = row.dataset.isNew === '1';
-                    var role = row.querySelector('.song-artist-role');
-                    artists.push({
-                        artist_id: isNew ? null : aid,
-                        is_main: role ? role.value === 'main' : true,
+                var existingSongId = songDiv.dataset.existingSongId ? parseInt(songDiv.dataset.existingSongId) : null;
+                if (existingSongId) {
+                    album.songs.push({ name: name, existing_song_id: existingSongId });
+                } else {
+                    var artists = [];
+                    songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                        var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
+                        var isNew = row.dataset.isNew === '1';
+                        var role = row.querySelector('.song-artist-role');
+                        artists.push({
+                            artist_id: isNew ? null : aid,
+                            is_main: role ? role.value === 'main' : true,
+                        });
                     });
-                });
-                album.songs.push({
-                    name: name,
-                    is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
-                    is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
-                    artists: artists,
-                });
+                    album.songs.push({
+                        name: name,
+                        is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
+                        is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
+                        artists: artists,
+                    });
+                }
             }
         });
         if (album.name.trim()) albums.push(album);
     });
     document.getElementById('albums-data').value = JSON.stringify(albums);
+});
+
+// Close song search results when clicking outside
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('[id^="song-search-results-"]').forEach(function(el) {
+        if (!el.contains(e.target) && !e.target.matches('[data-field="name"]')) {
+            el.style.display = 'none';
+        }
+    });
 });
 
 // Initialise slug preview on page load
@@ -356,17 +450,19 @@ function validateForm() {
         // At least one song
         var songs = albumDiv.querySelectorAll('[id^="song-' + num + '-"]');
         if (!songs.length) valid = false;
-        // Each song needs a name and at least one main artist
+        // Each song needs a name and at least one main artist (unless it's an existing song)
         songs.forEach(function(songDiv) {
             var sNum = songDiv.id.split('-')[2];
             var songName = songDiv.querySelector('[data-song="' + sNum + '"][data-field="name"]');
             if (!songName || !songName.value.trim()) valid = false;
-            var hasMain = false;
-            songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
-                var role = row.querySelector('.song-artist-role');
-                if (role && role.value === 'main') hasMain = true;
-            });
-            if (!hasMain) valid = false;
+            if (!songDiv.dataset.existingSongId) {
+                var hasMain = false;
+                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                    var role = row.querySelector('.song-artist-role');
+                    if (role && role.value === 'main') hasMain = true;
+                });
+                if (!hasMain) valid = false;
+            }
         });
     });
 

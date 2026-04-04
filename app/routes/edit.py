@@ -250,6 +250,47 @@ def song_move_album(song_id):
     return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/search-songs')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def global_search_songs():
+    """Search all songs in the database. Used by the Add Artist page."""
+    _require_edit_mode()
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return json.dumps([]), 200, {'Content-Type': 'application/json'}
+
+    like = f'%{q}%'
+    rows = db.session.query(Song, Album, Artist).join(
+        AlbumSong, Song.id == AlbumSong.song_id
+    ).join(
+        Album, AlbumSong.album_id == Album.id
+    ).join(
+        ArtistSong, Song.id == ArtistSong.song_id
+    ).join(
+        Artist, ArtistSong.artist_id == Artist.id
+    ).filter(
+        Song.name.ilike(like),
+        ArtistSong.artist_is_main == True,
+    ).distinct().limit(50).all()
+
+    seen = set()
+    results = []
+    for s, al, a in rows:
+        if s.id in seen:
+            continue
+        seen.add(s.id)
+        results.append({
+            'id': s.id,
+            'name': s.name,
+            'artist': a.name,
+            'album': al.name,
+        })
+
+    results.sort(key=lambda r: r['name'].lower())
+    return json.dumps(results[:30]), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/artist/<int:artist_id>/search-songs')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -642,6 +683,8 @@ def add_artist_submit():
                 errors['albums'] = 'Release date must be in YYYY-MM-DD format.'
                 break
             for song in album.get('songs', []):
+                if song.get('existing_song_id'):
+                    continue
                 artists_list = song.get('artists', [])
                 if artists_list and not any(a.get('is_main') for a in artists_list):
                     errors['albums'] = 'Each song must have at least one main artist.'
@@ -701,6 +744,20 @@ def add_artist_submit():
             db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=gid))
 
         for track_num, song_data in enumerate(album_data.get('songs', []), 1):
+            existing_song_id = song_data.get('existing_song_id')
+            if existing_song_id:
+                existing_song = db.session.get(Song, existing_song_id)
+                if existing_song is None:
+                    continue
+                already = AlbumSong.query.filter_by(song_id=existing_song_id, album_id=album.id).first()
+                if not already:
+                    db.session.add(AlbumSong(album_id=album.id, song_id=existing_song_id, track_number=track_num))
+                artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=existing_song_id).first()
+                if not artist_link:
+                    db.session.add(ArtistSong(artist_id=artist.id, song_id=existing_song_id, artist_is_main=False))
+                total_songs += 1
+                continue
+
             song_obj = Song(
                 name=song_data['name'],
                 submitted_by_id=current_user.id,

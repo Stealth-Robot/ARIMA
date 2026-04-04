@@ -118,11 +118,15 @@
             <div class="grid grid-cols-2 gap-3">
                 {% for col in cols %}
                 <div class="flex items-center gap-2">
-                    <span class="text-xs" style="font-family: monospace; color: var(--text-secondary); min-width: 60px;"
-                          id="hex-{{ col }}">{{ colours[col] or '#FFFFFF' }}</span>
+                    <input type="text" value="{{ colours[col] or '#FFFFFF' }}" maxlength="7"
+                           id="hex-{{ col }}" title="Click to copy, or type/paste a hex code"
+                           class="text-xs border rounded px-1 cursor-pointer"
+                           style="font-family: monospace; color: var(--text-secondary); width: 66px; border-color: var(--border); background: transparent;"
+                           onclick="if(document.activeElement!==this){navigator.clipboard.writeText(this.value).then(()=>{var o=this.value;this.value='Copied!';setTimeout(()=>this.value=o,800)})}"
+                           oninput="var v=this.value.trim();if(/^#[0-9A-Fa-f]{6}$/.test(v)){var cp=this.nextElementSibling;cp.value=v;cp.dispatchEvent(new Event('input',{bubbles:true}));}">
                     <input type="color" name="{{ col }}" value="{{ colours[col] or '#FFFFFF' }}"
                            class="w-10 h-8 border rounded cursor-pointer" style="border-color: var(--border); flex-shrink: 0;"
-                           oninput="document.getElementById('hex-{{ col }}').textContent=this.value">
+                           oninput="document.getElementById('hex-{{ col }}').value=this.value">
                     <label class="text-xs">{{ labels.get(col, col) }}</label>
                 </div>
                 {% endfor %}
