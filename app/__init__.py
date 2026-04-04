@@ -150,6 +150,21 @@ def create_app():
             db.session.rollback()
             pass  # DB may not exist yet
 
+    # One-time migration: create missing personal Theme rows for users
+    with flask_app.app_context():
+        try:
+            from app.models.theme import Theme
+            from app.models.user import User
+            users = User.query.all()
+            for u in users:
+                if not Theme.query.filter_by(user_id=u.id).first():
+                    db.session.add(Theme(user_id=u.id))
+                    logger.info('Created missing theme for user: %s', u.username)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            pass  # DB may not exist yet
+
     # Validate system themes on startup
     with flask_app.app_context():
         try:
