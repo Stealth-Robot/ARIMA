@@ -268,4 +268,18 @@ def create_app():
         import_rock()
         click.echo('Rock import complete.')
 
+    @flask_app.cli.command('fix-themes')
+    def fix_themes_command():
+        """Create missing personal Theme rows for users that don't have one."""
+        from app.models import User, Theme
+        users = User.query.all()
+        count = 0
+        for u in users:
+            if not Theme.query.filter_by(user_id=u.id).first():
+                db.session.add(Theme(user_id=u.id))
+                count += 1
+                click.echo(f'Created theme for {u.username}')
+        db.session.commit()
+        click.echo(f'Done. Created {count} theme(s).')
+
     return flask_app
