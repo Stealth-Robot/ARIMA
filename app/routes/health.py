@@ -2,6 +2,8 @@ import os
 
 from flask import Blueprint, request
 
+from app.extensions import csrf
+
 health_bp = Blueprint('health', __name__)
 
 
@@ -10,6 +12,7 @@ def health():
     return 'ok', 200
 
 
+@csrf.exempt
 @health_bp.route('/upload-db', methods=['PUT'])
 def upload_db():
     secret = os.environ.get('UPLOAD_SECRET')
