@@ -394,6 +394,73 @@ function showInlineEdit(event, endpoint, span) {
     });
 }
 
+function showInlineDateEdit(event, endpoint, span, currentFullDate) {
+    event.stopPropagation();
+
+    const original = span.textContent.trim();
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.value = currentFullDate || '';
+    input.style.cssText = `
+        border: 1px solid var(--link, #2563EB); border-radius: 2px;
+        font-size: inherit; font-family: inherit; padding: 0 2px;
+        background: var(--bg-primary); color: var(--text-primary);
+    `;
+
+    span.replaceWith(input);
+    input.focus();
+
+    function commit() {
+        const val = input.value.trim();
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: 'value=' + encodeURIComponent(val),
+        }).then(function(r) {
+            if (!r.ok) { restore(); return; }
+            return r.text();
+        }).then(function(text) {
+            if (text === undefined) return;
+            var displayYear = text ? text.substring(0, 4) : 'date';
+            const newSpan = document.createElement('span');
+            newSpan.className = 'edit-inline';
+            newSpan.style.cursor = 'pointer';
+            newSpan.dataset.fullDate = text || '';
+            if (!text) newSpan.style.color = 'var(--text-secondary)';
+            newSpan.setAttribute('onclick', "showInlineDateEdit(event, '" + endpoint + "', this, this.dataset.fullDate)");
+            newSpan.textContent = displayYear;
+            input.replaceWith(newSpan);
+        });
+    }
+
+    function restore() {
+        const newSpan = document.createElement('span');
+        newSpan.className = 'edit-inline';
+        newSpan.style.cursor = 'pointer';
+        newSpan.dataset.fullDate = currentFullDate || '';
+        if (!currentFullDate) newSpan.style.color = 'var(--text-secondary)';
+        newSpan.setAttribute('onclick', "showInlineDateEdit(event, '" + endpoint + "', this, this.dataset.fullDate)");
+        newSpan.textContent = original;
+        input.replaceWith(newSpan);
+    }
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); restore(); }
+    });
+
+    input.addEventListener('change', function() { commit(); });
+
+    input.addEventListener('blur', function() {
+        setTimeout(function() {
+            if (document.activeElement !== input) restore();
+        }, 300);
+    });
+}
+
 /* Inline genre edit — checkbox popover */
 
 var activeGenrePopover = null;
