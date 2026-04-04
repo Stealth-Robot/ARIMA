@@ -712,6 +712,43 @@ def _verify_password():
     return True
 
 
+@edit_bp.route('/song/<int:song_id>/add-to-album', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def add_song_to_album(song_id):
+    """Add a song to an additional album (creates a new AlbumSong link)."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    target_album_id = request.form.get('album_id', '').strip()
+    if not target_album_id:
+        abort(400)
+    target_album_id = int(target_album_id)
+    target_album = db.session.get(Album, target_album_id)
+    if target_album is None:
+        abort(400)
+
+    # Check if already in this album
+    existing = AlbumSong.query.filter_by(song_id=song_id, album_id=target_album_id).first()
+    if existing:
+        return json.dumps({'error': 'Song is already in this album'}), 400, {'Content-Type': 'application/json'}
+
+    # Get next track number
+    next_track = db.session.execute(db.text(
+        'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+    ), {'aid': target_album_id}).scalar()
+
+    db.session.add(AlbumSong(album_id=target_album_id, song_id=song_id, track_number=next_track))
+
+    log_change(current_user,
+               f'Added "{song.name}" to "{target_album.name}" album',
+               song=song, album=target_album)
+    db.session.commit()
+
+    return json.dumps({'album_id': target_album.id, 'album_name': target_album.name}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/remove-from-album/<int:album_id>', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
