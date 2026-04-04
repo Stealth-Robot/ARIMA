@@ -48,6 +48,8 @@ def artist_stats():
     artist_rows = []
     for a in artists:
         stats = get_artist_stats(a.id, users, bulk)
+        if genre_id is not None and stats['song_count'] == 0:
+            continue
         artist_rows.append({
             'artist': a,
             'stats': stats,
@@ -98,6 +100,8 @@ def global_stats():
     artist_rows = []
     for a in artists:
         scores = get_artist_score_stats(a.id, users, bulk)
+        if genre_id is not None and scores['song_count'] == 0:
+            continue
         artist_rows.append({
             'artist': a,
             'scores': scores,
