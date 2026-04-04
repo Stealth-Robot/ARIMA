@@ -23,17 +23,21 @@ class Changelog(db.Model):
     @property
     def description_html(self):
         """Description with artist/song names linked to artist page."""
-        desc = escape(self.description)
+        desc = str(escape(self.description))
         if self.artist and self.artist.slug:
-            artist_name = escape(self.artist.name)
-            link = Markup('<a href="/artists/{}" style="color: var(--link);">{}</a>').format(
-                self.artist.slug, self.artist.name)
-            desc = desc.replace(f'"{artist_name}"', f'"{link}"')
+            artist_name = str(escape(self.artist.name))
+            link = '<a href="/artists/{}" style="color: var(--link);">{}</a>'.format(
+                escape(self.artist.slug), artist_name)
+            desc = desc.replace('&#34;' + artist_name + '&#34;', '&#34;' + link + '&#34;')
+            desc = desc.replace('&quot;' + artist_name + '&quot;', '&quot;' + link + '&quot;')
+            desc = desc.replace('"' + artist_name + '"', '"' + link + '"')
         if self.song and self.artist and self.artist.slug and self.song.name != self.artist.name:
-            song_name = escape(self.song.name)
-            link = Markup('<a href="/artists/{}#song-{}" style="color: var(--link);">{}</a>').format(
-                self.artist.slug, self.song.id, self.song.name)
-            desc = desc.replace(f'"{song_name}"', f'"{link}"')
+            song_name = str(escape(self.song.name))
+            link = '<a href="/artists/{}#song-{}" style="color: var(--link);">{}</a>'.format(
+                escape(self.artist.slug), self.song.id, song_name)
+            desc = desc.replace('&#34;' + song_name + '&#34;', '&#34;' + link + '&#34;')
+            desc = desc.replace('&quot;' + song_name + '&quot;', '&quot;' + link + '&quot;')
+            desc = desc.replace('"' + song_name + '"', '"' + link + '"')
         return Markup(desc)
 
     __table_args__ = (

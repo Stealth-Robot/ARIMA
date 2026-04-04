@@ -78,10 +78,17 @@ def log_change(user, description, artist=None, album=None, song=None, change_typ
         change_type_id = 2
     else:
         change_type_id = None
+    # Infer artist from song if not explicitly provided
+    resolved_artist = artist
+    if not resolved_artist and song:
+        link = ArtistSong.query.filter_by(song_id=song.id, artist_is_main=True).first()
+        if link:
+            resolved_artist = db.session.get(Artist, link.artist_id)
+
     db.session.add(Changelog(
         date=datetime.now(timezone.utc).isoformat(),
         user_id=user.id,
-        artist_id=artist.id if artist else None,
+        artist_id=resolved_artist.id if resolved_artist else None,
         album_id=album.id if album else None,
         song_id=song.id if song else None,
         change_type_id=change_type_id,
