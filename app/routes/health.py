@@ -12,6 +12,8 @@ def health():
 
 @health_bp.route('/upload-db', methods=['PUT'])
 def upload_db():
+    from flask import current_app
+    current_app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
     secret = os.environ.get('UPLOAD_SECRET')
     if not secret or request.headers.get('X-Upload-Secret') != secret:
         return 'forbidden', 403
