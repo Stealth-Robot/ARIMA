@@ -341,12 +341,15 @@ function showInlineEdit(event, endpoint, span) {
     input.value = original === 'date' ? '' : original;
     input.style.cssText = `
         border: 1px solid var(--link, #2563EB); border-radius: 2px;
-        font-size: inherit; font-family: inherit; padding: 0 2px;
-        width: ${Math.max(80, span.offsetWidth)}px;
+        font-size: inherit; font-family: inherit; font-weight: inherit;
+        padding: 0 2px;
+        width: ${Math.max(80, span.offsetWidth + 20)}px;
         background: var(--bg-primary); color: var(--text-primary);
     `;
 
     span.replaceWith(input);
+    var settled = false;
+    setTimeout(function() { settled = true; }, 300);
     input.focus();
     input.select();
 
@@ -389,8 +392,8 @@ function showInlineEdit(event, endpoint, span) {
 
     input.addEventListener('blur', function() {
         setTimeout(function() {
-            if (document.activeElement !== input) restore();
-        }, 150);
+            if (settled && document.activeElement !== input) restore();
+        }, 200);
     });
 }
 
