@@ -1,6 +1,6 @@
-/* Offset anchor-targeted rows so the fixed top navbar (44px) doesn't cover them */
+/* Offset anchor-targeted rows so the fixed navbar (44px) + sticky table header (~30px) don't cover them */
 tr[id] {
-    scroll-margin-top: 54px;
+    scroll-margin-top: 70px;
 }
 
 /* Dense spreadsheet styling */
