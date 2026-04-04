@@ -4,7 +4,7 @@ import math
 from collections import defaultdict
 
 from app.extensions import db
-from app.models.music import Rating, ArtistSong, Song, ArtistArtist, AlbumSong
+from app.models.music import Rating, ArtistSong, Song, ArtistArtist, AlbumSong, album_genres
 from app.models.user import User
 
 SCORED_GROUP_THRESHOLD = 0.80
@@ -19,8 +19,16 @@ def get_display_users():
 class _BulkData:
     """Pre-loaded stats via SQL aggregation (~5 queries, but returns aggregated rows)."""
 
-    def __init__(self, include_featured, include_remixes, artist_ids=None):
+    def __init__(self, include_featured, include_remixes, artist_ids=None, genre_id=None):
         scoped = artist_ids is not None
+
+        # 0. If genre filter is active, find song IDs that belong to albums with this genre
+        if genre_id is not None:
+            self._genre_song_ids = {row[0] for row in db.session.query(AlbumSong.song_id).join(
+                album_genres, AlbumSong.album_id == album_genres.c.album_id
+            ).filter(album_genres.c.genre_id == genre_id).all()}
+        else:
+            self._genre_song_ids = None
 
         # 1. Artist-song mappings (still needed for song_id resolution)
         if scoped:
@@ -121,6 +129,8 @@ class _BulkData:
             self.all_song_ids = {s.id for s in all_songs_query.all()}
             if not include_featured and self.all_main_song_ids is not None:
                 self.all_song_ids &= self.all_main_song_ids
+        if self._genre_song_ids is not None:
+            self.all_song_ids &= self._genre_song_ids
 
         self.include_featured = include_featured
         self.include_remixes = include_remixes
@@ -139,6 +149,9 @@ class _BulkData:
             for child_id in self.children.get(artist_id, []):
                 main_ids |= self.artist_main_songs.get(child_id, set())
             song_ids &= main_ids
+
+        if self._genre_song_ids is not None:
+            song_ids &= self._genre_song_ids
 
         return song_ids
 
@@ -233,9 +246,9 @@ def _artist_score_stats(artist_id, users, bulk):
 
 # --- Public API (used by routes) ---
 
-def load_bulk_data(include_featured=False, include_remixes=False, artist_ids=None):
+def load_bulk_data(include_featured=False, include_remixes=False, artist_ids=None, genre_id=None):
     """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
-    return _BulkData(include_featured, include_remixes, artist_ids=artist_ids)
+    return _BulkData(include_featured, include_remixes, artist_ids=artist_ids, genre_id=genre_id)
 
 
 def get_artist_stats(artist_id, users, bulk):

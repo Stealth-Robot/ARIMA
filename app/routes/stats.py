@@ -19,8 +19,15 @@ def _get_viewer_settings():
         return {
             'include_featured': current_user.settings.include_featured,
             'include_remixes': current_user.settings.include_remixes,
+            'country_id': current_user.settings.country,
+            'genre_id': current_user.settings.genre,
         }
-    return {'include_featured': False, 'include_remixes': False}
+    return {
+        'include_featured': False,
+        'include_remixes': False,
+        'country_id': session.get('country'),
+        'genre_id': session.get('genre'),
+    }
 
 
 @stats_bp.route('/artist-stats')
@@ -29,11 +36,15 @@ def artist_stats():
     """Artist Stats page — rating completion percentages."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = get_cached_bulk_data(**settings)
+    country_id = settings.pop('country_id')
+    genre_id = settings.pop('genre_id')
+    bulk = get_cached_bulk_data(**settings, genre_id=genre_id)
 
     summary = get_summary_stats(users, bulk)
 
     artists = get_top_level_artists(bulk)
+    if country_id is not None:
+        artists = [a for a in artists if a.country_id == country_id]
     artist_rows = []
     for a in artists:
         stats = get_artist_stats(a.id, users, bulk)
@@ -54,10 +65,12 @@ def expand_subunit(artist_id):
     """HTMX endpoint: return stats rows for subunits of an artist."""
     users = get_display_users()
     settings = _get_viewer_settings()
+    settings.pop('country_id')
+    genre_id = settings.pop('genre_id')
 
     subunits, _ = get_children(artist_id)
     subunit_ids = [sub.id for sub in subunits]
-    bulk = load_bulk_data(**settings, artist_ids=subunit_ids)
+    bulk = load_bulk_data(**settings, artist_ids=subunit_ids, genre_id=genre_id)
 
     rows = []
     for sub in subunits:
@@ -75,9 +88,13 @@ def global_stats():
     """Global Stats page — average scores per artist per user."""
     users = get_display_users()
     settings = _get_viewer_settings()
-    bulk = get_cached_bulk_data(**settings)
+    country_id = settings.pop('country_id')
+    genre_id = settings.pop('genre_id')
+    bulk = get_cached_bulk_data(**settings, genre_id=genre_id)
 
     artists = get_top_level_artists(bulk)
+    if country_id is not None:
+        artists = [a for a in artists if a.country_id == country_id]
     artist_rows = []
     for a in artists:
         scores = get_artist_score_stats(a.id, users, bulk)
@@ -98,10 +115,12 @@ def expand_subunit_scores(artist_id):
     """HTMX endpoint: return score rows for subunits of an artist."""
     users = get_display_users()
     settings = _get_viewer_settings()
+    settings.pop('country_id')
+    genre_id = settings.pop('genre_id')
 
     subunits, _ = get_children(artist_id)
     subunit_ids = [sub.id for sub in subunits]
-    bulk = load_bulk_data(**settings, artist_ids=subunit_ids)
+    bulk = load_bulk_data(**settings, artist_ids=subunit_ids, genre_id=genre_id)
 
     rows = []
     for sub in subunits:
