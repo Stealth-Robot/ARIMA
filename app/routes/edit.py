@@ -861,6 +861,15 @@ def album_add_song(album_id):
     ), {'aid': album_id}).scalar()
 
     db.session.add(AlbumSong(album_id=album_id, song_id=song_id, track_number=next_track))
+
+    # Ensure the viewing artist is linked to this song so it appears in their discography
+    artist_id = request.form.get('artist_id', '').strip()
+    if artist_id:
+        artist_id = int(artist_id)
+        artist_link = ArtistSong.query.filter_by(artist_id=artist_id, song_id=song_id).first()
+        if not artist_link:
+            db.session.add(ArtistSong(artist_id=artist_id, song_id=song_id, artist_is_main=False))
+
     log_change(current_user,
                f'Added "{song.name}" to "{album.name}" album',
                song=song, album=album)

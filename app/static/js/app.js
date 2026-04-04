@@ -1230,7 +1230,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                         fetch('/edit/album/' + albumId + '/add-song', {
                             method: 'POST',
                             headers: headers,
-                            body: 'song_id=' + item.id,
+                            body: 'song_id=' + item.id + '&artist_id=' + (typeof _currentArtistId !== 'undefined' ? _currentArtistId : ''),
                         }).then(function(r) {
                             if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
                             if (!r.ok) throw new Error('failed');
