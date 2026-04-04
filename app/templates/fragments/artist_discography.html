@@ -41,9 +41,9 @@ var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name |
 var _currentArtistId = {{ artist.id }};
 var _artistParentMap = {{ artist_parent_map | default({}) | tojson }};
 var _songArtists = {
-{% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: "{{ a.name | e }}", is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}
-{% for child in children %}{% for entry in child.discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: "{{ a.name | e }}", is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% for child in children %}{% for entry in child.discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}{% endfor %}
 };
 </script>
