@@ -724,6 +724,10 @@ def delete_song(song_id):
     if not _verify_password():
         return 'Incorrect password', 403
 
+    # Capture artist ID before deletions so we can redirect back
+    artist_link = ArtistSong.query.filter_by(song_id=song_id).first()
+    fallback_artist_id = artist_link.artist_id if artist_link else None
+
     # Get album links before deleting
     album_song_rows = AlbumSong.query.filter_by(song_id=song_id).all()
 
@@ -742,7 +746,10 @@ def delete_song(song_id):
 
     log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()
-    return '', 204
+
+    if fallback_artist_id:
+        return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))
+    return redirect(request.referrer or url_for('home.home'))
 
 
 @edit_bp.route('/album/<int:album_id>/delete-info')
@@ -783,6 +790,13 @@ def delete_album(album_id):
     # Get all songs in this album
     song_ids = [r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()]
 
+    # Capture artist ID before deletions so we can redirect back
+    fallback_artist_id = None
+    if song_ids:
+        artist_link = ArtistSong.query.filter(ArtistSong.song_id.in_(song_ids)).first()
+        if artist_link:
+            fallback_artist_id = artist_link.artist_id
+
     for song_id in song_ids:
         AlbumSong.query.filter_by(album_id=album_id, song_id=song_id).delete()
         # Only delete song if it's not in any other album
@@ -798,7 +812,10 @@ def delete_album(album_id):
     db.session.query(Album).filter_by(id=album_id).delete()
     log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)', change_type='album')
     db.session.commit()
-    return '', 204
+
+    if fallback_artist_id:
+        return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))
+    return redirect(request.referrer or url_for('home.home'))
 
 
 @edit_bp.route('/song/<int:song_id>/merge-candidates')
