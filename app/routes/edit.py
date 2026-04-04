@@ -109,7 +109,8 @@ def artist_name(artist_id):
         abort(400)
     old_name = artist.name
     artist.name = name
-    artist.slug = generate_unique_slug(name, artist.id)
+    existing_slugs = {r[0] for r in db.session.query(Artist.slug).filter(Artist.id != artist_id).all()}
+    artist.slug = generate_unique_slug(name, existing_slugs)
     log_change(current_user, f'Renamed "{old_name}" artist to "{name}"', artist=artist)
     db.session.commit()
     return name
