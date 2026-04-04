@@ -83,7 +83,7 @@ var _songArtists = {
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick='showDeleteConfirm("Delete album?", {{ (album.name ~ " will be permanently deleted. All songs and ratings not on another album will also be deleted.") | tojson }}, "/edit/album/{{ album.id }}/delete", true)'>&#10005;</span>
+                      onclick='confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -205,7 +205,7 @@ var _songArtists = {
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick='showDeleteConfirm("Delete album?", {{ (album.name ~ " will be permanently deleted. All songs and ratings not on another album will also be deleted.") | tojson }}, "/edit/album/{{ album.id }}/delete", true)'>&#10005;</span>
+                      onclick='confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" onclick="showInlineEdit(event, '/edit/album/{{ album.id }}/release-date', this)">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -464,7 +464,7 @@ function submitConvertArtist() {
     <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
                 padding:24px; width:340px; max-width:90vw;">
         <h3 id="confirm-delete-title" class="text-lg font-bold mb-2" style="color:var(--text-primary);"></h3>
-        <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary);"></p>
+        <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary); white-space:pre-line;"></p>
         <form id="confirm-delete-form" method="POST" action="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>

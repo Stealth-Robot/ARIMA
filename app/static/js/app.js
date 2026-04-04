@@ -1299,6 +1299,35 @@ var _deleteIsAjax = false;
 
 var _deleteRedirectUrl = null;
 
+function confirmDeleteAlbum(albumId, albumName) {
+    fetch('/edit/album/' + albumId + '/delete-info')
+        .then(function(r) {
+            if (!r.ok) throw new Error('status ' + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            var msg = albumName + ' will be permanently deleted.';
+            if (data.songs_deleted > 0) {
+                msg += '\n\n' + data.songs_deleted + ' song' + (data.songs_deleted !== 1 ? 's' : '') +
+                       ' and ' + data.ratings_deleted + ' rating' + (data.ratings_deleted !== 1 ? 's' : '') +
+                       ' will also be deleted.';
+                if (data.songs_deleted < data.songs) {
+                    msg += ' ' + (data.songs - data.songs_deleted) + ' song' +
+                           (data.songs - data.songs_deleted !== 1 ? 's' : '') +
+                           ' on other albums will be kept.';
+                }
+            } else if (data.songs > 0) {
+                msg += '\n\nAll ' + data.songs + ' song' + (data.songs !== 1 ? 's' : '') +
+                       ' are on other albums and will be kept.';
+            }
+            showDeleteConfirm('Delete album?', msg, '/edit/album/' + albumId + '/delete', true);
+        })
+        .catch(function() {
+            showDeleteConfirm('Delete album?', albumName + ' will be permanently deleted.',
+                              '/edit/album/' + albumId + '/delete', true);
+        });
+}
+
 function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     _deleteIsAjax = !!ajax;
     _deleteRedirectUrl = redirectUrl || null;

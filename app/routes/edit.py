@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from flask import Blueprint, request, session, abort, render_template, redirect, url_for
+from flask import Blueprint, request, session, abort, render_template, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -743,6 +743,29 @@ def delete_song(song_id):
     log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()
     return '', 204
+
+
+@edit_bp.route('/album/<int:album_id>/delete-info')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def delete_album_info(album_id):
+    """Return counts of songs and ratings that would be deleted with this album."""
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    album_songs = AlbumSong.query.filter_by(album_id=album_id).all()
+    song_ids = [r.song_id for r in album_songs]
+    songs_to_delete = 0
+    ratings_to_delete = 0
+    for song_id in song_ids:
+        other_albums = AlbumSong.query.filter(
+            AlbumSong.song_id == song_id, AlbumSong.album_id != album_id
+        ).count()
+        if other_albums == 0:
+            songs_to_delete += 1
+            ratings_to_delete += Rating.query.filter_by(song_id=song_id).count()
+    return jsonify(songs=len(song_ids), songs_deleted=songs_to_delete,
+                   ratings_deleted=ratings_to_delete)
 
 
 @edit_bp.route('/album/<int:album_id>/delete', methods=['POST'])
