@@ -933,7 +933,11 @@ def merge_song(kept_song_id):
                song=kept)
     db.session.commit()
 
-    return json.dumps({'ok': True, 'kept_song_id': kept_song_id}), 200, {'Content-Type': 'application/json'}
+    # Find the first artist linked to the kept song to redirect to their page
+    artist_link = ArtistSong.query.filter_by(song_id=kept_song_id).first()
+    if artist_link:
+        return redirect(url_for('artists.artist_detail', artist_id=artist_link.artist_id))
+    return redirect(request.referrer or url_for('home.home'))
 
 
 @edit_bp.route('/replace-database', methods=['GET', 'POST'])
