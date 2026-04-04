@@ -282,6 +282,39 @@ def _build_discography(artist):
     for album_id, song, track_num in all_album_songs:
         songs_by_album.setdefault(album_id, []).append((song, track_num))
 
+    # Deduplicate songs across albums: show each song only in its canonical album.
+    # Canonical = oldest non-Single album; if all are Singles, oldest Single.
+    # Skip in edit mode so editors can see and manage all placements.
+    if not edit_mode:
+        SINGLE_TYPE_ID = 2
+        album_lookup = {a.id: a for a in albums}
+        # Build reverse index: song_id → list of album_ids it appears in
+        song_albums = {}
+        for aid, song_list in songs_by_album.items():
+            for song, _ in song_list:
+                song_albums.setdefault(song.id, []).append(aid)
+
+        for sid, aid_list in song_albums.items():
+            if len(aid_list) < 2:
+                continue
+            # Sort by release_date ascending, nulls last
+            sorted_aids = sorted(aid_list, key=lambda a: (
+                album_lookup[a].release_date is None,
+                album_lookup[a].release_date or '',
+            ))
+            # Pick oldest non-Single, or fall back to oldest overall
+            canonical = None
+            for aid in sorted_aids:
+                if album_lookup[aid].album_type_id != SINGLE_TYPE_ID:
+                    canonical = aid
+                    break
+            if canonical is None:
+                canonical = sorted_aids[0]
+            # Remove song from non-canonical albums
+            for aid in aid_list:
+                if aid != canonical:
+                    songs_by_album[aid] = [(s, tn) for s, tn in songs_by_album[aid] if s.id != sid]
+
     # Bulk-load all ratings, collab labels, and song-artist associations
     all_ratings_map = _get_ratings_map(list(song_ids))
     all_collab_labels = _get_collab_labels(song_ids, artist.id)

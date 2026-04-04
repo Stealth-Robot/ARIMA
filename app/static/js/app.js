@@ -1293,6 +1293,25 @@ if (_addAlbumModal) {
     _addAlbumModal.addEventListener('change', validateAddAlbum);
 }
 
+/* Remove song from album (no password required) */
+
+function confirmRemoveFromAlbum(songId, albumId, songName, albumName) {
+    if (!confirm('Remove "' + songName + '" from "' + albumName + '"?\n\nIf this is the song\'s only album, the song will be deleted.')) return;
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    fetch('/edit/song/' + songId + '/remove-from-album/' + albumId, {
+        method: 'POST',
+        headers: headers,
+        body: '',
+    }).then(function(r) {
+        if (!r.ok) throw new Error('failed');
+        window.location.reload();
+    }).catch(function() {
+        showToast('Remove failed — try again');
+    });
+}
+
 /* Shared delete confirmation modal */
 
 var _deleteIsAjax = false;

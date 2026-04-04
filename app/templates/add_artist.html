@@ -375,9 +375,10 @@ function validateForm() {
     btn.style.cursor = valid ? 'pointer' : 'not-allowed';
 }
 
-// Event delegation: validate on any input/change inside the form
+// Event delegation: validate on any input/change/click inside the form
 document.getElementById('add-artist-form').addEventListener('input', validateForm);
 document.getElementById('add-artist-form').addEventListener('change', validateForm);
+document.getElementById('add-artist-form').addEventListener('click', function() { setTimeout(validateForm, 0); });
 
 // Also validate after DOM mutations (add/remove album/song/artist)
 var _origAddAlbum = addAlbum, _origRemoveAlbum = removeAlbum, _origAddSong = addSong, _origAddSongArtist = addSongArtist;
@@ -385,6 +386,11 @@ addAlbum = function() { _origAddAlbum(); validateForm(); };
 removeAlbum = function(n) { _origRemoveAlbum(n); validateForm(); };
 addSong = function(n) { _origAddSong(n); validateForm(); };
 addSongArtist = function(a, s, id, name, isMain, isNew) { _origAddSongArtist(a, s, id, name, isMain, isNew); validateForm(); };
+
+// Watch for DOM changes that might not fire input/change events
+new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
+    document.getElementById('add-artist-form'), { childList: true, subtree: true }
+);
 
 // Restore albums from previously submitted form data on validation error
 (function() {

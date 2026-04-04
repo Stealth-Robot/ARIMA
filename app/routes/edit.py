@@ -712,6 +712,55 @@ def _verify_password():
     return True
 
 
+@edit_bp.route('/song/<int:song_id>/remove-from-album/<int:album_id>', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def remove_song_from_album(song_id, album_id):
+    """Remove a song from an album. If it was the song's only album, delete the song too."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+
+    link = AlbumSong.query.filter_by(song_id=song_id, album_id=album_id).first()
+    if link is None:
+        abort(404)
+
+    # Capture artist for redirect before any deletions
+    artist_link = ArtistSong.query.filter_by(song_id=song_id).first()
+    fallback_artist_id = artist_link.artist_id if artist_link else None
+
+    song_name_val = song.name
+    album = db.session.get(Album, album_id)
+    album_name_val = album.name if album else '?'
+
+    # Remove the album-song link
+    db.session.delete(link)
+
+    # Check if the song is still in any other album
+    remaining_albums = AlbumSong.query.filter_by(song_id=song_id).count()
+    if remaining_albums == 0:
+        # Orphaned song — delete it and its associations
+        ArtistSong.query.filter_by(song_id=song_id).delete()
+        Rating.query.filter_by(song_id=song_id).delete()
+        db.session.query(Song).filter_by(id=song_id).delete()
+        log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}" (song deleted, was only album)', change_type='song')
+    else:
+        log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}"', change_type='song')
+
+    # Clean up album if now empty
+    remaining_songs = AlbumSong.query.filter_by(album_id=album_id).count()
+    if remaining_songs == 0:
+        db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
+        db.session.query(Album).filter_by(id=album_id).delete()
+
+    db.session.commit()
+
+    if fallback_artist_id:
+        return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))
+    return redirect(request.referrer or url_for('home.home'))
+
+
 @edit_bp.route('/song/<int:song_id>/delete', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

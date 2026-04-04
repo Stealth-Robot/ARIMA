@@ -113,6 +113,8 @@ var _songArtists = {
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
                       onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Remove from album"
+                      onclick='confirmRemoveFromAlbum({{ song.id }}, {{ album.id }}, {{ song.name | tojson }}, {{ album.name | tojson }})'>&#128279;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
                 <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
@@ -233,6 +235,8 @@ var _songArtists = {
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--delete-button); font-size: inherit; margin-left: 2px;" title="Delete song"
                       onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Remove from album"
+                      onclick='confirmRemoveFromAlbum({{ song.id }}, {{ album.id }}, {{ song.name | tojson }}, {{ album.name | tojson }})'>&#128279;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Manage artists"
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
                 <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
