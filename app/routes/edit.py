@@ -96,6 +96,25 @@ def album_genres_edit(album_id):
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/name', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_name(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    name = request.form.get('value', '').strip()
+    if not name:
+        abort(400)
+    old_name = artist.name
+    artist.name = name
+    artist.slug = generate_unique_slug(name, artist.id)
+    log_change(current_user, f'Renamed "{old_name}" artist to "{name}"', artist=artist)
+    db.session.commit()
+    return name
+
+
 @edit_bp.route('/artist/<int:artist_id>/country', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -397,7 +416,7 @@ def unlink_artist(artist_id):
         abort(404)
     link = ArtistArtist.query.filter_by(artist_2=artist_id).first()
     if link is None:
-        return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+        return redirect(url_for('artists.artist_detail', artist_id=artist_id))
     parent = db.session.get(Artist, link.artist_1)
     parent_name = parent.name if parent else 'Unknown'
     rel_type = 'soloist' if link.relationship == 1 else 'subunit'
@@ -405,7 +424,7 @@ def unlink_artist(artist_id):
     artist.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Unlinked "{artist.name}" as {rel_type} from "{parent_name}" artist', artist=artist)
     db.session.commit()
-    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+    return redirect(url_for('artists.artist_detail', artist_id=artist_id))
 
 
 @edit_bp.route('/song/<int:song_id>/artists', methods=['POST'])
