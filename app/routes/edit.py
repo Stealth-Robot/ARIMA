@@ -250,6 +250,53 @@ def song_move_album(song_id):
     return json.dumps({'album_id': new_album.id, 'album_name': new_album.name}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/search-songs')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_search_songs(artist_id):
+    """Search songs for adding to a new album. Current artist's songs first."""
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return json.dumps([]), 200, {'Content-Type': 'application/json'}
+
+    like = f'%{q}%'
+    rows = db.session.query(Song, Album, Artist).join(
+        AlbumSong, Song.id == AlbumSong.song_id
+    ).join(
+        Album, AlbumSong.album_id == Album.id
+    ).join(
+        ArtistSong, Song.id == ArtistSong.song_id
+    ).join(
+        Artist, ArtistSong.artist_id == Artist.id
+    ).filter(
+        Song.name.ilike(like),
+        ArtistSong.artist_is_main == True,
+    ).distinct().limit(50).all()
+
+    # Deduplicate by song id, keeping first occurrence
+    seen = set()
+    results = []
+    for s, al, a in rows:
+        if s.id in seen:
+            continue
+        seen.add(s.id)
+        results.append({
+            'id': s.id,
+            'name': s.name,
+            'artist': a.name,
+            'album': al.name,
+            'is_current_artist': a.id == artist_id,
+        })
+
+    # Sort: current artist's songs first, then alphabetically
+    results.sort(key=lambda r: (0 if r['is_current_artist'] else 1, r['name'].lower()))
+    return json.dumps(results[:30]), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/artist/<int:artist_id>/add-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -290,31 +337,48 @@ def add_album_to_artist(artist_id):
     for gid in genre_ids:
         db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=int(gid)))
 
+    new_song_count = 0
     for track_num, song_data in enumerate(songs, 1):
-        song = Song(
-            name=song_data['name'],
-            submitted_by_id=current_user.id,
-            is_promoted=song_data.get('is_promoted', False),
-            is_remix=song_data.get('is_remix', False),
-        )
-        db.session.add(song)
-        db.session.flush()
-
-        db.session.add(AlbumSong(album_id=album.id, song_id=song.id, track_number=track_num))
-
-        song_artists = song_data.get('artists')
-        if song_artists:
-            seen = set()
-            for sa in song_artists:
-                sa_id = sa.get('artist_id') or artist_id
-                if sa_id in seen:
-                    continue
-                seen.add(sa_id)
-                db.session.add(ArtistSong(artist_id=sa_id, song_id=song.id, artist_is_main=sa.get('is_main', True)))
+        existing_song_id = song_data.get('existing_song_id')
+        if existing_song_id:
+            # Link an existing song to this album
+            existing_song = db.session.get(Song, existing_song_id)
+            if existing_song is None:
+                abort(400)
+            already = AlbumSong.query.filter_by(song_id=existing_song_id, album_id=album.id).first()
+            if not already:
+                db.session.add(AlbumSong(album_id=album.id, song_id=existing_song_id, track_number=track_num))
         else:
-            db.session.add(ArtistSong(artist_id=artist_id, song_id=song.id, artist_is_main=song_data.get('artist_is_main', True)))
+            # Create a new song
+            new_song_count += 1
+            song = Song(
+                name=song_data['name'],
+                submitted_by_id=current_user.id,
+                is_promoted=song_data.get('is_promoted', False),
+                is_remix=song_data.get('is_remix', False),
+            )
+            db.session.add(song)
+            db.session.flush()
 
-    log_change(current_user, f'Added "{album_name}" album with {len(songs)} songs', artist=artist, album=album)
+            db.session.add(AlbumSong(album_id=album.id, song_id=song.id, track_number=track_num))
+
+            song_artists = song_data.get('artists')
+            if song_artists:
+                seen = set()
+                for sa in song_artists:
+                    sa_id = sa.get('artist_id') or artist_id
+                    if sa_id in seen:
+                        continue
+                    seen.add(sa_id)
+                    db.session.add(ArtistSong(artist_id=sa_id, song_id=song.id, artist_is_main=sa.get('is_main', True)))
+            else:
+                db.session.add(ArtistSong(artist_id=artist_id, song_id=song.id, artist_is_main=song_data.get('artist_is_main', True)))
+
+    existing_count = len(songs) - new_song_count
+    if existing_count:
+        log_change(current_user, f'Added "{album_name}" album with {new_song_count} new and {existing_count} existing songs', artist=artist, album=album)
+    else:
+        log_change(current_user, f'Added "{album_name}" album with {len(songs)} songs', artist=artist, album=album)
     db.session.commit()
 
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}

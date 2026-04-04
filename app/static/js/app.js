@@ -1601,6 +1601,10 @@ function resetAddAlbumModal() {
     document.querySelectorAll('#new-album-genres input').forEach(function(cb) { cb.checked = false; });
     var songs = document.getElementById('new-album-songs');
     if (songs) songs.innerHTML = '';
+    var searchInput = document.getElementById('album-song-search');
+    if (searchInput) searchInput.value = '';
+    var searchResults = document.getElementById('album-song-search-results');
+    if (searchResults) { searchResults.style.display = 'none'; searchResults.innerHTML = ''; }
     validateAddAlbum();
 }
 
@@ -1616,6 +1620,8 @@ function validateAddAlbum() {
     if (!songDivs.length) valid = false;
 
     songDivs.forEach(function(div) {
+        // Existing songs are always valid
+        if (div.dataset.existingSongId) return;
         var songName = div.querySelector('.new-album-song-name');
         if (!songName || !songName.value.trim()) valid = false;
         var hasMain = false;
@@ -1748,6 +1754,11 @@ function submitNewAlbum(artistId) {
 
     var songs = [];
     document.querySelectorAll('[id^="new-song-"]').forEach(function(songDiv) {
+        // Existing song — just reference by ID
+        if (songDiv.dataset.existingSongId) {
+            songs.push({ existing_song_id: parseInt(songDiv.dataset.existingSongId) });
+            return;
+        }
         var nameInput = songDiv.querySelector('.new-album-song-name');
         var n = nameInput ? nameInput.value.trim() : '';
         if (!n) return;
@@ -1801,6 +1812,100 @@ if (_addAlbumModal) {
     _addAlbumModal.addEventListener('input', validateAddAlbum);
     _addAlbumModal.addEventListener('change', validateAddAlbum);
 }
+
+/* Search existing songs for add-album modal */
+
+var _albumSongSearchTimer = null;
+function debouncedAlbumSongSearch(artistId) {
+    clearTimeout(_albumSongSearchTimer);
+    _albumSongSearchTimer = setTimeout(function() { albumSongSearch(artistId); }, 250);
+}
+
+function albumSongSearch(artistId) {
+    var input = document.getElementById('album-song-search');
+    var results = document.getElementById('album-song-search-results');
+    if (!input || !results) return;
+    var q = input.value.trim();
+    if (q.length < 2) { results.style.display = 'none'; return; }
+
+    fetch('/edit/artist/' + artistId + '/search-songs?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(songs) {
+            if (!songs.length) {
+                results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">No songs found</div>';
+                results.style.display = 'block';
+                return;
+            }
+            // Filter out songs already added to the album
+            var addedIds = getAddedExistingSongIds();
+            songs = songs.filter(function(s) { return addedIds.indexOf(s.id) === -1; });
+            if (!songs.length) {
+                results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">All matching songs already added</div>';
+                results.style.display = 'block';
+                return;
+            }
+            var html = '';
+            var lastWasCurrent = null;
+            songs.forEach(function(s) {
+                if (lastWasCurrent !== null && lastWasCurrent && !s.is_current_artist) {
+                    html += '<div style="border-top:1px solid var(--border); margin:2px 0;"></div>';
+                }
+                lastWasCurrent = s.is_current_artist;
+                html += '<div class="px-3 py-1 cursor-pointer" style="' +
+                    (s.is_current_artist ? 'font-weight:500;' : '') +
+                    '" onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'transparent\'" ' +
+                    'onclick="addExistingSongToAlbum(' + s.id + ',' + JSON.stringify(s.name).replace(/"/g, '&quot;') + ',' + JSON.stringify(s.artist).replace(/"/g, '&quot;') + ')">' +
+                    '<span>' + s.name.replace(/</g, '&lt;') + '</span>' +
+                    '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g, '&lt;') + ' (' + s.album.replace(/</g, '&lt;') + ')</span>' +
+                    '</div>';
+            });
+            results.innerHTML = html;
+            results.style.display = 'block';
+        });
+}
+
+function getAddedExistingSongIds() {
+    var ids = [];
+    document.querySelectorAll('#new-album-songs [data-existing-song-id]').forEach(function(el) {
+        ids.push(parseInt(el.dataset.existingSongId));
+    });
+    return ids;
+}
+
+function addExistingSongToAlbum(songId, songName, artistName) {
+    _newAlbumSongCount++;
+    var n = _newAlbumSongCount;
+    var container = document.getElementById('new-album-songs');
+    var row = document.createElement('div');
+    row.id = 'new-song-' + n;
+    row.className = 'mb-2 p-2 border rounded';
+    row.style.borderColor = 'var(--border)';
+    row.dataset.existingSongId = songId;
+    row.innerHTML =
+        '<div class="flex gap-2 items-center">' +
+            '<span class="flex-1 text-sm">' + songName.replace(/</g, '&lt;') +
+            ' <span style="color:var(--text-secondary); font-size:11px;">— ' + artistName.replace(/</g, '&lt;') + ' (existing)</span></span>' +
+            '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
+        '</div>';
+    container.appendChild(row);
+
+    // Clear search
+    var input = document.getElementById('album-song-search');
+    if (input) input.value = '';
+    var results = document.getElementById('album-song-search-results');
+    if (results) results.style.display = 'none';
+
+    validateAddAlbum();
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    var results = document.getElementById('album-song-search-results');
+    var input = document.getElementById('album-song-search');
+    if (results && input && !results.contains(e.target) && e.target !== input) {
+        results.style.display = 'none';
+    }
+});
 
 /* Remove song from album (no password required) */
 
