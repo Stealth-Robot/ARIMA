@@ -57,6 +57,17 @@
                         <p class="text-xs text-red-400 mt-1">{{ errors['country_id'] }}</p>
                         {% endif %}
                     </div>
+
+                    <div class="mb-3 flex gap-4">
+                        <label class="text-sm" style="cursor: pointer;">
+                            <input type="checkbox" name="is_disbanded" value="1"
+                                   {% if form_data.get('is_disbanded') %}checked{% endif %}> Disbanded
+                        </label>
+                        <label class="text-sm" style="cursor: pointer;">
+                            <input type="checkbox" name="is_complete" value="1"
+                                   {% if form_data.get('is_complete') %}checked{% endif %}> Complete
+                        </label>
+                    </div>
                 </fieldset>
             </div>
 

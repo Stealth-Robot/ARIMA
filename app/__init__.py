@@ -149,6 +149,12 @@ def create_app():
                     db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
                     logger.info('Added missing theme column: %s', col.name)
 
+            # 1b. Add is_complete column to artist table if missing
+            artist_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('artist')"))}
+            if 'is_complete' not in artist_cols:
+                db.session.execute(db.text("ALTER TABLE artist ADD COLUMN is_complete BOOLEAN NOT NULL DEFAULT 0"))
+                logger.info('Added is_complete column to artist table')
+
             # 2. Create missing personal Theme rows
             existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
             missing = User.query.filter(~User.id.in_(existing_user_ids)).all() if existing_user_ids else User.query.all()

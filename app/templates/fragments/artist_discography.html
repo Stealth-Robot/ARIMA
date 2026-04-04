@@ -6,7 +6,7 @@
         {% else %}
         {{ artist.name }}
         {% endif %}
-        {% if artist.is_disbanded %}<span class="text-sm font-normal" style="color: var(--text-secondary);">(disbanded)</span>{% endif %}
+        {% if artist.is_disbanded and not (session.get('edit_mode', False) and current_user.is_editor_or_admin) %}<span class="text-sm font-normal" style="color: var(--text-secondary);">(disbanded)</span>{% endif %}
         {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
         <span class="text-sm font-normal edit-inline" style="cursor: pointer; color: var(--text-secondary);"
               data-gender-id="{{ artist.gender_id }}"
@@ -14,6 +14,16 @@
         <span class="text-sm font-normal edit-inline" style="cursor: pointer; color: var(--text-secondary);"
               data-country-id="{{ artist.country_id }}"
               onclick="showCountryEdit(event, {{ artist.id }}, this, _allCountries, {{ artist.country_id }})">{{ artist.country.country if artist.country else 'country' }}</span>
+        <label class="text-sm font-normal" style="color: var(--text-secondary); margin-left: 8px; cursor: pointer;">
+            <input type="checkbox" {% if artist.is_disbanded %}checked{% endif %}
+                   onchange="fetch('/edit/artist/{{ artist.id }}/is-disbanded', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
+                   style="cursor: pointer;"> Disbanded
+        </label>
+        <label class="text-sm font-normal" style="color: var(--text-secondary); margin-left: 8px; cursor: pointer;">
+            <input type="checkbox" {% if artist.is_complete %}checked{% endif %}
+                   onchange="fetch('/edit/artist/{{ artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
+                   style="cursor: pointer;"> Complete
+        </label>
         {% endif %}
     </h2>
     {% if soloist_parent %}

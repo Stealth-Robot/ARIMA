@@ -69,6 +69,7 @@ class Artist(db.Model):
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     last_updated = db.Column(db.Text)
     is_disbanded = db.Column(db.Boolean, nullable=False, default=False)
+    is_complete = db.Column(db.Boolean, nullable=False, default=False)
 
     gender = db.relationship('GroupGender')
     country = db.relationship('Country')
