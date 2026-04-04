@@ -127,6 +127,10 @@ var _songArtists = {
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
                 <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
                       data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move up"
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -253,6 +257,10 @@ var _songArtists = {
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>
                 <span class="edit-inline merge-btn" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Merge with another song"
                       data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move up"
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}

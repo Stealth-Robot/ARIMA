@@ -1936,6 +1936,21 @@ function confirmRemoveFromAlbum(songId, albumId, songName, albumName) {
     });
 }
 
+/* Reorder song within album */
+
+function reorderSong(songId, albumId, direction) {
+    fetch('/edit/album/' + albumId + '/reorder-song', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+        body: 'song_id=' + songId + '&direction=' + direction,
+    }).then(function(r) {
+        if (!r.ok) throw new Error('failed');
+        window.location.reload();
+    }).catch(function() {
+        showToast('Reorder failed — try again');
+    });
+}
+
 /* Shared delete confirmation modal */
 
 var _deleteIsAjax = false;
