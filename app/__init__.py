@@ -101,6 +101,14 @@ def create_app():
             response.headers['Cache-Control'] = 'no-store'
         return response
 
+    # CSRF token expired — redirect to same page instead of showing ugly error
+    from flask_wtf.csrf import CSRFError
+
+    @flask_app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        from flask import request, redirect
+        return redirect(request.url)
+
     # 404 error page
     @flask_app.errorhandler(404)
     def page_not_found(e):
