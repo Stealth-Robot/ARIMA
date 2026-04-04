@@ -379,8 +379,9 @@ var _songArtists = {
             {% endif %}
             {% endfor %}
         </select>
+        <input type="text" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
         <label class="block text-sm mb-1" style="color:var(--text-primary);">Password</label>
-        <input type="password" id="convert-pw" class="w-full px-3 py-2 border rounded mb-3 text-sm" style="border-color:var(--border);">
+        <input type="password" id="convert-pw" autocomplete="current-password" class="w-full px-3 py-2 border rounded mb-3 text-sm" style="border-color:var(--border);">
         <div class="flex gap-2 justify-end">
             <button type="button" onclick="document.getElementById('convert-artist-modal').style.display='none'"
                     class="px-4 py-2 rounded text-sm" style="background:var(--button-secondary); color:var(--text-primary);">Cancel</button>
@@ -483,6 +484,7 @@ function submitConvertArtist() {
         <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary); white-space:pre-line;"></p>
         <form id="confirm-delete-form" method="POST" action="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="username" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
             <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
             <input type="password" name="password" id="confirm-delete-pw" required autocomplete="current-password"
                    class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">

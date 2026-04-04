@@ -12,6 +12,7 @@
         <label class="block text-sm mb-1" style="color: var(--text-primary);">Database file (.db)</label>
         <input type="file" name="database" accept=".db" required
                class="w-full mb-4 text-sm" style="color: var(--text-primary);">
+        <input type="text" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
         <label class="block text-sm mb-1" style="color: var(--text-primary);">Password</label>
         <input type="password" name="password" required autocomplete="current-password"
                class="w-full px-3 py-2 border rounded mb-4" style="border-color: var(--border); color: var(--text-primary); background: var(--bg-primary);">

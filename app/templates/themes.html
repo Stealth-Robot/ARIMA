@@ -97,6 +97,7 @@
         <p class="text-sm mb-4" style="color:var(--text-secondary);">This will reset all colours in your personal theme to default.</p>
         <form method="POST" action="{{ url_for('themes.theme_reset') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
             <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
             <input type="password" name="password" required autocomplete="current-password"
                    class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
