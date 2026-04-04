@@ -89,8 +89,8 @@ var _songArtists = {
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
-                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add existing song to album"
-                      onclick="showAlbumSongSearch(event, {{ album.id }}, this)">&#43;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
+                      onclick="showAlbumSongSearch(event, {{ album.id }}, {{ artist.id }}, this)">&#43;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
@@ -217,8 +217,8 @@ var _songArtists = {
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
-                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add existing song to album"
-                      onclick="showAlbumSongSearch(event, {{ album.id }}, this)">&#43;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
+                      onclick="showAlbumSongSearch(event, {{ album.id }}, {{ child.artist.id }}, this)">&#43;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}

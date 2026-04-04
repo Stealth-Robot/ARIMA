@@ -917,7 +917,7 @@ function closeAlbumSongSearchPopover() {
     }
 }
 
-function showAlbumSongSearch(event, albumId, span) {
+function showAlbumSongSearch(event, albumId, artistId, span) {
     event.stopPropagation();
     closeAlbumSongSearchPopover();
     closeAlbumMovePopover();
@@ -935,7 +935,7 @@ function showAlbumSongSearch(event, albumId, span) {
 
     var searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.placeholder = 'Search songs...';
+    searchInput.placeholder = 'Search existing or type new song name...';
     searchInput.style.cssText = 'width:100%; font-size:11px; padding:4px 6px; margin-bottom:6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
     popover.appendChild(searchInput);
 
@@ -944,6 +944,171 @@ function showAlbumSongSearch(event, albumId, span) {
     popover.appendChild(listContainer);
 
     var debounceTimer = null;
+
+    var _createSongNum = 0;
+
+    function showCreateSongForm(name) {
+        // Switch popover to creation mode
+        listContainer.innerHTML = '';
+        searchInput.style.display = 'none';
+        title.textContent = 'Create new song:';
+        popover.style.width = '380px';
+
+        _createSongNum++;
+        var sn = _createSongNum;
+
+        var form = document.createElement('div');
+
+        // Song name
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = name;
+        nameInput.placeholder = 'Song name';
+        nameInput.className = 'create-song-name';
+        nameInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
+        form.appendChild(nameInput);
+
+        // Checkboxes row
+        var cbRow = document.createElement('div');
+        cbRow.style.cssText = 'display:flex; gap:10px; margin-bottom:6px;';
+        cbRow.innerHTML =
+            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-promoted" style="margin-right:2px;"> Promoted</label>' +
+            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-remix" style="margin-right:2px;"> Remix</label>';
+        form.appendChild(cbRow);
+
+        // Artists section
+        var artistLabel = document.createElement('div');
+        artistLabel.style.cssText = 'font-size:10px; font-weight:bold; color:var(--text-secondary); margin-bottom:3px;';
+        artistLabel.textContent = 'Artists:';
+        form.appendChild(artistLabel);
+
+        var artistContainer = document.createElement('div');
+        artistContainer.id = 'create-song-artists-' + sn;
+        artistContainer.style.cssText = 'margin-bottom:4px;';
+        form.appendChild(artistContainer);
+
+        // Artist dropdown
+        var artistSelect = document.createElement('select');
+        artistSelect.style.cssText = 'font-size:11px; padding:2px 4px; border:1px solid var(--border,#ccc); border-radius:3px; margin-bottom:8px;';
+        function refreshArtistSelect() {
+            var used = [];
+            artistContainer.querySelectorAll('.create-artist-row').forEach(function(r) {
+                if (r.dataset.artistId) used.push(parseInt(r.dataset.artistId));
+            });
+            var opts = '<option value="">+ Add artist...</option>';
+            if (typeof _allArtists !== 'undefined') {
+                _allArtists.forEach(function(a) {
+                    if (used.indexOf(a.id) === -1) {
+                        opts += '<option value="' + a.id + '">' + a.name.replace(/</g, '&lt;') + '</option>';
+                    }
+                });
+            }
+            artistSelect.innerHTML = opts;
+            artistSelect.value = '';
+        }
+
+        function addArtistRow(aid, aname, isMain) {
+            var row = document.createElement('div');
+            row.className = 'create-artist-row';
+            row.dataset.artistId = aid;
+            row.style.cssText = 'display:flex; align-items:center; gap:4px; margin-bottom:2px;';
+            var nameSpan = document.createElement('span');
+            nameSpan.textContent = aname;
+            nameSpan.style.cssText = 'font-size:11px;';
+            row.appendChild(nameSpan);
+            var roleSelect = document.createElement('select');
+            roleSelect.className = 'create-artist-role';
+            roleSelect.style.cssText = 'font-size:10px; padding:1px 3px; border:1px solid var(--border,#ccc); border-radius:3px;';
+            roleSelect.innerHTML = '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
+                                   '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>';
+            row.appendChild(roleSelect);
+            if (artistContainer.children.length > 0) {
+                var removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = 'x';
+                removeBtn.style.cssText = 'font-size:10px; color:var(--delete-button,#DC2626); cursor:pointer; background:none; border:none; padding:0 2px;';
+                removeBtn.addEventListener('click', function() { row.remove(); refreshArtistSelect(); });
+                row.appendChild(removeBtn);
+            }
+            artistContainer.appendChild(row);
+            refreshArtistSelect();
+        }
+
+        artistSelect.addEventListener('change', function() {
+            var id = parseInt(artistSelect.value);
+            if (!id) return;
+            var artist = _allArtists.find(function(a) { return a.id === id; });
+            if (artist) addArtistRow(id, artist.name, false);
+        });
+        form.appendChild(artistSelect);
+
+        // Auto-add current artist as main
+        var currentName = 'Current Artist';
+        if (typeof _allArtists !== 'undefined') {
+            var found = _allArtists.find(function(a) { return a.id === artistId; });
+            if (found) currentName = found.name;
+        }
+        addArtistRow(artistId, currentName, true);
+
+        // Buttons row
+        var btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex; gap:6px; justify-content:flex-end;';
+        var cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'Back';
+        cancelBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:3px; background:var(--button-secondary,#e5e7eb); color:var(--text-primary); border:none; cursor:pointer;';
+        cancelBtn.addEventListener('click', function() {
+            searchInput.style.display = '';
+            title.textContent = 'Add song to album:';
+            popover.style.width = '320px';
+            doSearch(searchInput.value.trim());
+        });
+        btnRow.appendChild(cancelBtn);
+        var submitBtn = document.createElement('button');
+        submitBtn.type = 'button';
+        submitBtn.textContent = 'Create Song';
+        submitBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:3px; background:var(--edit-on-button,#2563EB); color:var(--button-text,#fff); border:none; cursor:pointer;';
+        submitBtn.addEventListener('click', function() {
+            var songName = form.querySelector('.create-song-name').value.trim();
+            if (!songName) { showToast('Song name is required'); return; }
+            var artists = [];
+            artistContainer.querySelectorAll('.create-artist-row').forEach(function(row) {
+                var role = row.querySelector('.create-artist-role');
+                artists.push({ artist_id: parseInt(row.dataset.artistId), is_main: role.value === 'main' });
+            });
+            if (!artists.length || !artists.some(function(a) { return a.is_main; })) {
+                showToast('At least one main artist is required'); return;
+            }
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/album/' + albumId + '/create-song', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    name: songName,
+                    artists: artists,
+                    is_promoted: form.querySelector('.create-song-promoted').checked,
+                    is_remix: form.querySelector('.create-song-remix').checked,
+                }),
+            }).then(function(r) {
+                if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
+                if (!r.ok) throw new Error('failed');
+                return r.json();
+            }).then(function() {
+                closeAlbumSongSearchPopover();
+                window.location.reload();
+            }).catch(function() {
+                closeAlbumSongSearchPopover();
+            });
+        });
+        btnRow.appendChild(submitBtn);
+        form.appendChild(btnRow);
+
+        listContainer.appendChild(form);
+        nameInput.focus();
+        nameInput.select();
+    }
 
     function doSearch(query) {
         if (query.length < 2) {
@@ -954,13 +1119,28 @@ function showAlbumSongSearch(event, albumId, span) {
             .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
             .then(function(results) {
                 listContainer.innerHTML = '';
+                // Always show create-new option at the top
+                var createBtn = document.createElement('div');
+                createBtn.style.cssText = 'padding:4px 6px; font-size:12px; cursor:pointer; border-radius:2px; border-bottom:1px solid var(--border,#ccc); padding-bottom:6px; margin-bottom:4px;';
+                var plus = document.createElement('span');
+                plus.textContent = '+ Create "' + query + '"';
+                plus.style.cssText = 'color:var(--link,#2563EB); font-weight:bold;';
+                createBtn.appendChild(plus);
+                createBtn.addEventListener('mouseenter', function() { createBtn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                createBtn.addEventListener('mouseleave', function() { createBtn.style.background = ''; });
+                createBtn.addEventListener('click', function(e) { e.stopPropagation(); showCreateSongForm(query); });
+                listContainer.appendChild(createBtn);
                 if (!results.length) {
                     var empty = document.createElement('div');
-                    empty.textContent = 'No matches';
+                    empty.textContent = 'No existing songs found';
                     empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
                     listContainer.appendChild(empty);
                     return;
                 }
+                var divider = document.createElement('div');
+                divider.textContent = 'Or add existing:';
+                divider.style.cssText = 'font-size:10px; font-weight:bold; color:var(--text-secondary); padding:4px 6px 2px;';
+                listContainer.appendChild(divider);
                 results.forEach(function(item) {
                     var btn = document.createElement('div');
                     btn.style.cssText = 'padding:4px 6px; font-size:12px; cursor:pointer; border-radius:2px;';

@@ -781,6 +781,61 @@ def album_add_song(album_id):
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/album/<int:album_id>/create-song', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_create_song(album_id):
+    """Create a brand-new song and add it to this album.
+
+    Accepts JSON body: {name, artists: [{artist_id, is_main}], is_promoted, is_remix}
+    """
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    artists = data.get('artists') or []
+    if not name or not artists:
+        abort(400)
+
+    # Validate at least one main artist
+    has_main = any(a.get('is_main') for a in artists)
+    if not has_main:
+        return json.dumps({'error': 'At least one main artist is required'}), 400, {'Content-Type': 'application/json'}
+
+    song = Song(
+        name=name,
+        submitted_by_id=current_user.id,
+        is_promoted=bool(data.get('is_promoted')),
+        is_remix=bool(data.get('is_remix')),
+    )
+    db.session.add(song)
+    db.session.flush()
+
+    next_track = db.session.execute(db.text(
+        'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+    ), {'aid': album_id}).scalar()
+
+    db.session.add(AlbumSong(album_id=album_id, song_id=song.id, track_number=next_track))
+
+    seen = set()
+    for a in artists:
+        aid = int(a['artist_id'])
+        if aid in seen:
+            continue
+        seen.add(aid)
+        db.session.add(ArtistSong(artist_id=aid, song_id=song.id, artist_is_main=bool(a.get('is_main'))))
+
+    log_change(current_user,
+               f'Created "{name}" song in "{album.name}" album',
+               song=song, album=album)
+    db.session.commit()
+
+    return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/add-to-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
