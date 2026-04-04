@@ -397,30 +397,47 @@ function showInlineEdit(event, endpoint, span) {
     });
 }
 
-function showInlineDateEdit(event, endpoint, span, currentFullDate) {
-    event.stopPropagation();
-
-    const original = span.textContent.trim();
-    const input = document.createElement('input');
+/**
+ * Apply yyyy-mm-dd auto-formatting to a text input.
+ * Strips non-digits, auto-inserts hyphens, caps at 10 chars.
+ */
+function applyDateFormat(input) {
     input.type = 'text';
-    input.value = currentFullDate || '';
     input.placeholder = 'yyyy-mm-dd';
     input.maxLength = 10;
-    input.style.cssText = `
-        border: 1px solid var(--link, #2563EB); border-radius: 2px;
-        font-size: inherit; font-family: monospace; padding: 0 2px;
-        background: var(--bg-primary); color: var(--text-primary);
-        width: 100px;
-    `;
-
+    input.style.fontFamily = 'monospace';
     input.addEventListener('input', function() {
         var v = this.value.replace(/[^0-9]/g, '');
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
         if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
         if (v.length > 10) v = v.slice(0, 10);
         this.value = v;
-        this.style.borderColor = 'var(--link, #2563EB)';
+        this.style.borderColor = '';
     });
+}
+
+// Auto-apply to all date inputs with the data-date-format attribute
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+});
+// Also apply after HTMX swaps (for fragments loaded dynamically)
+document.addEventListener('htmx:afterSettle', function(e) {
+    e.detail.elt.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+});
+
+function showInlineDateEdit(event, endpoint, span, currentFullDate) {
+    event.stopPropagation();
+
+    const original = span.textContent.trim();
+    const input = document.createElement('input');
+    input.value = currentFullDate || '';
+    input.style.cssText = `
+        border: 1px solid var(--link, #2563EB); border-radius: 2px;
+        font-size: inherit; padding: 0 2px;
+        background: var(--bg-primary); color: var(--text-primary);
+        width: 100px;
+    `;
+    applyDateFormat(input);
 
     span.replaceWith(input);
     input.focus();

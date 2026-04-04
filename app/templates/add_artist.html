@@ -137,7 +137,7 @@ function addAlbum() {
             '</div>' +
             '<div class="w-40">' +
                 '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
-                '<input type="date" data-album="' + albumCount + '" data-field="release_date" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border); font-family: monospace;">' +
             '</div>' +
             '<div class="w-32">' +
                 '<label class="block text-sm mb-1">Type</label>' +
@@ -156,6 +156,7 @@ function addAlbum() {
             '<button type="button" onclick="addSong(' + albumCount + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
         '</div>';
     container.appendChild(div);
+    if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
     addSong(albumCount);
 }
 
@@ -438,7 +439,7 @@ document.getElementById('artist_name').addEventListener('input', function() {
 document.getElementById('add-artist-form').addEventListener('submit', function() {
     formDirty = false;
     const albums = [];
-    document.querySelectorAll('[id^="album-"]').forEach(function(albumDiv) {
+    document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]').forEach(function(albumDiv) {
         const albumNum = albumDiv.id.split('-')[1];
         if (albumDiv.dataset.existingAlbumId) {
             albums.push({ existing_album_id: parseInt(albumDiv.dataset.existingAlbumId), name: 'existing' });
@@ -527,7 +528,7 @@ function validateForm() {
     if (!document.querySelector('[name="country_id"]').value) valid = false;
 
     // At least one album
-    var albums = document.querySelectorAll('[id^="album-"]');
+    var albums = document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]');
     if (!albums.length) valid = false;
 
     albums.forEach(function(albumDiv) {
@@ -613,7 +614,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                     '</div>' +
                     '<div class="w-40">' +
                         '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
-                        '<input type="date" data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border); font-family: monospace;">' +
                     '</div>' +
                     '<div class="w-32">' +
                         '<label class="block text-sm mb-1">Type</label>' +
@@ -632,6 +633,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                     '<button type="button" onclick="addSong(' + num + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
                 '</div>';
             container.appendChild(div);
+            if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
 
             // Set album type
             if (albumData.album_type_id) {
