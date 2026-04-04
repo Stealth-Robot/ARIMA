@@ -38,7 +38,7 @@
             <td class="px-2 py-1 font-semibold" style="border: 1px solid var(--grid-line); overflow: hidden;">Overall Average (weighted)</td>
             {% for u in users %}
             <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);
-                {% if summary.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(summary.per_user[u.id].pct_rated) }};{% endif %}">
+                {% if summary.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(summary.per_user[u.id].pct_rated) }}; color: var(--unrated-text);{% endif %}">
                 {{ summary.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
@@ -121,7 +121,7 @@
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             {# Global avg % — coloured (set 1) #}
             <td class="px-2 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
-                {% if stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(stats.global_avg_pct) }};{% endif %}">
+                {% if stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(stats.global_avg_pct) }}; color: var(--unrated-text);{% endif %}">
                 {{ stats.global_avg_pct }}
             </td>
             {# Global avg unrated (set 2) #}
@@ -136,7 +136,7 @@
             {# Set 1: % rated per user — heat mapped #}
             {% for u in users %}
             <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
-                {% if stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(stats.per_user[u.id].pct_rated) }};{% endif %}">
+                {% if stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(stats.per_user[u.id].pct_rated) }}; color: var(--unrated-text);{% endif %}">
                 {{ stats.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
