@@ -44,6 +44,8 @@ def rate():
 
     # Upsert: get existing or create new
     existing = db.session.get(Rating, (song_id, target_user_id))
+    old_rating = existing.rating if existing else None
+    old_note = existing.note if existing else None
 
     if existing:
         if rating_value is not None:
@@ -64,15 +66,19 @@ def rate():
         db.session.delete(existing)
         existing = None
 
+    # Only log if something actually changed
+    rating_changed = rating_value is not None and rating_value != old_rating
+    note_changed = note_sent and note != old_note
+
     song_obj = db.session.get(Song, song_id)
-    if song_obj:
+    if song_obj and (rating_changed or note_changed):
         on_behalf = ''
         if target_user_id != current_user.id:
             target_user = db.session.get(User, target_user_id)
             on_behalf = f' for {target_user.username}' if target_user else f' for user {target_user_id}'
-        if rating_value is not None:
+        if rating_changed:
             log_change(current_user, f'Rated "{song_obj.name}" song {rating_value}/5{on_behalf}', song=song_obj, change_type='rating')
-        elif note_sent:
+        elif note_changed:
             log_change(current_user, f'Updated note on "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
     try:
