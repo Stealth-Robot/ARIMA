@@ -136,39 +136,27 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
-    # One-time migration: add any new theme colour columns to existing DB
+    # Startup migrations — single app context block to minimise DB connection overhead
     with flask_app.app_context():
         try:
             from app.models.theme import Theme
+            from app.models.user import User
+
+            # 1. Add any new theme colour columns
             existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
             for col in Theme.__table__.columns:
                 if col.name not in existing and col.name not in ('id', 'name', 'user_id'):
                     db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
                     logger.info('Added missing theme column: %s', col.name)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            pass  # DB may not exist yet
 
-    # One-time migration: create missing personal Theme rows for users
-    with flask_app.app_context():
-        try:
-            from app.models.theme import Theme
-            from app.models.user import User
-            users = User.query.all()
-            for u in users:
-                if not Theme.query.filter_by(user_id=u.id).first():
-                    db.session.add(Theme(user_id=u.id))
-                    logger.info('Created missing theme for user: %s', u.username)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            pass  # DB may not exist yet
+            # 2. Create missing personal Theme rows
+            existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
+            missing = User.query.filter(~User.id.in_(existing_user_ids)).all() if existing_user_ids else User.query.all()
+            for u in missing:
+                db.session.add(Theme(user_id=u.id))
+                logger.info('Created missing theme for user: %s', u.username)
 
-    # Validate system themes on startup
-    with flask_app.app_context():
-        try:
-            from app.models.theme import Theme
+            # 3. Validate system themes
             colour_cols = [c.name for c in Theme.__table__.columns
                            if c.name not in ('id', 'name', 'user_id')]
             for theme_id, theme_name in ((0, 'Classic'), (1, 'Dark')):
@@ -177,12 +165,8 @@ def create_app():
                     for col in colour_cols:
                         if getattr(theme, col) is None:
                             logger.warning('%s theme (id=%d) has NULL value for column: %s', theme_name, theme_id, col)
-        except Exception:
-            pass  # DB may not exist yet (first run before seed)
 
-    # One-time schema migration: make rating.rating nullable (note-only entries)
-    with flask_app.app_context():
-        try:
+            # 4. Make rating.rating nullable (note-only entries)
             row = db.session.execute(
                 db.text("SELECT sql FROM sqlite_master WHERE type='table' AND name='rating'")
             ).scalar()
@@ -200,26 +184,19 @@ def create_app():
                     'FOREIGN KEY(song_id) REFERENCES song (id) ON DELETE CASCADE, '
                     'FOREIGN KEY(user_id) REFERENCES user (id) ON DELETE CASCADE)'
                 ))
-                db.session.execute(db.text(
-                    'INSERT INTO rating_new SELECT * FROM rating'
-                ))
+                db.session.execute(db.text('INSERT INTO rating_new SELECT * FROM rating'))
                 db.session.execute(db.text('DROP TABLE rating'))
                 db.session.execute(db.text('ALTER TABLE rating_new RENAME TO rating'))
                 db.session.execute(db.text('PRAGMA foreign_keys=ON'))
-                db.session.commit()
                 logger.info('Rating table migration complete')
-        except Exception:
-            db.session.rollback()
-            pass  # DB may not exist yet
 
-    # One-time migration: add missing indexes for existing databases
-    with flask_app.app_context():
-        try:
+            # 5. Add missing indexes
             for idx_sql in [
                 'CREATE INDEX IF NOT EXISTS ix_artist_artist_relationship ON artist_artist (relationship)',
                 'CREATE INDEX IF NOT EXISTS ix_rating_user_id ON rating (user_id)',
             ]:
                 db.session.execute(db.text(idx_sql))
+
             db.session.commit()
         except Exception:
             db.session.rollback()
