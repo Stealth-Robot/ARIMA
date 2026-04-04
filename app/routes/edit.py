@@ -348,6 +348,10 @@ def add_album_to_artist(artist_id):
             already = AlbumSong.query.filter_by(song_id=existing_song_id, album_id=album.id).first()
             if not already:
                 db.session.add(AlbumSong(album_id=album.id, song_id=existing_song_id, track_number=track_num))
+            # Ensure the current artist is linked to this song so the album appears in their discography
+            artist_link = ArtistSong.query.filter_by(artist_id=artist_id, song_id=existing_song_id).first()
+            if not artist_link:
+                db.session.add(ArtistSong(artist_id=artist_id, song_id=existing_song_id, artist_is_main=False))
         else:
             # Create a new song
             new_song_count += 1
