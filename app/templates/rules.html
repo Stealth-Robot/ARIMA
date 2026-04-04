@@ -60,42 +60,67 @@
 
         <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">What you can edit inline</h3>
         <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Album name, release date &amp; genres</strong> — Click any of these in the album header to edit. Genres open a checkbox picker.</li>
+            <li><strong>Artist name</strong> — Click the artist name at the top of the page to rename them.</li>
+            <li><strong>Album name &amp; genres</strong> — Click any of these in the album header to edit. Genres open a checkbox picker.</li>
+            <li><strong>Release date</strong> — Click the year in the album header to open a date picker.</li>
             <li><strong>Song name</strong> — Click a song name to rename it.</li>
             <li><strong>Remix / Promoted</strong> — Tick the checkboxes in the extra columns that appear in edit mode.</li>
-            <li><strong>Artist country</strong> — Click the country label next to the artist name to change it.</li>
+            <li><strong>Artist gender &amp; country</strong> — Click the labels next to the artist name to change them.</li>
             <li><strong>Rate for other users</strong> — In edit mode, editors and admins can click any user's rating cell to rate on their behalf.</li>
         </ul>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Song artists</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Manage artists</strong> — Click the &#9834; icon next to a song to open the artist popover. From here you can add or remove artists and toggle each between Main and Featured.</li>
-            <li><strong>Collaborations</strong> — Songs with multiple main artists automatically show "feat." labels. These update live as you change roles.</li>
-        </ul>
+        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Song controls</h3>
+        <p class="mb-2">Each song row shows a set of icon buttons in edit mode:</p>
+        <table class="text-xs mt-2 mb-4" style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">Icon</th>
+                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">What it does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#8693;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Move song to a different album (searchable picker, current artist shown first)</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#43;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add song to an additional album (the song appears in both)</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border); color: var(--delete-button);">&#10005;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Delete song permanently (password required)</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#128279;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Remove song from this album only (if it's the song's only album, the song is deleted)</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#9834;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Manage artists — add/remove artists and toggle between Main and Featured</td></tr>
+                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#10697;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Merge with another song (combines ratings and removes the duplicate)</td></tr>
+            </tbody>
+        </table>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Moving &amp; organising</h3>
+        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Collaborations</h3>
         <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Move a song</strong> — The &#8693; icon next to each song lets you move it to a different album.</li>
+            <li>Songs with additional main artists show <em>"with Artist"</em> next to the song name.</li>
+            <li>Songs with featured artists show <em>"feat. Artist"</em>.</li>
+            <li>These labels update automatically when you change artist roles via the &#9834; popover.</li>
         </ul>
 
         <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Adding content</h3>
         <ul class="list-disc ml-4 mb-3 space-y-1">
             <li><strong>Add Album</strong> — The green button at the bottom of the artist page. Set a name, type, date, genres, and songs. You can add collaborating artists to each song.</li>
+            <li><strong>Add song to album</strong> — Click the &#43; icon in the album header row (after genres). Search for an existing song to link it, or create a brand-new song with full artist management (main/featured roles).</li>
             <li><strong>Add Artist</strong> — Available from the navbar in edit mode. Create a new artist with albums, songs, genres, and collaborations.</li>
         </ul>
 
         <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Subunits &amp; Soloists</h3>
         <ul class="list-disc ml-4 mb-3 space-y-1">
             <li><strong>Convert to Subunit / Soloist</strong> — Use the buttons at the bottom of an artist page to link them under a parent artist. You'll pick the parent from a dropdown and confirm with your password. Disabled if the artist already has their own subunits or soloists.</li>
-            <li><strong>Unlink</strong> — Click the &#128279; icon next to a subunit or soloist header to convert them back to a standalone artist. Their songs and albums are not affected. Password required.</li>
+            <li><strong>Unlink</strong> — Click the &#128279; icon next to a subunit or soloist header to convert them back to a standalone artist. Their songs and albums are not affected.</li>
         </ul>
 
         <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Deleting</h3>
         <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Delete a song</strong> — The red &#10005; next to each song name. Password required.</li>
-            <li><strong>Delete an album</strong> — The red &#10005; to the left of the album header. All songs and ratings not on another album will also be deleted. Password required.</li>
+            <li><strong>Delete a song</strong> — The red &#10005; next to each song name. Password required. Shows the song name in the confirmation popup.</li>
+            <li><strong>Delete an album</strong> — The red &#10005; to the left of the album header. The confirmation popup shows how many songs and ratings will be deleted. Password required.</li>
             <li><strong>Delete an artist</strong> — The red button at the bottom of the page. Removes the artist and everything under them. Password required.</li>
             <li><strong>Delete a changelog entry</strong> — Admins only. A small &#10005; appears next to each entry on the Changelog page in edit mode.</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold mt-6 mb-2">Profile &amp; Account</h2>
+        <ul class="list-disc ml-4 mb-4 space-y-1">
+            <li><strong>Profile image</strong> — Set a custom image URL on your profile page.</li>
+            <li><strong>Reset password</strong> — Change your password from the profile page. Enter your new password and confirm it.</li>
+            <li><strong>Settings</strong> — Theme, filters (featured/remix), and album sort order are all configurable from your profile and saved between sessions.</li>
         </ul>
 
         <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Changelog</h3>

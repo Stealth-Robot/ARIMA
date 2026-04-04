@@ -90,6 +90,35 @@
         </button>
     </form>
 
+    <!-- Reset Password -->
+    {% if not current_user.is_system_or_guest %}
+    <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Reset Password</h2>
+        {% if session.get('pw_error') %}
+        <p class="text-sm mb-3" style="color: var(--delete-button);">{{ session.pop('pw_error') }}</p>
+        {% elif session.get('pw_success') %}
+        <p class="text-sm mb-3" style="color: var(--edit-on-button);">{{ session.pop('pw_success') }}</p>
+        {% endif %}
+        <form method="POST" action="{{ url_for('profile.reset_password') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1">New Password</label>
+                <input type="password" name="new_password" required autocomplete="new-password"
+                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1">Confirm Password</label>
+                <input type="password" name="confirm_password" required autocomplete="new-password"
+                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            </div>
+            <button type="submit" class="px-6 py-2 rounded text-white"
+                    style="background-color: var(--button-primary);">
+                Reset Password
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
     {% if current_user.role_id == 0 %}
     <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
         <h2 class="font-semibold mb-3">Admin</h2>

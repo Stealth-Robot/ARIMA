@@ -133,3 +133,27 @@ def toggle_edit_mode():
         return '', 403
     session['edit_mode'] = not session.get('edit_mode', False)
     return redirect(request.referrer or url_for('home.home'))
+
+
+@profile_bp.route('/profile/reset-password', methods=['POST'])
+@login_required
+def reset_password():
+    """Reset the current user's password."""
+    if current_user.is_system_or_guest:
+        return '', 403
+    new_password = request.form.get('new_password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+    if not new_password or not confirm_password:
+        session['pw_error'] = 'Both fields are required.'
+        return redirect(url_for('profile.profile'))
+    if new_password != confirm_password:
+        session['pw_error'] = 'Passwords do not match.'
+        return redirect(url_for('profile.profile'))
+    if len(new_password) < 4:
+        session['pw_error'] = 'Password must be at least 4 characters.'
+        return redirect(url_for('profile.profile'))
+    from app.routes.auth import _hash_password
+    current_user.password = _hash_password(new_password)
+    db.session.commit()
+    session['pw_success'] = 'Password updated.'
+    return redirect(url_for('profile.profile'))
