@@ -196,31 +196,40 @@ def _get_filtered_navbar():
 
 
 def _get_collab_labels(song_ids, artist_id):
-    """Return {song_id: 'feat. Artist1, Artist2'} for songs with multiple main artists.
+    """Return {song_id: 'with/feat. Artist1, Artist2'} for songs with other artists.
 
-    For each song in song_ids that has more than one ArtistSong row with artist_is_main=True,
-    return a label listing the OTHER main artists (not artist_id).
+    'with Artist' for other main artists, 'feat. Artist' for featured artists.
     """
     if not song_ids:
         return {}
     rows = ArtistSong.query.filter(
         ArtistSong.song_id.in_(song_ids),
-        ArtistSong.artist_is_main == True,
         ArtistSong.artist_id != artist_id,
     ).all()
     if not rows:
         return {}
     artist_ids = {row.artist_id for row in rows}
     artists_by_id = {a.id: a for a in Artist.query.filter(Artist.id.in_(artist_ids)).all()}
-    labels = {}
+    # Group by song: separate main vs featured
+    song_main = {}
+    song_feat = {}
     for row in rows:
         other_artist = artists_by_id.get(row.artist_id)
         if not other_artist:
             continue
-        if row.song_id not in labels:
-            labels[row.song_id] = []
-        labels[row.song_id].append(other_artist.name)
-    return {sid: 'feat. ' + ', '.join(names) for sid, names in labels.items()}
+        if row.artist_is_main:
+            song_main.setdefault(row.song_id, []).append(other_artist.name)
+        else:
+            song_feat.setdefault(row.song_id, []).append(other_artist.name)
+    labels = {}
+    for sid in set(list(song_main.keys()) + list(song_feat.keys())):
+        parts = []
+        if sid in song_main:
+            parts.append('with ' + ', '.join(song_main[sid]))
+        if sid in song_feat:
+            parts.append('feat. ' + ', '.join(song_feat[sid]))
+        labels[sid] = ' '.join(parts)
+    return labels
 
 
 def _build_discography(artist):
