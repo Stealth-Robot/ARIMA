@@ -16,4 +16,3 @@ class Config:
 
 class ProdConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:////data/arima.db'
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
