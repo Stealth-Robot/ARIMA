@@ -170,7 +170,7 @@ def get_filtered_navbar():
         genre_id = session.get('genre')
 
     if country_id is not None:
-        artists = [a for a in artists if a.country_id == country_id]
+        artists = [a for a in artists if a.country_id == country_id or a.name == 'Misc. Artists']
 
     if genre_id is not None:
         # Single query: find all artist IDs that have at least one song in an album with this genre
@@ -198,7 +198,7 @@ def get_filtered_navbar():
                 valid_ids.add(aid)
             elif aid in child_to_parent:
                 valid_ids.add(child_to_parent[aid])
-        artists = [a for a in artists if a.id in valid_ids]
+        artists = [a for a in artists if a.id in valid_ids or a.name == 'Misc. Artists']
 
     misc = [a for a in artists if a.name == 'Misc. Artists']
     rest = [a for a in artists if a.name != 'Misc. Artists']
