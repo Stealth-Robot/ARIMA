@@ -462,12 +462,24 @@ function applyDateFormat(input) {
     input.maxLength = 10;
     input.style.fontFamily = 'monospace';
     input.addEventListener('input', function() {
-        var v = this.value.replace(/[^0-9]/g, '');
+        var raw = this.value;
+        var pos = this.selectionStart;
+        // Count digits before cursor in the old value
+        var digitsBefore = (raw.slice(0, pos).match(/[0-9]/g) || []).length;
+        var v = raw.replace(/[^0-9]/g, '');
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
         if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
         if (v.length > 10) v = v.slice(0, 10);
         this.value = v;
         this.style.borderColor = '';
+        // Restore cursor: find position after the same number of digits
+        var newPos = 0;
+        var count = 0;
+        while (newPos < v.length && count < digitsBefore) {
+            if (/[0-9]/.test(v[newPos])) count++;
+            newPos++;
+        }
+        this.setSelectionRange(newPos, newPos);
     });
 }
 
@@ -481,13 +493,23 @@ function applyDateTimeFormat(input) {
     input.maxLength = 16;
     input.style.fontFamily = 'monospace';
     input.addEventListener('input', function() {
-        var v = this.value.replace(/[^0-9]/g, '');
+        var raw = this.value;
+        var pos = this.selectionStart;
+        var digitsBefore = (raw.slice(0, pos).match(/[0-9]/g) || []).length;
+        var v = raw.replace(/[^0-9]/g, '');
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
         if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
         if (v.length > 10) v = v.slice(0, 10) + ' ' + v.slice(10);
         if (v.length > 13) v = v.slice(0, 13) + ':' + v.slice(13);
         if (v.length > 16) v = v.slice(0, 16);
         this.value = v;
+        var newPos = 0;
+        var count = 0;
+        while (newPos < v.length && count < digitsBefore) {
+            if (/[0-9]/.test(v[newPos])) count++;
+            newPos++;
+        }
+        this.setSelectionRange(newPos, newPos);
     });
 }
 
