@@ -14,6 +14,7 @@
         ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
         ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
+        ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
     ] %}
 
     {% for title, count, url in sections %}

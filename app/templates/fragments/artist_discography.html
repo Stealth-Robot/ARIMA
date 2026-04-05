@@ -144,7 +144,7 @@ var _songArtists = {
                 {% else %}
                 {{ song.name }}
                 {% endif %}
-                {% if song.is_promoted %}<span style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
+                {% if song.is_promoted %}<span class="promoted-tag" style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
             </td>
 
@@ -274,7 +274,7 @@ var _songArtists = {
                 {% else %}
                 {{ song.name }}
                 {% endif %}
-                {% if song.is_promoted %}<span style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
+                {% if song.is_promoted %}<span class="promoted-tag" style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">({{ collab_labels[song.id] }})</span>{% endif %}
             </td>
             {% if edit_mode %}

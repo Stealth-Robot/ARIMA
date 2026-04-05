@@ -53,6 +53,9 @@ def views_page():
             Album.release_date.like('%-01-01'),
         ).count(),
         'potentially_disbanded': _potentially_disbanded_query().count(),
+        'incomplete_tabs': db.session.query(Artist).filter(
+            Artist.is_complete == False,
+        ).count(),
     }
     return render_template('views.html', counts=counts)
 
@@ -157,3 +160,16 @@ def _potentially_disbanded_query():
 def view_potentially_disbanded():
     artists = _potentially_disbanded_query().order_by(Artist.name).all()
     return render_template('fragments/view_potentially_disbanded.html', artists=artists)
+
+
+@views_bp.route('/views/incomplete-tabs')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_incomplete_tabs():
+    artists = db.session.query(Artist).filter(
+        Artist.is_complete == False,
+    ).order_by(Artist.name).all()
+    return render_template('fragments/view_list.html', items=[
+        {'label': f'<a href="/artists/{a.slug}" style="color: var(--link);">{a.name}</a>', 'safe': True}
+        for a in artists
+    ])

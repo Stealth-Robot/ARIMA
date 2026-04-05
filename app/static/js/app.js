@@ -322,13 +322,22 @@ document.addEventListener('keydown', function (e) {
 /* Inline text/date edit — edit mode only */
 
 function updatePromotedStyle(checkbox) {
-    const row = checkbox.closest('tr');
-    const songNameCell = row ? row.querySelector('td:first-child') : null;
-    if (!songNameCell) return;
+    var row = checkbox.closest('tr');
+    var cell = row ? row.querySelector('td:first-child') : null;
+    if (!cell) return;
+    var tag = cell.querySelector('.promoted-tag');
     if (checkbox.checked) {
-        songNameCell.style.backgroundColor = 'var(--promoted-song)';
+        cell.style.borderLeft = '4px solid var(--promoted-song)';
+        if (!tag) {
+            tag = document.createElement('span');
+            tag.className = 'promoted-tag';
+            tag.style.cssText = 'font-size:9px;padding:1px 5px;margin-left:4px;border-radius:3px;background-color:var(--promoted-song);color:var(--text-primary);';
+            tag.textContent = 'promoted';
+            cell.appendChild(tag);
+        }
     } else {
-        songNameCell.style.backgroundColor = '';
+        cell.style.borderLeft = '1px solid var(--grid-line)';
+        if (tag) tag.remove();
     }
 }
 
