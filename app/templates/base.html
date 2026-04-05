@@ -147,6 +147,22 @@
     <!-- Note tooltip (JS-positioned) -->
     <div id="note-tooltip"></div>
 
+    <!-- Flash messages (error category only) -->
+    {% with messages = get_flashed_messages(with_categories=true, category_filter=['error']) %}
+    {% if messages %}
+    <div style="position:fixed; top:50px; left:50%; transform:translateX(-50%); z-index:100; width:auto; max-width:500px;">
+        {% for category, message in messages %}
+        <div style="padding:10px 20px; margin-bottom:6px; border-radius:6px; font-size:13px;
+                    background:var(--delete-button); color:var(--button-text);
+                    box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:pointer;"
+             onclick="this.remove()">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <!-- Main content -->
     <main id="main-content" class="p-4" style="padding-top: 44px;">
         {% block content %}{% endblock %}
