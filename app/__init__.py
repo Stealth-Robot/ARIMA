@@ -242,6 +242,18 @@ def create_app():
             ]:
                 db.session.execute(db.text(idx_sql))
 
+            # 6. Seed updates table if empty
+            update_count = db.session.execute(db.text('SELECT COUNT(*) FROM "update"')).scalar()
+            if update_count == 0:
+                sql_path = os.path.join(os.path.dirname(__file__), '..', 'migrations', 'seed_updates.sql')
+                if os.path.exists(sql_path):
+                    with open(sql_path) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                db.session.execute(db.text(line))
+                    logger.info('Seeded %d updates from seed_updates.sql', db.session.execute(db.text('SELECT COUNT(*) FROM "update"')).scalar())
+
             db.session.commit()
         except Exception:
             db.session.rollback()

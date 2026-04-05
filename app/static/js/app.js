@@ -478,6 +478,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Also apply after HTMX swaps (for fragments loaded dynamically)
 document.addEventListener('htmx:afterSettle', function(e) {
     e.detail.elt.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+
+    // Update artist navbar active indicator after HTMX navigation
+    var header = e.detail.elt.querySelector('[data-current-artist-id]');
+    if (header) {
+        var activeId = header.dataset.currentArtistId;
+        document.querySelectorAll('[data-artist-id]').forEach(function(link) {
+            if (link.dataset.artistId === activeId) {
+                link.style.fontWeight = 'bold';
+                link.style.borderBottom = '2px solid var(--artist-button-text)';
+            } else {
+                link.style.fontWeight = '';
+                link.style.borderBottom = '';
+            }
+        });
+    }
 });
 
 // Force repaint on row after HTMX outerHTML swap to fix collapsed borders
