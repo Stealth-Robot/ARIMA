@@ -1269,8 +1269,11 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
             }).then(function() {
                 closeAlbumSongSearchPopover();
                 window.location.reload();
-            }).catch(function() {
-                closeAlbumSongSearchPopover();
+            }).catch(function(err) {
+                if (err && err.message !== 'bad') {
+                    showToast('Error creating song');
+                    console.error('Create song error:', err);
+                }
             });
         });
         btnRow.appendChild(submitBtn);
@@ -1748,7 +1751,7 @@ function addNewAlbumSong(currentArtistId) {
     row.style.borderColor = 'var(--border)';
     row.innerHTML =
         '<div class="flex gap-2 items-center mb-1">' +
-            '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);">' +
+            '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);" oninput="validateAddAlbum()">' +
             '<label class="text-xs"><input type="checkbox" class="new-song-promoted"> Promoted</label>' +
             '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
