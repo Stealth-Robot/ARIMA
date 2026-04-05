@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, render_template, session
 from flask_login import login_required, current_user
 
@@ -50,6 +52,7 @@ def views_page():
         'incomplete_date_albums': db.session.query(Album).filter(
             Album.release_date.like('%-01-01'),
         ).count(),
+        'potentially_disbanded': _potentially_disbanded_query().count(),
     }
     return render_template('views.html', counts=counts)
 
@@ -129,3 +132,28 @@ def view_incomplete_date_albums():
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode, id_prefix='incomplete',
                            show_year=True)
+
+
+def _potentially_disbanded_query():
+    """Artists with no songs on albums released in the last 5 years, not already marked disbanded."""
+    cutoff = f'{datetime.now().year - 5}-01-01'
+    recent_artist_ids = db.session.query(ArtistSong.artist_id).join(
+        AlbumSong, ArtistSong.song_id == AlbumSong.song_id
+    ).join(
+        Album, AlbumSong.album_id == Album.id
+    ).filter(
+        Album.release_date >= cutoff,
+        ArtistSong.artist_is_main == True,
+    ).distinct()
+    return db.session.query(Artist).filter(
+        ~Artist.id.in_(recent_artist_ids),
+        Artist.is_disbanded == False,
+    )
+
+
+@views_bp.route('/views/potentially-disbanded')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_potentially_disbanded():
+    artists = _potentially_disbanded_query().order_by(Artist.name).all()
+    return render_template('fragments/view_potentially_disbanded.html', artists=artists)
