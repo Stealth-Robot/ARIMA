@@ -72,8 +72,8 @@ td.has-note::after {
     right: 0;
     width: 0;
     height: 0;
-    border-top: 6px solid currentColor;
-    border-left: 6px solid transparent;
+    border-top: 10px solid currentColor;
+    border-left: 10px solid transparent;
 }
 
 /* JS-driven note tooltip — positioned via script */
