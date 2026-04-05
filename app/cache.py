@@ -16,13 +16,30 @@ _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():
     """Return (countries, genres, genders) lists, refreshing at most once per TTL."""
+    from sqlalchemy import func, desc
+    from app.extensions import db
     from app.models.lookups import Country, Genre, GroupGender
+    from app.models.music import Artist, album_genres
 
     now = time.monotonic()
     if now - _filter_cache['ts'] > _FILTER_TTL:
         try:
-            _filter_cache['countries'] = Country.query.order_by(Country.id).all()
-            _filter_cache['genres'] = Genre.query.order_by(Genre.id).all()
+            _filter_cache['countries'] = [
+                c for c, _ in
+                db.session.query(Country, func.count(Artist.id).label('cnt'))
+                .outerjoin(Artist, Artist.country_id == Country.id)
+                .group_by(Country.id)
+                .order_by(desc('cnt'), Country.country)
+                .all()
+            ]
+            _filter_cache['genres'] = [
+                g for g, _ in
+                db.session.query(Genre, func.count(album_genres.c.album_id).label('cnt'))
+                .outerjoin(album_genres, album_genres.c.genre_id == Genre.id)
+                .group_by(Genre.id)
+                .order_by(desc('cnt'), Genre.genre)
+                .all()
+            ]
             _filter_cache['genders'] = GroupGender.query.order_by(GroupGender.id).all()
             _filter_cache['ts'] = now
         except Exception:
