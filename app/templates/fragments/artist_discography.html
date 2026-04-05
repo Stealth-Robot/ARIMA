@@ -94,6 +94,9 @@ function toggleChildSection(childId) {
     if (hidden) {
         _expandRows('child-row', childId);
         delete state['child-' + childId];
+        Object.keys(state).forEach(function(k) {
+            if (k.indexOf('album-') === 0) _collapseRows('album-row', k.split('-')[1]);
+        });
     } else {
         _collapseRows('child-row', childId);
         state['child-' + childId] = 1;
