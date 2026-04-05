@@ -263,7 +263,10 @@ def song_move_album(song_id):
         is_empty = db.session.execute(db.text(
             'SELECT 1 FROM album_song WHERE album_id = :aid LIMIT 1'
         ), {'aid': old_id}).first() is None
-        if is_empty:
+        has_artist = db.session.execute(db.text(
+            'SELECT 1 FROM album WHERE id = :aid AND artist_id IS NOT NULL'
+        ), {'aid': old_id}).first() is not None
+        if is_empty and not has_artist:
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == old_id))
             db.session.execute(db.text('DELETE FROM album WHERE id = :aid'), {'aid': old_id})
 
@@ -926,12 +929,14 @@ def delete_artist(artist_id):
         AlbumSong.query.filter_by(song_id=song_id).delete()
         db.session.query(Song).filter_by(id=song_id).delete()
 
-        # Clean up albums that are now empty
+        # Clean up albums that are now empty (skip albums with direct artist_id link)
         for row in album_song_rows:
             remaining = AlbumSong.query.filter_by(album_id=row.album_id).count()
             if remaining == 0:
-                db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
-                db.session.query(Album).filter_by(id=row.album_id).delete()
+                album_obj = db.session.get(Album, row.album_id)
+                if album_obj and album_obj.artist_id is None:
+                    db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
+                    db.session.query(Album).filter_by(id=row.album_id).delete()
 
     # Delete artist relationships (subunits/soloists)
     ArtistArtist.query.filter(
@@ -1206,11 +1211,13 @@ def remove_song_from_album(song_id, album_id):
     else:
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}"', change_type='song')
 
-    # Clean up album if now empty
+    # Clean up album if now empty (skip albums with direct artist_id link)
     remaining_songs = AlbumSong.query.filter_by(album_id=album_id).count()
     if remaining_songs == 0:
-        db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
-        db.session.query(Album).filter_by(id=album_id).delete()
+        album_obj = db.session.get(Album, album_id)
+        if album_obj and album_obj.artist_id is None:
+            db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
+            db.session.query(Album).filter_by(id=album_id).delete()
 
     db.session.commit()
 
@@ -1244,12 +1251,14 @@ def delete_song(song_id):
     AlbumSong.query.filter_by(song_id=song_id).delete()
     db.session.query(Song).filter_by(id=song_id).delete()
 
-    # Clean up albums that are now empty
+    # Clean up albums that are now empty (skip albums with direct artist_id link)
     for row in album_song_rows:
         remaining = AlbumSong.query.filter_by(album_id=row.album_id).count()
         if remaining == 0:
-            db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
-            db.session.query(Album).filter_by(id=row.album_id).delete()
+            album_obj = db.session.get(Album, row.album_id)
+            if album_obj and album_obj.artist_id is None:
+                db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
+                db.session.query(Album).filter_by(id=row.album_id).delete()
 
     log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()

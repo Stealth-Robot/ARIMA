@@ -107,10 +107,12 @@ class Album(db.Model):
     release_date = db.Column(db.Text, nullable=True)
     album_type_id = db.Column(db.Integer, db.ForeignKey('album_type.id'), nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete='SET NULL'), nullable=True)
     last_updated = db.Column(db.Text)
 
     album_type = db.relationship('AlbumType')
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
+    artist = db.relationship('Artist', foreign_keys=[artist_id])
     songs = db.relationship('Song', secondary=AlbumSong.__table__, back_populates='albums',
                             viewonly=True)
     genres = db.relationship('Genre', secondary=album_genres, backref='albums')

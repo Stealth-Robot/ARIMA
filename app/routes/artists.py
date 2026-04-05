@@ -154,6 +154,11 @@ def _render_artist(artist, htmx=False, push_url=None):
             'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
             'JOIN artist_artist aa ON aa.artist_2 = ars.artist_id '
             'JOIN artist parent ON parent.id = aa.artist_1 '
+            'UNION '
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
+            'FROM album a '
+            'JOIN artist ar ON ar.id = a.artist_id '
+            'WHERE a.artist_id IS NOT NULL '
             'ORDER BY 3, 2'
         )).fetchall()
 
@@ -253,8 +258,6 @@ def _get_collab_labels(song_ids, artist):
 def _build_discography(artist):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
-    if not song_ids:
-        return []
 
     # Get filter settings — edit mode bypasses remix/featured filters
     from flask import session
@@ -275,13 +278,29 @@ def _build_discography(artist):
         order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.asc()
     else:
         order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.desc()
-    albums = db.session.query(Album).options(
+
+    albums = []
+    if song_ids:
+        albums = db.session.query(Album).options(
+            selectinload(Album.genres),
+        ).join(
+            AlbumSong, Album.id == AlbumSong.album_id
+        ).filter(
+            AlbumSong.song_id.in_(song_ids)
+        ).distinct().order_by(*order).all()
+
+    # Include empty albums directly linked to this artist via artist_id
+    seen_ids = {a.id for a in albums}
+    direct_albums = db.session.query(Album).options(
         selectinload(Album.genres),
-    ).join(
-        AlbumSong, Album.id == AlbumSong.album_id
     ).filter(
-        AlbumSong.song_id.in_(song_ids)
-    ).distinct().order_by(*order).all()
+        Album.artist_id == artist.id,
+        ~Album.id.in_(seen_ids) if seen_ids else db.true()
+    ).order_by(*order).all()
+    albums.extend(direct_albums)
+
+    if not albums:
+        return []
 
     # Apply genre filter at album level
     if genre_id is not None:

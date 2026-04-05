@@ -41,7 +41,8 @@ def views_page():
             ~Song.id.in_(db.session.query(ArtistSong.song_id))
         ).count(),
         'empty_albums': db.session.query(Album).filter(
-            ~Album.id.in_(db.session.query(AlbumSong.album_id))
+            ~Album.id.in_(db.session.query(AlbumSong.album_id)),
+            Album.artist_id.is_(None)
         ).count(),
         'empty_artists': db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
@@ -89,7 +90,8 @@ def view_no_artist_songs():
 @role_required(EDITOR_OR_ADMIN)
 def view_empty_albums():
     items = db.session.query(Album).filter(
-        ~Album.id.in_(db.session.query(AlbumSong.album_id))
+        ~Album.id.in_(db.session.query(AlbumSong.album_id)),
+        Album.artist_id.is_(None)
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={a.id} — "{a.name}"'} for a in items

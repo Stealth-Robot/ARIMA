@@ -158,6 +158,12 @@ def create_app():
                 db.session.execute(db.text("ALTER TABLE artist ADD COLUMN is_tracked BOOLEAN NOT NULL DEFAULT 0"))
                 logger.info('Added is_tracked column to artist table')
 
+            # 1c. Add artist_id column to album table (direct album-to-artist link for empty albums)
+            album_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album')"))}
+            if 'artist_id' not in album_cols:
+                db.session.execute(db.text("ALTER TABLE album ADD COLUMN artist_id INTEGER REFERENCES artist(id) ON DELETE SET NULL"))
+                logger.info('Added artist_id column to album table')
+
             # 2. Create missing personal Theme rows
             existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
             missing = User.query.filter(~User.id.in_(existing_user_ids)).all() if existing_user_ids else User.query.all()
@@ -165,15 +171,22 @@ def create_app():
                 db.session.add(Theme(user_id=u.id))
                 logger.info('Created missing theme for user: %s', u.username)
 
-            # 3. Validate system themes
+            # 3. Validate and backfill system themes
+            from app.seed import CLASSIC_THEME, DARK_THEME
             colour_cols = [c.name for c in Theme.__table__.columns
                            if c.name not in ('id', 'name', 'user_id')]
+            defaults = {0: CLASSIC_THEME, 1: DARK_THEME}
             for theme_id, theme_name in ((0, 'Classic'), (1, 'Dark')):
                 theme = db.session.get(Theme, theme_id)
                 if theme:
                     for col in colour_cols:
                         if getattr(theme, col) is None:
-                            logger.warning('%s theme (id=%d) has NULL value for column: %s', theme_name, theme_id, col)
+                            default = defaults[theme_id].get(col)
+                            if default:
+                                setattr(theme, col, default)
+                                logger.info('Backfilled %s theme column %s = %s', theme_name, col, default)
+                            else:
+                                logger.warning('%s theme (id=%d) has NULL value for column: %s', theme_name, theme_id, col)
 
             # 4. Make rating.rating nullable (note-only entries)
             row = db.session.execute(

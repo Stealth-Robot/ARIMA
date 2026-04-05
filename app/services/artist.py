@@ -205,6 +205,68 @@ def get_filtered_navbar():
     return misc + rest
 
 
+def sync_misc_artist_stubs():
+    """Ensure Misc. Artists has a country subunit per country and genre albums per subunit.
+
+    Idempotent — safe to call on every seed or after adding a genre/country.
+    Does NOT commit; caller must commit.
+    """
+    from app.models.lookups import Country, Genre
+
+    misc = Artist.query.filter_by(name='Misc. Artists').first()
+    if not misc:
+        return
+
+    # --- Country subunits ---
+    existing_children = {a.name: a for a in Artist.query.join(
+        ArtistArtist, ArtistArtist.artist_2 == Artist.id
+    ).filter(ArtistArtist.artist_1 == misc.id).all()}
+    existing_slugs = {a.slug for a in Artist.query.all() if a.slug}
+
+    for country in Country.query.order_by(Country.id).all():
+        subunit_name = f'Misc. Artists - {country.country}'
+        if subunit_name not in existing_children:
+            slug = generate_unique_slug(subunit_name, existing_slugs)
+            existing_slugs.add(slug)
+            sub = Artist(name=subunit_name, slug=slug,
+                         gender_id=misc.gender_id, country_id=country.id,
+                         submitted_by_id=0)
+            db.session.add(sub)
+            db.session.flush()
+            db.session.add(ArtistArtist(artist_1=misc.id, artist_2=sub.id, relationship=0))
+            existing_children[subunit_name] = sub
+
+    db.session.flush()
+
+    # --- Genre albums under each subunit ---
+    all_children = list(existing_children.values())
+    genres = Genre.query.order_by(Genre.id).all()
+
+    for child in all_children:
+        # Albums linked via songs
+        song_albums = {row[0] for row in db.session.query(Album.name).join(
+            AlbumSong, Album.id == AlbumSong.album_id
+        ).join(
+            ArtistSong, AlbumSong.song_id == ArtistSong.song_id
+        ).filter(ArtistSong.artist_id == child.id).all()}
+        # Albums linked directly via artist_id
+        direct_albums = {row[0] for row in db.session.query(Album.name).filter(
+            Album.artist_id == child.id).all()}
+        existing_albums = song_albums | direct_albums
+
+        for genre in genres:
+            album_name = f'Misc. Artists - {genre.genre}'
+            if album_name not in existing_albums:
+                album = Album(name=album_name, album_type_id=0,
+                              submitted_by_id=0, artist_id=child.id)
+                db.session.add(album)
+                db.session.flush()
+                db.session.execute(album_genres.insert().values(
+                    album_id=album.id, genre_id=genre.id))
+
+    db.session.flush()
+
+
 def resolve_artist_for_search(artist_id):
     """If the artist is a subunit, return the parent artist ID instead.
 

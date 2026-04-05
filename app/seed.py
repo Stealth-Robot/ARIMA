@@ -4,6 +4,7 @@ from flask import current_app
 
 from app.extensions import bcrypt
 from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship, ChangelogType
+from app.models.music import Artist, ArtistArtist, Album, AlbumSong, ArtistSong, album_genres
 from app.models.user import Role, User
 from app.models.theme import Theme
 from app.models.rules import Rules
@@ -244,6 +245,46 @@ def seed(db):
             db.session.add(Rules(id=1, content='Rules have not been set yet.'))
 
         db.session.flush()
+
+        # 5. Misc. Artists country subunits — auto-create one per country
+        misc = Artist.query.filter_by(name='Misc. Artists').first()
+        if misc:
+            from app.services.artist import generate_unique_slug, slugify
+
+            # Rename legacy genre-based subunits to country-based
+            RENAMES = {'Misc. Artists - Kpop': 'Misc. Artists - Korean',
+                       'Misc. Artists - Jpop': 'Misc. Artists - Japanese',
+                       'Misc. Artists - Rock': 'Misc. Artists - American',
+                       'Misc Artists - American': 'Misc. Artists - American',
+                       'Misc. Artists - American': 'Misc. Artists - American'}
+            for old_name, new_name in RENAMES.items():
+                legacy = Artist.query.filter_by(name=old_name).first()
+                if legacy and legacy.name != new_name:
+                    legacy.name = new_name
+                    legacy.slug = slugify(new_name)
+                    print(f'  Renamed "{old_name}" → "{new_name}"')
+
+            # Remove orphan genre-based subunits (no songs) that don't match a country
+            country_names = {c.country for c in Country.query.all()}
+            expected_names = {f'Misc. Artists - {c}' for c in country_names}
+            all_children = Artist.query.join(
+                ArtistArtist, ArtistArtist.artist_2 == Artist.id
+            ).filter(ArtistArtist.artist_1 == misc.id).all()
+            for child in all_children:
+                if child.name not in expected_names:
+                    has_songs = ArtistSong.query.filter_by(artist_id=child.id).first()
+                    if not has_songs:
+                        # Remove direct-linked albums
+                        Album.query.filter_by(artist_id=child.id).delete()
+                        ArtistArtist.query.filter_by(artist_1=misc.id, artist_2=child.id).delete()
+                        db.session.query(Artist).filter_by(id=child.id).delete()
+                        print(f'  Removed empty subunit: {child.name}')
+
+            db.session.flush()
+
+            # Create/sync country subunits and genre albums
+            from app.services.artist import sync_misc_artist_stubs
+            sync_misc_artist_stubs()
 
     # Fix AUTOINCREMENT sequences so new IDs start above reserved range.
     # sqlite_sequence is auto-created by SQLite on first AUTOINCREMENT insert.
