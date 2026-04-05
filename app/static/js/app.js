@@ -476,8 +476,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
 });
 // Also apply after HTMX swaps (for fragments loaded dynamically)
+/* Format UTC dates to local 12h time for changelog and similar elements */
+function formatUtcDates(root) {
+    (root || document).querySelectorAll('.changelog-date').forEach(function(td) {
+        var utc = td.dataset.utc;
+        if (!utc) return;
+        var d = new Date(utc);
+        if (isNaN(d)) return;
+        var pad = function(n) { return n < 10 ? '0' + n : n; };
+        var h = d.getHours();
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+            + '  ' + pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
+    });
+}
+formatUtcDates();
+
 document.addEventListener('htmx:afterSettle', function(e) {
     e.detail.elt.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+    formatUtcDates(e.detail.elt);
 
     // Update artist navbar active indicator after HTMX navigation
     var header = e.detail.elt.querySelector('[data-current-artist-id]');

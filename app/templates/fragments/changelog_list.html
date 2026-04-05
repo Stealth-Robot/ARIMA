@@ -24,7 +24,7 @@
                 {{ e.change_type.type if e.change_type else '—' }}
             </td>
             <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">{{ e.description_html | safe }}</td>
-            <td class="px-3 py-2 text-xs whitespace-nowrap" style="border: 1px solid var(--grid-line);">
+            <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date" style="border: 1px solid var(--grid-line); font-family: monospace;" data-utc="{{ e.date or '' }}">
                 {{ e.date[:10] if e.date else '-' }}
             </td>
             {% if session.get('edit_mode') and current_user.is_admin %}
