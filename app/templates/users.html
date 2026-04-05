@@ -37,10 +37,18 @@
                     </form>
                 </td>
                 <td class="px-3 py-2 font-medium">
-                    {{ u.username }}
-                    {% if not u.password and not u.email.endswith('arima.app') %}
-                    <span class="text-xs" style="color: var(--text-secondary);">(invited)</span>
-                    {% endif %}
+                    <div class="flex items-center gap-2">
+                        <img src="{{ u.profile_image or url_for('static', filename='img/default_image.png') }}"
+                             alt="" referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                        <span>
+                            {{ u.username }}
+                            {% if not u.password and not u.email.endswith('arima.app') %}
+                            <span class="text-xs" style="color: var(--text-secondary);">(invited)</span>
+                            {% endif %}
+                        </span>
+                    </div>
                 </td>
                 <td class="px-3 py-2">
                     <form method="POST" action="{{ url_for('users.change_role', user_id=u.id) }}"
