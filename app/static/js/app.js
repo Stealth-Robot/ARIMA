@@ -21,6 +21,51 @@ document.body.addEventListener('htmx:configRequest', function (e) {
     }
 });
 
+/* Hover background — reads hex from --hover-bg CSS variable and applies 0.2 opacity */
+function _hoverBg() {
+    var hex = getComputedStyle(document.documentElement).getPropertyValue('--hover-bg').trim();
+    if (!hex || hex.length < 7) return 'rgba(128,128,128,0.2)';
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',0.2)';
+}
+
+/* Search section collapse — persists across searches within the session */
+function _getSearchCollapsed() {
+    try { return JSON.parse(sessionStorage.getItem('search-collapse')) || {}; } catch(e) { return {}; }
+}
+function _applySearchCollapse() {
+    var state = _getSearchCollapsed();
+    document.querySelectorAll('.search-section-body').forEach(function(body) {
+        var section = body.dataset.section;
+        var arrow = document.querySelector('.search-section-arrow[data-section="' + section + '"]');
+        if (state[section]) {
+            body.style.display = 'none';
+            if (arrow) arrow.style.transform = 'rotate(-90deg)';
+        }
+    });
+}
+document.addEventListener('click', function(e) {
+    var header = e.target.closest('.search-section-header');
+    if (!header) return;
+    var section = header.dataset.section;
+    var body = document.querySelector('.search-section-body[data-section="' + section + '"]');
+    var arrow = header.querySelector('.search-section-arrow');
+    if (!body) return;
+    var state = _getSearchCollapsed();
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        if (arrow) arrow.style.transform = '';
+        delete state[section];
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(-90deg)';
+        state[section] = 1;
+    }
+    sessionStorage.setItem('search-collapse', JSON.stringify(state));
+});
+
 /* Global search — overlay with debounced input, dropdown results */
 
 function openSearchOverlay() {
@@ -75,6 +120,7 @@ function closeSearchOverlay() {
                 .then(function (html) {
                     searchResults.innerHTML = html;
                     searchResults.style.display = 'block';
+                    _applySearchCollapse();
                 })
                 .catch(function () {
                     searchResults.innerHTML = '<p class="text-red-400 p-4">Search unavailable \u2014 try again</p>';
@@ -642,7 +688,7 @@ function showCountryEdit(event, artistId, span, allCountries, currentId) {
         btn.textContent = c.name;
         btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
         if (c.id === currentId) btn.style.fontWeight = 'bold';
-        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
         btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
         btn.addEventListener('click', function() {
             var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -710,7 +756,7 @@ function showGenderEdit(event, artistId, span, allGenders, currentId) {
         btn.textContent = g.name;
         btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
         if (g.id === currentId) btn.style.fontWeight = 'bold';
-        btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
         btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
         btn.addEventListener('click', function() {
             var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -850,7 +896,7 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
                 var btn = document.createElement('div');
                 btn.textContent = item.label;
                 btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-                btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
                 btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
                 btn.addEventListener('click', function() {
                     var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -987,7 +1033,7 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
                 var btn = document.createElement('div');
                 btn.textContent = item.label;
                 btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-                btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
                 btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
                 btn.addEventListener('click', function() {
                     var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -1251,7 +1297,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                 plus.textContent = '+ Create "' + query + '"';
                 plus.style.cssText = 'color:var(--link,#2563EB); font-weight:bold;';
                 createBtn.appendChild(plus);
-                createBtn.addEventListener('mouseenter', function() { createBtn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                createBtn.addEventListener('mouseenter', function() { createBtn.style.background = _hoverBg(); });
                 createBtn.addEventListener('mouseleave', function() { createBtn.style.background = ''; });
                 createBtn.addEventListener('click', function(e) { e.stopPropagation(); showCreateSongForm(query); });
                 listContainer.appendChild(createBtn);
@@ -1276,7 +1322,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                     detailSpan.textContent = ' — ' + item.artist + ' / ' + item.album;
                     detailSpan.style.cssText = 'color:var(--text-secondary); font-size:11px;';
                     btn.appendChild(detailSpan);
-                    btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+                    btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
                     btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
                     btn.addEventListener('click', function() {
                         var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -1400,7 +1446,7 @@ function _openMergePopover(songId, songName, span) {
             var btn = document.createElement('div');
             btn.textContent = item.name + ' \u2014 ' + item.artist + ' (' + item.album + ')';
             btn.style.cssText = 'padding:4px 6px; font-size:11px; cursor:pointer; border-radius:2px;';
-            btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--hover-bg, #e5e7eb)'; });
+            btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
             btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
             btn.addEventListener('click', function() {
                 closeMergePopover();

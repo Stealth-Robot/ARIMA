@@ -82,6 +82,9 @@ class Theme(db.Model):
     edit_off_button = db.Column(db.Text)
     button_text = db.Column(db.Text)
 
+    # Dropdown hover
+    hover_bg = db.Column(db.Text)
+
     # Discography header
     discography_background = db.Column(db.Text)
     discography_text = db.Column(db.Text)

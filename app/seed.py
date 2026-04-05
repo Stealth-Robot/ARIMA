@@ -85,6 +85,8 @@ CLASSIC_THEME = {
     'edit_on_button': '#16a34a',
     'edit_off_button': '#6B7280',
     'button_text': '#FFFFFF',
+    # Dropdown hover
+    'hover_bg': '#808080',
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
@@ -157,6 +159,8 @@ DARK_THEME = {
     'edit_on_button': '#16a34a',
     'edit_off_button': '#6B7280',
     'button_text': '#FFFFFF',
+    # Dropdown hover
+    'hover_bg': '#808080',
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
