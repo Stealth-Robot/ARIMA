@@ -76,6 +76,7 @@
         <!-- Login Form -->
         <form id="login-form" method="POST" action="{{ url_for('auth.login') }}" class="{% if mode == 'create' %}hidden{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-4">
                 <label class="text-sm" style="color: var(--text-secondary);">Username<span class="required-star">*</span></label>
                 <input type="text" name="username" placeholder="Username"
@@ -92,6 +93,7 @@
         <!-- Create Account Form -->
         <form id="create-form" method="POST" action="{{ url_for('auth.create_account') }}" class="{% if mode != 'create' %}hidden{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-4">
                 <label class="text-sm" style="color: var(--text-secondary);">Email<span class="required-star">*</span></label>
                 <input type="email" name="email" id="create-email" placeholder="Email"
@@ -123,6 +125,7 @@
         <div class="flex gap-3">
             <form method="POST" action="{{ url_for('auth.guest_login') }}" class="flex-1">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
                 <button type="submit" class="btn-secondary">Login as Guest</button>
             </form>
             <button id="toggle-create" type="button" class="btn-secondary flex-1">

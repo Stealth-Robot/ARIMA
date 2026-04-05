@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from urllib.parse import urlparse
+
 from flask import Blueprint, request, redirect, url_for, session, render_template
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -8,6 +10,18 @@ from app.models.user import User, UserSettings
 from app.models.theme import Theme
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def _safe_redirect_target():
+    """Return the ``next`` param if it's a safe, relative URL; otherwise None."""
+    target = request.form.get('next') or request.args.get('next')
+    if not target:
+        return None
+    parsed = urlparse(target)
+    # Only allow relative paths (no scheme, no netloc)
+    if parsed.scheme or parsed.netloc:
+        return None
+    return target
 
 
 def _classic_theme():
@@ -26,6 +40,8 @@ def login():
 
     theme = _classic_theme()
 
+    next_url = _safe_redirect_target()
+
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -36,20 +52,22 @@ def login():
 
         if user and user.password and _check_password(user.password, password):
             _do_login(user)
-            return redirect(url_for('home.home'))
+            return redirect(next_url or url_for('home.home'))
 
         # Generic error — no indication of whether username or password was wrong
-        return render_template('auth/login.html', theme=theme, error='Invalid username or password.')
+        return render_template('auth/login.html', theme=theme, next=next_url,
+                               error='Invalid username or password.')
 
-    return render_template('auth/login.html', theme=theme)
+    return render_template('auth/login.html', theme=theme, next=next_url)
 
 
 @auth_bp.route('/guest', methods=['POST'])
 def guest_login():
+    next_url = _safe_redirect_target()
     guest = db.session.get(User, 1)
     if guest:
         _do_login(guest)
-    return redirect(url_for('home.home'))
+    return redirect(next_url or url_for('home.home'))
 
 
 @auth_bp.route('/lookup-invite', methods=['POST'])
@@ -70,30 +88,31 @@ def create_account():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '')
     confirm = request.form.get('confirm_password', '')
+    next_url = _safe_redirect_target()
     theme = _classic_theme()
 
     # Validate passwords match
     if password != confirm:
         return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email, create_username=username,
-                               error='Passwords do not match.')
+                               next=next_url, error='Passwords do not match.')
 
     if not password:
         return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email, create_username=username,
-                               error='Password is required.')
+                               next=next_url, error='Password is required.')
 
     # Look up invited user by email
     user = User.query.filter_by(email=email).first()
 
     if user is None:
         return render_template('auth/login.html', theme=theme, mode='create',
-                               create_email=email,
+                               create_email=email, next=next_url,
                                error='User Not Invited')
 
     if user.password is not None:
         return render_template('auth/login.html', theme=theme, mode='create',
-                               create_email=email,
+                               create_email=email, next=next_url,
                                error='User Account Already Exists')
 
     # Check username uniqueness (if changed from the pre-populated value)
@@ -102,7 +121,7 @@ def create_account():
         if existing:
             return render_template('auth/login.html', theme=theme, mode='create',
                                    create_email=email, create_username=username,
-                                   error='Username already taken.')
+                                   next=next_url, error='Username already taken.')
 
     # All valid — create account in single transaction
     user.username = username
@@ -118,7 +137,7 @@ def create_account():
     db.session.commit()
 
     _do_login(user)
-    return redirect(url_for('home.home'))
+    return redirect(next_url or url_for('home.home'))
 
 
 @auth_bp.route('/logout')
