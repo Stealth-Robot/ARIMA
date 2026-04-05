@@ -229,13 +229,18 @@ def song_move_album(song_id):
         db.text('SELECT artist_id FROM artist_song WHERE song_id = :sid'),
         {'sid': song_id}).fetchall()}
 
-    # Find the main artist of the target album (via its existing songs)
+    # Find the main artist of the target album (via its existing songs,
+    # falling back to the album's direct artist_id for empty albums)
     target_artist_id = db.session.execute(db.text(
         'SELECT ars.artist_id FROM artist_song ars '
         'JOIN album_song als ON als.song_id = ars.song_id '
         'WHERE als.album_id = :aid AND ars.artist_is_main = 1 '
         'LIMIT 1'
     ), {'aid': new_album_id}).scalar()
+    if target_artist_id is None:
+        target_artist_id = db.session.execute(db.text(
+            'SELECT artist_id FROM album WHERE id = :aid'
+        ), {'aid': new_album_id}).scalar()
 
     # Move the song: delete old album links, insert new one
     db.session.execute(
