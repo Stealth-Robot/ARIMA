@@ -30,6 +30,13 @@ def search():
     artist_query = Artist.query.filter(Artist.name.ilike(like))
     if country_id is not None:
         artist_query = artist_query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        artist_ids_with_genre = {row[0] for row in db.session.query(ArtistSong.artist_id).join(
+            AlbumSong, ArtistSong.song_id == AlbumSong.song_id
+        ).join(
+            album_genres, AlbumSong.album_id == album_genres.c.album_id
+        ).filter(album_genres.c.genre_id == genre_id).distinct().all()}
+        artist_query = artist_query.filter(Artist.id.in_(artist_ids_with_genre))
     artists = artist_query.all()
 
     # --- Albums ---
