@@ -51,13 +51,25 @@ def create_app():
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
-    # Update last_seen on every request
+    # Update last_seen on every request, stash previous value for update notification
     @flask_app.before_request
     def update_last_seen():
         from datetime import datetime, timezone
+        from flask import g
         if current_user.is_authenticated and not current_user.is_system_or_guest:
+            g.previous_last_seen = current_user.last_seen
             current_user.last_seen = datetime.now(timezone.utc).isoformat()
             db.session.commit()
+
+    # Update notification — inject latest update ID for client-side dismissal tracking
+    @flask_app.context_processor
+    def inject_update_notification():
+        if current_user.is_authenticated and not current_user.is_system_or_guest:
+            from app.models.update import Update
+            latest = Update.query.order_by(Update.id.desc()).first()
+            if latest:
+                return {'latest_update_id': latest.id}
+        return {'latest_update_id': 0}
 
     # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor

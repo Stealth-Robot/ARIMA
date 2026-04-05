@@ -41,7 +41,7 @@
         <tbody>
             {% for u in updates %}
             <tr style="border: 1px solid var(--grid-line);{% if loop.index0 % 2 == 1 %} background-color: var(--row-alternate);{% endif %}">
-                <td class="update-date" style="border: 1px solid var(--grid-line); white-space: nowrap; font-family: monospace; padding: 8px 10px;" data-raw="{{ u.date }}">{{ u.date }}</td>
+                <td class="update-date" style="border: 1px solid var(--grid-line); white-space: nowrap; font-family: monospace; padding: 8px 10px;" data-raw="{{ u.date_et }}">{{ u.date_et }}</td>
                 <td style="border: 1px solid var(--grid-line); padding: 8px 10px;" id="desc-{{ u.id }}">{{ u.description }}</td>
                 <td style="border: 1px solid var(--grid-line); font-family: monospace; padding: 8px 10px;">{{ u.commit_id[:7] }}</td>
                 {% if current_user.is_admin %}
