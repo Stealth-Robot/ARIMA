@@ -51,6 +51,14 @@ def create_app():
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
+    # Update last_seen on every request
+    @flask_app.before_request
+    def update_last_seen():
+        from datetime import datetime, timezone
+        if current_user.is_authenticated and not current_user.is_system_or_guest:
+            current_user.last_seen = datetime.now(timezone.utc).isoformat()
+            db.session.commit()
+
     # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor
     def inject_theme():

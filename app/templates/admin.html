@@ -39,5 +39,13 @@
                     style="background: var(--button-primary); color: var(--button-text);">Add Country</button>
         </form>
     </div>
+
+    <div class="mb-8">
+        <h2 class="text-lg font-bold mb-3">Database</h2>
+        <a href="{{ url_for('admin.replace_database') }}" class="text-sm px-4 py-1 rounded inline-block"
+           style="background: var(--delete-button); color: var(--button-text); text-decoration: none;">
+            Replace Database
+        </a>
+    </div>
 </div>
 {% endblock %}

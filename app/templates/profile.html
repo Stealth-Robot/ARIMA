@@ -119,16 +119,6 @@
     </div>
     {% endif %}
 
-    {% if current_user.role_id == 0 %}
-    <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
-        <h2 class="font-semibold mb-3">Admin</h2>
-        <a href="{{ url_for('edit.replace_database') }}" class="text-sm"
-           style="color: var(--button-primary); text-decoration: underline;">
-            Replace Database
-        </a>
-    </div>
-    {% endif %}
-
     <p class="mt-4 text-xs" style="color: var(--text-secondary);">
         Logged in as <strong>{{ current_user.username }}</strong>
         ({{ current_user.role.role }})

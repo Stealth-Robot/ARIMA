@@ -59,7 +59,7 @@
                 <td class="px-3 py-2 text-xs text-center">{{ 'Y' if u.password else '' }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.email }}</td>
                 <td class="px-3 py-2 text-xs">{{ u.created_at[:10] if u.created_at else '-' }}</td>
-                <td class="px-3 py-2 text-xs">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
+                <td class="px-3 py-2 text-xs last-seen-cell" data-utc="{{ u.last_seen or '' }}">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
                 <td class="px-3 py-2 text-center whitespace-nowrap">
                     {% if u.id != current_user.id %}
                     <button type="button" class="text-xs hover:underline"
@@ -143,6 +143,18 @@ function closeReinvite() {
 }
 document.getElementById('reinvite-modal').addEventListener('click', function(e) {
     if (e.target === this) closeReinvite();
+});
+document.querySelectorAll('.last-seen-cell').forEach(function(td) {
+    var utc = td.dataset.utc;
+    if (!utc) return;
+    var d = new Date(utc);
+    if (isNaN(d)) return;
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + ' ' + pad(h) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' ' + ampm;
 });
 </script>
 {% endblock %}
