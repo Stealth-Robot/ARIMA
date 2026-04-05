@@ -182,6 +182,19 @@ def artist_is_disbanded(artist_id):
     return json.dumps({'is_disbanded': artist.is_disbanded}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/is-tracked', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def artist_is_tracked(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    artist.is_tracked = not artist.is_tracked
+    db.session.commit()
+    return json.dumps({'is_tracked': artist.is_tracked}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/move-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -775,6 +788,7 @@ def add_artist_submit():
             'country_id': country_id,
             'is_disbanded': request.form.get('is_disbanded'),
             'is_complete': request.form.get('is_complete'),
+            'is_tracked': request.form.get('is_tracked'),
             'albums_json': albums_json,
         }
         return render_template('add_artist.html',
@@ -797,6 +811,7 @@ def add_artist_submit():
         submitted_by_id=current_user.id,
         is_disbanded=bool(request.form.get('is_disbanded')),
         is_complete=bool(request.form.get('is_complete')),
+        is_tracked=bool(request.form.get('is_tracked')),
     )
     db.session.add(artist)
     db.session.flush()

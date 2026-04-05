@@ -70,6 +70,7 @@ class Artist(db.Model):
     last_updated = db.Column(db.Text)
     is_disbanded = db.Column(db.Boolean, nullable=False, default=False)
     is_complete = db.Column(db.Boolean, nullable=False, default=False)
+    is_tracked = db.Column(db.Boolean, nullable=False, default=False)
 
     gender = db.relationship('GroupGender')
     country = db.relationship('Country')

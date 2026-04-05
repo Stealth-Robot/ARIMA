@@ -67,6 +67,12 @@
                             <input type="checkbox" name="is_complete" value="1"
                                    {% if form_data.get('is_complete') %}checked{% endif %}> Complete
                         </label>
+                        {% if current_user.is_admin %}
+                        <label class="text-sm" style="cursor: pointer;">
+                            <input type="checkbox" name="is_tracked" value="1"
+                                   {% if form_data.get('is_tracked') %}checked{% endif %}> Tracked
+                        </label>
+                        {% endif %}
                     </div>
                 </fieldset>
             </div>

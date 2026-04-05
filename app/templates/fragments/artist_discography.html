@@ -24,6 +24,13 @@
                    onchange="fetch('/edit/artist/{{ artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
                    style="cursor: pointer;"> Complete
         </label>
+        {% if current_user.is_admin %}
+        <label class="text-sm font-normal" style="color: var(--text-secondary); margin-left: 8px; cursor: pointer;">
+            <input type="checkbox" {% if artist.is_tracked %}checked{% endif %}
+                   onchange="fetch('/edit/artist/{{ artist.id }}/is-tracked', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
+                   style="cursor: pointer;"> Tracked
+        </label>
+        {% endif %}
         {% endif %}
     </h2>
     {% if soloist_parent %}
