@@ -311,7 +311,7 @@ def global_search_songs():
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(50).all()
+    ).distinct().all()
 
     seen = set()
     results = []
@@ -341,7 +341,7 @@ def global_search_albums():
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
     like = f'%{q}%'
-    albums = Album.query.filter(Album.name.ilike(like)).limit(30).all()
+    albums = Album.query.filter(Album.name.ilike(like)).all()
 
     results = []
     for al in albums:
@@ -395,7 +395,7 @@ def artist_search_songs(artist_id):
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(50).all()
+    ).distinct().all()
 
     # Deduplicate by song id, keeping first occurrence
     seen = set()
@@ -986,7 +986,7 @@ def album_search_songs(album_id):
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(30).all()
+    ).distinct().all()
 
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows if s.id not in existing_ids]
@@ -1347,7 +1347,7 @@ def merge_candidates(song_id):
         Song.name.ilike(like),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(50).all()
+    ).distinct().all()
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows]
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
@@ -1378,7 +1378,7 @@ def merge_search(song_id):
         Song.name.ilike(like),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(20).all()
+    ).distinct().all()
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows]
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
