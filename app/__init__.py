@@ -150,6 +150,9 @@ def create_app():
             from app.models.theme import Theme
             from app.models.user import User
 
+            # 0. Create any missing tables (e.g. update)
+            db.create_all()
+
             # 1. Add any new theme colour columns
             existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
             for col in Theme.__table__.columns:

@@ -47,6 +47,7 @@
         <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
         <a href="{{ url_for('changelog.changelog') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'changelog.changelog' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
         <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
+        <a href="{{ url_for('updates.updates_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'updates.updates_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Updates</a>
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
         <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
         {% endif %}

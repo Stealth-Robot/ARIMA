@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Updates{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Updates</h1>
+
+    {% if current_user.is_admin %}
+    <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="text-sm font-bold mb-3">New Update</h2>
+        <form method="POST" action="{{ url_for('updates.add_update') }}" class="flex flex-col gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex gap-2">
+                <input type="text" name="commit_id" placeholder="Commit ID" required
+                       class="text-xs px-3 py-1 rounded border flex-1" style="font-family: monospace; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                <input type="text" name="date" placeholder="YYYY-MM-DD HH:MM" required
+                       class="text-xs px-3 py-1 rounded border" style="width: 160px; font-family: monospace; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+            </div>
+            <div class="flex gap-2">
+                <input type="text" name="description" placeholder="feat: brief description" required
+                       class="text-xs px-3 py-1 rounded border flex-1" style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                <button type="submit" class="text-xs px-4 py-1 rounded"
+                        style="background: var(--button-primary); color: var(--button-text);">Add</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <table class="w-full text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+        <thead>
+            <tr style="background-color: var(--header-row);">
+                <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); width: 140px;">Date</th>
+                <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Description</th>
+                <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); width: 80px;">Commit</th>
+                {% if current_user.is_admin %}
+                <th class="px-3 py-2" style="border: 1px solid var(--grid-line); width: 100px;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in updates %}
+            <tr style="border: 1px solid var(--grid-line);{% if loop.index0 % 2 == 1 %} background-color: var(--row-alternate);{% endif %}">
+                <td class="update-date" style="border: 1px solid var(--grid-line); white-space: nowrap; font-family: monospace; padding: 8px 10px;" data-raw="{{ u.date }}">{{ u.date }}</td>
+                <td style="border: 1px solid var(--grid-line); padding: 8px 10px;" id="desc-{{ u.id }}">{{ u.description }}</td>
+                <td style="border: 1px solid var(--grid-line); font-family: monospace; padding: 8px 10px;">{{ u.commit_id[:7] }}</td>
+                {% if current_user.is_admin %}
+                <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line); white-space: nowrap;">
+                    <button type="button" class="text-xs hover:underline" style="color: var(--link);"
+                            onclick="editDesc({{ u.id }})">Edit</button>
+                    <form method="POST" action="{{ url_for('updates.delete_update', update_id=u.id) }}" class="inline"
+                          onsubmit="return confirm('Delete this update?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs hover:underline" style="color: var(--delete-button);">Delete</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+            {% if not updates %}
+            <tr>
+                <td colspan="{% if current_user.is_admin %}4{% else %}3{% endif %}" class="px-3 py-4 text-center" style="color: var(--text-secondary);">No updates yet.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if current_user.is_admin %}
+<script>
+function editDesc(id) {
+    var td = document.getElementById('desc-' + id);
+    var current = td.textContent.trim();
+    var input = document.createElement('form');
+    input.method = 'POST';
+    input.action = '/updates/' + id + '/edit';
+    input.style.cssText = 'display:flex; gap:4px; align-items:center;';
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    input.innerHTML = '<input type="hidden" name="csrf_token" value="' + (csrf ? csrf.content : '') + '">'
+        + '<input type="text" name="description" value="' + current.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="flex:1; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);">'
+        + '<button type="submit" class="text-xs px-2 py-1 rounded" style="background:var(--button-primary); color:var(--button-text);">Save</button>'
+        + '<button type="button" class="text-xs px-2 py-1 rounded" style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border);" onclick="this.closest(\'form\').outerHTML=this.closest(\'form\').dataset.orig">Cancel</button>';
+    input.dataset.orig = td.innerHTML;
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.querySelector('input[name=description]').focus();
+}
+</script>
+{% endif %}
+<script>
+document.querySelectorAll('.update-date').forEach(function(td) {
+    var raw = td.dataset.raw;
+    if (!raw || raw.length < 16) return;
+    var parts = raw.split(' ');
+    var date = parts[0];
+    var time = parts[1];
+    var tp = time.split(':');
+    var h = parseInt(tp[0], 10);
+    var m = tp[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    td.textContent = date + '  ' + (h < 10 ? '0' : '') + h + ':' + m + ' ' + ampm;
+});
+</script>
+{% endblock %}
