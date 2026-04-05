@@ -17,7 +17,7 @@ def search():
 
     like = f'%{q}%'
 
-    artists = Artist.query.filter(Artist.name.ilike(like)).limit(7).all()
+    artists = Artist.query.filter(Artist.name.ilike(like)).all()
 
     albums = db.session.query(Album, Artist).join(
         AlbumSong, Album.id == AlbumSong.album_id
@@ -28,7 +28,7 @@ def search():
     ).filter(
         Album.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(7).all()
+    ).distinct().all()
 
     songs = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
@@ -41,7 +41,7 @@ def search():
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().limit(7).all()
+    ).distinct().all()
 
     return render_template('fragments/search_results.html',
                            artists=artists, albums=albums, songs=songs,
