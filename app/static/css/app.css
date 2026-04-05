@@ -72,7 +72,7 @@ td.has-note::after {
     right: 0;
     width: 0;
     height: 0;
-    border-top: 6px solid var(--text-primary);
+    border-top: 6px solid currentColor;
     border-left: 6px solid transparent;
 }
 
