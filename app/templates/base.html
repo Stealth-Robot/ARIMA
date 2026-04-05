@@ -154,11 +154,11 @@
 
     {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
     <div id="update-notification" style="display:none; position:fixed; bottom:20px; right:20px; z-index:60;
-         background:var(--edit-on-button); color:var(--button-text); padding:12px 18px; border-radius:8px;
+         background:var(--edit-on-button); color:var(--button-text); padding:12px 28px 12px 18px; border-radius:8px;
          box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px; max-width:320px; line-height:1.5;">
         <div style="font-weight:bold; margin-bottom:4px;">A new update to ARIMA was deployed!</div>
         <div>Check the <a href="{{ url_for('updates.updates_page') }}" style="color:var(--button-text); text-decoration:underline; font-weight:bold;">Updates</a> tab for details</div>
-        <button onclick="dismissUpdate()" style="position:absolute; top:6px; right:10px; background:none; border:none; color:var(--button-text); cursor:pointer; font-size:16px;">&times;</button>
+        <button onclick="dismissUpdate()" style="position:absolute; top:4px; right:4px; background:none; border:none; color:var(--button-text); cursor:pointer; font-size:14px; padding:4px 6px;">&times;</button>
     </div>
     <script>
     var _latestUpdateId = {{ latest_update_id or 0 }};

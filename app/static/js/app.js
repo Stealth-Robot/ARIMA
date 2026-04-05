@@ -471,9 +471,30 @@ function applyDateFormat(input) {
     });
 }
 
-// Auto-apply to all date inputs with the data-date-format attribute
+/**
+ * Apply yyyy-mm-dd hh:mm auto-formatting to a text input.
+ * Strips non-digits, auto-inserts hyphens/space/colon, caps at 16 chars.
+ */
+function applyDateTimeFormat(input) {
+    input.type = 'text';
+    input.placeholder = 'YYYY-MM-DD HH:MM';
+    input.maxLength = 16;
+    input.style.fontFamily = 'monospace';
+    input.addEventListener('input', function() {
+        var v = this.value.replace(/[^0-9]/g, '');
+        if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+        if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
+        if (v.length > 10) v = v.slice(0, 10) + ' ' + v.slice(10);
+        if (v.length > 13) v = v.slice(0, 13) + ':' + v.slice(13);
+        if (v.length > 16) v = v.slice(0, 16);
+        this.value = v;
+    });
+}
+
+// Auto-apply to all date/datetime inputs
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+    document.querySelectorAll('[data-datetime-format]').forEach(applyDateTimeFormat);
 });
 // Also apply after HTMX swaps (for fragments loaded dynamically)
 /* Format UTC dates to local 12h time for changelog and similar elements */

@@ -15,8 +15,11 @@ UTC = ZoneInfo('UTC')
 
 
 def _et_to_utc(date_str):
-    """Convert 'YYYY-MM-DD HH:MM' in Eastern to UTC ISO string."""
-    dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+    """Convert 'YYYY-MM-DD HH:MM' in Eastern to UTC ISO string. Returns None if invalid."""
+    try:
+        dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+    except ValueError:
+        return None
     dt_et = dt.replace(tzinfo=ET)
     dt_utc = dt_et.astimezone(UTC)
     return dt_utc.strftime('%Y-%m-%d %H:%M:%S')
@@ -69,6 +72,8 @@ def add_update():
         return redirect(url_for('updates.updates_page'))
 
     date_utc = _et_to_utc(date)
+    if not date_utc:
+        return redirect(url_for('updates.updates_page'))
     db.session.add(Update(commit_id=commit_id, description=description, date=date_utc))
     db.session.commit()
     return redirect(url_for('updates.updates_page'))
