@@ -4,7 +4,17 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Add Artist</h1>
+    <div class="flex items-center gap-4 mb-6">
+        <h1 class="text-2xl font-bold">Add Artist</h1>
+        <button type="button" onclick="clearAddArtistDraft()" class="text-xs px-3 py-1 rounded"
+                style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border);">
+            Clear All
+        </button>
+    </div>
+
+    {% if errors and errors.get('general') %}
+    <div class="mb-4 p-3 rounded text-sm" style="background:var(--delete-button); color:var(--button-text);">{{ errors['general'] }}</div>
+    {% endif %}
 
     <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -455,53 +465,9 @@ document.getElementById('artist_name').addEventListener('input', function() {
 
 document.getElementById('add-artist-form').addEventListener('submit', function() {
     formDirty = false;
-    const albums = [];
-    document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]').forEach(function(albumDiv) {
-        const albumNum = albumDiv.id.split('-')[1];
-        if (albumDiv.dataset.existingAlbumId) {
-            albums.push({ existing_album_id: parseInt(albumDiv.dataset.existingAlbumId), name: 'existing' });
-            return;
-        }
-        const album = {
-            name: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '',
-            release_date: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="release_date"]') || {}).value || '',
-            album_type_id: parseInt((albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]') || {}).value || '0'),
-            genre_ids: [],
-            songs: [],
-        };
-        albumDiv.querySelectorAll('[data-album="' + albumNum + '"][data-genre]').forEach(function(cb) {
-            if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
-        });
-        albumDiv.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function(songDiv) {
-            const songNum = songDiv.id.split('-')[2];
-            const name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
-            if (name.trim()) {
-                var existingSongId = songDiv.dataset.existingSongId ? parseInt(songDiv.dataset.existingSongId) : null;
-                if (existingSongId) {
-                    album.songs.push({ name: name, existing_song_id: existingSongId });
-                } else {
-                    var artists = [];
-                    songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
-                        var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
-                        var isNew = row.dataset.isNew === '1';
-                        var role = row.querySelector('.song-artist-role');
-                        artists.push({
-                            artist_id: isNew ? null : aid,
-                            is_main: role ? role.value === 'main' : true,
-                        });
-                    });
-                    album.songs.push({
-                        name: name,
-                        is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
-                        is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
-                        artists: artists,
-                    });
-                }
-            }
-        });
-        if (album.name.trim()) albums.push(album);
-    });
-    document.getElementById('albums-data').value = JSON.stringify(albums);
+    localStorage.removeItem(_draftKey);
+    var state = collectFormState();
+    document.getElementById('albums-data').value = state.albums_json;
 });
 
 // Close search results when clicking outside
@@ -527,12 +493,81 @@ document.addEventListener('click', function(e) {
 })();
 
 let formDirty = false;
-document.getElementById('add-artist-form').addEventListener('input', function() { formDirty = true; });
+var _draftKey = 'arima-add-artist-draft';
+
+function collectFormState() {
+    var albums = [];
+    document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]').forEach(function(albumDiv) {
+        var albumNum = albumDiv.id.split('-')[1];
+        if (albumDiv.dataset.existingAlbumId) {
+            albums.push({ existing_album_id: parseInt(albumDiv.dataset.existingAlbumId), name: 'existing' });
+            return;
+        }
+        var album = {
+            name: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '',
+            release_date: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="release_date"]') || {}).value || '',
+            album_type_id: parseInt((albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]') || {}).value || '0'),
+            genre_ids: [],
+            songs: [],
+        };
+        albumDiv.querySelectorAll('[data-album="' + albumNum + '"][data-genre]').forEach(function(cb) {
+            if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
+        });
+        albumDiv.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function(songDiv) {
+            var songNum = songDiv.id.split('-')[2];
+            var name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
+            var existingSongId = songDiv.dataset.existingSongId ? parseInt(songDiv.dataset.existingSongId) : null;
+            if (existingSongId) {
+                album.songs.push({ name: name, existing_song_id: existingSongId });
+            } else {
+                var artists = [];
+                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                    var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
+                    var isNew = row.dataset.isNew === '1';
+                    var role = row.querySelector('.song-artist-role');
+                    artists.push({ artist_id: isNew ? null : aid, is_main: role ? role.value === 'main' : true });
+                });
+                album.songs.push({
+                    name: name,
+                    is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
+                    is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
+                    artists: artists,
+                });
+            }
+        });
+        albums.push(album);
+    });
+    return {
+        artist_name: document.getElementById('artist_name').value,
+        gender_id: document.querySelector('[name="gender_id"]').value,
+        country_id: document.querySelector('[name="country_id"]').value,
+        albums_json: JSON.stringify(albums),
+    };
+}
+
+function saveDraft() {
+    if (!formDirty) return;
+    try { localStorage.setItem(_draftKey, JSON.stringify(collectFormState())); } catch(e) {}
+}
+
+function clearAddArtistDraft() {
+    if (!confirm('Clear all data?')) return;
+    localStorage.removeItem(_draftKey);
+    window.location.reload();
+}
+
+var _saveDraftTimer = null;
+document.getElementById('add-artist-form').addEventListener('input', function() {
+    formDirty = true;
+    clearTimeout(_saveDraftTimer);
+    _saveDraftTimer = setTimeout(saveDraft, 1000);
+});
+document.getElementById('add-artist-form').addEventListener('change', function() {
+    formDirty = true;
+    saveDraft();
+});
 window.addEventListener('beforeunload', function(e) {
-    if (formDirty) {
-        e.preventDefault();
-        e.returnValue = 'You have unsaved changes.';
-    }
+    saveDraft();
 });
 
 function validateForm() {
@@ -591,19 +626,40 @@ document.getElementById('add-artist-form').addEventListener('click', function() 
 
 // Also validate after DOM mutations (add/remove album/song/artist)
 var _origAddAlbum = addAlbum, _origRemoveAlbum = removeAlbum, _origAddSong = addSong, _origAddSongArtist = addSongArtist;
-addAlbum = function() { _origAddAlbum(); validateForm(); };
-removeAlbum = function(n) { _origRemoveAlbum(n); validateForm(); };
-addSong = function(n) { _origAddSong(n); validateForm(); };
-addSongArtist = function(a, s, id, name, isMain, isNew) { _origAddSongArtist(a, s, id, name, isMain, isNew); validateForm(); };
+addAlbum = function() { _origAddAlbum(); validateForm(); formDirty = true; saveDraft(); };
+removeAlbum = function(n) { _origRemoveAlbum(n); validateForm(); formDirty = true; saveDraft(); };
+addSong = function(n) { _origAddSong(n); validateForm(); formDirty = true; saveDraft(); };
+addSongArtist = function(a, s, id, name, isMain, isNew) { _origAddSongArtist(a, s, id, name, isMain, isNew); validateForm(); formDirty = true; saveDraft(); };
 
 // Watch for DOM changes that might not fire input/change events
 new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
     document.getElementById('add-artist-form'), { childList: true, subtree: true }
 );
 
-// Restore albums from previously submitted form data on validation error
+// Restore albums from server form data, localStorage draft, or start fresh
 (function() {
-    const raw = document.getElementById('albums-data').value;
+    var raw = document.getElementById('albums-data').value;
+
+    // If no server data, try localStorage draft
+    if (!raw || raw === '[]') {
+        try {
+            var draft = JSON.parse(localStorage.getItem(_draftKey));
+            if (draft && draft.albums_json && draft.albums_json !== '[]') {
+                raw = draft.albums_json;
+                if (draft.artist_name && !document.getElementById('artist_name').value) {
+                    document.getElementById('artist_name').value = draft.artist_name;
+                    document.getElementById('artist_name').dispatchEvent(new Event('input'));
+                }
+                if (draft.gender_id && !document.querySelector('[name="gender_id"]').value) {
+                    document.querySelector('[name="gender_id"]').value = draft.gender_id;
+                }
+                if (draft.country_id && !document.querySelector('[name="country_id"]').value) {
+                    document.querySelector('[name="country_id"]').value = draft.country_id;
+                }
+            }
+        } catch(e) {}
+    }
+
     if (!raw || raw === '[]') {
         addAlbum();
         return;

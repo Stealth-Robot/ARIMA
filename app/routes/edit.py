@@ -828,94 +828,113 @@ def add_artist_submit():
                                album_types_js=album_types_js, genres_js=genres_js,
                                artists_js=artists_js), 422
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info('add_artist_submit: creating "%s" with %d albums by user %s',
+                name, len(albums_data), current_user.username)
+
     # Generate unique slug
     existing_slugs = {a.slug for a in Artist.query.filter(Artist.slug.isnot(None)).all()}
     slug = generate_unique_slug(name, existing_slugs)
 
-    artist = Artist(
-        name=name,
-        gender_id=int(gender_id),
-        country_id=int(country_id),
-        slug=slug,
-        submitted_by_id=current_user.id,
-        is_disbanded=bool(request.form.get('is_disbanded')),
-        is_complete=bool(request.form.get('is_complete')),
-        is_tracked=bool(request.form.get('is_tracked')),
-    )
-    db.session.add(artist)
-    db.session.flush()
-
-    total_songs = 0
-    for album_data in albums_data:
-        existing_album_id = album_data.get('existing_album_id')
-        if existing_album_id:
-            # Link all songs from existing album to the new artist
-            existing_album = db.session.get(Album, existing_album_id)
-            if existing_album is None:
-                continue
-            album_songs = AlbumSong.query.filter_by(album_id=existing_album_id).all()
-            for als in album_songs:
-                artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=als.song_id).first()
-                if not artist_link:
-                    db.session.add(ArtistSong(artist_id=artist.id, song_id=als.song_id, artist_is_main=True))
-                total_songs += 1
-            continue
-
-        album = Album(
-            name=album_data['name'],
-            release_date=album_data.get('release_date') or None,
-            album_type_id=album_data['album_type_id'],
+    try:
+        artist = Artist(
+            name=name,
+            gender_id=int(gender_id),
+            country_id=int(country_id),
+            slug=slug,
             submitted_by_id=current_user.id,
+            is_disbanded=bool(request.form.get('is_disbanded')),
+            is_complete=bool(request.form.get('is_complete')),
+            is_tracked=bool(request.form.get('is_tracked')),
         )
-        db.session.add(album)
+        db.session.add(artist)
         db.session.flush()
 
-        for gid in album_data.get('genre_ids', []):
-            db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=gid))
-
-        for track_num, song_data in enumerate(album_data.get('songs', []), 1):
-            existing_song_id = song_data.get('existing_song_id')
-            if existing_song_id:
-                existing_song = db.session.get(Song, existing_song_id)
-                if existing_song is None:
+        total_songs = 0
+        for album_data in albums_data:
+            existing_album_id = album_data.get('existing_album_id')
+            if existing_album_id:
+                existing_album = db.session.get(Album, existing_album_id)
+                if existing_album is None:
                     continue
-                already = AlbumSong.query.filter_by(song_id=existing_song_id, album_id=album.id).first()
-                if not already:
-                    db.session.add(AlbumSong(album_id=album.id, song_id=existing_song_id, track_number=track_num))
-                artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=existing_song_id).first()
-                if not artist_link:
-                    db.session.add(ArtistSong(artist_id=artist.id, song_id=existing_song_id, artist_is_main=False))
-                total_songs += 1
+                album_songs = AlbumSong.query.filter_by(album_id=existing_album_id).all()
+                for als in album_songs:
+                    artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=als.song_id).first()
+                    if not artist_link:
+                        db.session.add(ArtistSong(artist_id=artist.id, song_id=als.song_id, artist_is_main=True))
+                    total_songs += 1
                 continue
 
-            song_obj = Song(
-                name=song_data['name'],
+            album = Album(
+                name=album_data['name'],
+                release_date=album_data.get('release_date') or None,
+                album_type_id=album_data['album_type_id'],
                 submitted_by_id=current_user.id,
-                is_promoted=song_data.get('is_promoted', False),
-                is_remix=song_data.get('is_remix', False),
             )
-            db.session.add(song_obj)
+            db.session.add(album)
             db.session.flush()
-            total_songs += 1
 
-            db.session.add(AlbumSong(album_id=album.id, song_id=song_obj.id, track_number=track_num))
+            for gid in album_data.get('genre_ids', []):
+                db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=gid))
 
-            song_artists = song_data.get('artists')
-            if song_artists:
-                seen = set()
-                for sa in song_artists:
-                    sa_id = sa.get('artist_id') or artist.id
-                    if sa_id in seen:
+            for track_num, song_data in enumerate(album_data.get('songs', []), 1):
+                existing_song_id = song_data.get('existing_song_id')
+                if existing_song_id:
+                    existing_song = db.session.get(Song, existing_song_id)
+                    if existing_song is None:
                         continue
-                    seen.add(sa_id)
-                    db.session.add(ArtistSong(artist_id=sa_id, song_id=song_obj.id, artist_is_main=sa.get('is_main', True)))
-            else:
-                db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
+                    already = AlbumSong.query.filter_by(song_id=existing_song_id, album_id=album.id).first()
+                    if not already:
+                        db.session.add(AlbumSong(album_id=album.id, song_id=existing_song_id, track_number=track_num))
+                    artist_link = ArtistSong.query.filter_by(artist_id=artist.id, song_id=existing_song_id).first()
+                    if not artist_link:
+                        db.session.add(ArtistSong(artist_id=artist.id, song_id=existing_song_id, artist_is_main=False))
+                    total_songs += 1
+                    continue
 
-    log_change(current_user, f'Added "{name}" artist with {len(albums_data)} albums, {total_songs} songs', artist=artist)
-    db.session.commit()
+                song_obj = Song(
+                    name=song_data['name'],
+                    submitted_by_id=current_user.id,
+                    is_promoted=song_data.get('is_promoted', False),
+                    is_remix=song_data.get('is_remix', False),
+                )
+                db.session.add(song_obj)
+                db.session.flush()
+                total_songs += 1
 
-    return redirect(url_for('artists.artist_detail', artist_id=artist.id))
+                db.session.add(AlbumSong(album_id=album.id, song_id=song_obj.id, track_number=track_num))
+
+                song_artists = song_data.get('artists')
+                if song_artists:
+                    seen = set()
+                    for sa in song_artists:
+                        sa_id = sa.get('artist_id') or artist.id
+                        if sa_id in seen:
+                            continue
+                        seen.add(sa_id)
+                        db.session.add(ArtistSong(artist_id=sa_id, song_id=song_obj.id, artist_is_main=sa.get('is_main', True)))
+                else:
+                    db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
+
+        log_change(current_user, f'Added "{name}" artist with {len(albums_data)} albums, {total_songs} songs', artist=artist)
+        db.session.commit()
+        logger.info('add_artist_submit: success — artist id=%d, %d albums, %d songs', artist.id, len(albums_data), total_songs)
+
+        return redirect(url_for('artists.artist_detail', artist_id=artist.id))
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error('add_artist_submit: failed to create "%s" — %s', name, e, exc_info=True)
+        errors['general'] = 'An unexpected error occurred. Please try again.'
+        return render_template('add_artist.html',
+                               errors=errors,
+                               form_data={'artist_name': name, 'gender_id': gender_id,
+                                          'country_id': country_id, 'albums_json': request.form.get('albums_data', '[]')},
+                               genders=GroupGender.query.all(),
+                               countries=Country.query.all(),
+                               genres=Genre.query.all(),
+                               artists=Artist.query.order_by(Artist.name).all()), 422
 
 
 @edit_bp.route('/artist/<int:artist_id>/delete', methods=['POST'])
