@@ -79,13 +79,13 @@ function _collapseRows(prefix, id) {
     var rows = document.querySelectorAll('.' + prefix + '-' + id);
     var arrow = document.getElementById(prefix.replace('row', 'arrow') + '-' + id);
     rows.forEach(function(r) { r.style.display = 'none'; });
-    if (arrow) arrow.style.transform = 'rotate(-90deg)';
+    if (arrow) arrow.style.transform = 'translateY(-50%) rotate(-90deg)';
 }
 function _expandRows(prefix, id) {
     var rows = document.querySelectorAll('.' + prefix + '-' + id);
     var arrow = document.getElementById(prefix.replace('row', 'arrow') + '-' + id);
     rows.forEach(function(r) { r.style.display = ''; });
-    if (arrow) arrow.style.transform = '';
+    if (arrow) arrow.style.transform = 'translateY(-50%)';
 }
 function toggleChildSection(childId) {
     var rows = document.querySelectorAll('.child-row-' + childId);
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% else %}
 
 <div style="margin: 0 auto; max-width: fit-content; display: flex; gap: 12px; align-items: flex-start;">
-<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if edit_mode %} margin-left: 24px;{% endif %}">
+<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line); margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 44px; z-index: 10;">
@@ -161,10 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <tr style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
+                <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
-                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
+                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
                       onclick='event.stopPropagation();confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
-                <span id="album-arrow-{{ album.id }}" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="event.stopPropagation();showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '{{ album.release_date }}')">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" data-full-date="" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '')">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -173,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ artist.id }}, this)">&#43;</span>
                 {% else %}
-                <span id="album-arrow-{{ album.id }}" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
             </td>
@@ -264,12 +263,12 @@ document.addEventListener('DOMContentLoaded', function() {
         {# Child name header — black bg, white text, full width #}
         <tr style="background-color: var(--discography-background); border: 1px solid var(--grid-line); cursor: pointer;"
             onclick="toggleChildSection({{ child.artist.id }})">
-            <td colspan="100" style="padding: 0; font-weight: bold; font-size: 13px; color: var(--discography-text); position: relative;">
+            <td colspan="100" style="padding: 0 0 0 8px; font-weight: bold; font-size: 13px; color: var(--discography-text); position: relative;">
+                <span id="child-arrow-{{ child.artist.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 10px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
-                <span style="cursor: pointer; color: var(--link); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
+                <span style="cursor: pointer; color: var(--link); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
                       onclick="event.stopPropagation();showDeleteConfirm('Unlink {{ child.artist.name | e }}?', 'This will remove {{ child.artist.name | e }} as a {{ 'soloist' if child.is_soloist else 'subunit' }} and convert them to a standalone artist. Their songs and albums will not be affected.', '/edit/artist/{{ child.artist.id }}/unlink', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}')">&#128279;</span>
                 {% endif %}
-                <span id="child-arrow-{{ child.artist.id }}" style="display: inline-block; transition: transform 0.2s; margin-left: 8px; font-size: 10px;">&#9660;</span>
                 {% if child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
                    style="padding: 4px 4px; color: var(--discography-text); text-decoration: none; cursor: pointer;"
@@ -298,10 +297,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <tr class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
+                <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
-                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -20px; top: 50%; transform: translateY(-50%);" title="Delete album"
+                <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
                       onclick='event.stopPropagation();confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
-                <span id="album-arrow-{{ album.id }}" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>
                 <span class="edit-inline" style="cursor: pointer;" onclick="event.stopPropagation();showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}</span>{% if album.release_date %} (<span class="edit-inline" style="cursor: pointer;" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '{{ album.release_date }}')">{{ album.release_date[:4] }}</span>){% else %} (<span class="edit-inline" style="cursor: pointer; color: var(--text-secondary);" data-full-date="" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '')">date</span>){% endif %}
                 — <span class="edit-inline genre-edit text-xs" style="cursor: pointer; font-weight: normal;{% if not album.genres %} color: var(--text-secondary);{% endif %}"
                        data-album-id="{{ album.id }}"
@@ -310,7 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ child.artist.id }}, this)">&#43;</span>
                 {% else %}
-                <span id="album-arrow-{{ album.id }}" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
             </td>
