@@ -98,3 +98,10 @@ def delete_update(update_id):
     db.session.delete(update)
     db.session.commit()
     return redirect(url_for('updates.updates_page'))
+
+
+@updates_bp.route('/updates/latest-id')
+@login_required
+def latest_update_id():
+    latest = Update.query.order_by(Update.id.desc()).first()
+    return {'id': latest.id if latest else 0}

@@ -13,6 +13,13 @@ from app.services.audit import log_change
 from app.cache import clear_stats_cache
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
 
+
+def _get_filters():
+    """Return (country_id, genre_id) from user settings or session."""
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        return current_user.settings.country, current_user.settings.genre
+    return session.get('country'), session.get('genre')
+
 edit_bp = Blueprint('edit', __name__, url_prefix='/edit')
 
 
@@ -302,8 +309,9 @@ def global_search_songs():
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
+    country_id, genre_id = _get_filters()
     like = f'%{q}%'
-    rows = db.session.query(Song, Album, Artist).join(
+    query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
         Album, AlbumSong.album_id == Album.id
@@ -314,7 +322,12 @@ def global_search_songs():
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().all()
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
 
     seen = set()
     results = []
@@ -343,28 +356,35 @@ def global_search_albums():
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
+    country_id, genre_id = _get_filters()
     like = f'%{q}%'
-    albums = Album.query.filter(Album.name.ilike(like)).all()
+    query = db.session.query(Album, Artist).join(
+        AlbumSong, Album.id == AlbumSong.album_id
+    ).join(
+        ArtistSong, AlbumSong.song_id == ArtistSong.song_id
+    ).join(
+        Artist, ArtistSong.artist_id == Artist.id
+    ).filter(
+        Album.name.ilike(like),
+        ArtistSong.artist_is_main == True,
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
 
+    seen = set()
     results = []
-    for al in albums:
-        # Get the main artist for display
-        first_song_link = AlbumSong.query.filter_by(album_id=al.id).first()
-        artist_name = ''
-        if first_song_link:
-            artist_link = ArtistSong.query.filter_by(
-                song_id=first_song_link.song_id, artist_is_main=True
-            ).first()
-            if artist_link:
-                a = db.session.get(Artist, artist_link.artist_id)
-                if a:
-                    artist_name = a.name
-
+    for al, a in rows:
+        if al.id in seen:
+            continue
+        seen.add(al.id)
         song_count = AlbumSong.query.filter_by(album_id=al.id).count()
         results.append({
             'id': al.id,
             'name': al.name,
-            'artist': artist_name,
+            'artist': a.name,
             'release_date': al.release_date or '',
             'song_count': song_count,
         })
@@ -386,8 +406,9 @@ def artist_search_songs(artist_id):
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
+    country_id, genre_id = _get_filters()
     like = f'%{q}%'
-    rows = db.session.query(Song, Album, Artist).join(
+    query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
         Album, AlbumSong.album_id == Album.id
@@ -398,7 +419,12 @@ def artist_search_songs(artist_id):
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().all()
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
 
     # Deduplicate by song id, keeping first occurrence
     seen = set()
@@ -979,8 +1005,9 @@ def album_search_songs(album_id):
     # Songs already in this album
     existing_ids = {r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()}
 
+    country_id, genre_id = _get_filters()
     like = f'%{q}%'
-    rows = db.session.query(Song, Album, Artist).join(
+    query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
         Album, AlbumSong.album_id == Album.id
@@ -991,7 +1018,12 @@ def album_search_songs(album_id):
     ).filter(
         Song.name.ilike(like),
         ArtistSong.artist_is_main == True,
-    ).distinct().all()
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
 
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows if s.id not in existing_ids]
@@ -1343,8 +1375,9 @@ def merge_candidates(song_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
+    country_id, genre_id = _get_filters()
     like = f'%{song.name}%'
-    rows = db.session.query(Song, Album, Artist).join(
+    query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
         Album, AlbumSong.album_id == Album.id
@@ -1356,7 +1389,12 @@ def merge_candidates(song_id):
         Song.name.ilike(like),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
-    ).distinct().all()
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows]
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
@@ -1374,8 +1412,9 @@ def merge_search(song_id):
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
+    country_id, genre_id = _get_filters()
     like = f'%{q}%'
-    rows = db.session.query(Song, Album, Artist).join(
+    query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
         Album, AlbumSong.album_id == Album.id
@@ -1387,7 +1426,12 @@ def merge_search(song_id):
         Song.name.ilike(like),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
-    ).distinct().all()
+    )
+    if country_id is not None:
+        query = query.filter(Artist.country_id == country_id)
+    if genre_id is not None:
+        query = query.join(album_genres, Album.id == album_genres.c.album_id).filter(album_genres.c.genre_id == genre_id)
+    rows = query.distinct().all()
     results = [{'id': s.id, 'name': s.name, 'artist': a.name, 'album': al.name}
                for s, al, a in rows]
     return json.dumps(results), 200, {'Content-Type': 'application/json'}

@@ -152,7 +152,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% if latest_update_id %}
+    {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
     <div id="update-notification" style="display:none; position:fixed; bottom:20px; right:20px; z-index:60;
          background:var(--edit-on-button); color:var(--button-text); padding:12px 18px; border-radius:8px;
          box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px; max-width:320px; line-height:1.5;">
@@ -161,16 +161,26 @@
         <button onclick="dismissUpdate()" style="position:absolute; top:6px; right:10px; background:none; border:none; color:var(--button-text); cursor:pointer; font-size:16px;">&times;</button>
     </div>
     <script>
-    var _latestUpdateId = {{ latest_update_id }};
+    var _latestUpdateId = {{ latest_update_id or 0 }};
     function dismissUpdate() {
         document.getElementById('update-notification').style.display = 'none';
         localStorage.setItem('arima-dismissed-update', _latestUpdateId);
+    }
+    function checkForUpdates() {
+        fetch('/updates/latest-id').then(function(r) { return r.json(); }).then(function(data) {
+            if (data.id > _latestUpdateId) _latestUpdateId = data.id;
+            var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
+            if (_latestUpdateId > dismissed) {
+                document.getElementById('update-notification').style.display = 'block';
+            }
+        }).catch(function() {});
     }
     (function() {
         var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
         if (_latestUpdateId > dismissed) {
             document.getElementById('update-notification').style.display = 'block';
         }
+        setInterval(checkForUpdates, 120000);
     })();
     </script>
     {% endif %}
