@@ -195,40 +195,58 @@ def _get_filtered_navbar():
     return get_filtered_navbar()
 
 
-def _get_collab_labels(song_ids, artist_id):
+def _get_collab_labels(song_ids, artist):
     """Return {song_id: 'with/feat. Artist1, Artist2'} for songs with other artists.
 
     'with Artist' for other main artists, 'feat. Artist' for featured artists.
+    For Anime artists (gender_id=3):
+      - On the anime artist's page: appends '(by OtherArtist)' after with/feat
+      - On another artist's page: appends 'for AnimeArtist' after with/feat
     """
+    ANIME_GENDER_ID = 3
     if not song_ids:
         return {}
     rows = ArtistSong.query.filter(
         ArtistSong.song_id.in_(song_ids),
-        ArtistSong.artist_id != artist_id,
+        ArtistSong.artist_id != artist.id,
     ).all()
     if not rows:
         return {}
     artist_ids = {row.artist_id for row in rows}
     artists_by_id = {a.id: a for a in Artist.query.filter(Artist.id.in_(artist_ids)).all()}
-    # Group by song: separate main vs featured
-    song_main = {}
-    song_feat = {}
+    # Group by song: separate main vs featured, tracking anime status
+    is_anime_page = artist.gender_id == ANIME_GENDER_ID
+    # Per-song buckets
+    song_data = {}
     for row in rows:
-        other_artist = artists_by_id.get(row.artist_id)
-        if not other_artist:
+        other = artists_by_id.get(row.artist_id)
+        if not other:
             continue
-        if row.artist_is_main:
-            song_main.setdefault(row.song_id, []).append(other_artist.name)
+        d = song_data.setdefault(row.song_id, {'main': [], 'feat': [], 'by': [], 'for': []})
+        is_other_anime = other.gender_id == ANIME_GENDER_ID
+        if is_anime_page and not is_other_anime and row.artist_is_main:
+            # On anime page, non-anime main artists use "by" instead of "with"
+            d['by'].append(other.name)
+        elif not is_anime_page and is_other_anime and row.artist_is_main:
+            # On non-anime page, anime main artists use "for" instead of "with"
+            d['for'].append(other.name)
+        elif row.artist_is_main:
+            d['main'].append(other.name)
         else:
-            song_feat.setdefault(row.song_id, []).append(other_artist.name)
+            d['feat'].append(other.name)
     labels = {}
-    for sid in set(list(song_main.keys()) + list(song_feat.keys())):
+    for sid, d in song_data.items():
         parts = []
-        if sid in song_main:
-            parts.append('with ' + ', '.join(song_main[sid]))
-        if sid in song_feat:
-            parts.append('feat. ' + ', '.join(song_feat[sid]))
-        labels[sid] = ' '.join(parts)
+        if d['main']:
+            parts.append('(with ' + ', '.join(d['main']) + ')')
+        if d['by']:
+            parts.append('(by ' + ', '.join(d['by']) + ')')
+        if d['for']:
+            parts.append('(for ' + ', '.join(d['for']) + ')')
+        if d['feat']:
+            parts.append('(feat. ' + ', '.join(d['feat']) + ')')
+        if parts:
+            labels[sid] = ' '.join(parts)
     return labels
 
 
@@ -326,7 +344,7 @@ def _build_discography(artist):
 
     # Bulk-load all ratings, collab labels, and song-artist associations
     all_ratings_map = _get_ratings_map(list(song_ids))
-    all_collab_labels = _get_collab_labels(song_ids, artist.id)
+    all_collab_labels = _get_collab_labels(song_ids, artist)
 
     # Bulk-load all artist associations for songs (for edit mode artist picker)
     all_song_artists_rows = db.session.query(
