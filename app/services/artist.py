@@ -272,6 +272,52 @@ def sync_misc_artist_stubs():
 
     db.session.flush()
 
+    # --- Merge orphan albums (NULL artist_id) into subunit albums ---
+    for child in existing_children.values():
+        # Find albums with artist_id set for this child, keyed by lowercase name
+        direct = {}
+        for row in db.session.execute(db.text(
+            'SELECT id, name FROM album WHERE artist_id = :cid'
+        ), {'cid': child.id}).fetchall():
+            direct[row[1].lower()] = row[0]
+
+        # Find orphan albums (NULL artist_id) linked to this child via songs
+        orphans = db.session.execute(db.text(
+            'SELECT DISTINCT a.id, a.name FROM album a '
+            'JOIN album_song als ON als.album_id = a.id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
+            'WHERE ars.artist_id = :cid AND a.artist_id IS NULL'
+        ), {'cid': child.id}).fetchall()
+
+        for orphan_id, orphan_name in orphans:
+            target_id = direct.get(orphan_name.lower())
+            if target_id and target_id != orphan_id:
+                # Move songs from orphan to target, get next track number
+                max_track = db.session.execute(db.text(
+                    'SELECT COALESCE(MAX(track_number), 0) FROM album_song WHERE album_id = :aid'
+                ), {'aid': target_id}).scalar()
+                songs = db.session.execute(db.text(
+                    'SELECT song_id, track_number FROM album_song '
+                    'WHERE album_id = :aid ORDER BY track_number'
+                ), {'aid': orphan_id}).fetchall()
+                for song_id, _ in songs:
+                    max_track += 1
+                    db.session.execute(db.text(
+                        'INSERT OR IGNORE INTO album_song (album_id, song_id, track_number) '
+                        'VALUES (:aid, :sid, :tn)'
+                    ), {'aid': target_id, 'sid': song_id, 'tn': max_track})
+                # Delete orphan album links and album
+                db.session.execute(db.text('DELETE FROM album_song WHERE album_id = :aid'), {'aid': orphan_id})
+                db.session.execute(db.text('DELETE FROM album_genres WHERE album_id = :aid'), {'aid': orphan_id})
+                db.session.execute(db.text('DELETE FROM album WHERE id = :aid'), {'aid': orphan_id})
+            elif not target_id:
+                # No matching direct album — just set artist_id on the orphan
+                db.session.execute(db.text(
+                    'UPDATE album SET artist_id = :cid WHERE id = :aid'
+                ), {'cid': child.id, 'aid': orphan_id})
+
+    db.session.flush()
+
     # --- Genre albums under each subunit ---
     all_children = list(existing_children.values())
 
