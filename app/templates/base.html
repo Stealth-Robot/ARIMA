@@ -223,7 +223,9 @@
     })();
     </script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/core.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
     {% set _ep = request.endpoint or '' %}
     {% if _ep in ('home.home', 'stats.global_stats', 'stats.artist_stats', 'rules.rules', 'views.views_page', 'profile.profile') %}
     <script>

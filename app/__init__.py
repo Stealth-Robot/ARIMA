@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-import click
 from flask import Flask, session
 from flask_login import current_user
 from sqlalchemy import event
@@ -175,8 +174,9 @@ def create_app():
             logger.info('Copied bundled database to %s', db_path)
         else:
             with flask_app.app_context():
+                from app.migrations import create_last_updated_triggers
                 db.create_all()
-                _create_last_updated_triggers(db)
+                create_last_updated_triggers(db)
                 from app.seed import seed
                 seed(db)
                 logger.info('Seeded new database at %s', db_path)
@@ -185,154 +185,16 @@ def create_app():
     from app.routes import register_routes
     register_routes(flask_app)
 
+    # Register CLI commands
+    from app.cli import register_cli
+    register_cli(flask_app)
+
     # Startup migrations — skip if SKIP_MIGRATIONS is set (run separately before gunicorn)
     if os.environ.get('SKIP_MIGRATIONS'):
         return flask_app
 
     with flask_app.app_context():
-        try:
-            from app.models.theme import Theme
-            from app.models.user import User
-
-            # 0. Create any missing tables (e.g. update)
-            db.create_all()
-
-            # 1a. Add any new song columns (e.g. note)
-            from app.models.music import Song
-            existing_song_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('song')"))}
-            for col in Song.__table__.columns:
-                if col.name not in existing_song_cols:
-                    db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
-                    logger.info('Added missing song column: %s', col.name)
-
-            # 1b. Add any new theme colour columns
-            existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
-            for col in Theme.__table__.columns:
-                if col.name not in existing and col.name not in ('id', 'name', 'user_id'):
-                    db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
-                    logger.info('Added missing theme column: %s', col.name)
-
-            # 2. Create missing personal Theme rows
-            existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
-            missing = User.query.filter(~User.id.in_(existing_user_ids)).all() if existing_user_ids else User.query.all()
-            for u in missing:
-                db.session.add(Theme(user_id=u.id))
-                logger.info('Created missing theme for user: %s', u.username)
-
-            # 3. Backfill NULL values in system themes
-            from app.seed import CLASSIC_THEME, DARK_THEME
-            colour_cols = [c.name for c in Theme.__table__.columns
-                           if c.name not in ('id', 'name', 'user_id')]
-            defaults = {0: CLASSIC_THEME, 1: DARK_THEME}
-            for theme_id, theme_name in ((0, 'Classic'), (1, 'Dark')):
-                theme = db.session.get(Theme, theme_id)
-                if theme:
-                    for col in colour_cols:
-                        if getattr(theme, col) is None:
-                            default = defaults[theme_id].get(col)
-                            if default:
-                                setattr(theme, col, default)
-                                logger.info('Backfilled %s theme column %s = %s', theme_name, col, default)
-
-            # 4. Add missing indexes
-            for idx_sql in [
-                'CREATE INDEX IF NOT EXISTS ix_artist_artist_relationship ON artist_artist (relationship)',
-                'CREATE INDEX IF NOT EXISTS ix_rating_user_id ON rating (user_id)',
-            ]:
-                db.session.execute(db.text(idx_sql))
-
-            # 5. Remove personal themes for guest/system users (no email)
-            deleted = db.session.execute(db.text(
-                'DELETE FROM theme WHERE user_id IN (SELECT id FROM user WHERE email IS NULL)'
-            )).rowcount
-            if deleted:
-                logger.info('Removed %d guest/system theme rows', deleted)
-
-            # 6. Ensure Misc. Artists has country subunits and genre albums
-            from app.services.artist import sync_misc_artist_stubs
-            sync_misc_artist_stubs()
-
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            pass  # DB may not exist yet
-
-    def _create_last_updated_triggers(database):
-        """Create SQLite triggers that auto-set last_updated on row updates."""
-        for table in ('artist', 'song', 'album', 'user'):
-            database.session.execute(database.text(f"""
-                CREATE TRIGGER IF NOT EXISTS trg_{table}_last_updated
-                AFTER UPDATE ON {table}
-                BEGIN
-                    UPDATE {table} SET last_updated = strftime('%Y-%m-%dT%H:%M:%S', 'now')
-                    WHERE id = NEW.id;
-                END;
-            """))
-        database.session.commit()
-
-    # Flask CLI: seed command
-    @flask_app.cli.command('seed')
-    def seed_command():
-        """Create all tables and insert seed data."""
-        db.create_all()
-        _create_last_updated_triggers(db)
-        from app.seed import seed
-        seed(db)
-        click.echo('Database seeded.')
-
-    @flask_app.cli.command('import-jpop')
-    def import_jpop_command():
-        """Import JPOP data from 'lettuce jpop.xlsx'."""
-        from scripts.import_jpop_data import import_jpop
-        import_jpop()
-        click.echo('JPOP import complete.')
-
-    @flask_app.cli.command('import-kpop-notes')
-    def import_kpop_notes_command():
-        """Import cell comment notes from 'lettuce kpop.xlsx'."""
-        from scripts.import_kpop_notes import import_kpop_notes
-        import_kpop_notes()
-        click.echo('Kpop notes import complete.')
-
-    @flask_app.cli.command('fix-missing-songs')
-    def fix_missing_songs_command():
-        """Import Q=False songs that were missed inside album contexts."""
-        from scripts.fix_missing_songs import fix_missing_songs
-        fix_missing_songs()
-        click.echo('Fix complete.')
-
-    @flask_app.cli.command('fetch-album-dates')
-    def fetch_album_dates_command():
-        """Fetch exact release dates for albums from MusicBrainz."""
-        from scripts.fetch_album_dates import fetch_album_dates
-        fetch_album_dates()
-        click.echo('Album date fetch complete.')
-
-    @flask_app.cli.command('import-rock')
-    def import_rock_command():
-        """Import data from 'lettuce billy joel.xlsx'."""
-        from scripts.import_rock_data import import_rock
-        import_rock()
-        click.echo('Rock import complete.')
-
-    @flask_app.cli.command('rename-user')
-    def rename_user_command():
-        """One-time: rename user id=6 to Emily."""
-        from scripts.rename_user import rename_user
-        rename_user()
-
-    @flask_app.cli.command('fix-themes')
-    def fix_themes_command():
-        """Create missing personal Theme rows for users that don't have one."""
-        from app.models import User, Theme
-        users = User.query.all()
-        count = 0
-        for u in users:
-            if not Theme.query.filter_by(user_id=u.id).first():
-                db.session.add(Theme(user_id=u.id))
-                count += 1
-                click.echo(f'Created theme for {u.username}')
-        db.session.commit()
-        click.echo(f'Done. Created {count} theme(s).')
+        from app.migrations import run_startup_migrations
+        run_startup_migrations()
 
     return flask_app
