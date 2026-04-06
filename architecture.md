@@ -4,41 +4,49 @@
 
 ## 1. Project Structure
 
-Flat Flask app with route modules — no blueprints. Blueprints add ceremony that a 5-user app doesn't need. If the app ever grows past ~20 routes, extract blueprints then.
+Flask app with blueprints for route modules.
 
 ```
 ARIMA/
 ├── app/
 │   ├── __init__.py          # create_app() factory
 │   ├── config.py            # Config classes (Dev, Prod)
-│   ├── extensions.py        # db, login_manager, bcrypt (shared instances)
+│   ├── extensions.py        # db, login_manager, bcrypt, csrf (shared instances)
 │   ├── models/
 │   │   ├── __init__.py      # import all models (ensures registration)
 │   │   ├── user.py          # User, UserSettings, Role
 │   │   ├── music.py         # Artist, Album, Song, Rating + pivot models
-│   │   ├── submission.py    # Submission
 │   │   ├── theme.py         # Theme
 │   │   ├── changelog.py     # Changelog
+│   │   ├── update.py        # Update (daily activity log)
 │   │   ├── rules.py         # Rules
 │   │   └── lookups.py       # Country, Genre, AlbumType, GroupGender, ArtistRelationship
 │   ├── routes/
-│   │   ├── __init__.py      # register_routes(app) — imports and wires all route modules
+│   │   ├── __init__.py      # register blueprints
 │   │   ├── auth.py          # /login, /logout, /create-account, /guest
 │   │   ├── home.py          # /
 │   │   ├── artists.py       # /artists, /artists/<id> + HTMX fragments
 │   │   ├── stats.py         # /artist-stats, /global-stats + HTMX fragments
-│   │   ├── ratings.py       # /rate (POST), /rate/<id> (PUT)
-│   │   ├── submissions.py   # /submit, /submissions, /submissions/<id>/approve, reject
+│   │   ├── ratings.py       # /rate (POST)
+│   │   ├── edit/            # Edit mode routes (artists, albums, songs)
 │   │   ├── changelog.py     # /changelog
 │   │   ├── rules.py         # /rules, /rules/edit
 │   │   ├── views.py         # /views
 │   │   ├── users.py         # /admin/users (User Management)
+│   │   ├── admin.py         # /admin (database replacement, etc.)
 │   │   ├── profile.py       # /profile, /profile/settings
-│   │   └── themes.py        # /themes, /themes/<id>/edit
+│   │   ├── themes.py        # /themes, /themes/<id>/edit
+│   │   ├── updates.py       # /updates (activity timeline)
+│   │   ├── search.py        # /search
+│   │   ├── events.py        # SSE events
+│   │   └── health.py        # /health
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── stats.py         # Scored group calculation, averages, viewer-relative globals
-│   │   ├── submission.py    # Create/approve/reject submission transactions
+│   │   ├── artist.py        # Artist operations
+│   │   ├── audit.py         # Audit logging
+│   │   ├── email.py         # Transactional email (Resend / SMTP)
+│   │   ├── events.py        # Server-sent events
 │   │   ├── user.py          # User deletion (theme rename → delete → compact sort_order)
 │   │   └── theme.py         # Theme loading with Classic fallback
 │   ├── templates/
@@ -47,32 +55,22 @@ ARIMA/
 │   │   │   ├── artist_discography.html
 │   │   │   ├── rating_cell.html
 │   │   │   ├── stats_row.html
-│   │   │   ├── submission_detail.html
 │   │   │   └── ...
 │   │   ├── auth/
 │   │   │   └── login.html
-│   │   ├── home.html
-│   │   ├── artists.html
-│   │   ├── artist_stats.html
-│   │   ├── global_stats.html
-│   │   ├── submissions.html
-│   │   ├── changelog.html
-│   │   ├── rules.html
-│   │   ├── views.html
-│   │   ├── users.html
-│   │   ├── profile.html
-│   │   └── themes.html
+│   │   └── *.html           # Full page templates
 │   ├── static/
 │   │   ├── css/
 │   │   │   └── app.css      # Minimal custom CSS (Tailwind handles most)
 │   │   ├── js/
-│   │   │   └── app.js       # Minimal JS (HTMX handles most)
+│   │   │   ├── core.js      # Shared utilities
+│   │   │   ├── edit.js      # Edit mode JS
+│   │   │   └── ratings.js   # Rating interaction JS
 │   │   └── img/             # Static assets (logo, default images)
 │   ├── decorators.py        # @role_required, @admin_only, @editor_or_admin
 │   └── seed.py              # Database seeding script
-├── Utils/
-│   └── table_formatter.py
-├── migrations/              # Alembic (if needed later — manual for v1, see §3)
+├── scripts/                 # Data import/export scripts
+├── migrations/              # One-off schema migration scripts
 ├── kpop-rating-database-design.md
 ├── architecture.md
 ├── README.md
@@ -86,7 +84,7 @@ ARIMA/
 ### Why This Structure
 
 - **`models/` split by domain** — not one giant `models.py`. Keeps imports clean and files under 200 lines each.
-- **`services/`** — business logic that touches multiple models or requires transactions. Routes stay thin (validate input → call service → render template). This is not over-abstraction — these are the complex operations (submission approval, user deletion, stats calculation) that would otherwise bloat route files.
+- **`services/`** — business logic that touches multiple models or requires transactions. Routes stay thin (validate input → call service → render template). This is not over-abstraction — these are the complex operations (user deletion, stats calculation) that would otherwise bloat route files.
 - **`fragments/`** — HTMX partials live in their own directory so it's obvious which templates return full pages vs HTML chunks.
 - **`extensions.py`** — avoids circular imports. Models import `db` from here; `create_app()` initialises it.
 
@@ -100,14 +98,17 @@ Flask==3.1.*
 Flask-Login==0.6.*
 Flask-Bcrypt==1.0.*
 Flask-SQLAlchemy==3.1.*
+Flask-WTF==1.2.*
+Flask-Compress==1.*
 gunicorn==23.*
+python-dotenv==1.*
+markdown==3.*
+resend
 ```
 
-That's it. Five dependencies.
-
-- **No Alembic for v1.** The schema is fully defined upfront. Use `db.create_all()` + `seed.py` for initial setup. If a migration is needed later (e.g., adding a theme colour column), write it as a one-off SQL script in a `migrations/` folder. Alembic is worth adding if migrations become frequent.
-- **No Flask-Migrate.** Same reason.
-- **No Flask-WTF.** Forms are simple enough to validate manually. HTMX POST bodies are standard form data.
+- **No Alembic.** Schema migrations are handled as one-off scripts in `migrations/`. Alembic is worth adding if migrations become frequent.
+- **Flask-WTF** provides CSRF protection.
+- **Flask-Compress** for gzip response compression.
 - **HTMX + Tailwind via CDN** in `base.html`. No npm, no build step, no bundler.
 
 ---
@@ -163,7 +164,7 @@ with app.app_context():
 - All models inherit from `db.Model`.
 - Table names are lowercase snake_case (SQLAlchemy default).
 - Lookup tables (Roles, Countries, etc.) use plain `Integer` PKs — no AUTOINCREMENT.
-- Entity tables (Users, Artists, Songs, Albums, Submissions, Changelog, Themes) use `autoincrement=True`.
+- Entity tables (Users, Artists, Songs, Albums, Changelog, Themes) use `autoincrement=True`.
 - Timestamps as `Text` (not DateTime) to match SQLite's native text storage. Store as ISO 8601 strings.
 - Boolean columns use `Boolean` type (SQLite stores as 0/1).
 
@@ -227,13 +228,8 @@ class UserSettings(db.Model):
 # models/music.py
 class Artist(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    submission_id = db.Column(db.Integer,
-                              db.ForeignKey('submission.id', ondelete='RESTRICT'),
-                              nullable=False)
-    # ... other columns
+    # ... other columns (name, gender_id, country_id, last_updated, is_disbanded)
 
-    # Many-to-many: artists ↔ songs (use .__table__ because ArtistSong is a full model)
-    songs = db.relationship('Song', secondary='ArtistSong.__table__', back_populates='artists')
     # Parent/child relationships
     children = db.relationship('ArtistArtist',
                                foreign_keys='ArtistArtist.artist_1',
@@ -241,22 +237,13 @@ class Artist(db.Model):
 
 class Song(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    submission_id = db.Column(db.Integer,
-                              db.ForeignKey('submission.id', ondelete='RESTRICT'),
-                              nullable=False)
-    # ...
-    artists = db.relationship('Artist', secondary='ArtistSong.__table__', back_populates='songs')
-    albums = db.relationship('Album', secondary='AlbumSong.__table__', back_populates='songs')
+    # ... (name, is_promoted, is_remix, note)
     ratings = db.relationship('Rating', back_populates='song',
                               cascade='all, delete-orphan')
 
 class Album(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    submission_id = db.Column(db.Integer,
-                              db.ForeignKey('submission.id', ondelete='RESTRICT'),
-                              nullable=False)
-    # ...
-    songs = db.relationship('Song', secondary='AlbumSong.__table__', back_populates='albums')
+    # ... (name, release_date, album_type_id)
     genres = db.relationship('Genre', secondary='album_genres', back_populates='albums')
 
 class Rating(db.Model):
@@ -328,7 +315,7 @@ def seed(db):
     for id, name in [(0, 'Admin'), (1, 'Editor'), (2, 'User'), (3, 'Viewer'), (4, 'System')]:
         db.session.merge(Role(id=id, role=name))
 
-    # 2. Reserved users, seed submission, system themes
+    # 2. Reserved users, system themes
     # ... per whitepaper
 
     # 3. Fix AUTOINCREMENT sequences
@@ -422,11 +409,6 @@ def role_required(allowed_role_ids):
 # @role_required(ADMIN)
 # def user_management(): ...
 #
-# @app.route('/submissions')
-# @login_required
-# @role_required(EDITOR_OR_ADMIN)
-# def submissions(): ...
-#
 # @app.route('/rate', methods=['POST'])
 # @login_required
 # @role_required(USER_OR_ABOVE)
@@ -476,7 +458,6 @@ def artist_detail(artist_id):
 | Edit rules (inline) | `hx-get="/rules/edit"` | `#rules-content` | `rules_edit_form.html` |
 | Save rules | `hx-post="/rules"` | `#rules-content` | `rules_display.html` |
 | Search changelog | `hx-get="/changelog?q=..."` | `#changelog-list` | `changelog_list.html` |
-| Approve/reject submission | `hx-post` | `#submission-<id>` | `submission_detail.html` |
 
 ### Conventions
 
@@ -635,58 +616,7 @@ This runs per stats page load. No materialised views, no pre-aggregation.
 
 ---
 
-## 9. Submission Transaction Pattern
-
-The most complex write operation. Must be atomic:
-
-```python
-# services/submission.py
-from datetime import datetime, timezone
-
-def _now():
-    return datetime.now(timezone.utc).isoformat()
-
-def create_submission(user, artist_data, album_data, songs_data):
-    """Create a full submission in one transaction."""
-    timestamp = _now()
-    submission = Submission(
-        submitted_by_id=user.id,
-        submitted_at=timestamp,
-        status='approved' if user.is_editor_or_admin else 'pending',
-        approved_by_id=0 if user.is_editor_or_admin else None,
-        approved_at=timestamp if user.is_editor_or_admin else None,
-    )
-    db.session.add(submission)
-    db.session.flush()  # get submission.id
-
-    artist = Artist(submission_id=submission.id, submitted_by_id=user.id, ...)
-    db.session.add(artist)
-    db.session.flush()
-
-    for album_info in album_data:
-        album = Album(submission_id=submission.id, submitted_by_id=user.id, ...)
-        db.session.add(album)
-        db.session.flush()
-
-        for track_num, song_info in enumerate(album_info['songs'], 1):
-            song = Song(submission_id=submission.id, submitted_by_id=user.id, ...)
-            db.session.add(song)
-            db.session.flush()
-            # ALWAYS create Album_Song in same transaction — orphan prevention
-            db.session.add(AlbumSong(album_id=album.id, song_id=song.id,
-                                     track_number=track_num))
-            db.session.add(ArtistSong(artist_id=artist.id, song_id=song.id,
-                                      artist_is_main=True))
-
-    db.session.commit()  # atomic — all or nothing
-    return submission
-```
-
-If anything fails, SQLAlchemy rolls back the entire transaction. No orphaned songs.
-
----
-
-## 10. User Deletion Transaction
+## 9. User Deletion Transaction
 
 Another multi-step operation that must be atomic:
 
@@ -721,7 +651,7 @@ def delete_user(user):
 
 ---
 
-## 11. Deployment (Railway)
+## 10. Deployment (Railway)
 
 ### Procfile
 
@@ -770,22 +700,19 @@ def seed_command():
 
 ---
 
-## 12. Decisions That Can Wait
+## 11. Decisions That Can Wait
 
 These are explicitly NOT decided now. Defer until the developer hits them:
 
 | Decision | When to Decide |
 |---|---|
-| Alembic/migrations tooling | When the first schema change is needed post-launch |
+| Alembic/migrations tooling | If migrations become frequent enough to warrant it |
 | Caching layer (Redis, etc.) | If page loads become noticeably slow (unlikely at ~5 users) |
-| Email provider for invites | When implementing User Management (#18) — pick the simplest transactional email service at that time |
-| Changelog auto-generation vs manual | When implementing Changelog (#15) — try auto-generation first |
-| Image storage (profile pics, home page) | When implementing Profile (#19) — likely just store on the persistent volume or use a free tier of Cloudflare R2/S3 |
 | Rate limiting | If abuse is observed (unlikely in a trusted friend group) |
 
 ---
 
-## 13. Implementation Order
+## 12. Implementation Order
 
 Recommended sequence (matches issue numbers):
 
@@ -809,12 +736,8 @@ Phase 3: Main Pages
   #10 Artist Stats
   #11 Global Stats
 
-Phase 4: Content Pipeline
-  #13 Content Submission Form
-  #14 Submissions Page
+Phase 4: Content & Admin
   #15 Changelog
-
-Phase 5: Admin & Settings
   #16 Rules Page
   #17 Views Page
   #18 User Management
@@ -822,11 +745,11 @@ Phase 5: Admin & Settings
   #20 Themes Page
 ```
 
-Phase 1 is pure backend — no UI needed to validate. Phase 2 gets a working login-to-homepage flow. Phase 3 is the meat of the app. Phase 4 adds the content pipeline. Phase 5 is admin tooling that can ship last because the admin (you) can manage directly via SQLite until then.
+Phase 1 is pure backend — no UI needed to validate. Phase 2 gets a working login-to-homepage flow. Phase 3 is the meat of the app. Phase 4 is admin tooling and content management.
 
 ---
 
-## 14. Rating Colours & Heat Maps
+## 13. Rating Colours & Heat Maps
 
 ### Decision: ALL colours go in the Theme table.
 
@@ -913,7 +836,7 @@ The Key column cycles: Standard (7 rows: header + 6 scores) → Stealth (7 rows)
 
 ---
 
-## 15. UI Refinement Plan (Issues #36–#47)
+## 14. UI Refinement Plan (Issues #36–#47)
 
 ### Grouping and Dependencies
 

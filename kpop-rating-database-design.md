@@ -84,19 +84,18 @@ For v1 with ~5 users and a stable UI, schema migrations for new colours are infr
 
 ## Permissions
 
-| Action                          | Viewer | User          | Editor | Admin |
-|---------------------------------|--------|---------------|--------|-------|
-| Browse artists, albums, songs   | Yes    | Yes           | Yes    | Yes   |
-| View ratings                    | Yes    | Yes           | Yes    | Yes   |
-| View stats                      | Yes    | Yes           | Yes    | Yes   |
-| Rate songs                      | No     | Yes           | Yes    | Yes   |
-| Update own rating               | No     | Yes           | Yes    | Yes   |
-| Add artists, albums, songs      | No     | Yes (pending) | Yes    | Yes   |
-| Edit artists, albums, songs     | No     | No            | Yes    | Yes   |
-| Approve/reject pending changes  | No     | No            | Yes    | Yes   |
-| Delete songs/albums/artists     | No     | No            | No     | Yes   |
-| Assign user roles               | No     | No            | No     | Yes   |
-| Invite users                    | No     | No            | No     | Yes   |
+| Action                          | Viewer | User | Editor | Admin |
+|---------------------------------|--------|------|--------|-------|
+| Browse artists, albums, songs   | Yes    | Yes  | Yes    | Yes   |
+| View ratings                    | Yes    | Yes  | Yes    | Yes   |
+| View stats                      | Yes    | Yes  | Yes    | Yes   |
+| Rate songs                      | No     | Yes  | Yes    | Yes   |
+| Update own rating               | No     | Yes  | Yes    | Yes   |
+| Add artists, albums, songs      | No     | No   | Yes    | Yes   |
+| Edit artists, albums, songs     | No     | No   | Yes    | Yes   |
+| Delete songs/albums/artists     | No     | No   | No     | Yes   |
+| Assign user roles               | No     | No   | No     | Yes   |
+| Invite users                    | No     | No   | No     | Yes   |
 
 Admin has all permissions. Editor has all permissions that User and Viewer have. User has all permissions that Viewer has.
 
@@ -122,11 +121,9 @@ The **System** role (id=4) is internal only — it is never displayed in the UI,
 
 ### Content Management
 
-- As a user, I want to submit a new album (with its songs and artist) so the group can rate it. Songs must always be submitted as part of an album.
-- As an editor, I want to see a queue of user-submitted albums pending approval so I can review them.
-- As an editor, I want to approve or reject a pending submission, with the ability to reject individual songs while approving the rest, so only quality entries make it into the catalog.
+- As an editor, I want to add new artists, albums, and songs so the group can rate them.
 - As an editor, I want to edit song, album, and artist details so I can fix typos or incorrect info.
-- As an admin, I want to add albums via the same submission process, with my submissions auto-approved, so I can manage the catalog quickly.
+- As an admin, I want to delete songs, albums, or artists when needed.
 
 ### User Management
 
@@ -145,7 +142,6 @@ The **System** role (id=4) is internal only — it is never displayed in the UI,
 - Changelog
 - Rules
 - Views
-- Submissions (Editor and Admin only)
 - Country dropdown (far right) — "All" (prepended by application code, default, no filter applied) followed by options from the Countries table.
 - Genre dropdown (far right) — "All" (prepended by application code, default, no filter applied) followed by options from the Genres table.
 - Profile Image (far right)
@@ -161,7 +157,7 @@ The Country and Genre dropdowns act as global filters. "All" is the default sele
         - The email is checked against the Users table. Only pre-invited emails (where the account has not yet been created) are allowed.
             - show error message if the password(hash) column is not null "User Account Already Exists"
             - show error message if the email doenst have an associated user "User Not Invited"
-        - **Known issue:** Anyone who knows an invited email address could claim the account before the intended recipient. This is worse than a simple race condition — the malicious claimer permanently locks out the intended user because: (1) the email slot is consumed and cannot be re-invited, (2) the claimer can set any username they want during account creation, and (3) usernames cannot be changed after creation in v1. The legitimate user has no path to create an account for that email. **Recovery flow:** An Admin deletes the fraudulent User row (which cascades to Ratings and User_Settings, sets NULL on submitted content via ON DELETE SET NULL). The Admin then creates a new invite with the same email address — this works because the UNIQUE constraint on email is released when the fraudulent row is deleted. The intended user can then complete account creation normally.  Acceptable tradeoff for v1 given the app's small, trusted user base.
+        - **Known issue:** Anyone who knows an invited email address could claim the account before the intended recipient. This is worse than a simple race condition — the malicious claimer permanently locks out the intended user because: (1) the email slot is consumed and cannot be re-invited, (2) the claimer can set any username they want during account creation, and (3) usernames cannot be changed after creation in v1. The legitimate user has no path to create an account for that email. **Recovery flow:** An Admin deletes the fraudulent User row (which cascades to Ratings and User_Settings). The Admin then creates a new invite with the same email address — this works because the UNIQUE constraint on email is released when the fraudulent row is deleted. The intended user can then complete account creation normally.  Acceptable tradeoff for v1 given the app's small, trusted user base.
 - Upon loading the app (from any URL), the user is redirected to the login page if not logged in.
 - Upon successful login, the session is stored in a cookie (30-day expiry).
 - Page layout (top to bottom):
@@ -188,7 +184,7 @@ The Country and Genre dropdowns act as global filters. "All" is the default sele
 **Top Table**
 - Under Artist, there are 4 rows (Overall Average, Total Rated Songs, Rank, Scored Group Count).
     - Scored group count has a tooltip that explains what counts as a "scored group" (for initial release, it is 80% or more rated songs, but will be more complex later). The 80% threshold is intentionally hardcoded in application code — it is not a configurable setting or database value. This is calculated per user — the count of artists where that specific user has rated 80%+ of the artist's songs. **Scored group count is always calculated live against the current song totals.** It is expected to fluctuate: a user's count may increase as they rate more songs, and decrease when new songs are added to an artist (reducing the user's percentage below the threshold). This is intentional — the metric reflects the user's current standing, not a historical snapshot.
-    - **Denominator definition ("the artist's songs"):** The song count used as the denominator respects the user's settings: featured songs are included only if `include_featured = true`, remix tracks are included only if `include_remixes = true`. Songs from the artist's subunits are included in the parent's count, but soloist songs are not (soloists have their own row). Unapproved (pending) songs are included in the denominator.
+    - **Denominator definition ("the artist's songs"):** The song count used as the denominator respects the user's settings: featured songs are included only if `include_featured = true`, remix tracks are included only if `include_remixes = true`. Songs from the artist's subunits are included in the parent's count, but soloist songs are not (soloists have their own row).
 - Under Global Average, there are 4 rows (all averages exclude users with zero rated songs):
     - Overall average % of songs rated
     - Overall average count of rated songs
@@ -270,67 +266,31 @@ The last updated date is shown on the page. This is not the date of the last cha
 
 **Global averages are viewer-relative.** Global averages are computed against the viewing user's song set (respecting their `include_featured` and `include_remixes` settings) — they are not precomputed or shared across users. Two users with different settings will see different Global Average values for the same artist.
 
-**Unapproved items:** Unapproved (pending) artists, albums, and songs are always visible on all pages (Artists, Stats, etc.). An item is pending if its `submission_id` references a Submission with `status = 'pending'`. Pending items are visually distinguished from approved items (e.g., different background colour, opacity, or a "pending" badge — styled via the theme). Users can rate pending songs. Pending items include a link to the Submissions page so editors/admins can quickly navigate to approve or edit them. This ensures content is immediately useful upon submission, even before approval.
-
 ### Rules
 
 - User-authored content managed by Editors and Admins.
-- Visible to all roles (Users need to see rules before making submissions).
-- Covers rules for submissions, formatting, what should/shouldn't be added, etc.
+- Visible to all roles.
+- Covers rules for formatting, what should/shouldn't be added, etc.
 - Displays the rules content as rendered text.
 - Editors and Admins see an "Edit" button. Clicking it replaces the rendered text with an editable text field and the "Edit" button changes to a "Save" button. Clicking "Save" persists the content and switches back to rendered view.
 - Content is stored in the Rules table (see Database Tables).
 
 ### Changelog
 
-| Column        | Description                                                                                                                                                                          |
-|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Date          | When the change was made                                                                                                                                                             |
-| User          | Who submitted the change                                                                                                                                                             |
-| Approved By   | The approving Editor/Admin's name. For auto-approved changes (Editor/Admin submissions), shows "(auto)". For pending changes, shows "(pending)" with a link to the Submissions page. |
-| Description   | What changed (e.g., "Added album 'Biggest Fan' for Irene", "Removed song 'MOVEURBODY' from HYO album 'Banger'")                                                                      |
-| Justification | Required for removals (e.g., "duplicate album"). Optional otherwise.                                                                                                                 |
+| Column        | Description                                                                                                  |
+|---------------|--------------------------------------------------------------------------------------------------------------|
+| Date          | When the change was made                                                                                     |
+| User          | Who made the change                                                                                          |
+| Description   | What changed (e.g., "Added album 'Biggest Fan' for Irene", "Removed song 'MOVEURBODY' from HYO album 'Banger'") |
+| Justification | Required for removals (e.g., "duplicate album"). Optional otherwise.                                         |
 
-Logged changes: album add/removal, song add/removal, artist add/removal, song rejection from a submission.
+Logged changes: album add/removal, song add/removal, artist add/removal.
 
 - Search field at the top to filter by album/artist.
-- Changelog entries are **never deleted**. When a submission is rejected or items are deleted, the corresponding changelog entries survive with their foreign keys set to NULL (via ON DELETE SET NULL). The description field retains the human-readable record of what happened.
-- [Open question] Should changelog entries be auto-generated? Want to group changes into logical groupings to simplify somehow as well.
+- Changelog entries are **never deleted**. When items are deleted, the corresponding changelog entries survive with their foreign keys set to NULL (via ON DELETE SET NULL). The description field retains the human-readable record of what happened.
 
 ### Add Artist Page
-- Looks similar to a standard srtist page but starts empty and the user imputs albums and songs
-
-### Submissions
-
-- Only visible to Editor and Admin.
-- Shows pending submissions as a list with a search field at the top.
-- Each submission is expandable to show all items it contains (artist, albums, songs).
-- Editors/Admins can edit a submission before approving (e.g., fixing formatting).
-
-**Line-by-line rejection:** Editors can reject individual songs within a submission. The UI presents each song with a checkbox or reject button. This allows the editor to cherry-pick which items survive approval.
-
-**Approval flow:**
-1. Editor reviews the submission and optionally marks individual songs for rejection.
-2. Editor clicks "Approve."
-3. A confirmation modal displays:
-    - Items that will be approved (album, remaining songs, artist if new).
-    - Items that will be rejected and deleted (marked songs and their ratings).
-4. On confirm:
-    - Approved items: The album, non-rejected songs, and the artist (if newly created) remain linked to the Submission. Their approval status is derived from the Submission's `status`.
-    - Rejected songs: The song and its ratings are deleted. A changelog entry is created for each rejected song (e.g., "Song 'X' rejected from submission #Y").
-    - The Submission record: `status = 'approved'`, `approved_by_id` and `approved_at` are set.
-
-**Full rejection flow:**
-1. Editor clicks "Reject" on the entire submission.
-2. Editor must provide a `rejected_reason`.
-3. A confirmation modal displays every row that will be deleted (artist, albums, songs, ratings) with Confirm and Cancel buttons.
-4. On confirm:
-    - All items created by the submission are deleted (artist, albums, songs, ratings).
-    - Changelog entries referencing deleted items survive (foreign keys become NULL via ON DELETE SET NULL). A new changelog entry is created: "Submission #Y rejected: [reason]".
-    - The Submission record: `status = 'rejected'`, `rejected_by_id`, `rejected_at`, and `rejected_reason` are set. The Submission row itself is never deleted — it serves as the permanent audit record.
-- [v2] Before deletion, also send an email to affected users listing the deleted artist/album/song and their lost ratings in a summary table. Not implemented in v1.
-
-**Auto-approval:** Editor and Admin submissions are auto-approved (`status = 'approved'`, `approved_by_id` set to the System user id=0). Approval status is derived from the Submission — no separate flag on entities.
+- Editors and Admins can add new artists, albums, and songs directly.
 
 ### Views
 
@@ -367,16 +327,15 @@ Logged changes: album add/removal, song add/removal, artist add/removal, song re
 
 ### General Conventions
 
-- **AUTOINCREMENT:** Tables with `INTEGER PRIMARY KEY AUTOINCREMENT` are noted below. SQLite's AUTOINCREMENT guarantees IDs are never reused, even after deletion. Lookup tables with manually assigned IDs do not use AUTOINCREMENT. **Seeding:** All default/reserved rows (e.g., Users id 0-2, Submissions id 0) are inserted via seed script after table creation. The seed script must update `sqlite_sequence` to the highest seeded ID so that subsequent AUTOINCREMENT inserts start above the reserved range.
+- **AUTOINCREMENT:** Tables with `INTEGER PRIMARY KEY AUTOINCREMENT` are noted below. SQLite's AUTOINCREMENT guarantees IDs are never reused, even after deletion. Lookup tables with manually assigned IDs do not use AUTOINCREMENT. **Seeding:** All default/reserved rows (e.g., Users id 0-2) are inserted via seed script after table creation. The seed script must update `sqlite_sequence` to the highest seeded ID so that subsequent AUTOINCREMENT inserts start above the reserved range.
 - **NOT NULL:** All columns are NOT NULL unless explicitly marked as "Nullable."
 - **DEFAULT:** Columns with a default value are noted. Columns without a default must be explicitly set on insert.
 - **ON DELETE behaviour:** Foreign keys use different ON DELETE strategies depending on the relationship:
     - `ON DELETE CASCADE`: Used where child rows have no meaning without the parent (e.g., Ratings → Users, Ratings → Songs, User_Settings → Users, Album_Song → Albums/Songs, Artist_Song → Artists/Songs, Album_Genres → Albums/Genres).
-    - `ON DELETE SET NULL`: Used where the row should survive the deletion of the referenced entity (e.g., `submitted_by_id` on Artists/Albums/Songs/Submissions, `user_id` and `approved_by_id` on Changelog, `user_id` on Themes). These columns must be nullable.
-    - `ON DELETE RESTRICT`: Used where deletion of the parent should be blocked if children still reference it (e.g., `submission_id` on Artists/Albums/Songs — Submissions are audit records and must not be deleted while referenced).
+    - `ON DELETE SET NULL`: Used where the row should survive the deletion of the referenced entity (e.g., `user_id` on Changelog, `user_id` on Themes). These columns must be nullable.
     - Each foreign key's ON DELETE behaviour is documented in the table where it is defined. If not explicitly stated, assume `ON DELETE CASCADE`.
 - **User list filtering:** System (id=0) and Guest (id=1) accounts are excluded from all user lists in the app (Stats, Artists, User Management). To determine exclusion, check `email IS NULL`.
-- **Deletion confirmation:** All delete and rejection actions display a modal listing every row that will be affected (cascaded deletes, lost ratings, etc.) with Confirm and Cancel buttons. The deletion only proceeds on Confirm.
+- **Deletion confirmation:** All delete actions display a modal listing every row that will be affected (cascaded deletes, lost ratings, etc.) with Confirm and Cancel buttons. The deletion only proceeds on Confirm.
 
 ### Reserved User IDs
 
@@ -384,7 +343,7 @@ IDs 0-2 are reserved for system and special accounts. Real user IDs start at 3 (
 
 | ID | Username      | Purpose                                                        |
 |----|---------------|----------------------------------------------------------------|
-| 0  | (auto)        | System user. Used as `approved_by_id` for auto-approved items. |
+| 0  | (auto)        | System user. Used for audit logging.                           |
 | 1  | Guest         | Shared guest account with Viewer permissions.                  |
 | 2  | Stealth       | Default admin account.                                         |
 
@@ -412,7 +371,7 @@ Foreign keys: `role_id` → Roles(`id`).
 - The user's Ratings (via ON DELETE CASCADE on `Ratings.user_id`).
 - The user's User_Settings row (via ON DELETE CASCADE on `User_Settings.user_id`).
 
-Everything else the user created (Artists, Albums, Songs, Submissions, Changelog entries) **survives deletion**. The `submitted_by_id` columns on those tables are set to NULL (via ON DELETE SET NULL), preserving the content while removing the link to the deleted user. The user's personal Theme row also survives — see Themes table for details.
+Everything else the user created (Changelog entries) **survives deletion** with `user_id` set to NULL (via ON DELETE SET NULL). The user's personal Theme row also survives — see Themes table for details.
 
 Default data:
 
@@ -480,7 +439,6 @@ Every colour used in the app is a column in this table. No hardcoded colours —
 | gender_male      | TEXT    | Nullable. Male artist name colour.                                                                                                            |
 | gender_mixed     | TEXT    | Nullable. Mixed group artist name colour.                                                                                                     |
 | album_name       | TEXT    | Nullable. Album name colour (used on Artists page).                                                                                           |
-| pending_item     | TEXT    | Nullable. Background/highlight colour for pending (unapproved) items.                                                                         |
 | link             | TEXT    | Nullable. Link colour.                                                                                                                        |
 | button_primary   | TEXT    | Nullable. Primary button colour.                                                                                                              |
 | button_secondary | TEXT    | Nullable. Secondary button colour.                                                                                                            |
@@ -538,74 +496,43 @@ Default data:
 
 "All" is not stored in the database. It is prepended to the Genre dropdown in the UI by application code and represents "no filter applied" (i.e., show all genres).
 
-### Submissions
-
-A Submission is the grouping entity that ties together all items created in a single user action (e.g., submitting an album with its songs and optionally a new artist). Every Artist, Album, and Song created through the submission flow references the Submission via `submission_id`.
-
-| Column          | Type    | Notes                                                                                                                                 |
-|-----------------|---------|---------------------------------------------------------------------------------------------------------------------------------------|
-| id              | INTEGER | Primary key. AUTOINCREMENT.                                                                                                           |
-| submitted_by_id | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Who created the submission.                                                       |
-| submitted_at    | TEXT    | NOT NULL. When the submission was created.                                                                                            |
-| status          | TEXT    | NOT NULL. DEFAULT 'pending'. One of: 'pending', 'approved', 'rejected'.                                                               |
-| approved_by_id  | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Set when status = 'approved'. Set to System (id=0) for auto-approved submissions. |
-| approved_at     | TEXT    | Nullable. When the submission was approved.                                                                                           |
-| rejected_by_id  | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Set when status = 'rejected'.                                                     |
-| rejected_at     | TEXT    | Nullable. When the submission was rejected.                                                                                           |
-| rejected_reason | TEXT    | Nullable. Required when status = 'rejected'. Human-readable reason for rejection.                                                     |
-
-Foreign keys: `submitted_by_id` → Users(`id`) ON DELETE SET NULL, `approved_by_id` → Users(`id`) ON DELETE SET NULL, `rejected_by_id` → Users(`id`) ON DELETE SET NULL.
-
-The Submission row is **never deleted**. Even after rejection (and the subsequent deletion of its child items), the Submission row persists as a permanent audit record showing who submitted what, when, who reviewed it, and why it was rejected. Foreign keys referencing Submissions (`submission_id` on Artists, Albums, Songs) use `ON DELETE RESTRICT` — attempting to delete a Submission will fail if any child entities still reference it, preventing accidental orphaning or silent approval changes.
-
-**Seed Submission (id=0):** A reserved Submission row (id=0, `status = 'approved'`, `submitted_by_id = 0`, `approved_by_id = 0`) is inserted by the seed script. All legacy and seed data references this Submission via `submission_id = 0`. This eliminates the need to treat NULL as "implicitly approved" — every entity has an explicit Submission, and approval is always derived from the Submission's `status`.
-
 ### Artists
 
-| Column          | Type    | Notes                                                                                                                                                          |
-|-----------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id              | INTEGER | Primary key. AUTOINCREMENT.                                                                                                                                    |
-| name            | TEXT    | NOT NULL. Duplicates allowed (different artists can share a name).                                                                                             |
-| gender_id       | INTEGER | NOT NULL. Foreign key to Group_Gender.                                                                                                                         |
-| country_id      | INTEGER | NOT NULL. Foreign key to Countries.                                                                                                                            |
-| submitted_by_id | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Who originally submitted the entity.                                                                       |
-| submission_id   | INTEGER | NOT NULL. Foreign key to Submissions. ON DELETE RESTRICT. The submission this artist was created as part of. Legacy/seed data uses the seed Submission (id=0). |
-| last_updated    | TEXT    | Nullable. Date the artist's catalog was last verified complete.                                                                                                |
-| is_disbanded    | BOOLEAN | NOT NULL. DEFAULT false.                                                                                                                                       |
+| Column          | Type    | Notes                                                                              |
+|-----------------|---------|------------------------------------------------------------------------------------|
+| id              | INTEGER | Primary key. AUTOINCREMENT.                                                        |
+| name            | TEXT    | NOT NULL. Duplicates allowed (different artists can share a name).                 |
+| gender_id       | INTEGER | NOT NULL. Foreign key to Group_Gender.                                             |
+| country_id      | INTEGER | NOT NULL. Foreign key to Countries.                                                |
+| last_updated    | TEXT    | Nullable. Date the artist's catalog was last verified complete.                    |
+| is_disbanded    | BOOLEAN | NOT NULL. DEFAULT false.                                                           |
 
-Foreign keys: `gender_id` → Group_Gender(`id`), `country_id` → Countries(`id`), `submitted_by_id` → Users(`id`) ON DELETE SET NULL, `submission_id` → Submissions(`id`) ON DELETE RESTRICT.
-
-`submitted_by_id` records who originally submitted the entity. It is nullable and uses ON DELETE SET NULL so that submitted content survives user deletion. Duplicate artist submissions (same real-world artist) create separate rows with different IDs — deduplication is handled manually via approval/rejection, not enforced at the database level. **[v2] A merge operation is needed to combine duplicate artist entries that slip through approval (consolidating songs, ratings, and relationships under a single artist row).**
+Foreign keys: `gender_id` → Group_Gender(`id`), `country_id` → Countries(`id`).
 
 ### Songs
 
-| Column          | Type    | Notes                                                                                                                                                        |
-|-----------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id              | INTEGER | Primary key. AUTOINCREMENT.                                                                                                                                  |
-| name            | TEXT    | NOT NULL. Song name.                                                                                                                                         |
-| submitted_by_id | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL.                                                                                                          |
-| submission_id   | INTEGER | NOT NULL. Foreign key to Submissions. ON DELETE RESTRICT. The submission this song was created as part of. Legacy/seed data uses the seed Submission (id=0). |
-| is_promoted     | BOOLEAN | NOT NULL. DEFAULT false.                                                                                                                                     |
-| is_remix        | BOOLEAN | NOT NULL. DEFAULT false.                                                                                                                                     |
+| Column      | Type    | Notes                        |
+|-------------|---------|------------------------------|
+| id          | INTEGER | Primary key. AUTOINCREMENT.  |
+| name        | TEXT    | NOT NULL. Song name.         |
+| is_promoted | BOOLEAN | NOT NULL. DEFAULT false.     |
+| is_remix    | BOOLEAN | NOT NULL. DEFAULT false.     |
+| note        | TEXT    | Nullable. Song-level note.   |
 
-Foreign keys: `submitted_by_id` → Users(`id`) ON DELETE SET NULL, `submission_id` → Submissions(`id`) ON DELETE RESTRICT.
-
-Songs are always created as part of an album submission. The relationship between songs and artists is managed through the Artist_Song pivot table. The relationship between songs and albums is managed through the Album_Song pivot table.
+Songs are always created as part of an album. The relationship between songs and artists is managed through the Artist_Song pivot table. The relationship between songs and albums is managed through the Album_Song pivot table.
 
 **Orphan prevention:** Songs must always be created within a transaction that also creates the corresponding Album_Song row. There is no application flow that creates a standalone song. A song cannot exist without at least one album association — if the last Album_Song link would be removed, the operation must be blocked or the song must be deleted. The Views page provides visibility into any orphaned songs (songs with no Album_Song entry) for admin monitoring.
 
 ### Albums
 
-| Column          | Type    | Notes                                                                                                                                                         |
-|-----------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id              | INTEGER | Primary key. AUTOINCREMENT.                                                                                                                                   |
-| name            | TEXT    | NOT NULL. Album name.                                                                                                                                         |
-| release_date    | TEXT    | NOT NULL. Release date.                                                                                                                                       |
-| album_type_id   | INTEGER | NOT NULL. Foreign key to Album_Types.                                                                                                                         |
-| submitted_by_id | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL.                                                                                                           |
-| submission_id   | INTEGER | NOT NULL. Foreign key to Submissions. ON DELETE RESTRICT. The submission this album was created as part of. Legacy/seed data uses the seed Submission (id=0). |
+| Column        | Type    | Notes                                |
+|---------------|---------|--------------------------------------|
+| id            | INTEGER | Primary key. AUTOINCREMENT.          |
+| name          | TEXT    | NOT NULL. Album name.                |
+| release_date  | TEXT    | NOT NULL. Release date.              |
+| album_type_id | INTEGER | NOT NULL. Foreign key to Album_Types.|
 
-Foreign keys: `album_type_id` → Album_Types(`id`), `submitted_by_id` → Users(`id`) ON DELETE SET NULL, `submission_id` → Submissions(`id`) ON DELETE RESTRICT.
+Foreign keys: `album_type_id` → Album_Types(`id`).
 
 Albums are not directly linked to an artist. On the Artists page, songs are grouped by album via the Album_Song pivot. An album is an organisational container for songs — if two artists share a song, that song's album appears on both artists' pages.
 
@@ -676,17 +603,15 @@ Default data:
 | id             | INTEGER | Primary key. AUTOINCREMENT.                                                                                                           |
 | date           | TEXT    | NOT NULL. When the change was made.                                                                                                   |
 | user_id        | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Who made the change. NULL if the user has been deleted.                           |
-| approved_by_id | INTEGER | Nullable. Foreign key to Users. ON DELETE SET NULL. Set to 0 (System user) for auto-approved changes. NULL while pending.             |
-| submission_id  | INTEGER | Nullable. Foreign key to Submissions. ON DELETE SET NULL. The submission this change was part of, if any.                             |
 | artist_id      | INTEGER | Nullable. Foreign key to Artists. ON DELETE SET NULL. The artist this change relates to, if any. NULL if the artist has been deleted. |
 | album_id       | INTEGER | Nullable. Foreign key to Albums. ON DELETE SET NULL. The album this change relates to, if any. NULL if the album has been deleted.    |
 | song_id        | INTEGER | Nullable. Foreign key to Songs. ON DELETE SET NULL. The song this change relates to, if any. NULL if the song has been deleted.       |
 | description    | TEXT    | NOT NULL. Human-readable description of the change.                                                                                   |
 | justification  | TEXT    | Nullable. Required for removals.                                                                                                      |
 
-Foreign keys: `user_id` → Users(`id`) ON DELETE SET NULL, `approved_by_id` → Users(`id`) ON DELETE SET NULL, `submission_id` → Submissions(`id`) ON DELETE SET NULL, `artist_id` → Artists(`id`) ON DELETE SET NULL, `album_id` → Albums(`id`) ON DELETE SET NULL, `song_id` → Songs(`id`) ON DELETE SET NULL.
+Foreign keys: `user_id` → Users(`id`) ON DELETE SET NULL, `artist_id` → Artists(`id`) ON DELETE SET NULL, `album_id` → Albums(`id`) ON DELETE SET NULL, `song_id` → Songs(`id`) ON DELETE SET NULL.
 
-**Changelog entries are never deleted.** When referenced items are deleted (via rejection or any other means), the nullable foreign keys become NULL via ON DELETE SET NULL, but the row and its `description` field survive as a permanent audit record. A changelog entry may reference one or more of artist/album/song depending on the scope of the change (e.g., adding an album sets `album_id`; adding a song sets both `album_id` and `song_id`).
+**Changelog entries are never deleted.** When referenced items are deleted, the nullable foreign keys become NULL via ON DELETE SET NULL, but the row and its `description` field survive as a permanent audit record. A changelog entry may reference one or more of artist/album/song depending on the scope of the change (e.g., adding an album sets `album_id`; adding a song sets both `album_id` and `song_id`).
 
 ### Rules
 
@@ -764,14 +689,9 @@ Composite primary keys and UNIQUE constraints create implicit indexes. The follo
 - `album_song(song_id)` — orphan detection (Views page) and reverse lookup: which albums contain a song.
 - `album_genres(genre_id)` — genre filter queries.
 - `artists(country_id)` — Artists bottom navbar filter by country.
-- `artists(submission_id)` — lookup all artists in a submission.
-- `albums(submission_id)` — lookup all albums in a submission.
-- `songs(submission_id)` — lookup all songs in a submission.
 - `changelog(artist_id)` — lookup history for an artist.
 - `changelog(album_id)` — lookup history for an album.
 - `changelog(song_id)` — lookup history for a song.
-- `changelog(submission_id)` — lookup all changelog entries for a submission.
-
 ## Authentication
 
 ### Approach
@@ -803,9 +723,9 @@ Composite primary keys and UNIQUE constraints create implicit indexes. The follo
 - Only available via Admin invite. The Admin enters a username and email on the User Management page, which sends an invite email.
 - On the login page, "Create Account" prompts for email, username, password, and confirm password.
 - When the user enters their email, it is checked against the Users table. If a matching invited row is found (`password IS NULL AND email IS NOT NULL`), the username field is pre-populated with the Admin-assigned username (as a suggestion — the user may edit it). The form's submit button is disabled until the user has interacted with the username field (either confirming or editing the suggestion). This ensures the user consciously acknowledges their username choice.
-- The username is checked for uniqueness on submission. On success, the Users row is updated with the new username (if changed), password hash, and account creation timestamp.
+- The username is checked for uniqueness on form submit. On success, the Users row is updated with the new username (if changed), password hash, and account creation timestamp.
 - On successful account creation, a User_Settings row is created for the user with default values, and a personal Theme row is created (all colour columns NULL, rendering identically to Classic via fallback).
-- **Known issue:** Anyone who knows an invited email address could claim the account before the intended recipient. This is worse than a simple race condition — the malicious claimer permanently locks out the intended user because: (1) the email slot is consumed and cannot be re-invited, (2) the claimer can set any username they want during account creation, and (3) usernames cannot be changed after creation in v1. The legitimate user has no path to create an account for that email. **Recovery flow:** An Admin deletes the fraudulent User row (which cascades to Ratings and User_Settings, sets NULL on submitted content via ON DELETE SET NULL). The Admin then creates a new invite with the same email address — this works because the UNIQUE constraint on email is released when the fraudulent row is deleted. The intended user can then complete account creation normally. Acceptable tradeoff for v1 given the app's small, trusted user base.
+- **Known issue:** Anyone who knows an invited email address could claim the account before the intended recipient. This is worse than a simple race condition — the malicious claimer permanently locks out the intended user because: (1) the email slot is consumed and cannot be re-invited, (2) the claimer can set any username they want during account creation, and (3) usernames cannot be changed after creation in v1. The legitimate user has no path to create an account for that email. **Recovery flow:** An Admin deletes the fraudulent User row (which cascades to Ratings and User_Settings). The Admin then creates a new invite with the same email address — this works because the UNIQUE constraint on email is released when the fraudulent row is deleted. The intended user can then complete account creation normally. Acceptable tradeoff for v1 given the app's small, trusted user base.
 
 ### Route Protection
 
@@ -816,21 +736,15 @@ Composite primary keys and UNIQUE constraints create implicit indexes. The follo
 
 - Song creation is always performed within a database transaction that also creates the Album_Song entry, ensuring no orphaned songs.
 - The Views page queries for songs with no Album_Song entry to surface any data integrity issues.
-- **Submissions:** Every user-submitted album (with its songs and optionally a new artist) creates a Submission row. All entities created in that submission reference it via `submission_id`. This grouping key allows the Submissions page to display, approve, or reject an entire submission as a unit.
-- **Approval:** Approval status is derived from the Submission, not stored on individual entities. Every entity has a `submission_id` (NOT NULL). An entity is approved if its referenced Submission has `status = 'approved'`; pending if `status = 'pending'`. Legacy/seed data references the seed Submission (id=0, `status = 'approved'`). When an editor approves a submission, application code sets the Submission to `status = 'approved'` with `approved_by_id` and `approved_at`. Any songs the editor marked for rejection during review are deleted (along with their ratings), and a changelog entry is created for each. Editor and Admin submissions are auto-approved (Submission `status = 'approved'`, `approved_by_id = 0`).
-- **Rejection (full submission):** On full rejection, application code deletes all entities created by the submission (artist, albums, songs, ratings). Changelog entries referencing these items survive with NULL foreign keys (via ON DELETE SET NULL). A new changelog entry is created recording the rejection. The Submission row is updated with `status = 'rejected'`, `rejected_by_id`, `rejected_at`, and `rejected_reason` — the Submission row itself is never deleted.
 - **User deletion:** Application code must perform the following steps in order:
     1. Rename the user's personal theme: set `Themes.name = 'deleted_' + username` for the theme row where `user_id` matches the user being deleted.
-    2. Delete the User row. This cascades to: Ratings (ON DELETE CASCADE), User_Settings (ON DELETE CASCADE). It sets NULL on: `submitted_by_id` columns (Artists, Albums, Songs, Submissions), `user_id`/`approved_by_id` (Changelog), `user_id` (Themes), `approved_by_id`/`rejected_by_id` (Submissions).
+    2. Delete the User row. This cascades to: Ratings (ON DELETE CASCADE), User_Settings (ON DELETE CASCADE). It sets NULL on: `user_id` (Changelog), `user_id` (Themes).
     3. Compact `sort_order`: within the same transaction (after the DELETE has freed the old value), decrement `sort_order` by 1 for all users whose `sort_order` was greater than the deleted user's value, ordered by `sort_order ASC`. This closes the gap and keeps `sort_order` contiguous. The UNIQUE constraint is not violated because the DELETE runs first (freeing the gap) and the UPDATE processes rows in ascending order (each row moves into the slot just vacated by the previous update).
-    4. All submitted content (Artists, Albums, Songs, Changelog entries) survives the deletion.
 
 ## Frontend Implementation Notes
 
 - Every colour in the app is loaded from the user's selected theme (stored in the Themes table). No hardcoded colours — all colours are injected as CSS custom properties from the theme row on page load. For any NULL column in the selected theme, the Classic (id=0) theme colour is used as fallback.
 - Classic and Dark Mode are standalone themes (no automatic toggle). Users select a theme explicitly on their Profile page.
-- **Unapproved items are always visible.** Pending (unapproved) artists, albums, and songs appear on all pages alongside approved content. An item is pending if its referenced Submission has `status = 'pending'`. Pending items are visually distinguished using theme-driven styling (e.g., reduced opacity, different background colour, or a "pending" badge). Users can interact with pending items (including rating pending songs). Pending items display a link to the Submissions page so editors/admins can navigate directly to approve or edit them. All queries that display content (Artists, Global Stats, Artist Stats) include unapproved items — there is no approval filter on read queries.
-
 ## In Progress / Open Questions
 
 - When creating an album and selecting a song, typing in the field should show existing options as a dropdown. Pressing Enter creates a new entry.
