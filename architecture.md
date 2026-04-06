@@ -111,6 +111,32 @@ resend
 - **Flask-Compress** for gzip response compression.
 - **HTMX + Tailwind vendored locally** in `static/vendor/`. No npm, no build step, no bundler, no CDN dependency.
 
+### Rebuilding Tailwind CSS
+
+The app uses Tailwind CSS v2.2.19 (the last version that ships a pre-built CSS file with all utility classes). The vendored file is purged to ~9KB by removing unused classes. If you add new Tailwind classes to templates and they don't work, you need to rebuild from the full file.
+
+**1. Download the full Tailwind CSS build:**
+
+```bash
+curl -o app/static/vendor/tailwind.min.css \
+  https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css
+```
+
+This replaces the purged file with the complete ~3.7MB build containing all utility classes. The app will work immediately — new classes will now render correctly.
+
+**2. Purge and re-minify:**
+
+Once you've confirmed your new classes work, purge unused classes to shrink the file back down:
+
+```bash
+npm install -g purgecss
+purgecss --config purgecss.config.js
+```
+
+This scans all templates and JS files (configured in `purgecss.config.js`), keeps only the classes actually used, and overwrites `tailwind.min.css` with the purged output.
+
+**Important:** If you use Tailwind classes dynamically (e.g., built via string concatenation in JS or Jinja), PurgeCSS won't detect them. Add those classes to the `safelist` array in `purgecss.config.js` so they aren't stripped.
+
 ---
 
 ## 3. Database & SQLAlchemy Models
