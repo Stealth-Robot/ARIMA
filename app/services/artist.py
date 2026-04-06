@@ -222,28 +222,25 @@ def sync_misc_artist_stubs():
         ArtistArtist, ArtistArtist.artist_2 == Artist.id
     ).filter(ArtistArtist.artist_1 == misc.id).all()
     existing_slugs = {a.slug for a in Artist.query.all() if a.slug}
-    prefix = 'Misc. Artists - '
+    prefixes = ['Misc. Artists - ', 'Misc Artists - ']
     renamed = False
     for child in children:
-        if child.name.startswith(prefix):
-            short_name = child.name[len(prefix):]
-            existing_slugs.discard(child.slug)
-            child.name = short_name
-            child.slug = generate_unique_slug(short_name, existing_slugs)
-            existing_slugs.add(child.slug)
-            renamed = True
+        for pfx in prefixes:
+            if child.name.startswith(pfx):
+                short_name = child.name[len(pfx):]
+                existing_slugs.discard(child.slug)
+                child.name = short_name
+                child.slug = generate_unique_slug(short_name, existing_slugs)
+                existing_slugs.add(child.slug)
+                renamed = True
+                break
     # Rename albums using raw SQL (avoids ORM full-table scan)
     if renamed:
-        child_ids = [c.id for c in children]
-        if child_ids:
-            params = {f'c{i}': cid for i, cid in enumerate(child_ids)}
-            id_placeholders = ','.join(f':c{i}' for i in range(len(child_ids)))
-            for pattern, prefix_len in [('Misc. Artists - %', 16), ('Misc Artists - %', 15)]:
-                db.session.execute(db.text(
-                    f'UPDATE album SET name = SUBSTR(name, {prefix_len + 1}) '
-                    f'WHERE artist_id IN ({id_placeholders}) '
-                    f'AND name LIKE :pattern'
-                ), {**params, 'pattern': pattern})
+        for pattern, prefix_len in [('Misc. Artists - %', 16), ('Misc Artists - %', 15)]:
+            db.session.execute(db.text(
+                'UPDATE album SET name = SUBSTR(name, :plen) '
+                'WHERE name LIKE :pattern'
+            ), {'plen': prefix_len + 1, 'pattern': pattern})
         db.session.flush()
 
     # --- Country subunits ---
