@@ -1536,6 +1536,7 @@ function submitNewAlbum(artistId) {
     document.querySelectorAll('#new-album-genres input:checked').forEach(function(cb) {
         genreIds.push(parseInt(cb.value));
     });
+    if (!genreIds.length) { showToast('At least one genre is required'); return; }
 
     var songs = [];
     document.querySelectorAll('[id^="new-song-"]').forEach(function(songDiv) {

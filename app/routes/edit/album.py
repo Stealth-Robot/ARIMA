@@ -99,6 +99,8 @@ def add_album_to_artist(artist_id):
         abort(400)
     if release_date and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', release_date):
         abort(400)
+    if not genre_ids:
+        abort(400)
     if not songs:
         abort(400)
 

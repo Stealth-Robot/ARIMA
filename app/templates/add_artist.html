@@ -174,7 +174,7 @@ function addAlbum() {
             '</div>' +
         '</div>' +
         '<div class="mb-3">' +
-            '<label class="block text-sm mb-1">Genres</label>' +
+            '<label class="block text-sm mb-1">Genres <span style="color:var(--delete-button);">*</span></label>' +
             '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(albumCount) + '</div>' +
         '</div>' +
         '<div class="mb-3">' +
@@ -699,7 +699,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                     '</div>' +
                 '</div>' +
                 '<div class="mb-3">' +
-                    '<label class="block text-sm mb-1">Genres <span class="text-red-500">*</span></label>' +
+                    '<label class="block text-sm mb-1">Genres <span style="color:var(--delete-button);">*</span></label>' +
                     '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(num) + '</div>' +
                 '</div>' +
                 '<div class="mb-3">' +

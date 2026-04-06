@@ -551,7 +551,7 @@ function submitConvertArtist() {
             </div>
         </div>
 
-        <label class="block text-sm mb-1" style="color:var(--text-primary);">Genres</label>
+        <label class="block text-sm mb-1" style="color:var(--text-primary);">Genres <span style="color:var(--delete-button);">*</span></label>
         <div id="new-album-genres" class="flex flex-wrap gap-2 mb-3" style="font-size:12px;">
             {% for g in genres %}
             <label style="cursor:pointer;"><input type="checkbox" value="{{ g.id }}" style="margin-right:2px;">{{ g.genre }}</label>
