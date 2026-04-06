@@ -65,21 +65,15 @@ def add_country():
 
 
 @admin_bp.route('/admin/replace-database', methods=['GET', 'POST'])
+@login_required
+@role_required(ADMIN)
 def replace_database():
     """Replace the SQLite database file with an uploaded one."""
     if request.method == 'GET':
         return render_template('replace_database.html')
 
     from app.routes.edit import _verify_password
-    # Skip password check when no admin user has a password set (fresh seed)
-    admin_has_password = False
-    try:
-        from app.models.user import User
-        admin = User.query.filter_by(username='Stealth').first()
-        admin_has_password = admin and admin.password is not None
-    except Exception:
-        pass
-    if admin_has_password and not _verify_password():
+    if not _verify_password():
         return 'Incorrect password', 403
 
     uploaded = request.files.get('database')
