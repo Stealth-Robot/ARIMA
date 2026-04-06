@@ -234,7 +234,7 @@ def seed(db):
         if existing_admin is None:
             db.session.add(User(
                 id=2, username='Stealth', email='placeholder@arima.app',
-                password=None, role_id=0, created_at=_now(), sort_order=1,
+                password=_hash('admin'), role_id=0, created_at=_now(), sort_order=1,
                 profile_image='https://i.imgur.com/Nux0Yn7.png',
             ))
 
