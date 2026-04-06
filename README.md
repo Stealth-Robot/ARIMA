@@ -30,14 +30,11 @@ Edit `.env` and set the two required variables:
 
 ```
 SECRET_KEY=<random 64-char hex string>
-PEPPER=<random 32-char hex string>
+PEPPER=<ask the project owner>
 ```
 
-You can generate these with:
-
-```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
-```
+- `SECRET_KEY` — generate your own: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+- `PEPPER` — get this from the project owner. Passwords are hashed with the pepper, so you need the same value to log in with a copy of the production database.
 
 Then run the boot script, which creates the venv, installs dependencies, seeds the database, and starts the dev server:
 
