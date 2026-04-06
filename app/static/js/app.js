@@ -981,8 +981,10 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
             others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
         }
         groupOrder.sort(function(a, b) {
-            var aRank = a === currentArtistName ? 0 : a === 'Misc. Artists' ? 1 : 2;
-            var bRank = b === currentArtistName ? 0 : b === 'Misc. Artists' ? 1 : 2;
+            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
+            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
+            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
+            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
             if (aRank !== bRank) return aRank - bRank;
             return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
         });
@@ -1125,8 +1127,10 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
             others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
         }
         groupOrder.sort(function(a, b) {
-            var aRank = a === currentArtistName ? 0 : a === 'Misc. Artists' ? 1 : 2;
-            var bRank = b === currentArtistName ? 0 : b === 'Misc. Artists' ? 1 : 2;
+            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
+            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
+            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
+            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
             if (aRank !== bRank) return aRank - bRank;
             return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
         });
