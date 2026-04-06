@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — User Management{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">User Management</h1>
+
+    <table class="w-full text-sm border-collapse mb-8">
+        <thead>
+            <tr style="background-color: var(--header-row);">
+                <th class="px-3 py-2">Order</th>
+                <th class="text-left px-3 py-2">Username</th>
+                <th class="text-left px-3 py-2">Role</th>
+                <th class="px-3 py-2">PW</th>
+                <th class="text-left px-3 py-2">Email</th>
+                <th class="text-left px-3 py-2">Join Date</th>
+                <th class="text-left px-3 py-2">Last Seen</th>
+                <th class="px-3 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                    <form method="POST" action="{{ url_for('users.move_up', user_id=u.id) }}" class="inline"
+                          hx-post="{{ url_for('users.move_up', user_id=u.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs px-1"
+                                {% if loop.first %}disabled style="opacity:0.3;"{% endif %}>▲</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('users.move_down', user_id=u.id) }}" class="inline"
+                          hx-post="{{ url_for('users.move_down', user_id=u.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs px-1"
+                                {% if loop.last %}disabled style="opacity:0.3;"{% endif %}>▼</button>
+                    </form>
+                </td>
+                <td class="px-3 py-2 font-medium">
+                    <div class="flex items-center gap-2">
+                        <img src="{{ u.profile_image or url_for('static', filename='img/default_image.png') }}"
+                             alt="" referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                        <span>
+                            {{ u.username }}
+                            {% if not u.password and not u.email.endswith('arima.app') %}
+                            <span class="text-xs" style="color: var(--text-secondary);">(invited)</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </td>
+                <td class="px-3 py-2">
+                    <form method="POST" action="{{ url_for('users.change_role', user_id=u.id) }}"
+                          class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="role_id" onchange="this.form.submit()"
+                                class="px-2 py-1 border rounded text-xs" style="border-color: var(--border);">
+                            {% for r in roles %}
+                            <option value="{{ r.id }}" {% if r.id == u.role_id %}selected{% endif %}>
+                                {{ r.role }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </td>
+                <td class="px-3 py-2 text-xs text-center">{{ 'Y' if u.password else '' }}</td>
+                <td class="px-3 py-2 text-xs">{{ u.email }}</td>
+                <td class="px-3 py-2 text-xs">{{ u.created_at[:10] if u.created_at else '-' }}</td>
+                <td class="px-3 py-2 text-xs last-seen-cell" data-utc="{{ u.last_seen or '' }}">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                    {% if u.id != current_user.id %}
+                    <button type="button" class="text-xs hover:underline"
+                            style="color: var(--button-primary);"
+                            onclick="openReinvite({{ u.id }}, '{{ u.email }}')">Reinvite</button>
+                    <form method="POST" action="{{ url_for('users.delete', user_id=u.id) }}"
+                          class="inline"
+                          onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Submitted content will survive.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
+                    </form>
+                    {% else %}
+                    <span class="text-xs" style="color: var(--text-secondary);">You</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Invite form -->
+    <div class="p-4 border rounded" style="border-color: var(--border);">
+        <h2 class="font-semibold mb-3">Invite New User</h2>
+        <form method="POST" action="{{ url_for('users.invite_user') }}" class="flex gap-3 items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex-1">
+                <label class="block text-sm mb-1">Username</label>
+                <input type="text" name="username" required
+                       class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm mb-1">Email</label>
+                <input type="email" name="email" required
+                       class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            </div>
+            <div class="w-32">
+                <label class="block text-sm mb-1">Role</label>
+                <select name="role_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                    {% for r in roles %}
+                    <option value="{{ r.id }}" {% if r.id == 2 %}selected{% endif %}>{{ r.role }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 rounded text-white"
+                    style="background-color: var(--button-primary);">
+                Invite
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Reinvite modal -->
+<div id="reinvite-modal" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background-color: var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px; width:100%; max-width:400px;">
+        <h3 class="font-semibold mb-3">Reinvite User</h3>
+        <form id="reinvite-form" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="block text-sm mb-1">Email</label>
+            <input type="email" name="email" id="reinvite-email" required
+                   class="w-full px-3 py-2 border rounded mb-4" style="border-color: var(--border);">
+            <div class="flex gap-3">
+                <button type="submit" class="px-4 py-2 rounded text-white flex-1"
+                        style="background-color: var(--button-primary);">Send</button>
+                <button type="button" onclick="closeReinvite()" class="px-4 py-2 rounded flex-1"
+                        style="background-color: var(--button-secondary, var(--bg-primary)); border:1px solid var(--border);">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openReinvite(userId, email) {
+    var modal = document.getElementById('reinvite-modal');
+    document.getElementById('reinvite-form').action = '/admin/users/' + userId + '/reinvite';
+    document.getElementById('reinvite-email').value = email;
+    modal.style.display = 'flex';
+}
+function closeReinvite() {
+    document.getElementById('reinvite-modal').style.display = 'none';
+}
+document.getElementById('reinvite-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeReinvite();
+});
+document.querySelectorAll('.last-seen-cell').forEach(function(td) {
+    var utc = td.dataset.utc;
+    if (!utc) return;
+    var d = new Date(utc);
+    if (isNaN(d)) return;
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + ' ' + pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
+});
+</script>
+{% endblock %}

@@ -1,3 +1,3 @@
-# ARIMA
+# A.R.I.M.A.
 
-**A**pp for **R**ating and **I**ndexing **M**usic **A**lbums
+Welcome to A.R.I.M.A., your **A**pp for **R**ating and **I**ndexing **M**usic **A**lbums. 

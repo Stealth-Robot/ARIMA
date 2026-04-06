@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Edit Theme{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Edit: {{ edit_theme.name or "Personal Theme" }}</h1>
+
+    <form method="POST" action="{{ url_for('themes.theme_save', theme_id=edit_theme.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% set labels = {
+            'bg_primary': 'Page Background',
+            'bg_secondary': 'Card / Input Background',
+            'text_primary': 'Primary Text',
+            'text_secondary': 'Secondary Text',
+            'border': 'Borders',
+            'link': 'Links',
+            'row_alternate': 'Alternating Row',
+            'grid_line': 'Table Grid Lines',
+            'navbar_bg': 'Navbar Background',
+            'navbar_text': 'Navbar Text',
+            'navbar_active': 'Active Tab Indicator',
+            'artist_button_text': 'Artist Pill Text',
+            'search_section_bg': 'Search Section Background',
+            'search_section_text': 'Search Section Text',
+            'hover_bg': 'Dropdown Hover',
+            'button_primary': 'Primary Button',
+            'button_secondary': 'Secondary Button',
+            'button_text': 'Button Text',
+            'edit_on_button': 'Edit Mode On',
+            'edit_off_button': 'Edit Mode Off',
+            'delete_button': 'Delete / Destructive',
+            'discography_background': 'Header Background',
+            'discography_text': 'Header Text',
+            'album_header_bg': 'Album Row Background',
+            'header_row': 'Table Header Row',
+            'header_user_bg': 'User Column Header',
+            'album_name': 'Album Name Text',
+            'promoted_song': 'Promoted Badge',
+            'gender_female': 'Female',
+            'gender_male': 'Male',
+            'gender_mixed': 'Mixed',
+            'gender_anime': 'Anime',
+            'rating_5_bg': 'Score 5 Background',
+            'rating_4_bg': 'Score 4 Background',
+            'rating_3_bg': 'Score 3 Background',
+            'rating_2_bg': 'Score 2 Background',
+            'rating_1_bg': 'Score 1 Background',
+            'rating_0_bg': 'Score 0 Background',
+            'rating_5_text': 'Score 5 Text',
+            'rating_4_text': 'Score 4 Text',
+            'rating_3_text': 'Score 3 Text',
+            'rating_2_text': 'Score 2 Text',
+            'rating_1_text': 'Score 1 Text',
+            'rating_0_text': 'Score 0 Text',
+            'key_bg_standard': 'Standard Key Background',
+            'key_bg_stealth': 'Stealth Key Background',
+            'heatmap_high': 'High Score',
+            'heatmap_mid': 'Mid Score',
+            'heatmap_low': 'Low Score',
+            'pct_high': 'High Completion',
+            'pct_mid': 'Mid Completion',
+            'pct_low': 'Low Completion',
+            'unrated_0_bg': 'Fully Rated (0 left)',
+            'unrated_low_bg': 'Low Remaining (1–20)',
+            'unrated_mid_bg': 'Mid Remaining (21–40)',
+            'unrated_high_bg': 'High Remaining (41+)',
+            'unrated_text': 'Unrated Cell Text',
+            'update_type_feature': 'Feature Badge',
+            'update_type_bugfix': 'Bugfix Badge',
+            'update_type_style': 'Style Badge',
+            'update_type_perf': 'Perf. Badge',
+        } %}
+
+        {% set groups = [
+            ('Page & Layout', [
+                'bg_primary', 'bg_secondary', 'text_primary', 'text_secondary',
+                'border', 'link', 'row_alternate', 'grid_line',
+            ]),
+            ('Navigation', [
+                'navbar_bg', 'navbar_text', 'navbar_active',
+                'artist_button_text',
+                'search_section_bg', 'search_section_text',
+                'hover_bg',
+            ]),
+            ('Buttons', [
+                'button_primary', 'button_secondary', 'button_text',
+                'edit_on_button', 'edit_off_button', 'delete_button',
+            ]),
+            ('Discography Table', [
+                'discography_background', 'discography_text',
+                'album_header_bg', 'header_row', 'header_user_bg',
+                'album_name', 'promoted_song',
+            ]),
+            ('Gender Colours', [
+                'gender_female', 'gender_male', 'gender_mixed', 'gender_anime',
+            ]),
+            ('Ratings — Backgrounds', [
+                'rating_5_bg', 'rating_4_bg', 'rating_3_bg',
+                'rating_2_bg', 'rating_1_bg', 'rating_0_bg',
+            ]),
+            ('Ratings — Text', [
+                'rating_5_text', 'rating_4_text', 'rating_3_text',
+                'rating_2_text', 'rating_1_text', 'rating_0_text',
+            ]),
+            ('Rating Key', [
+                'key_bg_standard', 'key_bg_stealth',
+            ]),
+            ('Stats — Score Heat Map', [
+                'heatmap_high', 'heatmap_mid', 'heatmap_low',
+            ]),
+            ('Stats — Completion Heat Map', [
+                'pct_high', 'pct_mid', 'pct_low',
+            ]),
+            ('Stats — Unrated Songs', [
+                'unrated_0_bg', 'unrated_low_bg', 'unrated_mid_bg', 'unrated_high_bg', 'unrated_text',
+            ]),
+            ('Update Type Badges', [
+                'update_type_feature', 'update_type_bugfix', 'update_type_style', 'update_type_perf',
+            ]),
+        ] %}
+
+        {% for group_name, cols in groups %}
+        <div class="mb-6">
+            <h2 class="text-sm font-bold uppercase tracking-wide mb-2" style="color: var(--text-secondary);">{{ group_name }}</h2>
+            <div class="grid grid-cols-2 gap-3">
+                {% for col in cols %}
+                <div class="flex items-center gap-2">
+                    <input type="text" value="{{ colours[col] or '#FFFFFF' }}" maxlength="7"
+                           id="hex-{{ col }}" title="Click to copy, or type/paste a hex code"
+                           class="text-xs border rounded px-1 cursor-pointer"
+                           style="font-family: monospace; color: var(--text-secondary); width: 66px; border-color: var(--border); background: transparent;"
+                           onclick="if(document.activeElement!==this){navigator.clipboard.writeText(this.value).then(()=>{var o=this.value;this.value='Copied!';setTimeout(()=>this.value=o,800)})}"
+                           oninput="var v=this.value.trim();if(/^#[0-9A-Fa-f]{6}$/.test(v)){var cp=this.nextElementSibling;cp.value=v;cp.dispatchEvent(new Event('input',{bubbles:true}));}">
+                    <input type="color" name="{{ col }}" value="{{ colours[col] or '#FFFFFF' }}"
+                           class="w-10 h-8 border rounded cursor-pointer" style="border-color: var(--border); flex-shrink: 0;"
+                           oninput="document.getElementById('hex-{{ col }}').value=this.value">
+                    <label class="text-xs">{{ labels.get(col, col) }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="flex gap-3 mt-6 mb-8">
+            <button type="submit" class="px-6 py-2 rounded"
+                    style="background-color: var(--button-primary); color: var(--button-text);">Save</button>
+            <a href="{{ url_for('themes.themes_list') }}" class="px-6 py-2 rounded"
+               style="background-color: var(--button-secondary); color: var(--text-primary);">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

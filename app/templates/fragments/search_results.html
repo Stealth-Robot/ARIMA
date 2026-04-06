@@ -1,0 +1,52 @@
+{% if not artists and not albums and not songs %}
+<div style="padding: 10px 14px; color: var(--text-secondary, #888); font-size: 13px;">
+    No results for "{{ query }}"
+</div>
+{% else %}
+
+{% if artists %}
+<div class="search-section-header" data-section="search-artists" style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: var(--search-section-bg); color: var(--search-section-text); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">
+    <span class="search-section-arrow" data-section="search-artists" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>Artists
+</div>
+<div class="search-section-body" data-section="search-artists">
+{% for a in artists %}
+<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+   class="search-result-item"
+   style="display: block; padding: 6px 14px; font-size: 13px; text-decoration: none; color: var(--text-primary); cursor: pointer;">
+    {{ a.name }}
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if albums %}
+<div class="search-section-header" data-section="search-albums" style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: var(--search-section-bg); color: var(--search-section-text); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">
+    <span class="search-section-arrow" data-section="search-albums" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>Albums
+</div>
+<div class="search-section-body" data-section="search-albums">
+{% for album, artist in albums %}
+<a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}#album-{{ album.id }}"
+   class="search-result-item"
+   style="display: block; padding: 6px 14px; font-size: 13px; text-decoration: none; color: var(--text-primary); cursor: pointer;">
+    {{ album.name }} <span style="color: var(--text-secondary, #888);">({{ artist.name }})</span>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if songs %}
+<div class="search-section-header" data-section="search-songs" style="padding: 4px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; background-color: var(--search-section-bg); color: var(--search-section-text); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">
+    <span class="search-section-arrow" data-section="search-songs" style="display: inline-block; transition: transform 0.2s; margin-right: 4px; font-size: 8px;">&#9660;</span>Songs
+</div>
+<div class="search-section-body" data-section="search-songs">
+{% for song, album, artist in songs %}
+<a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}#song-{{ song.id }}"
+   class="search-result-item"
+   style="display: block; padding: 6px 14px; font-size: 13px; text-decoration: none; color: var(--text-primary); cursor: pointer;">
+    {{ song.name }} <span style="color: var(--text-secondary, #888);">({{ album.name }} — {{ artist.name }})</span>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% endif %}

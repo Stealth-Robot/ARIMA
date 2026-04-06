@@ -1,0 +1,12 @@
+{% set cell_style = rating_cell_style(rating.rating if rating else None) %}
+{% set is_own_column = current_user.id == user_id %}
+{% set rating_all = session.get('rating_mode', 'self') == 'all' %}
+{% set is_editable = current_user.can_rate and (is_own_column or (current_user.is_editor_or_admin and rating_all)) %}
+<td id="rating-{{ song_id }}-{{ user_id }}"
+    {% if rating and rating.note %}data-note="{{ rating.note }}"{% endif %}
+    class="text-center px-1 py-1 relative{% if is_editable %} cursor-pointer hover:opacity-70{% endif %}{% if rating and rating.note %} has-note{% endif %}"
+    style="border: 1px solid var(--grid-line);
+           {% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+    {% if is_editable %}onclick="showRatingInput(event, {{ song_id }}, {{ user_id }})"{% endif %}>
+    {% if rating and rating.rating is not none %}{{ rating.rating }}{% endif %}
+</td>
