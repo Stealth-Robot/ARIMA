@@ -44,6 +44,8 @@ Then run the boot script, which creates the venv, installs dependencies, seeds t
 
 The app will be available at `http://127.0.0.1:5000`. Log in with the default admin account (`Stealth` / `admin`), or click "Login as Guest" for read-only access.
 
+> **Note:** If you import the production database, you will need to change the Stealth user's password back to `admin` BEFORE logging out or closing the app in terminal, otherwise you will be unable to log in.
+
 ### Manual Setup
 
 If you prefer to set up step by step:
