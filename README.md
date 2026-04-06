@@ -18,45 +18,60 @@ A lightweight web app for a small group of friends to rate music together. Brows
 - Python 3.12+
 - Git
 
-### Installation
+### Quick Start
 
 ```bash
 git clone https://github.com/Stealth-Robot/ARIMA.git
 cd ARIMA
-
-python3 -m venv venv
-source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-### Configuration
-
-Copy the example environment file and fill in your values:
-
-```bash
 cp .env.example .env
 ```
 
-Required variables:
-- `SECRET_KEY` — random 64-char hex string (e.g. `python3 -c "import secrets; print(secrets.token_hex(32))"`)
-- `PEPPER` — random 32-char hex string
+Edit `.env` and set the two required variables:
 
-### Database Setup
-
-```bash
-flask seed
+```
+SECRET_KEY=<random 64-char hex string>
+PEPPER=<random 32-char hex string>
 ```
 
-This creates all tables and inserts seed data (roles, system users, default themes). The seed is idempotent and safe to re-run.
-
-### Running
+You can generate these with:
 
 ```bash
-flask run
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-The app will be available at `http://localhost:5000`. Log in with the default admin account (`Stealth` / `admin`).
+Then run the boot script, which creates the venv, installs dependencies, seeds the database, and starts the dev server:
+
+```bash
+./boot_app.sh
+```
+
+The app will be available at `http://127.0.0.1:5000`. Log in with the default admin account (`Stealth` / `admin`), or click "Login as Guest" for read-only access.
+
+### Manual Setup
+
+If you prefer to set up step by step:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+export FLASK_APP=app:create_app
+flask seed        # create tables + seed data (idempotent)
+flask run --debug
+```
+
+### Optional Configuration
+
+The following `.env` variables are optional and only needed for specific features:
+
+| Variable | Purpose |
+|----------|---------|
+| `RESEND_API_KEY` | Send invite emails via [Resend](https://resend.com) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Send invite emails via SMTP instead of Resend |
+| `SMTP_FROM`, `SMTP_FROM_NAME` | Sender address and display name for emails |
+| `FLASK_ENV` | Set to `production` for deployed environments |
+| `APP_URL` | Production URL used in email links |
 
 ## Project Structure
 
