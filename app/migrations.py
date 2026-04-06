@@ -86,4 +86,4 @@ def run_startup_migrations():
         db.session.commit()
     except Exception:
         db.session.rollback()
-        pass  # DB may not exist yet
+        logger.exception('Startup migration failed (DB may not exist yet)')
