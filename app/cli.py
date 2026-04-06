@@ -38,6 +38,6 @@ def register_cli(flask_app):
     @flask_app.cli.command('export-spreadsheet')
     def export_spreadsheet_command():
         """Export data to spreadsheet format."""
-        from scripts.export_spreadsheet import export_spreadsheet
-        export_spreadsheet()
+        from scripts.export_spreadsheet import main as export_main
+        export_main()
         click.echo('Export complete.')

@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from flask import request, abort, jsonify
+from flask import request, abort, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -386,7 +386,6 @@ def delete_album(album_id):
     song_ids = [r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()]
 
     # Capture artist ID before deletions so we can redirect back
-    from flask import redirect, url_for
     fallback_artist_id = None
     if song_ids:
         artist_link = ArtistSong.query.filter(ArtistSong.song_id.in_(song_ids)).first()
