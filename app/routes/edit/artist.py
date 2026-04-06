@@ -11,6 +11,7 @@ from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistA
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug
 from app.services.audit import log_change
+from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
@@ -211,6 +212,8 @@ def delete_artist(artist_id):
         album_song_rows = AlbumSong.query.filter_by(song_id=song_id).all()
         AlbumSong.query.filter_by(song_id=song_id).delete()
         db.session.query(Song).filter_by(id=song_id).delete()
+        _close_orphaned_submissions('song', song_id, current_user)
+        _close_orphaned_submissions('rating', song_id, current_user)
 
         # Clean up albums that are now empty (skip albums with direct artist_id link)
         for row in album_song_rows:
@@ -220,6 +223,10 @@ def delete_artist(artist_id):
                 if album_obj and album_obj.artist_id is None:
                     db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
                     db.session.query(Album).filter_by(id=row.album_id).delete()
+                    _close_orphaned_submissions('album', row.album_id, current_user)
+
+    # Close orphaned submissions for the artist itself
+    _close_orphaned_submissions('artist', artist_id, current_user)
 
     # Delete artist relationships (subunits/soloists)
     ArtistArtist.query.filter(
@@ -580,6 +587,20 @@ def add_artist_submit():
                     db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
 
         log_change(current_user, f'Added "{name}" artist with {len(albums_data)} albums, {total_songs} songs', artist=artist)
+
+        # Create submissions for the new artist, its albums, and new songs
+        create_submission('artist', artist.id, current_user.id)
+        for album_obj in Album.query.filter_by(artist_id=artist.id).all():
+            create_submission('album', album_obj.id, current_user.id)
+        seen_song_ids = set()
+        for link in ArtistSong.query.filter_by(artist_id=artist.id).all():
+            if link.song_id in seen_song_ids:
+                continue
+            seen_song_ids.add(link.song_id)
+            song_obj = db.session.get(Song, link.song_id)
+            if song_obj and song_obj.submitted_by_id == current_user.id:
+                create_submission('song', song_obj.id, current_user.id)
+
         db.session.commit()
         logger.info('add_artist_submit: success — artist id=%d, %d albums, %d songs', artist.id, len(albums_data), total_songs)
 

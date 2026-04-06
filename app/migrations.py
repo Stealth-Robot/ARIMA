@@ -26,7 +26,21 @@ def run_startup_migrations():
         from app.models.user import User
 
         # 0. Create any missing tables (e.g. update)
+        # If the submission table exists with an old schema, drop and recreate it
+        existing_sub_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))}
+        if existing_sub_cols and 'type' not in existing_sub_cols:
+            db.session.execute(db.text('DROP TABLE IF EXISTS submission'))
+            logger.info('Dropped old submission table (schema mismatch)')
+
         db.create_all()
+
+        # 0b. Add any new submission columns
+        existing_sub_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))}
+        for col in ('entity_name', 'artist_id', 'artist_name', 'album_id'):
+            if existing_sub_cols and col not in existing_sub_cols:
+                col_type = 'INTEGER' if col.endswith('_id') else 'TEXT'
+                db.session.execute(db.text(f'ALTER TABLE submission ADD COLUMN {col} {col_type}'))
+                logger.info('Added missing submission column: %s', col)
 
         # 1a. Add any new song columns (e.g. note)
         from app.models.music import Song

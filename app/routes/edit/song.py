@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
 from app.services.audit import log_change
+from app.services.submission import _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
@@ -265,6 +266,8 @@ def remove_song_from_album(song_id, album_id):
         ArtistSong.query.filter_by(song_id=song_id).delete()
         Rating.query.filter_by(song_id=song_id).delete()
         db.session.query(Song).filter_by(id=song_id).delete()
+        _close_orphaned_submissions('song', song_id, current_user)
+        _close_orphaned_submissions('rating', song_id, current_user)
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}" (song deleted, was only album)', change_type='song')
     else:
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}"', change_type='song')
@@ -277,6 +280,7 @@ def remove_song_from_album(song_id, album_id):
         if album_obj and delete_album:
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
             db.session.query(Album).filter_by(id=album_id).delete()
+            _close_orphaned_submissions('album', album_id, current_user)
             context = f' ({album_artist_name})' if album_artist_name else ''
             log_change(current_user, f'Deleted empty album "{album_name_val}"{context}', change_type='album')
         elif album_obj and not album_obj.artist_id and fallback_artist_id:
@@ -314,6 +318,8 @@ def delete_song(song_id):
     Rating.query.filter_by(song_id=song_id).delete()
     AlbumSong.query.filter_by(song_id=song_id).delete()
     db.session.query(Song).filter_by(id=song_id).delete()
+    _close_orphaned_submissions('song', song_id, current_user)
+    _close_orphaned_submissions('rating', song_id, current_user)
 
     # Clean up albums that are now empty (skip albums with direct artist_id link)
     for row in album_song_rows:
@@ -323,6 +329,7 @@ def delete_song(song_id):
             if album_obj and album_obj.artist_id is None:
                 db.session.execute(album_genres.delete().where(album_genres.c.album_id == row.album_id))
                 db.session.query(Album).filter_by(id=row.album_id).delete()
+                _close_orphaned_submissions('album', row.album_id, current_user)
 
     log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Submissions{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Submissions</h1>
+
+    <div class="flex gap-2 mb-4 flex-wrap" id="submissions-filters">
+        <!-- Status tabs -->
+        <div class="flex gap-1">
+            <a href="{{ url_for('submissions.submissions_page', status='open', type=type_filter) }}"
+               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                Open
+            </a>
+            <a href="{{ url_for('submissions.submissions_page', status='history', type=type_filter) }}"
+               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                History
+            </a>
+        </div>
+
+        <!-- Type filter -->
+        <select name="type" id="submissions-type-filter"
+                onchange="window.location.href='/submissions?status={{ status }}&type='+this.value"
+                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <option value="">All Types</option>
+            <option value="artist" {% if type_filter == 'artist' %}selected{% endif %}>Artist</option>
+            <option value="album" {% if type_filter == 'album' %}selected{% endif %}>Album</option>
+            <option value="song" {% if type_filter == 'song' %}selected{% endif %}>Song</option>
+            <option value="rating" {% if type_filter == 'rating' %}selected{% endif %}>Rating</option>
+        </select>
+    </div>
+
+    <div id="submissions-list">
+        {% include "fragments/submissions_list.html" %}
+    </div>
+</div>
+
+<!-- Approve modal -->
+<div id="approve-modal" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this)closeApproveModal()">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:90%; max-width:520px; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3">Approve Submission</h3>
+        <form id="approve-form" onsubmit="submitApprove(event)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div id="approve-modal-related" class="mb-3"></div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeApproveModal()"
+                        class="px-4 py-2 rounded text-sm" style="background:var(--bg-primary); border:1px solid var(--border);">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background:var(--edit-on-button); color:var(--button-text);">Approve</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rejection modal -->
+<div id="reject-modal" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this)closeRejectModal()">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:90%; max-width:520px; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3" id="reject-modal-title">Reject Submission</h3>
+        <div id="reject-modal-cascade"></div>
+        <form id="reject-form" onsubmit="submitReject(event)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Reason (required)</label>
+                <textarea name="reason" required rows="2" class="w-full px-3 py-2 border rounded text-sm"
+                          style="border-color:var(--border);"></textarea>
+            </div>
+            <div id="reject-password-field" class="mb-3" style="display:none;">
+                <label class="block text-sm mb-1">Password (required)</label>
+                <input type="password" name="password" class="w-full px-3 py-2 border rounded text-sm"
+                       style="border-color:var(--border);">
+            </div>
+            <div id="reject-error" class="text-sm mb-2" style="color:var(--delete-button); display:none;"></div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeRejectModal()"
+                        class="px-4 py-2 rounded text-sm" style="background:var(--bg-primary); border:1px solid var(--border);">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background:var(--delete-button); color:var(--button-text);">Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var _rejectSubId = null;
+var _rejectSubType = null;
+var _approveSubId = null;
+
+function toggleGroup(artistId) {
+    var children = document.querySelectorAll('.artist-group-' + artistId + '-child');
+    var icon = document.getElementById('expand-icon-' + artistId);
+    var visible = children.length > 0 && children[0].style.display !== 'none';
+    for (var i = 0; i < children.length; i++) {
+        var el = children[i];
+        if (visible) {
+            // Collapse: hide all children and album sub-children
+            el.style.display = 'none';
+        } else {
+            // Expand: only show direct children (albums + loose songs), not album sub-children
+            // Album sub-children have the album-group-*-child class
+            if (!el.className.match(/album-group-\d+-child/)) {
+                el.style.display = '';
+            }
+        }
+    }
+    if (icon) icon.innerHTML = visible ? '&#9654;' : '&#9660;';
+    // Reset all album expand icons within this group
+    if (visible) {
+        children.forEach(function(el) {
+            var albumIcon = el.querySelector('[id^="expand-album-icon-"]');
+            if (albumIcon) albumIcon.innerHTML = '&#9654;';
+        });
+    }
+}
+
+function toggleAlbum(artistId, albumId) {
+    var children = document.querySelectorAll('.album-group-' + albumId + '-child');
+    var icon = document.getElementById('expand-album-icon-' + albumId);
+    var visible = children.length > 0 && children[0].style.display !== 'none';
+    for (var i = 0; i < children.length; i++) {
+        children[i].style.display = visible ? 'none' : '';
+    }
+    if (icon) icon.innerHTML = visible ? '&#9654;' : '&#9660;';
+}
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function openRejectModal(subId, subType) {
+    _rejectSubId = subId;
+    _rejectSubType = subType;
+    var modal = document.getElementById('reject-modal');
+    var cascadeDiv = document.getElementById('reject-modal-cascade');
+    var pwField = document.getElementById('reject-password-field');
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    cascadeDiv.innerHTML = '';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+
+    if (subType === 'rating') {
+        pwField.style.display = 'none';
+    } else {
+        pwField.style.display = 'block';
+        pwField.querySelector('input').value = '';
+        var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+        fetch('/submissions/' + subId + '/cascade-preview', {
+            headers: {'X-CSRFToken': csrfToken}
+        }).then(function(r) { return r.text(); }).then(function(html) {
+            cascadeDiv.innerHTML = html;
+        });
+    }
+    modal.style.display = 'block';
+}
+
+function closeRejectModal() {
+    document.getElementById('reject-modal').style.display = 'none';
+    _rejectSubId = null;
+}
+
+function submitReject(e) {
+    e.preventDefault();
+    var form = document.getElementById('reject-form');
+    var formData = new FormData(form);
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+
+    fetch('/submissions/' + _rejectSubId + '/reject', {
+        method: 'POST',
+        body: formData,
+    }).then(function(r) {
+        if (r.ok) {
+            closeRejectModal();
+            window.location.reload();
+        } else {
+            r.text().then(function(t) {
+                errDiv.textContent = t;
+                errDiv.style.display = 'block';
+            });
+        }
+    });
+}
+
+function approveSubmission(subId, subType) {
+    if (subType === 'artist' || subType === 'album') {
+        openApproveModal(subId);
+    } else {
+        submitApproveDirectly(subId);
+    }
+}
+
+function openApproveModal(subId) {
+    _approveSubId = subId;
+    var modal = document.getElementById('approve-modal');
+    var relatedDiv = document.getElementById('approve-modal-related');
+    relatedDiv.innerHTML = 'Loading...';
+
+    fetch('/submissions/' + subId + '/approve-preview').then(function(r) {
+        return r.json();
+    }).then(function(data) {
+        if (!data.related || data.related.length === 0) {
+            submitApproveDirectly(subId);
+            return;
+        }
+        var html = '<p class="text-sm mb-2">Also approve these related submissions:</p>';
+        for (var i = 0; i < data.related.length; i++) {
+            var r = data.related[i];
+            html += '<label style="display:block; padding:3px 0; font-size:13px; cursor:pointer;">'
+                + '<input type="checkbox" name="also_approve" value="' + r.id + '" checked style="margin-right:6px;">'
+                + '<span class="px-2 py-1 rounded text-xs" style="background:var(--bg-primary); border:1px solid var(--border); margin-right:4px;">' + escapeHtml(r.type.charAt(0).toUpperCase() + r.type.slice(1)) + '</span>'
+                + escapeHtml(r.name)
+                + '</label>';
+        }
+        relatedDiv.innerHTML = html;
+        modal.style.display = 'block';
+    });
+}
+
+function closeApproveModal() {
+    document.getElementById('approve-modal').style.display = 'none';
+    _approveSubId = null;
+}
+
+function submitApprove(e) {
+    e.preventDefault();
+    var form = document.getElementById('approve-form');
+    var formData = new FormData(form);
+
+    fetch('/submissions/' + _approveSubId + '/approve', {
+        method: 'POST',
+        body: formData,
+    }).then(function(r) {
+        if (r.ok) {
+            closeApproveModal();
+            window.location.reload();
+        }
+    });
+}
+
+function submitApproveDirectly(subId) {
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    fetch('/submissions/' + subId + '/approve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'csrf_token=' + encodeURIComponent(csrfToken),
+    }).then(function(r) {
+        if (r.ok) {
+            window.location.reload();
+        }
+    });
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('approve-modal').style.display === 'block') closeApproveModal();
+        if (document.getElementById('reject-modal').style.display === 'block') closeRejectModal();
+    }
+    if (e.key === 'Enter' && document.getElementById('approve-modal').style.display === 'block') {
+        e.preventDefault();
+        submitApprove(e);
+    }
+});
+</script>
+{% endblock %}

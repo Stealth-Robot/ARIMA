@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
 from app.models.lookups import Genre
 from app.services.audit import log_change
+from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
@@ -163,6 +164,14 @@ def add_album_to_artist(artist_id):
         log_change(current_user, f'Added "{album_name_val}" album with {new_song_count} new and {existing_count} existing songs', artist=artist, album=album)
     else:
         log_change(current_user, f'Added "{album_name_val}" album with {len(songs)} songs', artist=artist, album=album)
+
+    # Create submissions for the new album and its new songs
+    create_submission('album', album.id, current_user.id)
+    for als in AlbumSong.query.filter_by(album_id=album.id).all():
+        song_obj = db.session.get(Song, als.song_id)
+        if song_obj and song_obj.submitted_by_id == current_user.id:
+            create_submission('song', song_obj.id, current_user.id)
+
     db.session.commit()
 
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
@@ -302,6 +311,7 @@ def album_create_song(album_id):
     log_change(current_user,
                f'Created "{name}" song in "{album.name}" album',
                song=song, album=album)
+    create_submission('song', song.id, current_user.id)
     db.session.commit()
 
     return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
@@ -403,6 +413,8 @@ def delete_album(album_id):
         ArtistSong.query.filter_by(song_id=sid).delete()
         Rating.query.filter_by(song_id=sid).delete()
         db.session.query(Song).filter_by(id=sid).delete()
+        _close_orphaned_submissions('song', sid, current_user)
+        _close_orphaned_submissions('rating', sid, current_user)
 
     album_name_val = album.name
     # Resolve artist name: try album.artist_id first, fall back to song's main artist
@@ -417,6 +429,7 @@ def delete_album(album_id):
                 artist_name_val = artist_obj.name
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
+    _close_orphaned_submissions('album', album_id, current_user)
     context = f' ({artist_name_val})' if artist_name_val else ''
     log_change(current_user, f'Deleted "{album_name_val}" album{context} ({len(song_ids)} songs)', change_type='album')
     db.session.commit()

@@ -95,6 +95,7 @@
             + Artist
         </a>
         <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
+        <a href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
         {% endif %}
 

@@ -8,6 +8,7 @@ from app.models.user import User
 from app.decorators import role_required, USER_OR_ABOVE
 from app.services.events import publish
 from app.services.audit import log_change
+from app.services.submission import create_submission
 from app.cache import clear_stats_cache
 
 ratings_bp = Blueprint('ratings', __name__)
@@ -81,6 +82,17 @@ def rate():
         elif note_changed:
             log_change(current_user, f'Updated note on "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
+        # Create submission for proxy ratings (not self-ratings)
+        if target_user_id != current_user.id:
+            create_submission(
+                'rating', song_id, current_user.id,
+                target_user_id=target_user_id,
+                old_rating=old_rating,
+                new_rating=rating_value if rating_changed else old_rating,
+                old_note=old_note,
+                new_note=note if note_changed else old_note,
+            )
+
     try:
         db.session.commit()
     except IntegrityError:
@@ -115,6 +127,8 @@ def delete_rating():
 
     existing = db.session.get(Rating, (song_id, target_user_id))
     if existing:
+        old_rating_val = existing.rating
+        old_note_val = existing.note
         song_obj = db.session.get(Song, song_id)
         if song_obj:
             on_behalf = ''
@@ -122,6 +136,18 @@ def delete_rating():
                 target_user = db.session.get(User, target_user_id)
                 on_behalf = f' for {target_user.username}' if target_user else f' for user {target_user_id}'
             log_change(current_user, f'Cleared rating for "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
+
+        # Create submission for proxy rating deletions
+        if target_user_id != current_user.id:
+            create_submission(
+                'rating', song_id, current_user.id,
+                target_user_id=target_user_id,
+                old_rating=old_rating_val,
+                new_rating=None,
+                old_note=old_note_val,
+                new_note=None,
+            )
+
         existing.rating = None
         # Only delete the row if note is also empty
         if not existing.note:

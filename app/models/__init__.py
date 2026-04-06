@@ -6,3 +6,4 @@ from app.models.music import Artist, Song, Album, Rating, ArtistSong, AlbumSong,
 from app.models.changelog import Changelog  # noqa: F401
 from app.models.rules import Rules  # noqa: F401
 from app.models.update import Update  # noqa: F401
+from app.models.submission import Submission  # noqa: F401
