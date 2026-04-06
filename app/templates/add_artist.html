@@ -68,18 +68,18 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-3 flex gap-4">
+                    <div class="mb-3" style="display:flex; gap:16px;">
                         <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_disbanded" value="1"
+                            <input type="checkbox" name="is_disbanded" value="1" style="margin-right:3px;"
                                    {% if form_data.get('is_disbanded') %}checked{% endif %}> Disbanded
                         </label>
                         <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_complete" value="1"
+                            <input type="checkbox" name="is_complete" value="1" style="margin-right:3px;"
                                    {% if form_data.get('is_complete') %}checked{% endif %}> Complete
                         </label>
                         {% if current_user.is_admin %}
                         <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_tracked" value="1"
+                            <input type="checkbox" name="is_tracked" value="1" style="margin-right:3px;"
                                    {% if form_data.get('is_tracked') %}checked{% endif %}> Tracked
                         </label>
                         {% endif %}
@@ -153,34 +153,34 @@ function addAlbum() {
     div.style.borderColor = 'var(--border)';
     div.id = 'album-' + albumCount;
     div.innerHTML =
-        '<div class="flex justify-between items-center mb-3">' +
-            '<span class="font-semibold">Album ' + albumCount + '</span>' +
-            '<button type="button" onclick="removeAlbum(' + albumCount + ')" class="text-sm text-red-500 hover:underline">Remove</button>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+            '<span style="font-weight:600;">Album ' + albumCount + '</span>' +
+            '<button type="button" onclick="removeAlbum(' + albumCount + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
         '</div>' +
-        '<div class="flex gap-3 mb-3">' +
-            '<div class="flex-1">' +
-                '<label class="block text-sm mb-1">Album Name <span class="text-red-500">*</span></label>' +
-                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+        '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+            '<div style="flex:1;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
             '</div>' +
-            '<div class="w-40">' +
-                '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
-                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border); font-family: monospace;">' +
+            '<div style="width:160px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
             '</div>' +
-            '<div class="w-32">' +
-                '<label class="block text-sm mb-1">Type</label>' +
-                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+            '<div style="width:128px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
                     albumTypeOptions() +
                 '</select>' +
             '</div>' +
         '</div>' +
-        '<div class="mb-3">' +
-            '<label class="block text-sm mb-1">Genres <span style="color:var(--delete-button);">*</span></label>' +
-            '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(albumCount) + '</div>' +
+        '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+            '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(albumCount) + '</div>' +
         '</div>' +
-        '<div class="mb-3">' +
-            '<label class="block text-sm mb-1">Songs</label>' +
-            '<div id="songs-' + albumCount + '" class="space-y-2"></div>' +
-            '<button type="button" onclick="addSong(' + albumCount + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
+        '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+            '<div id="songs-' + albumCount + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+            '<button type="button" onclick="addSong(' + albumCount + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
         '</div>';
     container.appendChild(div);
     if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
@@ -195,7 +195,7 @@ function albumTypeOptions() {
 function genreCheckboxes(albumNum) {
     const genres = {{ genres_js | tojson }};
     return genres.map(function(g) {
-        return '<label class="text-sm"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox"> ' + g.genre + '</label>';
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox" style="margin-right:3px;"> ' + g.genre + '</label>';
     }).join('');
 }
 
@@ -278,26 +278,25 @@ function addSong(albumNum) {
     const songNum = songCounters[albumNum];
     const container = document.getElementById('songs-' + albumNum);
     const div = document.createElement('div');
-    div.className = 'mb-3 p-2 border rounded';
-    div.style.borderColor = 'var(--border)';
+    div.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
     div.id = 'song-' + albumNum + '-' + songNum;
     div.innerHTML =
-        '<div class="flex gap-2 items-center mb-1">' +
-            '<span class="text-sm w-6 song-num">' + songNum + '.</span>' +
-            '<div class="flex-1" style="position: relative;">' +
-                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+            '<span class="song-num" style="font-size:14px; width:24px;">' + songNum + '.</span>' +
+            '<div style="flex:1; position:relative;">' +
+                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
                 '<div id="song-search-results-' + albumNum + '-' + songNum + '" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; max-height:200px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>' +
             '</div>' +
-            '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check"> Promoted</label>' +
-            '<label class="text-xs"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check"> Remix</label>' +
-            '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
-            '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" class="text-red-500 text-sm">x</button>' +
+            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"> Promoted</label>' +
+            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"> Remix</label>' +
+            '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+            '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
         '</div>' +
-        '<div class="flex items-center gap-2 ml-6">' +
-            '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
-            '<div id="song-artists-' + albumNum + '-' + songNum + '" class="flex flex-wrap gap-2"></div>' +
-            '<select class="add-artist-select text-xs px-1 border rounded" style="border-color: var(--border);" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
+        '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
+            '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
+            '<div id="song-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+            '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
                 artistSelectOptions([]) +
             '</select>' +
         '</div>';
@@ -678,34 +677,34 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
             div.style.borderColor = 'var(--border)';
             div.id = 'album-' + num;
             div.innerHTML =
-                '<div class="flex justify-between items-center mb-3">' +
-                    '<span class="font-semibold">Album ' + num + '</span>' +
-                    '<button type="button" onclick="removeAlbum(' + num + ')" class="text-sm text-red-500 hover:underline">Remove</button>' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                    '<span style="font-weight:600;">Album ' + num + '</span>' +
+                    '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
                 '</div>' +
-                '<div class="flex gap-3 mb-3">' +
-                    '<div class="flex-1">' +
-                        '<label class="block text-sm mb-1">Album Name <span class="text-red-500">*</span></label>' +
-                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+                    '<div style="flex:1;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
                     '</div>' +
-                    '<div class="w-40">' +
-                        '<label class="block text-sm mb-1">Release Date <span class="text-red-500">*</span></label>' +
-                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border); font-family: monospace;">' +
+                    '<div style="width:160px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
                     '</div>' +
-                    '<div class="w-32">' +
-                        '<label class="block text-sm mb-1">Type</label>' +
-                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field w-full px-3 py-2 border rounded" style="border-color: var(--border);">' +
+                    '<div style="width:128px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
                             albumTypeOptions() +
                         '</select>' +
                     '</div>' +
                 '</div>' +
-                '<div class="mb-3">' +
-                    '<label class="block text-sm mb-1">Genres <span style="color:var(--delete-button);">*</span></label>' +
-                    '<div class="flex gap-2 flex-wrap">' + genreCheckboxes(num) + '</div>' +
+                '<div style="margin-bottom:12px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
                 '</div>' +
-                '<div class="mb-3">' +
-                    '<label class="block text-sm mb-1">Songs <span class="text-red-500">*</span></label>' +
-                    '<div id="songs-' + num + '" class="space-y-2"></div>' +
-                    '<button type="button" onclick="addSong(' + num + ')" class="mt-2 text-sm hover:underline" style="color: var(--link);">+ Add Song</button>' +
+                '<div style="margin-bottom:12px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+                    '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
                 '</div>';
             container.appendChild(div);
             if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
@@ -729,23 +728,24 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                 const sNum = songCounters[num];
                 const sc = document.getElementById('songs-' + num);
                 const sdiv = document.createElement('div');
-                sdiv.className = 'mb-3 p-2 border rounded';
-                sdiv.style.borderColor = 'var(--border)';
+                sdiv.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
                 sdiv.id = 'song-' + num + '-' + sNum;
                 sdiv.innerHTML =
-                    '<div class="flex gap-2 items-center mb-1">' +
-                        '<span class="text-sm w-6 song-num">' + sNum + '.</span>' +
-                        '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field flex-1 px-2 py-1 border rounded text-sm" style="border-color: var(--border);">' +
-                        '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
-                        '<label class="text-xs"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
-                        '<button type="button" onclick="moveSong(this, \'up\')" class="text-xs px-1" title="Move up">▲</button>' +
-                        '<button type="button" onclick="moveSong(this, \'down\')" class="text-xs px-1" title="Move down">▼</button>' +
-                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" class="text-red-500 text-sm">x</button>' +
+                    '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+                        '<span class="song-num" style="font-size:14px; width:24px;">' + sNum + '.</span>' +
+                        '<div style="flex:1; position:relative;">' +
+                            '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;">' +
+                        '</div>' +
+                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
+                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                        '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+                        '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
                     '</div>' +
-                    '<div class="flex items-center gap-2 ml-6">' +
-                        '<span class="text-xs" style="color: var(--text-secondary);">Artists:</span>' +
-                        '<div id="song-artists-' + num + '-' + sNum + '" class="flex flex-wrap gap-2"></div>' +
-                        '<select class="add-artist-select text-xs px-1 border rounded" style="border-color: var(--border);" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
+                    '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
+                        '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
+                        '<div id="song-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+                        '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
                             artistSelectOptions([]) +
                         '</select>' +
                     '</div>';
