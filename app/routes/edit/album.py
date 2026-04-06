@@ -405,9 +405,20 @@ def delete_album(album_id):
         db.session.query(Song).filter_by(id=sid).delete()
 
     album_name_val = album.name
+    # Resolve artist name: try album.artist_id first, fall back to song's main artist
+    artist_name_val = None
+    if album.artist:
+        artist_name_val = album.artist.name
+    elif song_ids:
+        main_link = ArtistSong.query.filter(ArtistSong.song_id.in_(song_ids), ArtistSong.artist_is_main == True).first()
+        if main_link:
+            artist_obj = db.session.get(Artist, main_link.artist_id)
+            if artist_obj:
+                artist_name_val = artist_obj.name
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
-    log_change(current_user, f'Deleted "{album_name_val}" album ({len(song_ids)} songs)', change_type='album')
+    context = f' ({artist_name_val})' if artist_name_val else ''
+    log_change(current_user, f'Deleted "{album_name_val}" album{context} ({len(song_ids)} songs)', change_type='album')
     db.session.commit()
 
     if fallback_artist_id:

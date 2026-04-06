@@ -243,6 +243,17 @@ def remove_song_from_album(song_id, album_id):
     song_name_val = song.name
     album = db.session.get(Album, album_id)
     album_name_val = album.name if album else '?'
+    # Resolve artist name: try album.artist_id first, fall back to song's main artist
+    album_artist_name = None
+    if album and album.artist:
+        album_artist_name = album.artist.name
+    elif album:
+        artist_link = ArtistSong.query.filter_by(song_id=song_id, artist_is_main=True).first()
+        if artist_link:
+            from app.models.music import Artist
+            artist_obj = db.session.get(Artist, artist_link.artist_id)
+            if artist_obj:
+                album_artist_name = artist_obj.name
 
     # Remove the album-song link
     db.session.delete(link)
@@ -258,13 +269,19 @@ def remove_song_from_album(song_id, album_id):
     else:
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}"', change_type='song')
 
-    # Clean up album if now empty (skip albums with direct artist_id link)
+    # Clean up album if now empty
     remaining_songs = AlbumSong.query.filter_by(album_id=album_id).count()
     if remaining_songs == 0:
+        delete_album = request.form.get('delete_album') == '1'
         album_obj = db.session.get(Album, album_id)
-        if album_obj and album_obj.artist_id is None:
+        if album_obj and delete_album:
             db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
             db.session.query(Album).filter_by(id=album_id).delete()
+            context = f' ({album_artist_name})' if album_artist_name else ''
+            log_change(current_user, f'Deleted empty album "{album_name_val}"{context}', change_type='album')
+        elif album_obj and not album_obj.artist_id and fallback_artist_id:
+            # Ensure the empty album has an artist_id so it shows in the discography
+            album_obj.artist_id = fallback_artist_id
 
     db.session.commit()
 

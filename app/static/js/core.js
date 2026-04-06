@@ -252,6 +252,12 @@ function switchStatMode(val) {
 
 /* Hamburger artist menu — toggle, outside-click, Escape */
 
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
 function toggleArtistMenu() {
     var menu = document.getElementById('artist-menu');
     if (!menu) return;

@@ -1708,15 +1708,57 @@ document.addEventListener('click', function(e) {
 
 /* Remove song from album (no password required) */
 
-function confirmRemoveFromAlbum(songId, albumId, songName, albumName) {
-    if (!confirm('Remove "' + songName + '" from "' + albumName + '"?\n\nIf this is the song\'s only album, the song will be deleted.')) return;
+function confirmRemoveFromAlbum(songId, albumId, songName, albumName, songCount) {
+    var msg = 'Remove "' + songName + '" from "' + albumName + '"?';
+    if (songCount <= 1) {
+        msg += '\n\nThis is the last song in "' + albumName + '".';
+    }
+    msg += '\n\nIf this is the song\'s only album, the song will be deleted.';
+
+    if (songCount <= 1) {
+        // Show custom confirm with delete-album checkbox
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        overlay.innerHTML =
+            '<div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px; width:90%; max-width:420px;">' +
+                '<p style="margin-bottom:12px;">Remove "' + escapeHtml(songName) + '" from "' + escapeHtml(albumName) + '"?</p>' +
+                '<p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">This is the last song. If this is the song\'s only album, it will be deleted.</p>' +
+                '<label style="display:block; margin-bottom:16px; font-size:13px; cursor:pointer;">' +
+                    '<input type="checkbox" id="delete-album-cb" checked style="margin-right:6px;">Also delete the empty album "' + escapeHtml(albumName) + '"' +
+                '</label>' +
+                '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
+                    '<button type="button" onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:6px 16px; border:1px solid var(--border); border-radius:4px; background:var(--bg-primary); cursor:pointer;">Cancel</button>' +
+                    '<button type="button" id="confirm-remove-btn" style="padding:6px 16px; border:none; border-radius:4px; background:var(--delete-button); color:var(--button-text); cursor:pointer;">Remove</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(overlay);
+        document.getElementById('confirm-remove-btn').onclick = function() {
+            var deleteAlbum = document.getElementById('delete-album-cb').checked;
+            overlay.remove();
+            doRemoveFromAlbum(songId, albumId, deleteAlbum);
+        };
+        // Escape to close
+        function onEsc(e) {
+            if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+        }
+        document.addEventListener('keydown', onEsc);
+        return;
+    }
+
+    if (!confirm(msg)) return;
+    doRemoveFromAlbum(songId, albumId, false);
+}
+
+function doRemoveFromAlbum(songId, albumId, deleteAlbum) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    var body = deleteAlbum ? 'delete_album=1' : '';
     fetch('/edit/song/' + songId + '/remove-from-album/' + albumId, {
         method: 'POST',
         headers: headers,
-        body: '',
+        body: body,
     }).then(function(r) {
         if (!r.ok) throw new Error('failed');
         window.location.reload();
