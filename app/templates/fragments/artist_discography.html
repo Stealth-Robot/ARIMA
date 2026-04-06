@@ -194,7 +194,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <tr id="song-{{ song.id }}" class="album-row-{{ album.id }}" style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
                         <!-- Song name (no track number) -->
-            <td style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line);
+            <td class="song-name-cell{% if song.note %} has-song-note{% endif %}"
+                data-song-id="{{ song.id }}"
+                {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
+                style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line); position: relative;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
@@ -213,7 +216,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move up"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span></span>
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
+                </span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}
@@ -328,7 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
         {% for song, track_num in songs %}
         <tr id="song-{{ song.id }}" class="child-row-{{ child.artist.id }} album-row-{{ album.id }}" style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
-                        <td style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line);
+                        <td class="song-name-cell{% if song.note %} has-song-note{% endif %}"
+                data-song-id="{{ song.id }}"
+                {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
+                style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line); position: relative;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
@@ -347,7 +354,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move up"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span></span>
+                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
+                </span>
                 {% else %}
                 {{ song.name }}
                 {% endif %}

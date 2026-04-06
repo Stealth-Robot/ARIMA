@@ -91,6 +91,7 @@ class Song(db.Model):
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     is_promoted = db.Column(db.Boolean, nullable=False, default=False)
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
+    note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
 
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])

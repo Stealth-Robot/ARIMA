@@ -95,6 +95,21 @@ td.has-note::after {
     border-left: 10px solid transparent;
 }
 
+/* Song note indicator — triangle in top-right corner, same as rating notes */
+td.song-name-cell.has-song-note {
+    position: relative;
+}
+td.song-name-cell.has-song-note::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid currentColor;
+    border-left: 10px solid transparent;
+}
+
 /* JS-driven note tooltip — positioned via script */
 #note-tooltip {
     position: fixed;

@@ -2649,6 +2649,142 @@ document.addEventListener('click', (e) => {
     });
 })();
 
+// Song note tooltip — event delegation on song-name-cell with triangle
+(function () {
+    const tooltip = document.getElementById('note-tooltip');
+    if (!tooltip) return;
+
+    document.addEventListener('mouseover', function (e) {
+        const td = e.target.closest('td.song-name-cell.has-song-note');
+        if (!td) return;
+        const note = td.getAttribute('data-song-note');
+        if (!note) return;
+        tooltip.textContent = note;
+        const rect = getZoomedRect(td);
+        tooltip.style.left = rect.left + rect.width / 2 + 'px';
+        tooltip.style.transform = 'translateX(-50%)';
+        if (rect.top > 40) {
+            tooltip.style.top = (rect.top - 4) + 'px';
+            tooltip.style.bottom = 'auto';
+            tooltip.style.transform += ' translateY(-100%)';
+        } else {
+            tooltip.style.top = (rect.bottom + 4) + 'px';
+            tooltip.style.bottom = 'auto';
+        }
+        tooltip.style.opacity = '1';
+    });
+
+    document.addEventListener('mouseout', function (e) {
+        const td = e.target.closest('td.song-name-cell.has-song-note');
+        if (!td) return;
+        if (!td.contains(e.relatedTarget)) {
+            tooltip.style.opacity = '0';
+        }
+    });
+})();
+
+// Song note editor — edit-mode only, triggered by right-click on song name cell
+var activeSongNote = null;
+
+function showSongNoteInput(event, tdEl) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (activeSongNote) closeSongNoteInput();
+
+    var songId = tdEl.getAttribute('data-song-id');
+    var existingNote = tdEl.getAttribute('data-song-note') || '';
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,.25); width:240px;';
+
+    var textarea = document.createElement('textarea');
+    textarea.value = existingNote;
+    textarea.style.cssText = 'width:100%; height:80px; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px; padding:6px; font-size:12px; font-family:inherit;';
+    overlay.appendChild(textarea);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:6px; margin-top:8px; justify-content:flex-end;';
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:12px;';
+    saveBtn.onclick = function () { submitSongNote(songId, textarea.value.trim(), tdEl); };
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:12px;';
+    cancelBtn.onclick = closeSongNoteInput;
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    overlay.appendChild(btnRow);
+    document.body.appendChild(overlay);
+
+    var rect = getZoomedRect(tdEl);
+    overlay.style.left = Math.min(rect.right - 240, window.innerWidth - 260) + 'px';
+    overlay.style.top = (rect.bottom + 6) + 'px';
+
+    textarea.focus();
+    textarea.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); closeSongNoteInput(); }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitSongNote(songId, textarea.value.trim(), tdEl); }
+    });
+
+    activeSongNote = { overlay: overlay, td: tdEl };
+}
+
+function closeSongNoteInput() {
+    if (!activeSongNote) return;
+    activeSongNote.overlay.remove();
+    activeSongNote = null;
+}
+
+function submitSongNote(songId, noteText, tdEl) {
+    var formData = new FormData();
+    formData.append('value', noteText);
+    fetch('/edit/song/' + songId + '/note', { method: 'POST', headers: _csrfHeaders({}), body: formData })
+        .then(function (r) { return r.text(); })
+        .then(function (text) {
+            var note = text.trim();
+            if (note) {
+                tdEl.classList.add('has-song-note');
+                tdEl.setAttribute('data-song-note', note);
+            } else {
+                tdEl.classList.remove('has-song-note');
+                tdEl.removeAttribute('data-song-note');
+            }
+            closeSongNoteInput();
+        });
+}
+
+// Right-click on song name cell opens note editor (edit mode only)
+document.addEventListener('contextmenu', function (e) {
+    var td = e.target.closest('td.song-name-cell');
+    if (!td) return;
+    if (!td.querySelector('.edit-inline')) return;
+    showSongNoteInput(e, td);
+});
+
+// 'n' key on hovered song name cell opens note editor (edit mode only)
+var _hoveredSongCell = null;
+document.addEventListener('mouseover', function (e) {
+    var td = e.target.closest('td.song-name-cell');
+    _hoveredSongCell = td || null;
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'n' || !_hoveredSongCell || activeSongNote) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (!_hoveredSongCell.querySelector('.edit-inline')) return;
+    e.preventDefault();
+    showSongNoteInput(e, _hoveredSongCell);
+});
+
+// Close song note overlay on outside click
+document.addEventListener('click', function (e) {
+    if (activeSongNote && !activeSongNote.overlay.contains(e.target) && !activeSongNote.td.contains(e.target)) {
+        closeSongNoteInput();
+    }
+});
+
 // Real-time rating sync via SSE — one connection per browser via BroadcastChannel
 (function () {
     var channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('sse-ratings') : null;

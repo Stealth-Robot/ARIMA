@@ -197,7 +197,15 @@ def create_app():
             # 0. Create any missing tables (e.g. update)
             db.create_all()
 
-            # 1. Add any new theme colour columns
+            # 1a. Add any new song columns (e.g. note)
+            from app.models.music import Song
+            existing_song_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('song')"))}
+            for col in Song.__table__.columns:
+                if col.name not in existing_song_cols:
+                    db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
+                    logger.info('Added missing song column: %s', col.name)
+
+            # 1b. Add any new theme colour columns
             existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
             for col in Theme.__table__.columns:
                 if col.name not in existing and col.name not in ('id', 'name', 'user_id'):

@@ -593,6 +593,27 @@ def song_is_promoted(song_id):
     return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
 
 
+@edit_bp.route('/song/<int:song_id>/note', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_note(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    note = (request.form.get('value', '') or '').strip() or None
+    old_note = song.note
+    song.note = note
+    if note and not old_note:
+        log_change(current_user, f'Added note to "{song.name}"', song=song)
+    elif not note and old_note:
+        log_change(current_user, f'Removed note from "{song.name}"', song=song)
+    elif note != old_note:
+        log_change(current_user, f'Updated note on "{song.name}"', song=song)
+    db.session.commit()
+    return note or ''
+
+
 @edit_bp.route('/artist/<int:artist_id>/convert', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
