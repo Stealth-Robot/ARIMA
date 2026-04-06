@@ -46,20 +46,6 @@ The app will be available at `http://127.0.0.1:5000`. Log in with the default ad
 
 > **Note:** If you import the production database, you will need to change the Stealth user's password back to `admin` BEFORE logging out or closing the app in terminal, otherwise you will be unable to log in.
 
-### Manual Setup
-
-If you prefer to set up step by step:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-export FLASK_APP=app:create_app
-flask seed        # create tables + seed data (idempotent)
-flask run --debug
-```
-
 ### Optional Configuration
 
 The following `.env` variables are optional and only needed for specific features:
