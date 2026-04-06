@@ -980,6 +980,8 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
         if (!currentArtistName && parentMap[others[0] && others[0].artist]) {
             others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
         }
+        // Fallback: use the page's artist name (for parent artists with no direct albums)
+        if (!currentArtistName && typeof _currentArtistName !== 'undefined') currentArtistName = _currentArtistName;
         groupOrder.sort(function(a, b) {
             var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
             var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;

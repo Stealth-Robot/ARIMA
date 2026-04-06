@@ -57,6 +57,7 @@ var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | t
 var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
+var _currentArtistName = {{ artist.name | tojson }};
 var _isAnimePage = {{ 'true' if artist.gender_id == 3 else 'false' }};
 var _artistParentMap = {{ artist_parent_map | default({}) | tojson }};
 var _songArtists = {
