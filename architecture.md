@@ -113,7 +113,7 @@ resend
 
 ### Rebuilding Tailwind CSS
 
-The app uses Tailwind CSS v2.2.19 (the last version that ships a pre-built CSS file with all utility classes). The vendored file is purged to ~9KB by removing unused classes. If you add new Tailwind classes to templates and they don't work, you need to rebuild from the full file.
+The app uses Tailwind CSS v2.2.19 (the last version that ships a pre-built CSS file with all utility classes). Tailwind v3+ and v4 require an npm-based build step to generate CSS, which is not an option for this project due to security restrictions on npm for web-deployed applications. The vendored file is purged to ~9KB by removing unused classes. If you add new Tailwind classes to templates and they don't work, you need to rebuild from the full file.
 
 **1. Download the full Tailwind CSS build:**
 
