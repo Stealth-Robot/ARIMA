@@ -60,7 +60,7 @@ function showInlineEdit(event, endpoint, span) {
             newSpan.style.cursor = 'pointer';
             newSpan.setAttribute('onclick', 'showInlineEdit(event, \'' + endpoint + '\', this)');
             newSpan.textContent = text || 'date';
-            input.replaceWith(newSpan);
+            dateWrapper.replaceWith(newSpan);
         });
     }
 
@@ -99,7 +99,8 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
     `;
     applyDateFormat(input);
 
-    span.replaceWith(input);
+    var dateWrapper = input._dateWrapper || input;
+    span.replaceWith(dateWrapper);
     input.focus();
 
     var committed = false;
@@ -132,7 +133,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
             if (!text) newSpan.style.color = 'var(--text-secondary)';
             newSpan.setAttribute('onclick', "showInlineDateEdit(event, '" + endpoint + "', this, this.dataset.fullDate)");
             newSpan.textContent = displayYear;
-            input.replaceWith(newSpan);
+            dateWrapper.replaceWith(newSpan);
         });
     }
 
@@ -144,7 +145,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
         if (!currentFullDate) newSpan.style.color = 'var(--text-secondary)';
         newSpan.setAttribute('onclick', "showInlineDateEdit(event, '" + endpoint + "', this, this.dataset.fullDate)");
         newSpan.textContent = original;
-        input.replaceWith(newSpan);
+        dateWrapper.replaceWith(newSpan);
     }
 
     input.addEventListener('keydown', function(e) {

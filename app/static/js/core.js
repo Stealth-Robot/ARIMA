@@ -295,11 +295,79 @@ formatUtcDates();
  * Apply yyyy-mm-dd auto-formatting to a text input.
  * Strips non-digits, auto-inserts hyphens, caps at 10 chars.
  */
+function _setupDateGuide(input, pattern) {
+    /**
+     * Add a persistent format guide behind a date input.
+     * Uses a wrapper span that inherits the input's layout properties.
+     */
+    var wrapper = document.createElement('span');
+    wrapper.style.cssText = 'position:relative; display:inline-block;';
+    // Inherit width from input if set, otherwise use flex
+    var inputWidth = input.style.width;
+    if (inputWidth) {
+        wrapper.style.width = inputWidth;
+        input.style.width = '100%';
+    }
+    // Inherit flex properties
+    var inputFlex = input.style.flex;
+    if (inputFlex) {
+        wrapper.style.flex = inputFlex;
+        input.style.flex = '';
+    }
+    if (input.classList.contains('flex-1')) {
+        input.classList.remove('flex-1');
+        wrapper.style.flex = '1';
+    }
+
+    var guide = document.createElement('input');
+    guide.type = 'text';
+    guide.value = pattern;
+    guide.disabled = true;
+    guide.tabIndex = -1;
+    guide.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; box-sizing:border-box; pointer-events:none; background:transparent !important; border:transparent; color:var(--text-secondary); opacity:0.4; margin:0;';
+
+    if (input.parentNode) {
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(guide);
+        wrapper.appendChild(input);
+    } else {
+        wrapper.appendChild(guide);
+        wrapper.appendChild(input);
+        input._dateWrapper = wrapper;
+    }
+
+    // Clone exact box model from real input after layout
+    requestAnimationFrame(function() {
+        var cs = getComputedStyle(input);
+        guide.style.padding = cs.padding;
+        guide.style.font = cs.font;
+        guide.style.letterSpacing = cs.letterSpacing;
+        guide.style.borderWidth = cs.borderWidth;
+        guide.style.borderStyle = 'solid';
+        guide.style.borderColor = 'transparent';
+    });
+
+    function updateGuide() {
+        var v = input.value;
+        if (!v) { guide.value = pattern; return; }
+        var visible = '';
+        for (var i = 0; i < pattern.length; i++) {
+            visible += i < v.length ? ' ' : pattern[i];
+        }
+        guide.value = visible;
+    }
+
+    return updateGuide;
+}
+
 function applyDateFormat(input) {
     input.type = 'text';
     input.placeholder = 'yyyy-mm-dd';
     input.maxLength = 10;
     input.style.fontFamily = 'monospace';
+
+    var updateGuide = _setupDateGuide(input, 'yyyy-mm-dd');
+
     input.addEventListener('input', function() {
         var raw = this.value;
         var pos = this.selectionStart;
@@ -319,7 +387,10 @@ function applyDateFormat(input) {
             newPos++;
         }
         this.setSelectionRange(newPos, newPos);
+        updateGuide();
     });
+
+    updateGuide();
 }
 
 /**
@@ -330,6 +401,9 @@ function applyDateTimeFormat(input) {
     input.placeholder = 'YYYY-MM-DD HH:MM';
     input.maxLength = 16;
     input.style.fontFamily = 'monospace';
+
+    var updateGuide = _setupDateGuide(input, 'YYYY-MM-DD HH:MM');
+
     input.addEventListener('input', function() {
         var raw = this.value;
         var pos = this.selectionStart;
@@ -348,7 +422,10 @@ function applyDateTimeFormat(input) {
             newPos++;
         }
         this.setSelectionRange(newPos, newPos);
+        updateGuide();
     });
+
+    updateGuide();
 }
 
 // Auto-apply to all date/datetime inputs
