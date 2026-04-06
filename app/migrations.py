@@ -79,7 +79,20 @@ def run_startup_migrations():
         if deleted:
             logger.info('Removed %d guest/system theme rows', deleted)
 
-        # 6. Ensure Misc. Artists has country subunits and genre albums
+        # 6. Ensure all seeded UpdateType rows exist
+        from app.models.lookups import UpdateType
+        for id_, type_, desc in [
+            (1, 'Feature', 'New Feature'),
+            (2, 'Bugfix', 'Bug Fix'),
+            (3, 'Style', 'Themes And Layout Changes'),
+            (4, 'Perf.', 'Performance Improvement'),
+            (5, 'Code', 'Code-only changes, cleanup/refactors, no change for users'),
+        ]:
+            if not db.session.get(UpdateType, id_):
+                db.session.add(UpdateType(id=id_, type=type_, description=desc))
+                logger.info('Added missing update type: %s', type_)
+
+        # 7. Ensure Misc. Artists has country subunits and genre albums
         from app.services.artist import sync_misc_artist_stubs
         sync_misc_artist_stubs()
 
