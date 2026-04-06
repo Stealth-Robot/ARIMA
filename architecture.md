@@ -109,7 +109,7 @@ resend
 - **No Alembic.** Schema migrations are handled as one-off scripts in `migrations/`. Alembic is worth adding if migrations become frequent.
 - **Flask-WTF** provides CSRF protection.
 - **Flask-Compress** for gzip response compression.
-- **HTMX + Tailwind via CDN** in `base.html`. No npm, no build step, no bundler.
+- **HTMX + Tailwind vendored locally** in `static/vendor/`. No npm, no build step, no bundler, no CDN dependency.
 
 ---
 

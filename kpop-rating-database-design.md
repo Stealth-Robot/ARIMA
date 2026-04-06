@@ -30,7 +30,7 @@ Flask is the simplest backend that meets the project's needs. It serves HTML dir
 
 ### Decision: HTMX + Jinja2 + Tailwind CSS
 
-HTMX eliminates full-page reloads without introducing a JavaScript build pipeline. Flask routes return HTML fragments, and HTMX swaps them into the page via simple HTML attributes (e.g., `hx-post="/rate"`, `hx-swap="outerHTML"`). This keeps the entire frontend inside Jinja2 templates — one codebase, no separate frontend app, no bundler. Tailwind CSS handles styling with utility classes, keeping the UI clean without writing custom CSS. No npm or build step required (Tailwind via CDN).
+HTMX eliminates full-page reloads without introducing a JavaScript build pipeline. Flask routes return HTML fragments, and HTMX swaps them into the page via simple HTML attributes (e.g., `hx-post="/rate"`, `hx-swap="outerHTML"`). This keeps the entire frontend inside Jinja2 templates — one codebase, no separate frontend app, no bundler. Tailwind CSS handles styling with utility classes, keeping the UI clean without writing custom CSS. No npm or build step required (HTMX and Tailwind vendored locally).
 
 ## Hosting Options
 

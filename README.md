@@ -7,7 +7,7 @@ A lightweight web app for a small group of friends to rate music together. Brows
 ## Tech Stack
 
 - **Backend:** Flask, SQLAlchemy, SQLite
-- **Frontend:** Jinja2 templates, HTMX, Tailwind CSS (CDN)
+- **Frontend:** Jinja2 templates, HTMX, Tailwind CSS (vendored locally)
 - **Auth:** Flask-Login, bcrypt with server-side pepper
 - **Hosting:** Railway (with persistent volume for SQLite)
 
