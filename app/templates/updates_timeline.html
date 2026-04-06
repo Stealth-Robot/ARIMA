@@ -126,9 +126,31 @@ function formatTime(d) {
     return pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
 }
 
+// Custom tooltip for daily bar chart
+var chartTip = (function() {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:12px; min-width:140px;';
+    document.body.appendChild(el);
+    return {
+        show: function(html, colRect, barRect) {
+            el.innerHTML = html;
+            el.style.opacity = '1';
+            var x = colRect.left + colRect.width/2 - el.offsetWidth/2;
+            var y = barRect.top - el.offsetHeight - 8;
+            if (y < 4) y = barRect.bottom + 8;
+            if (x < 4) x = 4;
+            if (x + el.offsetWidth > window.innerWidth - 4) x = window.innerWidth - el.offsetWidth - 4;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+        },
+        hide: function() { el.style.opacity = '0'; }
+    };
+})();
+
 // Build daily bar chart grouped by local date (must run BEFORE grouping moves cards)
 (function() {
     var typeOrder = [{% for t in all_types %}'{{ t.type | lower | replace('.', '') }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    var typeLabels = { {% for t in all_types %}'{{ t.type | lower | replace('.', '') }}': '{{ t.type }}'{% if not loop.last %}, {% endif %}{% endfor %} };
     var cards = document.querySelectorAll('#timeline-cards .tl-card');
     var daily = {};
     var dayOrder = [];
@@ -158,8 +180,20 @@ function formatTime(d) {
         var total = 0;
         for (var t in counts) total += counts[t];
         var bar = document.createElement('div');
-        bar.style.cssText = 'flex:1; height:' + Math.round(total/maxDay*100) + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
-        bar.title = key + ': ' + total + ' update' + (total !== 1 ? 's' : '');
+        bar.style.cssText = 'height:' + Math.round(total/maxDay*100) + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
+        var tipDate = friendlyDate(new Date(key + 'T12:00:00'));
+        var tipRows = '';
+        typeOrder.forEach(function(typ) {
+            var c = counts[typ] || 0;
+            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;">'
+                + '<span style="width:8px; height:8px; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
+                + '<span style="flex:1; color:var(--text-secondary);">' + typeLabels[typ] + '</span>'
+                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:24px; text-align:right;">' + c + '</span>'
+                + '</div>';
+        });
+        var tipHtml = '<div style="font-weight:700; margin-bottom:6px; color:var(--text-primary);">' + tipDate + '</div>'
+            + '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
+            + tipRows;
         typeOrder.forEach(function(typ) {
             var c = counts[typ] || 0;
             if (c > 0) {
@@ -168,7 +202,14 @@ function formatTime(d) {
                 bar.appendChild(seg);
             }
         });
-        barsEl.appendChild(bar);
+        var col = document.createElement('div');
+        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:8px; height:100%;';
+        col.appendChild(bar);
+        (function(html, colEl, barEl) {
+            colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
+            colEl.addEventListener('mouseleave', function() { chartTip.hide(); });
+        })(tipHtml, col, bar);
+        barsEl.appendChild(col);
         var label = document.createElement('div');
         label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
         var d = new Date(key + 'T12:00:00');
