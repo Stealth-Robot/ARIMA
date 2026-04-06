@@ -233,13 +233,14 @@ def sync_misc_artist_stubs():
     # Rename albums under subunits using raw SQL to avoid full table scan
     child_ids = [c.id for c in children]
     if child_ids:
-        placeholders = ','.join(['?' if db.engine.dialect.paramstyle == 'qmark' else ':p' + str(i) for i in range(len(child_ids))])
+        params = {f'c{i}': cid for i, cid in enumerate(child_ids)}
+        id_placeholders = ','.join(f':c{i}' for i in range(len(child_ids)))
         for pattern, prefix_len in [('Misc. Artists - %', 16), ('Misc Artists - %', 15)]:
             db.session.execute(db.text(
                 f'UPDATE album SET name = SUBSTR(name, {prefix_len + 1}) '
-                f'WHERE artist_id IN ({",".join(":" + str(i) for i in range(len(child_ids)))}) '
+                f'WHERE artist_id IN ({id_placeholders}) '
                 f'AND name LIKE :pattern'
-            ), {**{str(i): cid for i, cid in enumerate(child_ids)}, 'pattern': pattern})
+            ), {**params, 'pattern': pattern})
     db.session.flush()
 
     # --- Country subunits ---
