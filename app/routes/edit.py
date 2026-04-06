@@ -484,6 +484,7 @@ def add_album_to_artist(artist_id):
         release_date=release_date or None,
         album_type_id=int(album_type_id),
         submitted_by_id=current_user.id,
+        artist_id=artist_id,
     )
     db.session.add(album)
     db.session.flush()
@@ -876,6 +877,7 @@ def add_artist_submit():
                 release_date=album_data.get('release_date') or None,
                 album_type_id=album_data['album_type_id'],
                 submitted_by_id=current_user.id,
+                artist_id=artist.id,
             )
             db.session.add(album)
             db.session.flush()

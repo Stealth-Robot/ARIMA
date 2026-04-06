@@ -957,8 +957,8 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
         var groupOrder = [];
         var entryMap = {};
         others.forEach(function(a) {
-            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1) return;
             var group = parentMap[a.artist] || a.artist;
+            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1 && group.toLowerCase().indexOf(lc) === -1) return;
             var isChild = a.artist !== group;
             var key = group + '::' + a.id;
             if (entryMap[key] && !isChild) return;
@@ -1103,8 +1103,8 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
         var groupOrder = [];
         var entryMap = {};
         others.forEach(function(a) {
-            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1) return;
             var group = parentMap[a.artist] || a.artist;
+            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1 && group.toLowerCase().indexOf(lc) === -1) return;
             var isChild = a.artist !== group;
             var key = group + '::' + a.id;
             if (entryMap[key] && !isChild) return;

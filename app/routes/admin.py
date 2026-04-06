@@ -110,10 +110,20 @@ def replace_database():
 @login_required
 @role_required(ADMIN)
 def download_database():
-    """Download the current SQLite database file."""
+    """Download a consistent snapshot of the SQLite database."""
+    import sqlite3 as _sqlite3
+    import tempfile
     db_uri = current_app.config['SQLALCHEMY_DATABASE_URI']
     db_path = db_uri.replace('sqlite:///', '')
     if not db_path.startswith('/'):
         db_path = os.path.join(current_app.instance_path, db_path)
-    return send_file(db_path, as_attachment=True,
+    # Use SQLite backup API for a consistent copy (safe with WAL mode)
+    tmp = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+    tmp.close()
+    src = _sqlite3.connect(db_path)
+    dst = _sqlite3.connect(tmp.name)
+    src.backup(dst)
+    src.close()
+    dst.close()
+    return send_file(tmp.name, as_attachment=True,
                      download_name=os.path.basename(db_path))

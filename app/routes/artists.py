@@ -152,13 +152,6 @@ def _render_artist(artist, htmx=False, push_url=None):
             'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
             'JOIN artist ar ON ar.id = ars.artist_id '
             'UNION '
-            'SELECT DISTINCT a.id, a.name, parent.name AS artist_name, parent.id AS artist_id '
-            'FROM album a '
-            'JOIN album_song als ON als.album_id = a.id '
-            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
-            'JOIN artist_artist aa ON aa.artist_2 = ars.artist_id '
-            'JOIN artist parent ON parent.id = aa.artist_1 '
-            'UNION '
             'SELECT DISTINCT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
             'FROM album a '
             'JOIN artist ar ON ar.id = a.artist_id '
@@ -190,6 +183,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            gender_css=GENDER_CSS, children=children_sections,
                            soloist_parent=soloist_parent, all_artists=all_artists,
                            all_albums_by_artist=all_albums_by_artist,
+                           artist_parent_map=artist_parent_map,
                            last_updated=last_updated)
 
 
