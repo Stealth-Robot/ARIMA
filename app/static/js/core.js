@@ -260,7 +260,12 @@ function toggleArtistMenu() {
 
 function closeArtistMenu() {
     var menu = document.getElementById('artist-menu');
-    if (menu) menu.style.display = 'none';
+    if (menu) {
+        menu.style.display = 'none';
+        // Clear silent search state
+        var highlighted = menu.querySelector('.artist-menu-item[style*="outline"]');
+        if (highlighted) highlighted.style.outline = '';
+    }
 }
 
 document.addEventListener('click', function (e) {
@@ -271,6 +276,46 @@ document.addEventListener('click', function (e) {
         closeArtistMenu();
     }
 });
+
+// Silent search in artist hamburger menu
+(function() {
+    var _searchBuf = '';
+    var _searchTimer = null;
+    var _lastHighlight = null;
+
+    document.addEventListener('keydown', function(e) {
+        var menu = document.getElementById('artist-menu');
+        if (!menu || menu.style.display === 'none') return;
+        // Ignore if user is typing in an input/textarea/select
+        var tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        // Only single printable characters
+        if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+
+        e.preventDefault();
+        _searchBuf += e.key.toLowerCase();
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(function() { _searchBuf = ''; }, 800);
+
+        // Find first matching artist link
+        var items = menu.querySelectorAll('.artist-menu-item');
+        var match = null;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].textContent.trim().toLowerCase().indexOf(_searchBuf) === 0) {
+                match = items[i];
+                break;
+            }
+        }
+        if (match) {
+            // Remove previous highlight
+            if (_lastHighlight) _lastHighlight.style.outline = '';
+            // Scroll into view and highlight
+            match.scrollIntoView({ block: 'nearest' });
+            match.style.outline = '2px solid var(--navbar-active, #fff)';
+            _lastHighlight = match;
+        }
+    });
+})();
 
 /* Format UTC dates to local 12h time for changelog and similar elements */
 function formatUtcDates(root) {
