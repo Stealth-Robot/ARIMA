@@ -8,3 +8,4 @@ gunicorn==23.*
 python-dotenv==1.*
 markdown==3.*
 resend
+boto3

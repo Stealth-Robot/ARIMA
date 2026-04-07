@@ -197,4 +197,8 @@ def create_app():
         from app.migrations import run_startup_migrations
         run_startup_migrations()
 
+    # Start backup scheduler (production only, after migrations)
+    from app.services.backup import start_backup_scheduler
+    start_backup_scheduler(flask_app)
+
     return flask_app
