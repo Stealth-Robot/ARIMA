@@ -129,27 +129,7 @@ def run_startup_migrations():
                 db.session.add(UpdateType(id=id_, type=type_, description=desc))
                 logger.info('Added missing update type: %s', type_)
 
-        # 7. Re-render changelog description_html with ID-based links
-        from app.models.changelog import Changelog
-        from app.services.audit import build_description_html
-        from app.models.music import Artist, Song, Album
-        changelogs = Changelog.query.all()
-        rerendered = 0
-        for cl in changelogs:
-            a = db.session.get(Artist, cl.artist_id) if cl.artist_id else None
-            al = db.session.get(Album, cl.album_id) if cl.album_id else None
-            s = db.session.get(Song, cl.song_id) if cl.song_id else None
-            # Infer artist from album if not set on changelog
-            if not a and al and al.artist_id:
-                a = db.session.get(Artist, al.artist_id)
-            new_html = build_description_html(cl.description, artist=a, album=al, song=s)
-            if new_html != cl.description_html:
-                cl.description_html = new_html
-                rerendered += 1
-        if rerendered:
-            logger.info('Re-rendered %d changelog entries with ID-based links', rerendered)
-
-        # 8. Ensure Misc. Artists has country subunits and genre albums
+        # 7. Ensure Misc. Artists has country subunits and genre albums
         from app.services.artist import sync_misc_artist_stubs
         sync_misc_artist_stubs()
 
