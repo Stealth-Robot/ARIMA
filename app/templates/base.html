@@ -223,6 +223,12 @@
     })();
     </script>
     {% endif %}
+    <script>
+    if (localStorage.getItem('is_hamburger') === 'true') {
+        var _hb = document.getElementById('hamburger-btn');
+        if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:22px; height:22px; border-radius:2px;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
+    }
+    </script>
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
