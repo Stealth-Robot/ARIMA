@@ -94,8 +94,8 @@
                   background:var(--edit-on-button); color:var(--button-text); text-decoration:none;">
             + Artist
         </a>
-        <a href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
-        <a href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
+        <a id="views-link" href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
+        <a id="submissions-link" href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
         {% endif %}
         {% if current_user.is_authenticated and current_user.can_rate and not current_user.is_editor_or_admin %}
@@ -262,9 +262,15 @@
                 btn.style.background = isOn ? styles.getPropertyValue('--edit-off-button') : styles.getPropertyValue('--edit-on-button');
                 btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
                 var addLink = document.getElementById('add-artist-link');
+                var viewsLink = document.getElementById('views-link');
+                var submissionsLink = document.getElementById('submissions-link');
                 if (isOn) {
+                    // Turning OFF
                     if (addLink) addLink.style.display = 'none';
+                    if (viewsLink) viewsLink.style.display = 'none';
+                    if (submissionsLink) submissionsLink.style.display = 'none';
                 } else {
+                    // Turning ON
                     if (addLink) {
                         addLink.style.display = '';
                     } else {
@@ -274,6 +280,28 @@
                         addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button); color:var(--button-text); text-decoration:none;';
                         addLink.textContent = '+ Artist';
                         form.parentNode.insertBefore(addLink, form.nextSibling);
+                    }
+                    if (viewsLink) {
+                        viewsLink.style.display = '';
+                    } else {
+                        viewsLink = document.createElement('a');
+                        viewsLink.id = 'views-link';
+                        viewsLink.href = '{{ url_for("views.views_page") }}';
+                        viewsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
+                        viewsLink.textContent = 'Views';
+                        var afterAdd = document.getElementById('add-artist-link');
+                        if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
+                    }
+                    if (submissionsLink) {
+                        submissionsLink.style.display = '';
+                    } else {
+                        submissionsLink = document.createElement('a');
+                        submissionsLink.id = 'submissions-link';
+                        submissionsLink.href = '{{ url_for("submissions.submissions_page") }}';
+                        submissionsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
+                        submissionsLink.textContent = 'Submissions';
+                        var afterViews = document.getElementById('views-link');
+                        if (afterViews) afterViews.parentNode.insertBefore(submissionsLink, afterViews.nextSibling);
                     }
                 }
             });
