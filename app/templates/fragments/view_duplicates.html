@@ -1,0 +1,33 @@
+{% if groups %}
+{% for group in groups %}
+<div style="margin-bottom: 16px;">
+    <h3 class="text-sm font-semibold" style="margin: 0 0 4px;">{{ group.name }}</h3>
+    <table class="w-full text-sm border-collapse" style="border: 1px solid var(--grid-line);">
+        <thead>
+            <tr style="background-color: var(--header-row);">
+                <th class="text-left px-3 py-1" style="border: 1px solid var(--grid-line);">Song</th>
+                <th class="text-left px-3 py-1" style="border: 1px solid var(--grid-line);">Album(s)</th>
+                <th class="text-left px-3 py-1" style="border: 1px solid var(--grid-line);">Artist(s)</th>
+                <th class="text-center px-3 py-1" style="border: 1px solid var(--grid-line);">Remix?</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in group.songs %}
+            <tr style="border: 1px solid var(--grid-line);{% if loop.index0 % 2 == 1 %} background-color: var(--row-alternate);{% endif %}">
+                <td class="px-3 py-1" style="border: 1px solid var(--grid-line);">
+                    <a href="/artists/{{ s.artist_slug }}#song-{{ s.id }}" style="color: var(--link);">{{ s.name }}</a>
+                </td>
+                <td class="px-3 py-1" style="border: 1px solid var(--grid-line);">{{ s.albums | join(', ') or '—' }}</td>
+                <td class="px-3 py-1" style="border: 1px solid var(--grid-line);">
+                    <a href="/artists/{{ s.artist_slug }}" style="color: var(--link);">{{ s.artist_name }}</a>
+                </td>
+                <td class="px-3 py-1 text-center" style="border: 1px solid var(--grid-line);">{{ 'Yes' if s.is_remix else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-sm" style="color: var(--text-secondary);">No potential duplicates found.</p>
+{% endif %}

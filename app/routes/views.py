@@ -57,6 +57,7 @@ def views_page():
         'incomplete_tabs': db.session.query(Artist).filter(
             Artist.is_complete == False,
         ).count(),
+        'duplicate_songs': _duplicate_song_count(),
     }
     return render_template('views.html', counts=counts)
 
@@ -162,6 +163,118 @@ def _potentially_disbanded_query():
 def view_potentially_disbanded():
     artists = _potentially_disbanded_query().order_by(Artist.name).all()
     return render_template('fragments/view_potentially_disbanded.html', artists=artists)
+
+
+_DUPLICATE_IGNORE = {'intro'}
+
+
+def _duplicate_song_ids():
+    """Return set of song IDs flagged as potential duplicates by either strategy."""
+    ignore_filter = ~db.func.lower(Song.name).in_(_DUPLICATE_IGNORE)
+
+    # Strategy 1: same name + same main artist
+    by_artist = db.session.query(
+        db.func.lower(Song.name).label('lower_name'),
+        ArtistSong.artist_id.label('artist_id'),
+    ).join(
+        ArtistSong, db.and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True)
+    ).filter(ignore_filter).group_by(
+        db.func.lower(Song.name), ArtistSong.artist_id
+    ).having(db.func.count() > 1).subquery()
+
+    ids_1 = {r[0] for r in db.session.query(Song.id).join(
+        ArtistSong, db.and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True)
+    ).filter(
+        db.tuple_(db.func.lower(Song.name), ArtistSong.artist_id).in_(
+            db.session.query(by_artist.c.lower_name, by_artist.c.artist_id)
+        )
+    ).all()}
+
+    # Strategy 2: same name + same album release year/month
+    year_month = db.func.substr(Album.release_date, 1, 7)
+    by_month = db.session.query(
+        db.func.lower(Song.name).label('lower_name'),
+        year_month.label('ym'),
+    ).join(
+        AlbumSong, AlbumSong.song_id == Song.id
+    ).join(
+        Album, Album.id == AlbumSong.album_id
+    ).filter(
+        Album.release_date.isnot(None), Album.release_date != '',
+        ignore_filter,
+    ).group_by(
+        db.func.lower(Song.name), year_month
+    ).having(db.func.count(db.distinct(Song.id)) > 1).subquery()
+
+    ids_2 = {r[0] for r in db.session.query(Song.id).join(
+        AlbumSong, AlbumSong.song_id == Song.id
+    ).join(
+        Album, Album.id == AlbumSong.album_id
+    ).filter(
+        db.tuple_(db.func.lower(Song.name), db.func.substr(Album.release_date, 1, 7)).in_(
+            db.session.query(by_month.c.lower_name, by_month.c.ym)
+        )
+    ).all()}
+
+    return ids_1 | ids_2
+
+
+def _duplicate_song_count():
+    """Count distinct song-name groups that have potential duplicates."""
+    song_ids = _duplicate_song_ids()
+    if not song_ids:
+        return 0
+    return db.session.query(
+        db.func.lower(Song.name)
+    ).filter(Song.id.in_(song_ids)).group_by(db.func.lower(Song.name)).count()
+
+
+@views_bp.route('/views/potential-duplicates')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_potential_duplicates():
+    song_ids = _duplicate_song_ids()
+    if not song_ids:
+        return render_template('fragments/view_duplicates.html', groups=[])
+
+    rows = db.session.query(
+        Song.id, Song.name, Song.is_remix,
+        Artist.name.label('artist_name'), Artist.slug.label('artist_slug'),
+        Album.name.label('album_name'),
+    ).join(
+        ArtistSong, db.and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True)
+    ).join(
+        Artist, Artist.id == ArtistSong.artist_id
+    ).outerjoin(
+        AlbumSong, AlbumSong.song_id == Song.id
+    ).outerjoin(
+        Album, Album.id == AlbumSong.album_id
+    ).filter(
+        Song.id.in_(song_ids)
+    ).order_by(db.func.lower(Song.name), Artist.name, Song.id).all()
+
+    # Group by lowercase song name
+    groups = {}
+    for song_id, song_name, is_remix, artist_name, artist_slug, album_name in rows:
+        key = song_name.lower()
+        if key not in groups:
+            groups[key] = {'name': song_name, 'songs': []}
+        existing = next((s for s in groups[key]['songs'] if s['id'] == song_id), None)
+        if existing:
+            if album_name and album_name not in existing['albums']:
+                existing['albums'].append(album_name)
+        else:
+            groups[key]['songs'].append({
+                'id': song_id,
+                'name': song_name,
+                'is_remix': is_remix,
+                'artist_name': artist_name,
+                'artist_slug': artist_slug,
+                'albums': [album_name] if album_name else [],
+            })
+
+    sorted_groups = sorted(groups.values(), key=lambda g: g['name'].lower())
+    return render_template('fragments/view_duplicates.html', groups=sorted_groups)
 
 
 @views_bp.route('/views/incomplete-tabs')

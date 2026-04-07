@@ -15,6 +15,7 @@
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
         ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
+        ('Potential song duplicates (same name + artist, or same name + release month)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
     ] %}
 
     {% for title, count, url in sections %}
