@@ -283,6 +283,53 @@ document.addEventListener('click', function (e) {
     }
 });
 
+// Drag-to-scroll on artist navbar
+(function() {
+    var nav = document.querySelector('.artist-nav');
+    if (!nav) return;
+    var dragging = false, startX = 0, savedScroll = 0, moved = false;
+
+    nav.addEventListener('mousedown', function(e) {
+        dragging = true;
+        moved = false;
+        startX = e.pageX;
+        savedScroll = nav.scrollLeft;
+        nav.style.cursor = 'grabbing';
+        nav.style.userSelect = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var dx = e.pageX - startX;
+        if (Math.abs(dx) > 5) moved = true;
+        nav.scrollLeft = savedScroll - dx;
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (!dragging) return;
+        dragging = false;
+        nav.style.cursor = 'grab';
+        nav.style.userSelect = '';
+        // Suppress click if dragged
+        if (moved) {
+            nav.addEventListener('click', function suppress(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                nav.removeEventListener('click', suppress, true);
+            }, true);
+        }
+    });
+
+    nav.addEventListener('mouseleave', function() {
+        if (dragging) {
+            dragging = false;
+            nav.style.cursor = 'grab';
+            nav.style.userSelect = '';
+        }
+    });
+})();
+
 // Silent search in artist hamburger menu
 (function() {
     var _searchBuf = '';
