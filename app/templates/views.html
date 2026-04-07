@@ -15,7 +15,7 @@
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
         ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
-        ('Potential song duplicates (same name + artist, or same name + release month)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
+        ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
     ] %}
 
     {% for title, count, url in sections %}
@@ -27,7 +27,7 @@
             data-loaded="false">
             <span class="view-arrow" style="display: inline-block; transition: transform 0.2s; margin-right: 6px;">&#9654;</span>
             {{ title }}
-            <span class="text-sm font-normal" style="color: var(--text-secondary);">— {{ count }}</span>
+            <span class="view-count text-sm font-normal" style="color: var(--text-secondary);">— {{ count }}</span>
         </h2>
         <div class="view-content" style="display: none; padding: 0 16px 12px;"></div>
     </div>
@@ -58,6 +58,11 @@ function openView(header) {
     }).then(function(html) {
         content.innerHTML = html;
         header.dataset.loaded = 'true';
+        var countEl = content.querySelector('[data-view-count]');
+        if (countEl) {
+            var span = header.querySelector('.view-count');
+            if (span) span.textContent = '— ' + countEl.dataset.viewCount;
+        }
     });
 }
 

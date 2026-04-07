@@ -57,7 +57,7 @@ def views_page():
         'incomplete_tabs': db.session.query(Artist).filter(
             Artist.is_complete == False,
         ).count(),
-        'duplicate_songs': _duplicate_song_count(),
+        'duplicate_songs': '…',
     }
     return render_template('views.html', counts=counts)
 
@@ -190,43 +190,46 @@ def _duplicate_song_ids():
         )
     ).all()}
 
-    # Strategy 2: same name + same album release year/month
-    year_month = db.func.substr(Album.release_date, 1, 7)
-    by_month = db.session.query(
-        db.func.lower(Song.name).label('lower_name'),
-        year_month.label('ym'),
-    ).join(
-        AlbumSong, AlbumSong.song_id == Song.id
-    ).join(
-        Album, Album.id == AlbumSong.album_id
-    ).filter(
-        Album.release_date.isnot(None), Album.release_date != '',
-        ignore_filter,
-    ).group_by(
-        db.func.lower(Song.name), year_month
+    # Strategy 2: same name + albums released within 3 days of each other
+    # Step A: find song names that appear on more than one distinct song (cheap)
+    repeated_names = db.session.query(
+        db.func.lower(Song.name).label('lower_name')
+    ).filter(ignore_filter).group_by(
+        db.func.lower(Song.name)
     ).having(db.func.count(db.distinct(Song.id)) > 1).subquery()
 
-    ids_2 = {r[0] for r in db.session.query(Song.id).join(
+    # Step B: fetch (song_id, lower_name, julianday) only for repeated names
+    candidates = db.session.query(
+        Song.id, db.func.lower(Song.name).label('lower_name'),
+        db.func.julianday(Album.release_date).label('jd'),
+    ).join(
         AlbumSong, AlbumSong.song_id == Song.id
     ).join(
         Album, Album.id == AlbumSong.album_id
     ).filter(
-        db.tuple_(db.func.lower(Song.name), db.func.substr(Album.release_date, 1, 7)).in_(
-            db.session.query(by_month.c.lower_name, by_month.c.ym)
-        )
-    ).all()}
+        db.func.lower(Song.name).in_(db.session.query(repeated_names.c.lower_name)),
+        Album.release_date.isnot(None), Album.release_date != '',
+    ).all()
+
+    # Step C: group by name, compare dates in Python (small set)
+    from collections import defaultdict
+    by_name = defaultdict(list)
+    for song_id, lower_name, jd in candidates:
+        if jd is not None:
+            by_name[lower_name].append((song_id, jd))
+
+    ids_2 = set()
+    for entries in by_name.values():
+        entries.sort(key=lambda x: x[1])
+        for i in range(len(entries)):
+            for j in range(i + 1, len(entries)):
+                if entries[j][1] - entries[i][1] > 3:
+                    break
+                if entries[i][0] != entries[j][0]:
+                    ids_2.add(entries[i][0])
+                    ids_2.add(entries[j][0])
 
     return ids_1 | ids_2
-
-
-def _duplicate_song_count():
-    """Count distinct song-name groups that have potential duplicates."""
-    song_ids = _duplicate_song_ids()
-    if not song_ids:
-        return 0
-    return db.session.query(
-        db.func.lower(Song.name)
-    ).filter(Song.id.in_(song_ids)).group_by(db.func.lower(Song.name)).count()
 
 
 @views_bp.route('/views/potential-duplicates')
