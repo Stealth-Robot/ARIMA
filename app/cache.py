@@ -11,14 +11,14 @@ import time
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
 
-_filter_cache = {'countries': [], 'genres': [], 'genders': [], 'ts': -9999.0}
+_filter_cache = {'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'ts': -9999.0}
 _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():
     """Return (countries, genres, genders) lists, refreshing at most once per TTL."""
     from sqlalchemy import func, desc
     from app.extensions import db
-    from app.models.lookups import Country, Genre, GroupGender
+    from app.models.lookups import Country, Genre, GroupGender, AlbumType
     from app.models.music import Artist, album_genres
 
     now = time.monotonic()
@@ -41,10 +41,11 @@ def get_cached_filters():
                 .all()
             ]
             _filter_cache['genders'] = GroupGender.query.order_by(GroupGender.id).all()
+            _filter_cache['album_types'] = AlbumType.query.order_by(AlbumType.id).all()
             _filter_cache['ts'] = now
         except Exception:
             pass  # return stale/empty lists rather than None
-    return _filter_cache['countries'], _filter_cache['genres'], _filter_cache['genders']
+    return _filter_cache['countries'], _filter_cache['genres'], _filter_cache['genders'], _filter_cache['album_types']
 
 
 def clear_filter_cache():

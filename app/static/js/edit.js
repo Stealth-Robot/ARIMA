@@ -386,7 +386,74 @@ document.addEventListener('click', function(e) {
     if (activeGenderPopover && !activeGenderPopover.contains(e.target)) {
         closeGenderPopover();
     }
+    if (activeAlbumTypePopover && !activeAlbumTypePopover.contains(e.target)) {
+        closeAlbumTypePopover();
+    }
 });
+
+/* Inline album type edit — pick type popover */
+
+var activeAlbumTypePopover = null;
+
+function closeAlbumTypePopover() {
+    if (activeAlbumTypePopover) {
+        activeAlbumTypePopover.remove();
+        activeAlbumTypePopover = null;
+    }
+}
+
+function showAlbumTypeEdit(event, albumId, span, allTypes, currentId) {
+    event.stopPropagation();
+    closeAlbumTypePopover();
+
+    var popover = document.createElement('div');
+    popover.style.cssText =
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
+        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:120px;';
+
+    allTypes.forEach(function(t) {
+        var btn = document.createElement('div');
+        btn.textContent = t.name;
+        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
+        if (t.id === currentId) btn.style.fontWeight = 'bold';
+        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
+        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+        btn.addEventListener('click', function() {
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/album/' + albumId + '/type', {
+                method: 'POST',
+                headers: headers,
+                body: 'album_type_id=' + t.id,
+            }).then(function(r) {
+                if (!r.ok) throw new Error('save failed');
+                return r.json();
+            }).then(function(data) {
+                span.textContent = data.type;
+                span.setAttribute('data-album-type-id', data.id);
+                closeAlbumTypePopover();
+            }).catch(function() {
+                showToast('Failed to save album type — try again');
+                closeAlbumTypePopover();
+            });
+        });
+        popover.appendChild(btn);
+    });
+
+    var rect = getZoomedRect(span);
+    popover.style.left = rect.left + 'px';
+
+    document.body.appendChild(popover);
+    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
+    var viewH = window.innerHeight / zoom;
+    if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
+        popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
+    } else {
+        popover.style.top = rect.bottom + 2 + 'px';
+    }
+    activeAlbumTypePopover = popover;
+}
 
 /* Inline gender edit — pick gender popover */
 

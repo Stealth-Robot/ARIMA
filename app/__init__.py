@@ -104,16 +104,17 @@ def create_app():
                 country_id = session.get('country')
                 genre_id = session.get('genre')
                 song_button_size = session.get('song_button_size', 13)
-            countries, genres, genders = get_cached_filters()
+            countries, genres, genders, album_types = get_cached_filters()
             return {
                 'current_country': country_id,
                 'current_genre': genre_id,
                 'countries': countries,
                 'genres': genres,
                 'genders': genders,
+                'album_types': album_types,
                 'song_button_size': song_button_size,
             }
-        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'song_button_size': 13}
+        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13}
 
     # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
