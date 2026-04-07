@@ -2,7 +2,7 @@
 <div class="mb-3" data-current-artist-id="{{ artist.id }}" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }}); padding-left: 12px;">
     <h2 class="text-2xl font-bold" style="color: var(--text-primary); margin: 0; line-height: 1.2;">
         {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-        <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/artist/{{ artist.id }}/name', this)">{{ artist.name }}</span>
+        <span class="edit-inline" style="cursor: pointer;" onclick="showArtistNameEdit(event, '/edit/artist/{{ artist.id }}/name', this)">{{ artist.name }}</span>
         {% else %}
         {{ artist.name }}
         {% endif %}

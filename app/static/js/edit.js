@@ -20,6 +20,58 @@ function updatePromotedStyle(checkbox) {
     }
 }
 
+function showArtistNameEdit(event, endpoint, span) {
+    event.stopPropagation();
+    var original = span.textContent.trim();
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = original;
+    input.style.cssText = 'border:1px solid var(--link,#2563EB); border-radius:2px; font-size:inherit; font-family:inherit; font-weight:inherit; padding:0 2px; width:' + Math.max(80, span.offsetWidth + 20) + 'px; background:var(--bg-primary); color:var(--text-primary);';
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+        var val = input.value.trim();
+        if (!val || val === original) { restore(); return; }
+        var csrfToken = document.querySelector('meta[name="csrf-token"]');
+        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        fetch(endpoint, { method: 'POST', headers: headers, body: 'value=' + encodeURIComponent(val) })
+        .then(function(r) { if (!r.ok) { restore(); return null; } return r.json(); })
+        .then(function(data) {
+            if (!data) return;
+            var newSpan = document.createElement('span');
+            newSpan.className = 'edit-inline';
+            newSpan.style.cursor = 'pointer';
+            newSpan.setAttribute('onclick', "showArtistNameEdit(event, '" + endpoint + "', this)");
+            newSpan.textContent = data.name;
+            input.replaceWith(newSpan);
+            // Update browser URL to new slug
+            if (data.slug) {
+                window.history.replaceState(null, '', '/artists/' + data.slug);
+            }
+        });
+    }
+
+    function restore() {
+        var newSpan = document.createElement('span');
+        newSpan.className = 'edit-inline';
+        newSpan.style.cursor = 'pointer';
+        newSpan.setAttribute('onclick', "showArtistNameEdit(event, '" + endpoint + "', this)");
+        newSpan.textContent = original;
+        input.replaceWith(newSpan);
+    }
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); restore(); }
+    });
+    input.addEventListener('blur', function() {
+        setTimeout(function() { if (document.activeElement !== input) restore(); }, 300);
+    });
+}
+
 function showInlineEdit(event, endpoint, span) {
     event.stopPropagation();
 

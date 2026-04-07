@@ -3,7 +3,7 @@ import re
 import logging
 from datetime import datetime, timezone
 
-from flask import request, session, abort, render_template, redirect, url_for
+from flask import request, session, abort, render_template, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -31,13 +31,13 @@ def artist_name(artist_id):
         abort(400)
     old_name = artist.name
     if name == old_name:
-        return name
+        return jsonify(name=name, slug=artist.slug)
     artist.name = name
     existing_slugs = {r[0] for r in db.session.query(Artist.slug).filter(Artist.id != artist_id).all()}
     artist.slug = generate_unique_slug(name, existing_slugs)
     log_change(current_user, f'Renamed "{old_name}" artist to "{name}"', artist=artist)
     db.session.commit()
-    return name
+    return jsonify(name=name, slug=artist.slug)
 
 
 @edit_bp.route('/artist/<int:artist_id>/country', methods=['POST'])
