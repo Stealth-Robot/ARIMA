@@ -30,6 +30,8 @@ def artist_name(artist_id):
     if not name:
         abort(400)
     old_name = artist.name
+    if name == old_name:
+        return name
     artist.name = name
     existing_slugs = {r[0] for r in db.session.query(Artist.slug).filter(Artist.id != artist_id).all()}
     artist.slug = generate_unique_slug(name, existing_slugs)
@@ -52,6 +54,8 @@ def artist_country(artist_id):
     country = db.session.get(Country, int(country_id))
     if country is None:
         abort(400)
+    if artist.country_id == country.id:
+        return json.dumps({'id': country.id, 'country': country.country}), 200, {'Content-Type': 'application/json'}
     artist.country_id = country.id
     log_change(current_user, f'Changed country of "{artist.name}" artist to {country.country}', artist=artist)
     db.session.commit()
@@ -72,6 +76,8 @@ def artist_gender(artist_id):
     gender = db.session.get(GroupGender, int(gender_id))
     if gender is None:
         abort(400)
+    if artist.gender_id == gender.id:
+        return json.dumps({'id': gender.id, 'gender': gender.gender}), 200, {'Content-Type': 'application/json'}
     artist.gender_id = gender.id
     log_change(current_user, f'Changed gender of "{artist.name}" artist to {gender.gender}', artist=artist)
     db.session.commit()
