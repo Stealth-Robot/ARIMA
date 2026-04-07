@@ -54,18 +54,21 @@
     </td>
     {% else %}
     <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);">
-        {% if sub._can_resolve %}
+        {% if sub._can_approve %}
         <button onclick="approveSubmission({{ sub.id }}, '{{ sub.type }}')"
                 class="px-2 py-1 rounded text-xs"
                 style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:4px;">
             Approve
         </button>
+        {% endif %}
+        {% if sub._can_reject %}
         <button onclick="openRejectModal({{ sub.id }}, '{{ sub.type }}')"
                 class="px-2 py-1 rounded text-xs"
                 style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">
             Reject
         </button>
-        {% else %}
+        {% endif %}
+        {% if not sub._can_approve and not sub._can_reject %}
         <span class="text-xs" style="color:var(--text-secondary);">Your submission</span>
         {% endif %}
     </td>
@@ -159,7 +162,7 @@
             </td>
             {% else %}
             <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
-                {% if group.artist_sub and group.artist_sub._can_resolve %}
+                {% if group.artist_sub and group.artist_sub._can_approve %}
                 <button onclick="approveSubmission({{ group.artist_sub.id }}, 'artist')"
                         class="px-2 py-1 rounded text-xs"
                         style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:4px;">
@@ -242,7 +245,7 @@
                 </td>
                 {% else %}
                 <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
-                    {% if asub._can_resolve %}
+                    {% if asub._can_approve %}
                     <button onclick="approveSubmission({{ asub.id }}, 'album')"
                             class="px-2 py-1 rounded text-xs"
                             style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:4px;">

@@ -8,7 +8,7 @@ from app.extensions import db
 from app.models.submission import Submission
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong
 from app.models.user import User
-from app.decorators import role_required, EDITOR_OR_ADMIN
+from app.decorators import role_required, EDITOR_OR_ADMIN, USER_OR_ABOVE
 from app.services.submission import (
     approve_submission, _mark_approved, reject_rating_submission,
     reject_artist_submission, reject_album_submission, reject_song_submission,
@@ -117,16 +117,22 @@ def _resolve_artist_for_submission(sub):
 
 @submissions_bp.route('/submissions')
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(USER_OR_ABOVE)
 def submissions_page():
     """Submissions page with open/history tabs and type filter."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
+    is_editor = current_user.is_editor_or_admin
 
     query = Submission.query.options(
         joinedload(Submission.submitted_by),
         joinedload(Submission.resolved_by),
     )
+
+    # Regular users only see rating submissions targeting them
+    if not is_editor:
+        query = query.filter_by(type='rating', target_user_id=current_user.id)
+        type_filter = 'rating'
 
     if status == 'open':
         query = query.filter_by(status='open')
@@ -147,9 +153,15 @@ def submissions_page():
     for sub in submissions:
         sub._entity_name = _entity_name(sub)
         sub._entity_url = _entity_url(sub)
-        sub._can_resolve = (
-            current_user.is_admin or sub.submitted_by_id != current_user.id
-        )
+        # Rating submissions: only target user can approve/reject
+        # Non-rating submissions: any editor/admin except submitter (unless admin)
+        if sub.type == 'rating':
+            is_target = sub.target_user_id == current_user.id
+            sub._can_approve = is_target
+            sub._can_reject = is_target
+        else:
+            sub._can_approve = is_editor and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+            sub._can_reject = is_editor and (current_user.is_admin or sub.submitted_by_id != current_user.id)
 
     # Group by artist for the open view
     # Each group: {artist_id, artist_name, artist_url, artist_sub, children: [album/song subs]}
@@ -312,13 +324,21 @@ def _get_related_open_submissions(sub):
 
 @submissions_bp.route('/submissions/<int:sub_id>/approve', methods=['POST'])
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(USER_OR_ABOVE)
 def approve(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    if sub.submitted_by_id == current_user.id and not current_user.is_admin:
-        abort(403)
+    # Rating submissions: only target user can approve
+    # Non-rating: any editor/admin except submitter (unless admin)
+    if sub.type == 'rating':
+        if sub.target_user_id != current_user.id:
+            abort(403)
+    else:
+        if not current_user.is_editor_or_admin:
+            abort(403)
+        if sub.submitted_by_id == current_user.id and not current_user.is_admin:
+            abort(403)
     _mark_approved(sub, current_user)
 
     # Bulk-approve additional related submissions (validated against actual related set)
@@ -338,13 +358,21 @@ def approve(sub_id):
 
 @submissions_bp.route('/submissions/<int:sub_id>/reject', methods=['POST'])
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(USER_OR_ABOVE)
 def reject(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    if sub.submitted_by_id == current_user.id and not current_user.is_admin:
-        abort(403)
+    # Rating submissions: only target user or admin can reject
+    # Non-rating submissions: any editor/admin except submitter (unless admin)
+    if sub.type == 'rating':
+        if sub.target_user_id != current_user.id:
+            abort(403)
+    else:
+        if not current_user.is_editor_or_admin:
+            abort(403)
+        if sub.submitted_by_id == current_user.id and not current_user.is_admin:
+            abort(403)
 
     reason = request.form.get('reason', '').strip()
     if not reason:

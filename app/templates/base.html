@@ -98,6 +98,9 @@
         <a href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
         {% endif %}
+        {% if current_user.is_authenticated and current_user.can_rate and not current_user.is_editor_or_admin %}
+        <a href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
+        {% endif %}
 
         <!-- Search trigger (compact in navbar) -->
         <button id="search-trigger" onclick="openSearchOverlay()"
