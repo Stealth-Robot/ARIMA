@@ -34,7 +34,7 @@ def _entity_name(sub):
     elif sub.type == 'song':
         entity = db.session.get(Song, sub.entity_id)
         return entity.name if entity else fallback
-    elif sub.type == 'rating':
+    elif sub.type in ('rating', 'note'):
         entity = db.session.get(Song, sub.entity_id)
         target = db.session.get(User, sub.target_user_id) if sub.target_user_id else None
         song_name = entity.name if entity else fallback
@@ -66,7 +66,7 @@ def _entity_url(sub):
                 artist = db.session.get(Artist, link.artist_id)
                 if artist and artist.slug:
                     return f'/artists/{artist.slug}#song-{entity.id}'
-    elif sub.type == 'rating':
+    elif sub.type in ('rating', 'note'):
         entity = db.session.get(Song, sub.entity_id)
         if entity:
             from app.models.music import ArtistSong
@@ -122,6 +122,11 @@ def submissions_page():
     """Submissions page with open/history tabs and type filter."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
+    mine = request.args.get('mine') == '1'
+    submitted_by = request.args.get('submitted_by', '')
+    resolved_by = request.args.get('resolved_by', '')
+    submitted_by = submitted_by if submitted_by.isdigit() else ''
+    resolved_by = resolved_by if resolved_by.isdigit() else ''
     is_editor = current_user.is_editor_or_admin
 
     query = Submission.query.options(
@@ -129,15 +134,27 @@ def submissions_page():
         joinedload(Submission.resolved_by),
     )
 
-    # Regular users only see rating submissions targeting them
+    # Regular users only see rating/note submissions targeting them
     if not is_editor:
-        query = query.filter_by(type='rating', target_user_id=current_user.id)
-        type_filter = 'rating'
+        query = query.filter(
+            Submission.type.in_(['rating', 'note']),
+            Submission.target_user_id == current_user.id,
+        )
+    elif mine:
+        query = query.filter(
+            Submission.type.in_(['rating', 'note']),
+            Submission.target_user_id == current_user.id,
+        )
 
     if status == 'open':
         query = query.filter_by(status='open')
     else:
         query = query.filter(Submission.status.in_(['approved', 'rejected']))
+
+    if submitted_by:
+        query = query.filter_by(submitted_by_id=int(submitted_by))
+    if resolved_by:
+        query = query.filter_by(resolved_by_id=int(resolved_by))
 
     if type_filter:
         query = query.filter_by(type=type_filter)
@@ -153,9 +170,9 @@ def submissions_page():
     for sub in submissions:
         sub._entity_name = _entity_name(sub)
         sub._entity_url = _entity_url(sub)
-        # Rating submissions: only target user can approve/reject
+        # Rating/note submissions: only target user can approve/reject
         # Non-rating submissions: any editor/admin except submitter (unless admin)
-        if sub.type == 'rating':
+        if sub.type in ('rating', 'note'):
             is_target = sub.target_user_id == current_user.id
             sub._can_approve = is_target
             sub._can_reject = is_target
@@ -172,7 +189,7 @@ def submissions_page():
     # Two-pass grouping: artists and albums first, then songs
     song_subs = []
     for sub in submissions:
-        if sub.type == 'rating':
+        if sub.type in ('rating', 'note'):
             ungrouped.append(sub)
             continue
 
@@ -252,9 +269,22 @@ def submissions_page():
                                groups=list(groups.values()), ungrouped=ungrouped,
                                status=status)
 
+    # Get users for filter dropdowns
+    from sqlalchemy import distinct
+    user_ids = set()
+    for r in db.session.query(distinct(Submission.submitted_by_id)).all():
+        if r[0]:
+            user_ids.add(r[0])
+    for r in db.session.query(distinct(Submission.resolved_by_id)).all():
+        if r[0]:
+            user_ids.add(r[0])
+    filter_users = User.query.filter(User.id.in_(user_ids)).order_by(User.username).all() if user_ids else []
+
     return render_template('submissions.html',
                            groups=list(groups.values()), ungrouped=ungrouped,
-                           status=status, type_filter=type_filter)
+                           status=status, type_filter=type_filter, mine=mine,
+                           submitted_by=submitted_by, resolved_by=resolved_by,
+                           filter_users=filter_users)
 
 
 @submissions_bp.route('/submissions/<int:sub_id>/approve-preview')
@@ -329,9 +359,9 @@ def approve(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Rating submissions: only target user can approve
+    # Rating/note submissions: only target user can approve
     # Non-rating: any editor/admin except submitter (unless admin)
-    if sub.type == 'rating':
+    if sub.type in ('rating', 'note'):
         if sub.target_user_id != current_user.id:
             abort(403)
     else:
@@ -363,9 +393,9 @@ def reject(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Rating submissions: only target user or admin can reject
+    # Rating/note submissions: only target user can reject
     # Non-rating submissions: any editor/admin except submitter (unless admin)
-    if sub.type == 'rating':
+    if sub.type in ('rating', 'note'):
         if sub.target_user_id != current_user.id:
             abort(403)
     else:
@@ -378,7 +408,7 @@ def reject(sub_id):
     if not reason:
         return 'Rejection reason is required', 400
 
-    if sub.type == 'rating':
+    if sub.type in ('rating', 'note'):
         reject_rating_submission(sub, current_user, reason)
     else:
         # Entity rejections require password

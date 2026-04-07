@@ -31,7 +31,7 @@ def _resolve_submission_context(submission_type, entity_id):
                 if artist:
                     art_id = artist.id
                     art_name = artist.name
-    elif submission_type in ('song', 'rating'):
+    elif submission_type in ('song', 'rating', 'note'):
         entity = db.session.get(Song, entity_id)
         if entity:
             entity_name = entity.name
@@ -87,12 +87,16 @@ def approve_submission(submission, reviewer):
 
 
 def reject_rating_submission(submission, reviewer, reason):
-    """Reject a proxy rating submission — revert to old values."""
+    """Reject a proxy rating or note submission — revert to old values."""
     song = db.session.get(Song, submission.entity_id)
 
-    # Revert the rating
+    # Revert the change
     rating = db.session.get(Rating, (submission.entity_id, submission.target_user_id))
-    if submission.old_rating is None and submission.old_note is None:
+    if submission.type == 'note':
+        # Note-only submission — only revert the note, don't touch rating
+        if rating:
+            rating.note = submission.old_note
+    elif submission.old_rating is None and submission.old_note is None:
         # No prior rating existed — delete the row
         if rating:
             db.session.delete(rating)
@@ -286,11 +290,18 @@ def get_song_cascade_preview(song_id):
     }
 
 
-def _close_orphaned_submissions(entity_type, entity_id, reviewer):
-    """Close any open submissions referencing a deleted entity."""
+def _close_orphaned_submissions(entity_types, entity_id, reviewer):
+    """Close any open submissions referencing a deleted entity.
+
+    entity_types can be a string or list of strings.
+    """
+    if isinstance(entity_types, str):
+        entity_types = [entity_types]
     now = datetime.now(timezone.utc).isoformat()
-    orphans = Submission.query.filter_by(
-        type=entity_type, entity_id=entity_id, status='open'
+    orphans = Submission.query.filter(
+        Submission.type.in_(entity_types),
+        Submission.entity_id == entity_id,
+        Submission.status == 'open',
     ).all()
     for s in orphans:
         s.status = 'rejected'
@@ -339,7 +350,7 @@ def reject_artist_submission(submission, reviewer, reason):
         db.session.query(Song).filter_by(id=song_id).delete()
         deleted_songs += 1
         _close_orphaned_submissions('song', song_id, reviewer)
-        _close_orphaned_submissions('rating', song_id, reviewer)
+        _close_orphaned_submissions(['rating', 'note'], song_id, reviewer)
 
         # Clean up albums that are now empty
         for row in album_song_rows:
@@ -410,7 +421,7 @@ def _delete_album_cascade(album_id, reviewer=None):
         deleted_song_ids.add(sid)
         if reviewer:
             _close_orphaned_submissions('song', sid, reviewer)
-            _close_orphaned_submissions('rating', sid, reviewer)
+            _close_orphaned_submissions(['rating', 'note'], sid, reviewer)
 
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     db.session.query(Album).filter_by(id=album_id).delete()
@@ -488,7 +499,7 @@ def reject_song_submission(submission, reviewer, reason):
     AlbumSong.query.filter_by(song_id=song.id).delete()
     ArtistSong.query.filter_by(song_id=song.id).delete()
     Rating.query.filter_by(song_id=song.id).delete()
-    _close_orphaned_submissions('rating', song.id, reviewer)
+    _close_orphaned_submissions(['rating', 'note'], song.id, reviewer)
     db.session.delete(song)
 
     # Clean up albums that are now empty

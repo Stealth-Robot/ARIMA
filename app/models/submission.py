@@ -28,7 +28,7 @@ class Submission(db.Model):
     target_user = db.relationship('User', foreign_keys=[target_user_id])
 
     __table_args__ = (
-        db.CheckConstraint("type IN ('artist', 'album', 'song', 'rating')", name='submission_type_check'),
+        db.CheckConstraint("type IN ('artist', 'album', 'song', 'rating', 'note')", name='submission_type_check'),
         db.CheckConstraint("status IN ('open', 'approved', 'rejected')", name='submission_status_check'),
         db.Index('ix_submission_status', 'status'),
         db.Index('ix_submission_type', 'type'),

@@ -1,23 +1,29 @@
-{% macro render_sub_row(sub, status, css_class='', style='', indent=0) %}
+{% macro render_sub_row(sub, status, css_class='', style='', indent=0, show_expand_col=true) %}
 <tr id="submission-row-{{ sub.id }}" class="{{ css_class }}"
     style="{{ style }} border: 1px solid var(--grid-line);">
+    {% if show_expand_col %}
     <td class="px-3 py-2" style="border: 1px solid var(--grid-line);"></td>
+    {% endif %}
     <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
         <span class="px-2 py-1 rounded text-xs"
               style="background:var(--bg-secondary); border:1px solid var(--border);">
             {{ sub.type | capitalize }}
         </span>
     </td>
-    <td class="px-3 py-2" style="border: 1px solid var(--grid-line); padding-left: {{ indent }}px;">
+    <td style="border: 1px solid var(--grid-line); padding: 8px 12px 8px {{ indent if indent > 12 else 12 }}px;">
         {% if sub._entity_url %}
         <a href="{{ sub._entity_url }}" style="color:var(--text-primary); text-decoration:underline;">{{ sub._entity_name }}</a>
         {% else %}
         {{ sub._entity_name }}
         {% endif %}
         {% if sub.type == 'rating' %}
-        <span class="text-xs" style="color:var(--text-secondary);">
+        <div class="text-xs" style="color:var(--text-secondary); margin-top:2px;">
             {{ sub.old_rating if sub.old_rating is not none else 'none' }} &rarr; {{ sub.new_rating if sub.new_rating is not none else 'none' }}
-        </span>
+        </div>
+        {% elif sub.type == 'note' %}
+        <div class="text-xs" style="color:var(--text-secondary); margin-top:2px;">
+            "{{ sub.old_note or 'empty' }}" &rarr; "{{ sub.new_note or 'empty' }}"
+        </div>
         {% endif %}
     </td>
     <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
@@ -44,7 +50,15 @@
         </span>
     </td>
     <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
-        {{ sub.resolved_by.username if sub.resolved_by else '-' }}
+        {% if sub.resolved_by %}
+        <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
+            <img src="{{ sub.resolved_by.profile_image or url_for('static', filename='img/default_image.png') }}"
+                 alt="" referrerpolicy="no-referrer"
+                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                 style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+            <span>{{ sub.resolved_by.username }}</span>
+        </div>
+        {% else %}-{% endif %}
     </td>
     <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date" style="border: 1px solid var(--grid-line); font-family:monospace;" data-utc="{{ sub.resolved_at or '' }}">
         {{ sub.resolved_at[:10] if sub.resolved_at else '-' }}
@@ -82,7 +96,9 @@
 <table class="w-full text-sm border-collapse" style="border: 1px solid var(--grid-line);">
     <thead>
         <tr style="background-color: var(--header-row);">
+            {% if groups %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); width: 30px;"></th>
+            {% endif %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Type</th>
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Entity</th>
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Submitted By</th>
@@ -152,7 +168,15 @@
                 </span>
             </td>
             <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
-                {{ row_sub.resolved_by.username if row_sub.resolved_by else '-' }}
+                {% if row_sub.resolved_by %}
+                <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                    <img src="{{ row_sub.resolved_by.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         alt="" referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                    <span>{{ row_sub.resolved_by.username }}</span>
+                </div>
+                {% else %}-{% endif %}
             </td>
             <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date" style="border: 1px solid var(--grid-line); font-family:monospace;" data-utc="{{ row_sub.resolved_at or '' }}">
                 {{ row_sub.resolved_at[:10] if row_sub.resolved_at else '-' }}
@@ -235,7 +259,15 @@
                     </span>
                 </td>
                 <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
-                    {{ asub.resolved_by.username if asub.resolved_by else '-' }}
+                    {% if asub.resolved_by %}
+                    <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                        <img src="{{ asub.resolved_by.profile_image or url_for('static', filename='img/default_image.png') }}"
+                             alt="" referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                             style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                        <span>{{ asub.resolved_by.username }}</span>
+                    </div>
+                    {% else %}-{% endif %}
                 </td>
                 <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date" style="border: 1px solid var(--grid-line); font-family:monospace;" data-utc="{{ asub.resolved_at or '' }}">
                     {{ asub.resolved_at[:10] if asub.resolved_at else '-' }}
@@ -284,7 +316,7 @@
 
         {# --- Ungrouped rows (ratings, orphans) --- #}
         {% for sub in ungrouped %}
-        {{ render_sub_row(sub, status, indent=0) }}
+        {{ render_sub_row(sub, status, indent=0, show_expand_col=groups|length > 0) }}
         {% endfor %}
     </tbody>
 </table>

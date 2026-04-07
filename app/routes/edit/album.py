@@ -414,7 +414,7 @@ def delete_album(album_id):
         Rating.query.filter_by(song_id=sid).delete()
         db.session.query(Song).filter_by(id=sid).delete()
         _close_orphaned_submissions('song', sid, current_user)
-        _close_orphaned_submissions('rating', sid, current_user)
+        _close_orphaned_submissions(['rating', 'note'], sid, current_user)
 
     album_name_val = album.name
     # Resolve artist name: try album.artist_id first, fall back to song's main artist

@@ -267,7 +267,7 @@ def remove_song_from_album(song_id, album_id):
         Rating.query.filter_by(song_id=song_id).delete()
         db.session.query(Song).filter_by(id=song_id).delete()
         _close_orphaned_submissions('song', song_id, current_user)
-        _close_orphaned_submissions('rating', song_id, current_user)
+        _close_orphaned_submissions(['rating', 'note'], song_id, current_user)
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}" (song deleted, was only album)', change_type='song')
     else:
         log_change(current_user, f'Removed "{song_name_val}" from "{album_name_val}"', change_type='song')
@@ -319,7 +319,7 @@ def delete_song(song_id):
     AlbumSong.query.filter_by(song_id=song_id).delete()
     db.session.query(Song).filter_by(id=song_id).delete()
     _close_orphaned_submissions('song', song_id, current_user)
-    _close_orphaned_submissions('rating', song_id, current_user)
+    _close_orphaned_submissions(['rating', 'note'], song_id, current_user)
 
     # Clean up albums that are now empty (skip albums with direct artist_id link)
     for row in album_song_rows:

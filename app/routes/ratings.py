@@ -82,16 +82,26 @@ def rate():
         elif note_changed:
             log_change(current_user, f'Updated note on "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
-        # Create submission for proxy ratings (not self-ratings)
+        # Create submission for proxy changes (not self-ratings)
         if target_user_id != current_user.id:
-            create_submission(
-                'rating', song_id, current_user.id,
-                target_user_id=target_user_id,
-                old_rating=old_rating,
-                new_rating=rating_value if rating_changed else old_rating,
-                old_note=old_note,
-                new_note=note if note_changed else old_note,
-            )
+            if rating_changed:
+                create_submission(
+                    'rating', song_id, current_user.id,
+                    target_user_id=target_user_id,
+                    old_rating=old_rating,
+                    new_rating=rating_value,
+                    old_note=old_note,
+                    new_note=old_note,
+                )
+            elif note_changed:
+                create_submission(
+                    'note', song_id, current_user.id,
+                    target_user_id=target_user_id,
+                    old_rating=old_rating,
+                    new_rating=old_rating,
+                    old_note=old_note,
+                    new_note=note,
+                )
 
     try:
         db.session.commit()

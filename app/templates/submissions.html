@@ -8,27 +8,55 @@
 
     <div class="flex gap-2 mb-4 flex-wrap" id="submissions-filters">
         <!-- Status tabs -->
-        <div class="flex gap-1">
-            <a href="{{ url_for('submissions.submissions_page', status='open', type=type_filter) }}"
+        <div style="display:flex; gap:4px;">
+            <a href="#" onclick="event.preventDefault(); switchStatus('open')"
                class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 Open
             </a>
-            <a href="{{ url_for('submissions.submissions_page', status='history', type=type_filter) }}"
+            <a href="#" onclick="event.preventDefault(); switchStatus('history')"
                class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 History
             </a>
         </div>
 
+        <a href="#" onclick="event.preventDefault(); toggleMine()"
+           class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if mine %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+            For Me
+        </a>
+
         <!-- Type filter -->
         <select name="type" id="submissions-type-filter"
-                onchange="window.location.href='/submissions?status={{ status }}&type='+this.value"
+                onchange="applySubmissionFilters()"
                 class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
             <option value="">All Types</option>
             <option value="artist" {% if type_filter == 'artist' %}selected{% endif %}>Artist</option>
             <option value="album" {% if type_filter == 'album' %}selected{% endif %}>Album</option>
             <option value="song" {% if type_filter == 'song' %}selected{% endif %}>Song</option>
             <option value="rating" {% if type_filter == 'rating' %}selected{% endif %}>Rating</option>
+            <option value="note" {% if type_filter == 'note' %}selected{% endif %}>Note</option>
         </select>
+
+        <!-- Submitted By filter -->
+        <select name="submitted_by" id="submissions-submitted-by-filter"
+                onchange="applySubmissionFilters()"
+                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <option value="">Submitted By</option>
+            {% for u in filter_users %}
+            <option value="{{ u.id }}" {% if submitted_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Resolved By filter (history only) -->
+        {% if status == 'history' %}
+        <select name="resolved_by" id="submissions-resolved-by-filter"
+                onchange="applySubmissionFilters()"
+                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <option value="">Resolved By</option>
+            {% for u in filter_users %}
+            <option value="{{ u.id }}" {% if resolved_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
     </div>
 
     <div id="submissions-list">
@@ -88,6 +116,38 @@
 </div>
 
 <script>
+var _currentStatus = '{{ status }}';
+var _currentMine = {{ 'true' if mine else 'false' }};
+
+function buildSubmissionUrl(overrides) {
+    var params = {
+        status: overrides.status !== undefined ? overrides.status : _currentStatus,
+        type: document.getElementById('submissions-type-filter') ? document.getElementById('submissions-type-filter').value : '',
+        submitted_by: document.getElementById('submissions-submitted-by-filter') ? document.getElementById('submissions-submitted-by-filter').value : '',
+        resolved_by: document.getElementById('submissions-resolved-by-filter') ? document.getElementById('submissions-resolved-by-filter').value : '',
+        mine: overrides.mine !== undefined ? overrides.mine : (_currentMine ? '1' : ''),
+    };
+    var parts = [];
+    for (var k in params) {
+        if (params[k]) parts.push(k + '=' + encodeURIComponent(params[k]));
+    }
+    return '/submissions' + (parts.length ? '?' + parts.join('&') : '');
+}
+
+function applySubmissionFilters() {
+    window.location.href = buildSubmissionUrl({});
+}
+
+function switchStatus(s) {
+    var overrides = { status: s };
+    if (s === 'open') overrides.resolved_by = '';
+    window.location.href = buildSubmissionUrl(overrides);
+}
+
+function toggleMine() {
+    window.location.href = buildSubmissionUrl({ mine: _currentMine ? '' : '1' });
+}
+
 var _rejectSubId = null;
 var _rejectSubType = null;
 var _approveSubId = null;
@@ -146,7 +206,7 @@ function openRejectModal(subId, subType) {
     cascadeDiv.innerHTML = '';
     document.querySelector('#reject-form textarea[name=reason]').value = '';
 
-    if (subType === 'rating') {
+    if (subType === 'rating' || subType === 'note') {
         pwField.style.display = 'none';
     } else {
         pwField.style.display = 'block';
