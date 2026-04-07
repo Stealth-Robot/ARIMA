@@ -113,7 +113,7 @@ def run_startup_migrations():
         # 7. Re-render changelog description_html with ID-based links
         from app.models.changelog import Changelog
         from app.services.audit import build_description_html
-        from app.models.music import Song, Album
+        from app.models.music import Artist, Song, Album
         changelogs = Changelog.query.all()
         rerendered = 0
         for cl in changelogs:
