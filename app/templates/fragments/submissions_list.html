@@ -4,7 +4,7 @@
     {% if status == 'open' %}
     <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
         {% if sub._can_approve or sub._can_reject %}
-        <input type="checkbox" class="submission-checkbox" value="{{ sub.id }}" data-can-approve="{{ 'true' if sub._can_approve else 'false' }}" data-can-reject="{{ 'true' if sub._can_reject else 'false' }}" onchange="updateBulkActions()">
+        <input type="checkbox" class="submission-checkbox" value="{{ sub.id }}" data-type="{{ sub.type }}" data-can-approve="{{ 'true' if sub._can_approve else 'false' }}" data-can-reject="{{ 'true' if sub._can_reject else 'false' }}" onchange="updateBulkActions()">
         {% else %}
         <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
         {% endif %}
@@ -15,7 +15,7 @@
     {% endif %}
     <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
         <span class="px-2 py-1 rounded text-xs"
-              style="background:var(--bg-secondary); border:1px solid var(--border);">
+              style="background:var(--submission-type-{{ sub.type }}); color:#fff; border:1px solid var(--border);">
             {{ sub.type | capitalize }}
         </span>
     </td>
@@ -76,7 +76,7 @@
         {{ sub.rejection_reason or '-' }}
     </td>
     {% else %}
-    <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);">
+    <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line); white-space:nowrap;">
         {% if sub._can_approve %}
         <button onclick="approveSubmission({{ sub.id }}, '{{ sub.type }}')"
                 class="px-2 py-1 rounded text-xs"
@@ -106,16 +106,14 @@
     <thead>
         <tr style="background-color: var(--header-row);">
             {% if status == 'open' %}
-            <th class="text-center px-1 py-2" style="border: 1px solid var(--grid-line); width: 30px;">
-                <input type="checkbox" id="select-all-submissions" onchange="toggleAllSubmissions(this.checked)" title="Select all">
-            </th>
+            <th class="px-1 py-2" style="border: 1px solid var(--grid-line); width: 30px;"></th>
             {% endif %}
             {% if groups %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); width: 30px;"></th>
             {% endif %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Type</th>
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Entity</th>
-            <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Submitted By</th>
+            <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); white-space:nowrap;">Submitted By</th>
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Date</th>
             {% if status == 'history' %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Status</th>
@@ -123,7 +121,7 @@
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Resolved</th>
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line);">Reason</th>
             {% else %}
-            <th class="text-center px-3 py-2" style="border: 1px solid var(--grid-line);">Actions</th>
+            <th class="text-center px-3 py-2" style="border: 1px solid var(--grid-line); white-space:nowrap;">Actions</th>
             {% endif %}
         </tr>
     </thead>
@@ -138,7 +136,7 @@
             {% if status == 'open' %}
             <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
                 {% if group.artist_sub and group.artist_sub._can_approve %}
-                <input type="checkbox" class="submission-checkbox" value="{{ group.artist_sub.id }}" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
+                <input type="checkbox" class="submission-checkbox" value="{{ group.artist_sub.id }}" data-type="artist" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
                 {% elif group.artist_sub %}
                 <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
                 {% endif %}
@@ -151,7 +149,7 @@
             </td>
             <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
                 <span class="px-2 py-1 rounded text-xs"
-                      style="background:var(--bg-secondary); border:1px solid var(--border);">
+                      style="background:var(--submission-type-artist); color:#fff; border:1px solid var(--border);">
                     Artist
                 </span>
             </td>
@@ -166,6 +164,8 @@
                     ({{ group.child_count }} more)
                 </span>
                 {% endif %}
+                <a href="/submissions?q={{ group.artist_name | urlencode }}" onclick="event.stopPropagation()"
+                   style="font-size:11px; color:var(--text-secondary); margin-left:6px; text-decoration:underline;" title="Filter by this artist">filter</a>
             </td>
             <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
                 <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
@@ -208,7 +208,7 @@
                 {{ row_sub.rejection_reason or '-' }}
             </td>
             {% else %}
-            <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
+            <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line); white-space:nowrap;" onclick="event.stopPropagation()">
                 {% if group.artist_sub and group.artist_sub._can_approve %}
                 <button onclick="approveSubmission({{ group.artist_sub.id }}, 'artist')"
                         class="px-2 py-1 rounded text-xs"
@@ -238,7 +238,7 @@
                 {% if status == 'open' %}
                 <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
                     {% if asub._can_approve %}
-                    <input type="checkbox" class="submission-checkbox" value="{{ asub.id }}" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
+                    <input type="checkbox" class="submission-checkbox" value="{{ asub.id }}" data-type="album" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
                     {% else %}
                     <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
                     {% endif %}
@@ -251,7 +251,7 @@
                 </td>
                 <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">
                     <span class="px-2 py-1 rounded text-xs"
-                          style="background:var(--bg-secondary); border:1px solid var(--border);">
+                          style="background:var(--submission-type-album); color:#fff; border:1px solid var(--border);">
                         Album
                     </span>
                 </td>
@@ -308,7 +308,7 @@
                     {{ asub.rejection_reason or '-' }}
                 </td>
                 {% else %}
-                <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
+                <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line); white-space:nowrap;" onclick="event.stopPropagation()">
                     {% if asub._can_approve %}
                     <button onclick="approveSubmission({{ asub.id }}, 'album')"
                             class="px-2 py-1 rounded text-xs"

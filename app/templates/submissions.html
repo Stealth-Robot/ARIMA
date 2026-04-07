@@ -19,6 +19,10 @@
             </a>
         </div>
 
+        <input type="text" id="submissions-search" placeholder="Search..." value="{{ search or '' }}"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();applySubmissionFilters()}"
+               class="px-3 py-2 border rounded text-sm" style="border-color: var(--border); width:160px;">
+
         <select name="type" id="submissions-type-filter"
                 onchange="applySubmissionFilters()"
                 class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
@@ -26,8 +30,6 @@
             <option value="artist" {% if type_filter == 'artist' %}selected{% endif %}>Artist</option>
             <option value="album" {% if type_filter == 'album' %}selected{% endif %}>Album</option>
             <option value="song" {% if type_filter == 'song' %}selected{% endif %}>Song</option>
-            <option value="rating" {% if type_filter == 'rating' %}selected{% endif %}>Rating</option>
-            <option value="note" {% if type_filter == 'note' %}selected{% endif %}>Note</option>
         </select>
 
         <select name="submitted_by" id="submissions-submitted-by-filter"
@@ -120,6 +122,7 @@ var _currentStatus = '{{ status }}';
 function buildSubmissionUrl(overrides) {
     var params = {
         status: overrides.status !== undefined ? overrides.status : _currentStatus,
+        q: document.getElementById('submissions-search') ? document.getElementById('submissions-search').value.trim() : '',
         type: document.getElementById('submissions-type-filter') ? document.getElementById('submissions-type-filter').value : '',
         submitted_by: document.getElementById('submissions-submitted-by-filter') ? document.getElementById('submissions-submitted-by-filter').value : '',
         resolved_by: document.getElementById('submissions-resolved-by-filter') ? document.getElementById('submissions-resolved-by-filter').value : '',
@@ -398,6 +401,28 @@ function refreshSubmissionsList() {
     });
 }
 
+// --- Persist expand state across edit mode toggle / page reload ---
+function saveExpandedState() {
+    var state = getExpandedState();
+    sessionStorage.setItem('submissions_expand_state', JSON.stringify(state));
+}
+
+(function restoreOnLoad() {
+    var raw = sessionStorage.getItem('submissions_expand_state');
+    if (!raw) return;
+    sessionStorage.removeItem('submissions_expand_state');
+    try {
+        var state = JSON.parse(raw);
+        restoreExpandedState(state);
+    } catch(e) {}
+})();
+
+// Hook into edit mode toggle
+var _editForm = document.getElementById('edit-mode-form');
+if (_editForm) {
+    _editForm.addEventListener('submit', function() { saveExpandedState(); });
+}
+
 var _sseSource = new EventSource('/events/ratings');
 _sseSource.addEventListener('submission-update', function(e) {
     refreshSubmissionsList();
@@ -466,14 +491,8 @@ function bulkRejectPrompt() {
     // Check if any non-rating/note types are selected
     var needsPassword = false;
     document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
-        var row = cb.closest('tr');
-        if (row) {
-            var typeSpan = row.querySelector('td:nth-child(2) span, td:nth-child(3) span');
-            if (typeSpan) {
-                var t = typeSpan.textContent.trim().toLowerCase();
-                if (t !== 'rating' && t !== 'note') needsPassword = true;
-            }
-        }
+        var t = cb.dataset.type;
+        if (t && t !== 'rating' && t !== 'note') needsPassword = true;
     });
     pwField.style.display = needsPassword ? 'block' : 'none';
     if (needsPassword) pwField.querySelector('input').value = '';

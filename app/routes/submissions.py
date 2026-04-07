@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from flask import Blueprint, request, render_template, abort, jsonify
+from flask import Blueprint, request, render_template, abort, jsonify, session
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
 
@@ -37,10 +37,17 @@ def _entity_name(sub):
         return entity.name if entity else fallback
     elif sub.type in ('rating', 'note'):
         entity = db.session.get(Song, sub.entity_id)
-        target = db.session.get(User, sub.target_user_id) if sub.target_user_id else None
         song_name = entity.name if entity else fallback
-        user_name = target.username if target else f'user {sub.target_user_id}'
-        return f'{song_name} (for {user_name})'
+        artist_ctx = ''
+        if sub.artist_name:
+            artist_ctx = f' ({sub.artist_name})'
+        elif entity:
+            link = ArtistSong.query.filter_by(song_id=entity.id, artist_is_main=True).first()
+            if link:
+                artist = db.session.get(Artist, link.artist_id)
+                if artist:
+                    artist_ctx = f' ({artist.name})'
+        return f'{song_name}{artist_ctx}'
     return fallback
 
 
@@ -167,15 +174,18 @@ def submissions_for_me():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def submissions_page():
-    """Data Approvals page — all submissions for editors/admins."""
+    """Data Approvals page — entity submissions for editors/admins."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
+    search = request.args.get('q', '').strip()
     submitted_by = request.args.get('submitted_by', '')
     resolved_by = request.args.get('resolved_by', '')
     submitted_by = submitted_by if submitted_by.isdigit() else ''
     resolved_by = resolved_by if resolved_by.isdigit() else ''
 
-    query = Submission.query.options(
+    query = Submission.query.filter(
+        Submission.type.in_(['artist', 'album', 'song']),
+    ).options(
         joinedload(Submission.submitted_by),
         joinedload(Submission.resolved_by),
     )
@@ -193,6 +203,15 @@ def submissions_page():
     if type_filter:
         query = query.filter_by(type=type_filter)
 
+    if search:
+        like = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Submission.entity_name.ilike(like),
+                Submission.artist_name.ilike(like),
+            )
+        )
+
     if status == 'open':
         query = query.order_by(Submission.submitted_at.desc(), Submission.id.desc())
     else:
@@ -201,102 +220,100 @@ def submissions_page():
     submissions = query.all()
 
     # Attach display info
+    is_editor = current_user.is_editor_or_admin
+    edit_mode = session.get('edit_mode', False)
     for sub in submissions:
         sub._entity_name = _entity_name(sub)
         sub._entity_url = _entity_url(sub)
-        # Rating/note submissions: only target user can approve/reject
-        # Non-rating submissions: any editor/admin except submitter (unless admin)
-        if sub.type in ('rating', 'note'):
-            is_target = sub.target_user_id == current_user.id
-            sub._can_approve = is_target
-            sub._can_reject = is_target
-        else:
-            sub._can_approve = is_editor and (current_user.is_admin or sub.submitted_by_id != current_user.id)
-            sub._can_reject = is_editor and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+        # Data Approvals: requires edit mode + editor/admin except submitter
+        can_act = is_editor and edit_mode and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+        sub._can_approve = can_act
+        sub._can_reject = can_act
 
-    # Group by artist for the open view
-    # Each group: {artist_id, artist_name, artist_url, artist_sub, children: [album/song subs]}
-    # Rating submissions and orphans go into ungrouped list
+    # Group by artist — only when showing all types or artist filter
+    # When filtering by album or song, show a flat list instead
     groups = OrderedDict()
     ungrouped = []
 
-    # Two-pass grouping: artists and albums first, then songs
-    song_subs = []
-    for sub in submissions:
-        if sub.type in ('rating', 'note'):
-            ungrouped.append(sub)
-            continue
-
-        artist_info = _resolve_artist_for_submission(sub)
-        if not artist_info:
-            ungrouped.append(sub)
-            continue
-
-        artist_id, artist_name, artist_url = artist_info
-        if artist_id not in groups:
-            groups[artist_id] = {
-                'artist_id': artist_id,
-                'artist_name': artist_name,
-                'artist_url': artist_url,
-                'artist_sub': None,
-                'children': [],
-            }
-
-        if sub.type == 'artist':
-            groups[artist_id]['artist_sub'] = sub
-        elif sub.type == 'album':
-            groups[artist_id]['children'].append({
-                'album_sub': sub,
-                'songs': [],
-            })
-        elif sub.type == 'song':
-            song_subs.append((sub, artist_id))
-
-    # Second pass: attach songs to their album groups
-    for sub, artist_id in song_subs:
-        placed = False
-        if artist_id in groups:
-            # Try live DB lookup first
-            song_obj = db.session.get(Song, sub.entity_id)
-            if song_obj:
-                song_album_ids = {r.album_id for r in AlbumSong.query.filter_by(song_id=song_obj.id).all()}
-            elif sub.album_id:
-                # Song deleted — use stored album_id
-                song_album_ids = {sub.album_id}
-            else:
-                song_album_ids = set()
-
-            for child in groups[artist_id]['children']:
-                if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
-                    child['songs'].append(sub)
-                    placed = True
-                    break
-        if not placed:
-            if artist_id in groups:
-                groups[artist_id]['children'].append(sub)
-            else:
+    if type_filter in ('artist', 'album', 'song'):
+        # Flat list when filtering by album or song
+        ungrouped = list(submissions)
+    else:
+        # Group by artist
+        song_subs = []
+        for sub in submissions:
+            if sub.type in ('rating', 'note'):
                 ungrouped.append(sub)
+                continue
 
-    # Pre-compute row_sub and child_count for each group
-    for group in groups.values():
-        row_sub = group['artist_sub']
-        if not row_sub:
+            artist_info = _resolve_artist_for_submission(sub)
+            if not artist_info:
+                ungrouped.append(sub)
+                continue
+
+            artist_id, artist_name, artist_url = artist_info
+            if artist_id not in groups:
+                groups[artist_id] = {
+                    'artist_id': artist_id,
+                    'artist_name': artist_name,
+                    'artist_url': artist_url,
+                    'artist_sub': None,
+                    'children': [],
+                }
+
+            if sub.type == 'artist':
+                groups[artist_id]['artist_sub'] = sub
+            elif sub.type == 'album':
+                groups[artist_id]['children'].append({
+                    'album_sub': sub,
+                    'songs': [],
+                })
+            elif sub.type == 'song':
+                song_subs.append((sub, artist_id))
+
+        # Second pass: attach songs to their album groups
+        for sub, artist_id in song_subs:
+            placed = False
+            if artist_id in groups:
+                song_obj = db.session.get(Song, sub.entity_id)
+                if song_obj:
+                    song_album_ids = {r.album_id for r in AlbumSong.query.filter_by(song_id=song_obj.id).all()}
+                elif sub.album_id:
+                    song_album_ids = {sub.album_id}
+                else:
+                    song_album_ids = set()
+
+                for child in groups[artist_id]['children']:
+                    if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
+                        child['songs'].append(sub)
+                        placed = True
+                        break
+            if not placed:
+                if artist_id in groups:
+                    groups[artist_id]['children'].append(sub)
+                else:
+                    ungrouped.append(sub)
+
+        # Pre-compute row_sub and child_count for each group
+        for group in groups.values():
+            row_sub = group['artist_sub']
+            if not row_sub:
+                for child in group['children']:
+                    if isinstance(child, dict):
+                        row_sub = child['album_sub']
+                    else:
+                        row_sub = child
+                    if row_sub:
+                        break
+            group['row_sub'] = row_sub
+
+            child_count = 0
             for child in group['children']:
                 if isinstance(child, dict):
-                    row_sub = child['album_sub']
+                    child_count += 1 + len(child['songs'])
                 else:
-                    row_sub = child
-                if row_sub:
-                    break
-        group['row_sub'] = row_sub
-
-        child_count = 0
-        for child in group['children']:
-            if isinstance(child, dict):
-                child_count += 1 + len(child['songs'])
-            else:
-                child_count += 1
-        group['child_count'] = child_count
+                    child_count += 1
+            group['child_count'] = child_count
 
     if request.headers.get('HX-Request'):
         return render_template('fragments/submissions_list.html',
@@ -316,7 +333,7 @@ def submissions_page():
 
     return render_template('submissions.html',
                            groups=list(groups.values()), ungrouped=ungrouped,
-                           status=status, type_filter=type_filter,
+                           status=status, type_filter=type_filter, search=search,
                            submitted_by=submitted_by, resolved_by=resolved_by,
                            filter_users=filter_users)
 
@@ -396,21 +413,18 @@ def approve(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Rating/note submissions: only target user can approve
-    # Non-rating: any editor/admin except submitter (unless admin)
-    if sub.type in ('rating', 'note'):
-        if sub.target_user_id != current_user.id:
-            abort(403)
-    else:
-        if not current_user.is_editor_or_admin:
-            abort(403)
-        if sub.submitted_by_id == current_user.id and not current_user.is_admin:
-            abort(403)
+    # Target user can always act on their own rating/note submissions
+    # Editors need edit mode to act on Data Approvals
+    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id
+    is_editor_allowed = current_user.is_editor_or_admin and session.get('edit_mode') and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+    if not is_target and not is_editor_allowed:
+        abort(403)
     _mark_approved(sub, current_user)
 
     # Bulk-approve additional related submissions (validated against actual related set)
+    # Only editors in edit mode can bulk-approve related items
     also_approve = request.form.getlist('also_approve')
-    if also_approve:
+    if also_approve and is_editor_allowed:
         allowed = {s.id for s in _get_related_open_submissions(sub)}
         for extra_id in also_approve:
             extra_id = int(extra_id)
@@ -431,15 +445,11 @@ def reject(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Rating/note submissions: only target user can reject
-    # Non-rating submissions: any editor/admin except submitter (unless admin)
-    if sub.type in ('rating', 'note'):
-        if sub.target_user_id != current_user.id:
-            abort(403)
-    else:
-        if not current_user.is_editor_or_admin:
-            abort(403)
-        if sub.submitted_by_id == current_user.id and not current_user.is_admin:
+    # Target user can always act on their own rating/note submissions
+    # Editors need edit mode to act on Data Approvals
+    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id
+    is_editor_allowed = current_user.is_editor_or_admin and session.get('edit_mode') and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+    if not is_target and not is_editor_allowed:
             abort(403)
 
     reason = request.form.get('reason', '').strip()

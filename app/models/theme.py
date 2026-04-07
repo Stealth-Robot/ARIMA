@@ -96,4 +96,11 @@ class Theme(db.Model):
     update_type_perf = db.Column(db.Text)
     update_type_code = db.Column(db.Text)
 
+    # Submission type badge colours
+    submission_type_artist = db.Column(db.Text)
+    submission_type_album = db.Column(db.Text)
+    submission_type_song = db.Column(db.Text)
+    submission_type_rating = db.Column(db.Text)
+    submission_type_note = db.Column(db.Text)
+
     owner = db.relationship('User', foreign_keys=[user_id])

@@ -97,6 +97,12 @@ CLASSIC_THEME = {
     'update_type_style': '#7C3AED',
     'update_type_perf': '#059669',
     'update_type_code': '#6B7280',
+    # Submission type badges
+    'submission_type_artist': '#7C3AED',
+    'submission_type_album': '#2563EB',
+    'submission_type_song': '#059669',
+    'submission_type_rating': '#D97706',
+    'submission_type_note': '#6B7280',
 }
 
 # Dark theme — all columns populated, no NULLs
@@ -177,6 +183,12 @@ DARK_THEME = {
     'update_type_style': '#A78BFA',
     'update_type_perf': '#34D399',
     'update_type_code': '#9CA3AF',
+    # Submission type badges
+    'submission_type_artist': '#A78BFA',
+    'submission_type_album': '#3B82F6',
+    'submission_type_song': '#34D399',
+    'submission_type_rating': '#FBBF24',
+    'submission_type_note': '#9CA3AF',
 }
 
 

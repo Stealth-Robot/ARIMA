@@ -72,6 +72,11 @@
             'update_type_style': 'Style Badge',
             'update_type_perf': 'Perf. Badge',
             'update_type_code': 'Code Badge',
+            'submission_type_artist': 'Artist Badge',
+            'submission_type_album': 'Album Badge',
+            'submission_type_song': 'Song Badge',
+            'submission_type_rating': 'Rating Badge',
+            'submission_type_note': 'Note Badge',
         } %}
 
         {% set groups = [
@@ -119,6 +124,9 @@
             ]),
             ('Update Type Badges', [
                 'update_type_feature', 'update_type_bugfix', 'update_type_style', 'update_type_perf', 'update_type_code',
+            ]),
+            ('Submission Type Badges', [
+                'submission_type_artist', 'submission_type_album', 'submission_type_song', 'submission_type_rating', 'submission_type_note',
             ]),
         ] %}
 

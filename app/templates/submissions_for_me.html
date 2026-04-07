@@ -145,6 +145,21 @@ function refreshSubmissionsList() {
     });
 }
 
+// --- Persist scroll across edit mode toggle ---
+(function restoreScroll() {
+    var scroll = sessionStorage.getItem('submissions_scroll');
+    if (scroll) {
+        sessionStorage.removeItem('submissions_scroll');
+        window.scrollTo(0, parseInt(scroll));
+    }
+})();
+var _editForm = document.getElementById('edit-mode-form');
+if (_editForm) {
+    _editForm.addEventListener('submit', function() {
+        sessionStorage.setItem('submissions_scroll', window.scrollY);
+    });
+}
+
 var _sseSource = new EventSource('/events/ratings');
 _sseSource.addEventListener('submission-update', function(e) {
     refreshSubmissionsList();

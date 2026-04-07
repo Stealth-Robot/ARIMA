@@ -49,8 +49,8 @@
         <div style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.stats-dd').style.display='block'"
              onmouseleave="this.querySelector('.stats-dd').style.display='none'">
-            <span style="color:var(--navbar-text); cursor:default;
-                         {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</span>
+            <a href="{{ url_for('stats.global_stats') }}" style="color:var(--navbar-text); text-decoration:none;
+                         {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</a>
             <div class="stats-dd" style="display:none; position:absolute; top:100%; left:0;
                         background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
                         box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
@@ -72,8 +72,8 @@
         <div style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.submissions-dd').style.display='block'"
              onmouseleave="this.querySelector('.submissions-dd').style.display='none'">
-            <span style="color:var(--navbar-text); cursor:default;
-                         {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</span>
+            <a href="{{ url_for('submissions.submissions_for_me') }}" style="color:var(--navbar-text); text-decoration:none;
+                         {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
             <div class="submissions-dd" style="display:none; position:absolute; top:100%; left:0;
                         background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
                         box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
