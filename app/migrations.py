@@ -32,24 +32,19 @@ def run_startup_migrations():
             db.session.execute(db.text('DROP TABLE IF EXISTS submission'))
             logger.info('Dropped old submission table (schema mismatch)')
 
-        # Recreate submission table if CHECK constraint doesn't include 'note' type
-        # SQLite can't alter CHECK constraints, so we recreate the table preserving data
-        if existing_sub_cols and 'type' in existing_sub_cols:
-            # Check if the constraint needs updating by trying to read table SQL
-            table_sql = db.session.execute(db.text(
-                "SELECT sql FROM sqlite_master WHERE type='table' AND name='submission'"
-            )).scalar() or ''
-            if "'note'" not in table_sql:
-                # Get column names from old table to handle schema differences
-                old_cols = [row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))]
-                db.session.execute(db.text('ALTER TABLE submission RENAME TO submission_old'))
-                db.create_all()
-                cols = ', '.join(old_cols)
-                db.session.execute(db.text(
-                    f'INSERT INTO submission ({cols}) SELECT {cols} FROM submission_old'
-                ))
-                db.session.execute(db.text('DROP TABLE submission_old'))
-                logger.info('Recreated submission table with updated CHECK constraint')
+        # Clean up submission_old if left behind by a failed migration
+        try:
+            db.session.execute(db.text(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='submission_old'"
+            ))
+            row = db.session.execute(db.text(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='submission_old'"
+            )).fetchone()
+            if row:
+                db.session.execute(db.text('DROP TABLE IF EXISTS submission_old'))
+                logger.info('Cleaned up leftover submission_old table')
+        except Exception:
+            pass
 
         db.create_all()
 
