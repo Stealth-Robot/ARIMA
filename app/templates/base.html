@@ -232,8 +232,7 @@
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
-    {% set _ep = request.endpoint or '' %}
-    {% if _ep in ('home.home', 'stats.global_stats', 'stats.artist_stats', 'rules.rules', 'views.views_page', 'profile.profile') %}
+    {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
     <script>
     (function() {
         var rForm = document.getElementById('rating-mode-form');
@@ -264,8 +263,10 @@
                 btn.style.background = isOn ? styles.getPropertyValue('--edit-off-button') : styles.getPropertyValue('--edit-on-button');
                 btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
                 var addLink = document.getElementById('add-artist-link');
+                var viewsLink = document.getElementById('views-link');
                 if (isOn) {
                     if (addLink) addLink.style.display = 'none';
+                    if (viewsLink) viewsLink.style.display = 'none';
                 } else {
                     if (addLink) {
                         addLink.style.display = '';
@@ -277,6 +278,24 @@
                         addLink.textContent = '+ Artist';
                         form.parentNode.insertBefore(addLink, form.nextSibling);
                     }
+                    if (viewsLink) {
+                        viewsLink.style.display = '';
+                    } else {
+                        viewsLink = document.createElement('a');
+                        viewsLink.id = 'views-link';
+                        viewsLink.href = '{{ url_for("views.views_page") }}';
+                        viewsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
+                        viewsLink.textContent = 'Views';
+                        var afterAdd = document.getElementById('add-artist-link');
+                        if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
+                    }
+                }
+                // Refresh artist discography if on artist page
+                var disco = document.getElementById('discography');
+                if (disco) {
+                    fetch(window.location.href, { headers: { 'HX-Request': 'true' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) { disco.innerHTML = html; });
                 }
             });
         });
