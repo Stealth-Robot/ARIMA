@@ -25,6 +25,8 @@ def song_name(song_id):
     if not name:
         abort(400)
     old_name = song.name
+    if name == old_name:
+        return name
     song.name = name
     log_change(current_user, f'Renamed "{old_name}" song to "{name}"', song=song)
     db.session.commit()

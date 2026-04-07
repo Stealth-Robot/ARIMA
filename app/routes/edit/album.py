@@ -27,6 +27,8 @@ def album_name(album_id):
     if not name:
         abort(400)
     old_name = album.name
+    if name == old_name:
+        return name
     album.name = name
     log_change(current_user, f'Renamed "{old_name}" album to "{name}"', album=album)
     db.session.commit()
@@ -42,12 +44,12 @@ def album_release_date(album_id):
     if album is None:
         abort(404)
     value = request.form.get('value', '').strip()
-    if value == '':
-        album.release_date = None
-    elif re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
-        album.release_date = value
-    else:
+    new_date = None if value == '' else value
+    if new_date and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', new_date):
         abort(400)
+    if new_date == album.release_date:
+        return value
+    album.release_date = new_date
     log_change(current_user, f'Changed release date of "{album.name}" album to {value or "none"}', album=album)
     db.session.commit()
     return value
@@ -63,12 +65,17 @@ def album_genres_edit(album_id):
     if album is None:
         abort(404)
     raw = request.form.get('genre_ids', '').strip()
-    genre_ids = [int(x) for x in raw.split(',') if x.strip()] if raw else []
+    genre_ids = sorted([int(x) for x in raw.split(',') if x.strip()]) if raw else []
+    current_ids = sorted([r[1] for r in db.session.execute(
+        album_genres.select().where(album_genres.c.album_id == album_id)
+    ).fetchall()])
+    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    if genre_ids == current_ids:
+        return json.dumps(names), 200, {'Content-Type': 'application/json'}
     # Replace all genre associations
     db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_id))
     for gid in genre_ids:
         db.session.execute(album_genres.insert().values(album_id=album_id, genre_id=gid))
-    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
     album.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Set genres of "{album.name}" album to {", ".join(names) or "none"}', album=album)
     db.session.commit()
