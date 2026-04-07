@@ -20,7 +20,7 @@
         </div>
 
         <input type="text" id="submissions-search" placeholder="Search..." value="{{ search or '' }}"
-               onkeydown="if(event.key==='Enter'){event.preventDefault();applySubmissionFilters()}"
+               oninput="debouncedSearch()"
                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border); width:160px;">
 
         <select name="type" id="submissions-type-filter"
@@ -136,6 +136,22 @@ function buildSubmissionUrl(overrides) {
 
 function applySubmissionFilters() {
     window.location.href = buildSubmissionUrl({});
+}
+
+var _searchTimer = null;
+function debouncedSearch() {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function() {
+        var url = buildSubmissionUrl({});
+        // Update URL without navigation
+        window.history.replaceState(null, '', url);
+        // Fetch and swap list fragment
+        fetch(url, { headers: { 'HX-Request': 'true' } })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            document.getElementById('submissions-list').innerHTML = html;
+        });
+    }, 300);
 }
 
 function switchStatus(s) {
