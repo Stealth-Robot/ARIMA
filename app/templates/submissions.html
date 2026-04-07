@@ -239,7 +239,7 @@ function submitReject(e) {
     }).then(function(r) {
         if (r.ok) {
             closeRejectModal();
-            window.location.reload();
+            refreshSubmissionsList();
         } else {
             r.text().then(function(t) {
                 errDiv.textContent = t;
@@ -300,7 +300,7 @@ function submitApprove(e) {
     }).then(function(r) {
         if (r.ok) {
             closeApproveModal();
-            window.location.reload();
+            refreshSubmissionsList();
         }
     });
 }
@@ -313,7 +313,7 @@ function submitApproveDirectly(subId) {
         body: 'csrf_token=' + encodeURIComponent(csrfToken),
     }).then(function(r) {
         if (r.ok) {
-            window.location.reload();
+            refreshSubmissionsList();
         }
     });
 }
@@ -327,6 +327,56 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         submitApprove(e);
     }
+});
+
+// --- SSE: real-time submission updates ---
+function getExpandedState() {
+    var state = { groups: [], albums: [], scroll: window.scrollY };
+    document.querySelectorAll('.artist-group-row').forEach(function(row) {
+        var onclick = row.getAttribute('onclick') || '';
+        var m = onclick.match(/toggleGroup\((-?\d+)\)/);
+        if (m) {
+            var gid = m[1];
+            var firstChild = document.querySelector('.artist-group-' + gid + '-child');
+            if (firstChild && firstChild.style.display !== 'none') {
+                state.groups.push(gid);
+            }
+        }
+    });
+    document.querySelectorAll('[id^="expand-album-icon-"]').forEach(function(icon) {
+        var aid = icon.id.replace('expand-album-icon-', '');
+        var firstChild = document.querySelector('.album-group-' + aid + '-child');
+        if (firstChild && firstChild.style.display !== 'none') {
+            state.albums.push(aid);
+        }
+    });
+    return state;
+}
+
+function restoreExpandedState(state) {
+    state.groups.forEach(function(gid) { toggleGroup(parseInt(gid)); });
+    state.albums.forEach(function(aid) { toggleAlbum(null, parseInt(aid)); });
+    window.scrollTo(0, state.scroll);
+}
+
+var _lastRefresh = 0;
+function refreshSubmissionsList() {
+    var now = Date.now();
+    if (now - _lastRefresh < 2000) return;
+    _lastRefresh = now;
+    var state = getExpandedState();
+    var url = window.location.pathname + window.location.search;
+    fetch(url, { headers: { 'HX-Request': 'true' } })
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+        document.getElementById('submissions-list').innerHTML = html;
+        restoreExpandedState(state);
+    });
+}
+
+var _sseSource = new EventSource('/events/ratings');
+_sseSource.addEventListener('submission-update', function(e) {
+    refreshSubmissionsList();
 });
 </script>
 {% endblock %}

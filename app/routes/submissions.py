@@ -15,6 +15,7 @@ from app.services.submission import (
     get_artist_cascade_preview, get_album_cascade_preview, get_song_cascade_preview,
 )
 from app.cache import clear_stats_cache
+from app.services.events import publish
 
 submissions_bp = Blueprint('submissions', __name__)
 
@@ -383,6 +384,7 @@ def approve(sub_id):
                     _mark_approved(extra, current_user)
 
     db.session.commit()
+    publish('submission-update', {'action': 'approved', 'id': sub_id})
     return ''
 
 
@@ -427,6 +429,7 @@ def reject(sub_id):
             reject_song_submission(sub, current_user, reason)
 
     clear_stats_cache()
+    publish('submission-update', {'action': 'rejected', 'id': sub_id})
     return ''
 
 
