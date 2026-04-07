@@ -39,7 +39,7 @@
         <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
             <div style="font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1;">{{ total }}</div>
             <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.3;">
-                update{{ 's' if total != 1 else '' }} shipped
+                Update{{ 's' if total != 1 else '' }} Shipped
             </div>
             <div style="display: flex; gap: 12px; margin-left: auto; flex-wrap: wrap;">
                 {% for t in all_types %}
@@ -68,6 +68,13 @@
         <!-- Daily bar chart (built by JS using local dates) -->
         <div id="daily-chart-bars" style="display: flex; align-items: flex-end; gap: 3px; height: 80px; margin-top: 16px;"></div>
         <div id="daily-chart-labels" style="display: flex; gap: 3px; margin-top: 4px;"></div>
+
+        <!-- Hourly bar chart (all updates, ET timezone) -->
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Updates By Hour Of Day <span style="font-weight: 400;">(ET, All Time)</span></div>
+            <div id="hourly-chart-bars" style="display: flex; align-items: flex-end; gap: 3px; height: 80px;"></div>
+            <div id="hourly-chart-labels" style="display: flex; gap: 3px; margin-top: 4px;"></div>
+        </div>
     </div>
 
     <!-- Cards rendered flat, JS regroups by local date -->
@@ -216,6 +223,73 @@ var chartTip = (function() {
         label.textContent = isNaN(d) ? key : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         labelsEl.appendChild(label);
     });
+})();
+
+// Build hourly bar chart (ET, all updates)
+(function() {
+    var hourly = {{ hourly_json | safe }};
+    var typeOrder = [{% for t in all_types %}'{{ t.type | lower | replace('.', '') }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    var typeLabels = { {% for t in all_types %}'{{ t.type | lower | replace('.', '') }}': '{{ t.type }}'{% if not loop.last %}, {% endif %}{% endfor %} };
+    var barsEl = document.getElementById('hourly-chart-bars');
+    var labelsEl = document.getElementById('hourly-chart-labels');
+    if (!barsEl) return;
+
+    var maxHour = 0;
+    for (var h = 0; h < 24; h++) {
+        var counts = hourly[h] || {};
+        var total = 0;
+        for (var t in counts) total += counts[t];
+        if (total > maxHour) maxHour = total;
+    }
+    if (maxHour === 0) return;
+
+    for (var h = 0; h < 24; h++) {
+        var counts = hourly[h] || {};
+        var total = 0;
+        for (var t in counts) total += counts[t];
+
+        var bar = document.createElement('div');
+        var pct = total > 0 ? Math.round(total / maxHour * 100) : 0;
+        bar.style.cssText = 'height:' + pct + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
+
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        var h12 = h % 12 || 12;
+        var tipRows = '';
+        typeOrder.forEach(function(typ) {
+            var c = counts[typ] || 0;
+            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;">'
+                + '<span style="width:8px; height:8px; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
+                + '<span style="flex:1; color:var(--text-secondary);">' + typeLabels[typ] + '</span>'
+                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:24px; text-align:right;">' + c + '</span>'
+                + '</div>';
+        });
+        var tipHtml = '<div style="font-weight:700; margin-bottom:6px; color:var(--text-primary);">' + h12 + ' ' + ampm + ' ET</div>'
+            + '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
+            + tipRows;
+
+        typeOrder.forEach(function(typ) {
+            var c = counts[typ] || 0;
+            if (c > 0) {
+                var seg = document.createElement('div');
+                seg.style.cssText = 'flex:' + c + '; background:var(--update-type-' + typ + ');';
+                bar.appendChild(seg);
+            }
+        });
+
+        var col = document.createElement('div');
+        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:8px; height:100%;';
+        col.appendChild(bar);
+        (function(html, colEl, barEl) {
+            colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
+            colEl.addEventListener('mouseleave', function() { chartTip.hide(); });
+        })(tipHtml, col, bar);
+        barsEl.appendChild(col);
+
+        var label = document.createElement('div');
+        label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px;';
+        label.textContent = h % 6 === 0 ? (h12 + ampm[0]) : '';
+        labelsEl.appendChild(label);
+    }
 })();
 
 // Group cards by local date and build day sections (runs after chart so cards are still in #timeline-cards)

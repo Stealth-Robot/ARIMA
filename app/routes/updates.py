@@ -85,9 +85,34 @@ def updates_timeline():
     type_counts = Counter(u.type.type if u.type else 'Other' for u in updates)
     total = len(updates)
 
+    # Hourly distribution (all updates, unfiltered, in ET)
+    all_updates = Update.query.all()
+    hourly = {}
+    for u in all_updates:
+        if not u.date:
+            continue
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+            try:
+                dt = datetime.strptime(u.date, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            continue
+        dt_et = dt.replace(tzinfo=UTC).astimezone(ET)
+        hour = dt_et.hour
+        typ = u.type.type.lower().replace('.', '') if u.type else 'other'
+        if hour not in hourly:
+            hourly[hour] = {}
+        hourly[hour][typ] = hourly[hour].get(typ, 0) + 1
+
+    import json
+    hourly_json = json.dumps(hourly)
+
     return render_template('updates_timeline.html', updates=updates,
                            all_types=all_types, include=include,
-                           total=total, type_counts=type_counts)
+                           total=total, type_counts=type_counts,
+                           hourly_json=hourly_json)
 
 
 @updates_bp.route('/updates/add', methods=['POST'])
