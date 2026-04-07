@@ -28,7 +28,7 @@ def rate():
     if song_id is None:
         return 'Missing song_id', 400
 
-    if rating_value is None and not note:
+    if rating_value is None and not note_sent:
         return 'Missing rating or note', 400
 
     if rating_value is not None and (rating_value < 0 or rating_value > 5):
