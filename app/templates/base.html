@@ -68,6 +68,24 @@
         <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
         <a href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
         {% endif %}
+        {% if current_user.is_authenticated and current_user.can_rate %}
+        <div style="flex-shrink: 0; position: relative;"
+             onmouseenter="this.querySelector('.submissions-dd').style.display='block'"
+             onmouseleave="this.querySelector('.submissions-dd').style.display='none'">
+            <span style="color:var(--navbar-text); cursor:default;
+                         {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</span>
+            <div class="submissions-dd" style="display:none; position:absolute; top:100%; left:0;
+                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
+                        box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
+                <a href="{{ url_for('submissions.submissions_for_me') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
+                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">For Me</a>
+                {% if current_user.is_editor_or_admin %}
+                <a href="{{ url_for('submissions.submissions_page') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
+                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Data Approvals</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
         <form id="rating-mode-form" method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" style="display:inline; margin:0;">
@@ -95,11 +113,7 @@
             + Artist
         </a>
         <a id="views-link" href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
-        <a id="submissions-link" href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
-        {% endif %}
-        {% if current_user.is_authenticated and current_user.can_rate and not current_user.is_editor_or_admin %}
-        <a href="{{ url_for('submissions.submissions_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'submissions.submissions_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
         {% endif %}
 
         <!-- Search trigger (compact in navbar) -->
@@ -263,12 +277,10 @@
                 btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
                 var addLink = document.getElementById('add-artist-link');
                 var viewsLink = document.getElementById('views-link');
-                var submissionsLink = document.getElementById('submissions-link');
                 if (isOn) {
                     // Turning OFF
                     if (addLink) addLink.style.display = 'none';
                     if (viewsLink) viewsLink.style.display = 'none';
-                    if (submissionsLink) submissionsLink.style.display = 'none';
                 } else {
                     // Turning ON
                     if (addLink) {
@@ -291,17 +303,6 @@
                         viewsLink.textContent = 'Views';
                         var afterAdd = document.getElementById('add-artist-link');
                         if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
-                    }
-                    if (submissionsLink) {
-                        submissionsLink.style.display = '';
-                    } else {
-                        submissionsLink = document.createElement('a');
-                        submissionsLink.id = 'submissions-link';
-                        submissionsLink.href = '{{ url_for("submissions.submissions_page") }}';
-                        submissionsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
-                        submissionsLink.textContent = 'Submissions';
-                        var afterViews = document.getElementById('views-link');
-                        if (afterViews) afterViews.parentNode.insertBefore(submissionsLink, afterViews.nextSibling);
                     }
                 }
             });

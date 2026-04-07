@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — For Me{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">For Me</h1>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;" id="submissions-filters">
+        <!-- Status tabs -->
+        <div style="display:flex; gap:4px;">
+            <a href="{{ url_for('submissions.submissions_for_me', status='open', type=type_filter) }}"
+               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                Open
+            </a>
+            <a href="{{ url_for('submissions.submissions_for_me', status='history', type=type_filter) }}"
+               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                History
+            </a>
+        </div>
+
+        <!-- Type filter: rating/note only -->
+        <select name="type" id="submissions-type-filter"
+                onchange="window.location.href='/submissions/for-me?status={{ status }}&type='+this.value"
+                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <option value="">All Types</option>
+            <option value="rating" {% if type_filter == 'rating' %}selected{% endif %}>Rating</option>
+            <option value="note" {% if type_filter == 'note' %}selected{% endif %}>Note</option>
+        </select>
+    </div>
+
+    <!-- Bulk action bar -->
+    <div id="bulk-actions" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:var(--bg-secondary); border:1px solid var(--border);">
+        <span id="bulk-count" class="text-sm" style="margin-right:12px;"></span>
+        <button id="bulk-approve-btn" onclick="bulkApprove()" class="px-3 py-1 rounded text-sm" style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:6px;">Approve Selected</button>
+        <button id="bulk-reject-btn" onclick="bulkRejectPrompt()" class="px-3 py-1 rounded text-sm" style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">Reject Selected</button>
+    </div>
+
+    <div id="submissions-list">
+        {% include "fragments/submissions_list.html" with context %}
+    </div>
+</div>
+
+<!-- Rejection modal -->
+<div id="reject-modal" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this)closeRejectModal()">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:90%; max-width:520px; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3">Reject Submission</h3>
+        <div id="reject-modal-cascade"></div>
+        <form id="reject-form" onsubmit="submitReject(event)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Reason (required)</label>
+                <textarea name="reason" required rows="2" class="w-full px-3 py-2 border rounded text-sm"
+                          style="border-color:var(--border);"></textarea>
+            </div>
+            <div id="reject-password-field" class="mb-3" style="display:none;">
+                <label class="block text-sm mb-1">Password (required)</label>
+                <input type="password" name="password" class="w-full px-3 py-2 border rounded text-sm"
+                       style="border-color:var(--border);">
+            </div>
+            <div id="reject-error" class="text-sm mb-2" style="color:var(--delete-button); display:none;"></div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeRejectModal()"
+                        class="px-4 py-2 rounded text-sm" style="background:var(--bg-primary); border:1px solid var(--border);">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm"
+                        style="background:var(--delete-button); color:var(--button-text);">Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var _rejectSubId = null;
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function openRejectModal(subId, subType) {
+    _rejectSubId = subId;
+    var modal = document.getElementById('reject-modal');
+    var pwField = document.getElementById('reject-password-field');
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    document.getElementById('reject-modal-cascade').innerHTML = '';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+    pwField.style.display = 'none';
+    modal.style.display = 'block';
+}
+
+function closeRejectModal() {
+    document.getElementById('reject-modal').style.display = 'none';
+    _rejectSubId = null;
+}
+
+function submitReject(e) {
+    e.preventDefault();
+    var form = document.getElementById('reject-form');
+    var formData = new FormData(form);
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    fetch('/submissions/' + _rejectSubId + '/reject', {
+        method: 'POST',
+        body: formData,
+    }).then(function(r) {
+        if (r.ok) {
+            closeRejectModal();
+            refreshSubmissionsList();
+        } else {
+            r.text().then(function(t) {
+                errDiv.textContent = t;
+                errDiv.style.display = 'block';
+            });
+        }
+    });
+}
+
+function approveSubmission(subId, subType) {
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    fetch('/submissions/' + subId + '/approve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'csrf_token=' + encodeURIComponent(csrfToken),
+    }).then(function(r) {
+        if (r.ok) refreshSubmissionsList();
+    });
+}
+
+// --- Refresh ---
+var _lastRefresh = 0;
+function refreshSubmissionsList() {
+    var now = Date.now();
+    if (now - _lastRefresh < 2000) return;
+    _lastRefresh = now;
+    var url = window.location.pathname + window.location.search;
+    fetch(url, { headers: { 'HX-Request': 'true' } })
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+        document.getElementById('submissions-list').innerHTML = html;
+    });
+}
+
+var _sseSource = new EventSource('/events/ratings');
+_sseSource.addEventListener('submission-update', function(e) {
+    refreshSubmissionsList();
+});
+
+// --- Bulk actions ---
+function toggleAllSubmissions(checked) {
+    document.querySelectorAll('.submission-checkbox').forEach(function(cb) { cb.checked = checked; });
+    updateBulkActions();
+}
+
+function getSelectedIds(filter) {
+    var ids = [];
+    document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
+        if (!filter || cb.dataset[filter] === 'true') ids.push(parseInt(cb.value));
+    });
+    return ids;
+}
+
+function updateBulkActions() {
+    var checked = document.querySelectorAll('.submission-checkbox:checked');
+    var bar = document.getElementById('bulk-actions');
+    if (checked.length === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    document.getElementById('bulk-count').textContent = checked.length + ' selected';
+}
+
+function bulkApprove() {
+    var ids = getSelectedIds('canApprove');
+    if (!ids.length) return;
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    var done = 0;
+    ids.forEach(function(id) {
+        fetch('/submissions/' + id + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrfToken),
+        }).then(function() { done++; if (done === ids.length) refreshSubmissionsList(); });
+    });
+}
+
+function bulkRejectPrompt() {
+    var ids = getSelectedIds('canReject');
+    if (!ids.length) return;
+    var modal = document.getElementById('reject-modal');
+    document.getElementById('reject-modal-cascade').innerHTML = '<p class="text-sm mb-2">' + ids.length + ' submissions will be rejected.</p>';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+    document.getElementById('reject-password-field').style.display = 'none';
+    document.getElementById('reject-error').style.display = 'none';
+    modal.style.display = 'block';
+    var form = document.getElementById('reject-form');
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        var reason = form.querySelector('textarea[name=reason]').value.trim();
+        var errDiv = document.getElementById('reject-error');
+        if (!reason) { errDiv.textContent = 'Reason required'; errDiv.style.display = 'block'; return; }
+        var csrfToken = form.querySelector('input[name=csrf_token]').value;
+        var done = 0;
+        ids.forEach(function(id) {
+            fetch('/submissions/' + id + '/reject', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'csrf_token=' + encodeURIComponent(csrfToken) + '&reason=' + encodeURIComponent(reason),
+            }).then(function() { done++; if (done === ids.length) { closeRejectModal(); refreshSubmissionsList(); } });
+        });
+        form.onsubmit = function(ev) { ev.preventDefault(); submitReject(ev); };
+    };
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('reject-modal').style.display === 'block') closeRejectModal();
+});
+</script>
+{% endblock %}

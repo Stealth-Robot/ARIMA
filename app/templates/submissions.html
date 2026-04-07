@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Submissions</h1>
+    <h1 class="text-2xl font-bold mb-4">Data Approvals</h1>
 
     <div class="flex gap-2 mb-4 flex-wrap" id="submissions-filters">
         <!-- Status tabs -->
@@ -19,12 +19,6 @@
             </a>
         </div>
 
-        <a href="#" onclick="event.preventDefault(); toggleMine()"
-           class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if mine %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
-            For Me
-        </a>
-
-        <!-- Type filter -->
         <select name="type" id="submissions-type-filter"
                 onchange="applySubmissionFilters()"
                 class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
@@ -36,7 +30,6 @@
             <option value="note" {% if type_filter == 'note' %}selected{% endif %}>Note</option>
         </select>
 
-        <!-- Submitted By filter -->
         <select name="submitted_by" id="submissions-submitted-by-filter"
                 onchange="applySubmissionFilters()"
                 class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
@@ -46,7 +39,6 @@
             {% endfor %}
         </select>
 
-        <!-- Resolved By filter (history only) -->
         {% if status == 'history' %}
         <select name="resolved_by" id="submissions-resolved-by-filter"
                 onchange="applySubmissionFilters()"
@@ -124,7 +116,6 @@
 
 <script>
 var _currentStatus = '{{ status }}';
-var _currentMine = {{ 'true' if mine else 'false' }};
 
 function buildSubmissionUrl(overrides) {
     var params = {
@@ -132,7 +123,6 @@ function buildSubmissionUrl(overrides) {
         type: document.getElementById('submissions-type-filter') ? document.getElementById('submissions-type-filter').value : '',
         submitted_by: document.getElementById('submissions-submitted-by-filter') ? document.getElementById('submissions-submitted-by-filter').value : '',
         resolved_by: document.getElementById('submissions-resolved-by-filter') ? document.getElementById('submissions-resolved-by-filter').value : '',
-        mine: overrides.mine !== undefined ? overrides.mine : (_currentMine ? '1' : ''),
     };
     var parts = [];
     for (var k in params) {
@@ -149,10 +139,6 @@ function switchStatus(s) {
     var overrides = { status: s };
     if (s === 'open') overrides.resolved_by = '';
     window.location.href = buildSubmissionUrl(overrides);
-}
-
-function toggleMine() {
-    window.location.href = buildSubmissionUrl({ mine: _currentMine ? '' : '1' });
 }
 
 var _rejectSubId = null;

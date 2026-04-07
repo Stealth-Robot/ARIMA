@@ -116,36 +116,69 @@ def _resolve_artist_for_submission(sub):
     return None
 
 
-@submissions_bp.route('/submissions')
+@submissions_bp.route('/submissions/for-me')
 @login_required
 @role_required(USER_OR_ABOVE)
-def submissions_page():
-    """Submissions page with open/history tabs and type filter."""
+def submissions_for_me():
+    """For Me page — rating/note submissions targeting the current user."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
-    mine = request.args.get('mine') == '1'
+
+    query = Submission.query.options(
+        joinedload(Submission.submitted_by),
+        joinedload(Submission.resolved_by),
+    ).filter(
+        Submission.type.in_(['rating', 'note']),
+        Submission.target_user_id == current_user.id,
+    )
+
+    if status == 'open':
+        query = query.filter_by(status='open')
+    else:
+        query = query.filter(Submission.status.in_(['approved', 'rejected']))
+
+    if type_filter:
+        query = query.filter_by(type=type_filter)
+
+    if status == 'open':
+        query = query.order_by(Submission.submitted_at.desc(), Submission.id.desc())
+    else:
+        query = query.order_by(Submission.resolved_at.desc(), Submission.id.desc())
+
+    submissions = query.all()
+
+    for sub in submissions:
+        sub._entity_name = _entity_name(sub)
+        sub._entity_url = _entity_url(sub)
+        is_target = sub.target_user_id == current_user.id
+        sub._can_approve = is_target
+        sub._can_reject = is_target
+
+    if request.headers.get('HX-Request'):
+        return render_template('fragments/submissions_list.html',
+                               groups=[], ungrouped=submissions, status=status)
+
+    return render_template('submissions_for_me.html',
+                           groups=[], ungrouped=submissions,
+                           status=status, type_filter=type_filter)
+
+
+@submissions_bp.route('/submissions')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def submissions_page():
+    """Data Approvals page — all submissions for editors/admins."""
+    status = request.args.get('status', 'open')
+    type_filter = request.args.get('type', '')
     submitted_by = request.args.get('submitted_by', '')
     resolved_by = request.args.get('resolved_by', '')
     submitted_by = submitted_by if submitted_by.isdigit() else ''
     resolved_by = resolved_by if resolved_by.isdigit() else ''
-    is_editor = current_user.is_editor_or_admin
 
     query = Submission.query.options(
         joinedload(Submission.submitted_by),
         joinedload(Submission.resolved_by),
     )
-
-    # Regular users only see rating/note submissions targeting them
-    if not is_editor:
-        query = query.filter(
-            Submission.type.in_(['rating', 'note']),
-            Submission.target_user_id == current_user.id,
-        )
-    elif mine:
-        query = query.filter(
-            Submission.type.in_(['rating', 'note']),
-            Submission.target_user_id == current_user.id,
-        )
 
     if status == 'open':
         query = query.filter_by(status='open')
@@ -283,7 +316,7 @@ def submissions_page():
 
     return render_template('submissions.html',
                            groups=list(groups.values()), ungrouped=ungrouped,
-                           status=status, type_filter=type_filter, mine=mine,
+                           status=status, type_filter=type_filter,
                            submitted_by=submitted_by, resolved_by=resolved_by,
                            filter_users=filter_users)
 
