@@ -59,6 +59,13 @@
         {% endif %}
     </div>
 
+    <!-- Bulk action bar -->
+    <div id="bulk-actions" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:var(--bg-secondary); border:1px solid var(--border); display:none;">
+        <span id="bulk-count" class="text-sm" style="margin-right:12px;"></span>
+        <button id="bulk-approve-btn" onclick="bulkApprove()" class="px-3 py-1 rounded text-sm" style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:6px;">Approve Selected</button>
+        <button id="bulk-reject-btn" onclick="bulkRejectPrompt()" class="px-3 py-1 rounded text-sm" style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">Reject Selected</button>
+    </div>
+
     <div id="submissions-list">
         {% include "fragments/submissions_list.html" %}
     </div>
@@ -270,14 +277,45 @@ function openApproveModal(subId) {
             submitApproveDirectly(subId);
             return;
         }
-        var html = '<p class="text-sm mb-2">Also approve these related submissions:</p>';
+        // Group songs under their albums
+        var albums = {};
+        var albumOrder = [];
+        var loose = [];
         for (var i = 0; i < data.related.length; i++) {
             var r = data.related[i];
-            html += '<label style="display:block; padding:3px 0; font-size:13px; cursor:pointer;">'
-                + '<input type="checkbox" name="also_approve" value="' + r.id + '" checked style="margin-right:6px;">'
-                + '<span class="px-2 py-1 rounded text-xs" style="background:var(--bg-primary); border:1px solid var(--border); margin-right:4px;">' + escapeHtml(r.type.charAt(0).toUpperCase() + r.type.slice(1)) + '</span>'
-                + escapeHtml(r.name)
+            if (r.type === 'album') {
+                albums[r.entity_id] = { item: r, songs: [] };
+                albumOrder.push(r.entity_id);
+            }
+        }
+        for (var i = 0; i < data.related.length; i++) {
+            var r = data.related[i];
+            if (r.type === 'song') {
+                if (r.album_id && albums[r.album_id]) {
+                    albums[r.album_id].songs.push(r);
+                } else {
+                    loose.push(r);
+                }
+            }
+        }
+
+        var html = '<p class="text-sm mb-2">Also approve these related submissions:</p>';
+        function checkboxRow(item, indent) {
+            return '<label style="display:block; padding:3px 0 3px ' + indent + 'px; font-size:13px; cursor:pointer;">'
+                + '<input type="checkbox" name="also_approve" value="' + item.id + '" checked style="margin-right:6px;">'
+                + '<span class="px-2 py-1 rounded text-xs" style="background:var(--bg-primary); border:1px solid var(--border); margin-right:4px;">' + escapeHtml(item.type.charAt(0).toUpperCase() + item.type.slice(1)) + '</span>'
+                + escapeHtml(item.name)
                 + '</label>';
+        }
+        for (var j = 0; j < albumOrder.length; j++) {
+            var alb = albums[albumOrder[j]];
+            html += checkboxRow(alb.item, 0);
+            for (var k = 0; k < alb.songs.length; k++) {
+                html += checkboxRow(alb.songs[k], 20);
+            }
+        }
+        for (var j = 0; j < loose.length; j++) {
+            html += checkboxRow(loose[j], 0);
         }
         relatedDiv.innerHTML = html;
         modal.style.display = 'block';
@@ -378,5 +416,110 @@ var _sseSource = new EventSource('/events/ratings');
 _sseSource.addEventListener('submission-update', function(e) {
     refreshSubmissionsList();
 });
+
+// --- Bulk actions ---
+function toggleAllSubmissions(checked) {
+    document.querySelectorAll('.submission-checkbox').forEach(function(cb) {
+        cb.checked = checked;
+    });
+    updateBulkActions();
+}
+
+function getSelectedIds(filter) {
+    var ids = [];
+    document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
+        if (!filter || cb.dataset[filter] === 'true') ids.push(parseInt(cb.value));
+    });
+    return ids;
+}
+
+function updateBulkActions() {
+    var checked = document.querySelectorAll('.submission-checkbox:checked');
+    var bar = document.getElementById('bulk-actions');
+    if (checked.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = '';
+    var approveCount = getSelectedIds('canApprove').length;
+    var rejectCount = getSelectedIds('canReject').length;
+    document.getElementById('bulk-count').textContent = checked.length + ' selected';
+    document.getElementById('bulk-approve-btn').style.display = approveCount > 0 ? '' : 'none';
+    document.getElementById('bulk-reject-btn').style.display = rejectCount > 0 ? '' : 'none';
+}
+
+function bulkApprove() {
+    var ids = getSelectedIds('canApprove');
+    if (!ids.length) return;
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    var done = 0;
+    ids.forEach(function(id) {
+        fetch('/submissions/' + id + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrfToken),
+        }).then(function() {
+            done++;
+            if (done === ids.length) refreshSubmissionsList();
+        });
+    });
+}
+
+function bulkRejectPrompt() {
+    var ids = getSelectedIds('canReject');
+    if (!ids.length) return;
+    // Reuse the reject modal but for bulk
+    _rejectSubId = null;
+    var modal = document.getElementById('reject-modal');
+    var cascadeDiv = document.getElementById('reject-modal-cascade');
+    var pwField = document.getElementById('reject-password-field');
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    cascadeDiv.innerHTML = '<p class="text-sm mb-2">' + ids.length + ' submissions will be rejected.</p>';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+    // Check if any non-rating/note types are selected
+    var needsPassword = false;
+    document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
+        var row = cb.closest('tr');
+        if (row) {
+            var typeSpan = row.querySelector('td:nth-child(2) span, td:nth-child(3) span');
+            if (typeSpan) {
+                var t = typeSpan.textContent.trim().toLowerCase();
+                if (t !== 'rating' && t !== 'note') needsPassword = true;
+            }
+        }
+    });
+    pwField.style.display = needsPassword ? 'block' : 'none';
+    if (needsPassword) pwField.querySelector('input').value = '';
+    modal.style.display = 'block';
+
+    // Override the form submit for bulk
+    var form = document.getElementById('reject-form');
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        var reason = form.querySelector('textarea[name=reason]').value.trim();
+        if (!reason) { errDiv.textContent = 'Reason required'; errDiv.style.display = 'block'; return; }
+        var password = needsPassword ? form.querySelector('input[name=password]').value : '';
+        var csrfToken = form.querySelector('input[name=csrf_token]').value;
+        var done = 0;
+        ids.forEach(function(id) {
+            var body = 'csrf_token=' + encodeURIComponent(csrfToken) + '&reason=' + encodeURIComponent(reason);
+            if (password) body += '&password=' + encodeURIComponent(password);
+            fetch('/submissions/' + id + '/reject', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body,
+            }).then(function(r) {
+                done++;
+                if (done === ids.length) {
+                    closeRejectModal();
+                    refreshSubmissionsList();
+                }
+            });
+        });
+        // Restore normal form behavior
+        form.onsubmit = function(ev) { ev.preventDefault(); submitReject(ev); };
+    };
+}
 </script>
 {% endblock %}

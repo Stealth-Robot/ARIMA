@@ -304,15 +304,18 @@ def approve_preview(sub_id):
     result = []
     for r in related:
         entity = None
+        item = {'id': r.id, 'type': r.type}
         if r.type == 'album':
             entity = db.session.get(Album, r.entity_id)
+            item['name'] = entity.name if entity else f'album {r.entity_id}'
+            item['entity_id'] = r.entity_id
         elif r.type == 'song':
             entity = db.session.get(Song, r.entity_id)
-        result.append({
-            'id': r.id,
-            'type': r.type,
-            'name': entity.name if entity else f'{r.type} {r.entity_id}',
-        })
+            item['name'] = entity.name if entity else f'song {r.entity_id}'
+            item['album_id'] = r.album_id
+        else:
+            item['name'] = f'{r.type} {r.entity_id}'
+        result.append(item)
     return jsonify(related=result)
 
 

@@ -1,6 +1,15 @@
 {% macro render_sub_row(sub, status, css_class='', style='', indent=0, show_expand_col=true) %}
 <tr id="submission-row-{{ sub.id }}" class="{{ css_class }}"
     style="{{ style }} border: 1px solid var(--grid-line);">
+    {% if status == 'open' %}
+    <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
+        {% if sub._can_approve or sub._can_reject %}
+        <input type="checkbox" class="submission-checkbox" value="{{ sub.id }}" data-can-approve="{{ 'true' if sub._can_approve else 'false' }}" data-can-reject="{{ 'true' if sub._can_reject else 'false' }}" onchange="updateBulkActions()">
+        {% else %}
+        <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
+        {% endif %}
+    </td>
+    {% endif %}
     {% if show_expand_col %}
     <td class="px-3 py-2" style="border: 1px solid var(--grid-line);"></td>
     {% endif %}
@@ -96,6 +105,11 @@
 <table class="w-full text-sm border-collapse" style="border: 1px solid var(--grid-line);">
     <thead>
         <tr style="background-color: var(--header-row);">
+            {% if status == 'open' %}
+            <th class="text-center px-1 py-2" style="border: 1px solid var(--grid-line); width: 30px;">
+                <input type="checkbox" id="select-all-submissions" onchange="toggleAllSubmissions(this.checked)" title="Select all">
+            </th>
+            {% endif %}
             {% if groups %}
             <th class="text-left px-3 py-2" style="border: 1px solid var(--grid-line); width: 30px;"></th>
             {% endif %}
@@ -121,6 +135,15 @@
         <tr id="submission-row-{{ row_sub.id }}" class="artist-group-row"
             style="border: 1px solid var(--grid-line); cursor: pointer;"
             onclick="toggleGroup({{ group.artist_id }})">
+            {% if status == 'open' %}
+            <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
+                {% if group.artist_sub and group.artist_sub._can_approve %}
+                <input type="checkbox" class="submission-checkbox" value="{{ group.artist_sub.id }}" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
+                {% elif group.artist_sub %}
+                <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
+                {% endif %}
+            </td>
+            {% endif %}
             <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);">
                 {% if group.child_count > 0 %}
                 <span id="expand-icon-{{ group.artist_id }}" style="font-size: 10px; color: var(--text-secondary);">&#9654;</span>
@@ -212,6 +235,15 @@
             <tr id="submission-row-{{ asub.id }}" class="artist-group-{{ group.artist_id }}-child"
                 style="display:none; border: 1px solid var(--grid-line); background-color: var(--row-alternate); cursor:pointer;"
                 onclick="event.stopPropagation(); toggleAlbum({{ group.artist_id }}, {{ asub.entity_id }})">
+                {% if status == 'open' %}
+                <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">
+                    {% if asub._can_approve %}
+                    <input type="checkbox" class="submission-checkbox" value="{{ asub.id }}" data-can-approve="true" data-can-reject="true" onchange="updateBulkActions()">
+                    {% else %}
+                    <input type="checkbox" disabled style="opacity:0.3; cursor:not-allowed;">
+                    {% endif %}
+                </td>
+                {% endif %}
                 <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);">
                     {% if child.songs %}
                     <span id="expand-album-icon-{{ asub.entity_id }}" style="font-size: 10px; color: var(--text-secondary);">&#9654;</span>
