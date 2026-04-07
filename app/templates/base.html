@@ -241,11 +241,16 @@
     })();
     </script>
     {% endif %}
+    <script>
+    if (localStorage.getItem('is_hamburger') === 'true') {
+        var _hb = document.getElementById('hamburger-btn');
+        if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:22px; height:22px; border-radius:2px;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
+    }
+    </script>
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
-    {% set _ep = request.endpoint or '' %}
-    {% if _ep in ('home.home', 'stats.global_stats', 'stats.artist_stats', 'rules.rules', 'views.views_page', 'profile.profile') %}
+    {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
     <script>
     (function() {
         var rForm = document.getElementById('rating-mode-form');
@@ -304,6 +309,13 @@
                         var afterAdd = document.getElementById('add-artist-link');
                         if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
                     }
+                }
+                // Refresh artist discography if on artist page
+                var disco = document.getElementById('discography');
+                if (disco) {
+                    fetch(window.location.href, { headers: { 'HX-Request': 'true' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) { disco.innerHTML = html; });
                 }
             });
         });

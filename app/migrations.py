@@ -62,9 +62,12 @@ def run_startup_migrations():
                 db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing theme column: %s', col.name)
 
-        # 2. Create missing personal Theme rows
+        # 2. Create missing personal Theme rows (skip guest/system users with no email)
         existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
-        missing = User.query.filter(~User.id.in_(existing_user_ids)).all() if existing_user_ids else User.query.all()
+        missing = User.query.filter(
+            ~User.id.in_(existing_user_ids),
+            User.email.isnot(None),
+        ).all() if existing_user_ids else User.query.filter(User.email.isnot(None)).all()
         for u in missing:
             db.session.add(Theme(user_id=u.id))
             logger.info('Created missing theme for user: %s', u.username)
@@ -84,19 +87,34 @@ def run_startup_migrations():
                             setattr(theme, col, default)
                             logger.info('Backfilled %s theme column %s = %s', theme_name, col, default)
 
+        # 3b. Remove personal themes for guest/system users before backfilling
+        db.session.flush()
+        deleted = db.session.execute(db.text(
+            'DELETE FROM theme WHERE user_id IN (SELECT id FROM user WHERE email IS NULL)'
+        )).rowcount
+        if deleted:
+            db.session.expire_all()
+            logger.info('Removed %d guest/system theme rows', deleted)
+
+        # 3c. Backfill NULL values in personal themes from Dark theme
+        dark_theme = db.session.get(Theme, 1)
+        if dark_theme:
+            personal_themes = Theme.query.filter(Theme.user_id.isnot(None)).all()
+            for pt in personal_themes:
+                for col in colour_cols:
+                    if getattr(pt, col) is None:
+                        dark_val = getattr(dark_theme, col)
+                        if dark_val:
+                            setattr(pt, col, dark_val)
+
+        db.session.commit()
+
         # 4. Add missing indexes
         for idx_sql in [
             'CREATE INDEX IF NOT EXISTS ix_artist_artist_relationship ON artist_artist (relationship)',
             'CREATE INDEX IF NOT EXISTS ix_rating_user_id ON rating (user_id)',
         ]:
             db.session.execute(db.text(idx_sql))
-
-        # 5. Remove personal themes for guest/system users (no email)
-        deleted = db.session.execute(db.text(
-            'DELETE FROM theme WHERE user_id IN (SELECT id FROM user WHERE email IS NULL)'
-        )).rowcount
-        if deleted:
-            logger.info('Removed %d guest/system theme rows', deleted)
 
         # 6. Ensure all seeded UpdateType rows exist
         from app.models.lookups import UpdateType

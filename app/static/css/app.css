@@ -125,9 +125,19 @@ td.song-name-cell.has-song-note::after {
     overflow-wrap: break-word;
     word-break: break-word;
     z-index: 100;
-    pointer-events: none;
     opacity: 0;
     transition: opacity 0.15s;
+    user-select: text;
+    cursor: text;
+}
+#note-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    z-index: -1;
 }
 
 /* Subunit expand/collapse button on stats pages */

@@ -400,6 +400,7 @@ document.addEventListener('click', (e) => {
 });
 
 /* Note tooltip — event delegation, works for dynamically added cells */
+var _tooltipSelecting = false;
 (function () {
     const tooltip = document.getElementById('note-tooltip');
     if (!tooltip) return;
@@ -424,11 +425,26 @@ document.addEventListener('click', (e) => {
         tooltip.style.opacity = '1';
     });
 
+    tooltip.addEventListener('mousedown', function () { _tooltipSelecting = true; });
+    document.addEventListener('mouseup', function () { _tooltipSelecting = false; });
+
+    function hideTooltip() {
+        if (_tooltipSelecting) return;
+        tooltip.style.opacity = '0';
+    }
+
     document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.has-note');
         if (!td) return;
-        if (!td.contains(e.relatedTarget)) {
-            tooltip.style.opacity = '0';
+        if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
+            hideTooltip();
+        }
+    });
+
+    // Hide tooltip when mouse leaves the tooltip itself
+    tooltip.addEventListener('mouseout', function (e) {
+        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note')) {
+            hideTooltip();
         }
     });
 })();
@@ -461,8 +477,8 @@ document.addEventListener('click', (e) => {
     document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.song-name-cell.has-song-note');
         if (!td) return;
-        if (!td.contains(e.relatedTarget)) {
-            tooltip.style.opacity = '0';
+        if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
+            if (!_tooltipSelecting) tooltip.style.opacity = '0';
         }
     });
 })();

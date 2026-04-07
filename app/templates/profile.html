@@ -133,4 +133,47 @@
         ({{ current_user.role.role }})
     </p>
 </div>
+<script>
+(function() {
+    var _seq = '';
+    var _target = 'hamburger';
+    var _imgUrl = '{{ url_for("static", filename="img/hamburger.png") }}';
+
+    function applyHamburger(on) {
+        var btn = document.getElementById('hamburger-btn');
+        if (!btn) return;
+        if (on) {
+            btn.innerHTML = '<img src="' + _imgUrl + '" style="width:22px; height:22px; border-radius:2px;">';
+            btn.style.top = '0';
+            btn.style.left = '0';
+        } else {
+            btn.innerHTML = '&#9776;';
+            btn.style.top = '-3px';
+            btn.style.left = '5px';
+        }
+    }
+
+    // Apply on page load
+    if (localStorage.getItem('is_hamburger') === 'true') applyHamburger(true);
+
+    document.addEventListener('keydown', function(e) {
+        var tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+        _seq += e.key.toLowerCase();
+        if (_target.indexOf(_seq) !== 0) _seq = e.key.toLowerCase();
+        if (_seq === _target) {
+            _seq = '';
+            var isOn = localStorage.getItem('is_hamburger') === 'true';
+            localStorage.setItem('is_hamburger', isOn ? 'false' : 'true');
+            applyHamburger(!isOn);
+            var toast = document.createElement('div');
+            toast.textContent = isOn ? 'Hamburger Disabled!' : 'Hamburger Enabled!';
+            toast.style.cssText = 'position:fixed; top:50px; left:50%; transform:translateX(-50%); z-index:200; padding:10px 20px; border-radius:6px; font-size:13px; background:var(--edit-on-button); color:var(--button-text); box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.remove(); }, 2000);
+        }
+    });
+})();
+</script>
 {% endblock %}
