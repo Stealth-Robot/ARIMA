@@ -25,18 +25,9 @@ def run_startup_migrations():
         from app.models.theme import Theme
         from app.models.user import User
 
-        # 0. Create any missing tables (e.g. update)
-        # If the submission table exists with an old schema, drop and recreate it
-        existing_sub_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))}
-        if existing_sub_cols and 'type' not in existing_sub_cols:
-            db.session.execute(db.text('DROP TABLE IF EXISTS submission'))
-            logger.info('Dropped old submission table (schema mismatch)')
-
+        # 0. Create any missing tables
         # Clean up submission_old if left behind by a failed migration
         try:
-            db.session.execute(db.text(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='submission_old'"
-            ))
             row = db.session.execute(db.text(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='submission_old'"
             )).fetchone()
