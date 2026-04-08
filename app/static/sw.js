@@ -3,7 +3,7 @@ self.addEventListener('install', function() { self.skipWaiting(); });
 self.addEventListener('activate', function(event) { event.waitUntil(clients.claim()); });
 
 self.addEventListener('fetch', function(event) {
-    if (event.request.mode !== 'navigate') return;
+    if (event.request.mode !== 'navigate' || event.request.method !== 'GET') return;
     event.respondWith(
         fetch(event.request).then(function(response) {
             if (response.ok || response.status === 304 || response.redirected || (response.status >= 300 && response.status < 400)) return response;
