@@ -218,61 +218,6 @@ def _get_filtered_navbar():
     return get_filtered_navbar()
 
 
-def _get_collab_labels(song_ids, artist):
-    """Return {song_id: 'with/feat. Artist1, Artist2'} for songs with other artists.
-
-    'with Artist' for other main artists, 'feat. Artist' for featured artists.
-    For Anime artists (gender_id=3):
-      - On the anime artist's page: appends '(by OtherArtist)' after with/feat
-      - On another artist's page: appends 'for AnimeArtist' after with/feat
-    """
-    ANIME_GENDER_ID = 3
-    if not song_ids:
-        return {}
-    rows = ArtistSong.query.filter(
-        ArtistSong.song_id.in_(song_ids),
-        ArtistSong.artist_id != artist.id,
-    ).all()
-    if not rows:
-        return {}
-    artist_ids = {row.artist_id for row in rows}
-    artists_by_id = {a.id: a for a in Artist.query.filter(Artist.id.in_(artist_ids)).all()}
-    # Group by song: separate main vs featured, tracking anime status
-    is_anime_page = artist.gender_id == ANIME_GENDER_ID
-    # Per-song buckets
-    song_data = {}
-    for row in rows:
-        other = artists_by_id.get(row.artist_id)
-        if not other:
-            continue
-        d = song_data.setdefault(row.song_id, {'main': [], 'feat': [], 'by': [], 'for': []})
-        is_other_anime = other.gender_id == ANIME_GENDER_ID
-        if is_anime_page and not is_other_anime and row.artist_is_main:
-            # On anime page, non-anime main artists use "by" instead of "with"
-            d['by'].append(other.name)
-        elif not is_anime_page and is_other_anime:
-            # On non-anime page, anime artists always use "for"
-            d['for'].append(other.name)
-        elif row.artist_is_main:
-            d['main'].append(other.name)
-        else:
-            d['feat'].append(other.name)
-    labels = {}
-    for sid, d in song_data.items():
-        parts = []
-        if d['main']:
-            parts.append('(with ' + ', '.join(d['main']) + ')')
-        if d['by']:
-            parts.append('(by ' + ', '.join(d['by']) + ')')
-        if d['for']:
-            parts.append('(for ' + ', '.join(d['for']) + ')')
-        if d['feat']:
-            parts.append('(feat. ' + ', '.join(d['feat']) + ')')
-        if parts:
-            labels[sid] = ' '.join(parts)
-    return labels
-
-
 def _collab_labels_from_song_artists(all_song_artists, artist):
     """Derive collab labels from already-loaded song_artists data (no extra queries)."""
     ANIME_GENDER_ID = 3
