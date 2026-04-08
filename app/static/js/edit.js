@@ -1934,7 +1934,8 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     // Clean up any leftover merge hidden input
     var prev = form.querySelector('input[name="absorbed_song_id"]');
     if (prev) prev.remove();
-    document.getElementById('confirm-delete-pw').value = '';
+    var pwField = document.getElementById('confirm-delete-pw');
+    if (pwField) pwField.value = '';
     document.getElementById('confirm-delete-btn').textContent = btnLabel || 'Delete';
     document.getElementById('confirm-delete-modal').style.display = 'flex';
 }
@@ -1945,7 +1946,8 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     form.addEventListener('submit', function(e) {
         if (!_deleteIsAjax) return; // let normal form submit handle artist delete (redirect)
         e.preventDefault();
-        var pw = document.getElementById('confirm-delete-pw').value;
+        var pwField = document.getElementById('confirm-delete-pw');
+        var pw = pwField ? pwField.value : '';
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;

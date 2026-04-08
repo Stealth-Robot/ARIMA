@@ -412,11 +412,14 @@ def delete_album(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    if not _verify_password():
-        return 'Incorrect password', 403
 
     # Get all songs in this album
     song_ids = [r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()]
+
+    # Skip password for empty orphaned albums (no songs, no artist)
+    is_orphan = not song_ids and album.artist_id is None
+    if not is_orphan and not _verify_password():
+        return 'Incorrect password', 403
 
     # Capture artist ID before deletions so we can redirect back
     fallback_artist_id = None

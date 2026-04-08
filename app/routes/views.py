@@ -51,9 +51,14 @@ def views_page():
         'no_artist_songs': db.session.query(Song).filter(
             ~Song.id.in_(db.session.query(ArtistSong.song_id))
         ).count(),
+        'orphan_albums': db.session.query(Album).filter(
+            ~Album.id.in_(db.session.query(AlbumSong.album_id)),
+            Album.artist_id.is_(None),
+        ).count(),
         'empty_albums': db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
-            Album.artist_id.is_(None)
+            Album.artist_id.isnot(None),
+            ~Album.artist_id.in_(misc_ids),
         ).count(),
         'empty_artists': db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
@@ -99,17 +104,45 @@ def view_no_artist_songs():
     ])
 
 
+@views_bp.route('/views/orphan-albums')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_orphan_albums():
+    from markupsafe import Markup
+    items = db.session.query(Album).filter(
+        ~Album.id.in_(db.session.query(AlbumSong.album_id)),
+        Album.artist_id.is_(None),
+    ).all()
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    result = []
+    for a in items:
+        name_esc = Markup.escape(a.name)
+        label = f'"{name_esc}"'
+        if edit_mode:
+            label += (f' <span style="cursor:pointer; color:var(--delete-button, #EF4444); margin-left:6px;" title="Delete album"'
+                      f' onclick="deleteOrphanAlbum({a.id}, this)">&#10005;</span>')
+        result.append({'label': f'id={a.id} — {label}', 'safe': True})
+    return render_template('fragments/view_list.html', items=result)
+
+
 @views_bp.route('/views/empty-albums')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_empty_albums():
+    from markupsafe import Markup
+    from flask import url_for
+    misc_ids = _misc_artist_ids()
     items = db.session.query(Album).filter(
         ~Album.id.in_(db.session.query(AlbumSong.album_id)),
-        Album.artist_id.is_(None)
+        Album.artist_id.isnot(None),
+        ~Album.artist_id.in_(misc_ids),
     ).all()
-    return render_template('fragments/view_list.html', items=[
-        {'label': f'id={a.id} — "{a.name}"'} for a in items
-    ])
+    result = []
+    for a in items:
+        name_esc = Markup.escape(a.name)
+        label = f'<a href="{url_for("artists.artist_detail", artist_id=a.artist_id)}" style="color: var(--link, #2563EB); text-decoration: none;">"{name_esc}"</a>'
+        result.append({'label': f'id={a.id} — {label}', 'safe': True})
+    return render_template('fragments/view_list.html', items=result)
 
 
 @views_bp.route('/views/empty-artists')
