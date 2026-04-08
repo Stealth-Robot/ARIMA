@@ -111,8 +111,8 @@ function showInlineEdit(event, endpoint, span) {
             newSpan.className = 'edit-inline';
             newSpan.style.cursor = 'pointer';
             newSpan.setAttribute('onclick', 'showInlineEdit(event, \'' + endpoint + '\', this)');
-            newSpan.textContent = text || 'date';
-            dateWrapper.replaceWith(newSpan);
+            newSpan.textContent = text || original;
+            input.replaceWith(newSpan);
         });
     }
 
