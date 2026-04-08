@@ -282,8 +282,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--link); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
                       onclick="event.stopPropagation();showDeleteConfirm('Unlink {{ child.artist.name | e }}?', 'This will remove {{ child.artist.name | e }} as a {{ 'soloist' if child.is_soloist else 'subunit' }} and convert them to a standalone artist. Their songs and albums will not be affected.', '/edit/artist/{{ child.artist.id }}/unlink', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}')">&#128279;</span>
-                {% endif %}
-                {% if child.is_soloist %}
+                <span class="edit-inline" style="padding: 4px 4px; cursor: pointer;" onclick="event.stopPropagation();showArtistNameEdit(event, '/edit/artist/{{ child.artist.id }}/name', this)">{{ child.artist.name }}</span>
+                <span class="edit-inline" style="cursor: pointer; font-weight: normal; font-size: 11px; color: var(--text-secondary);"
+                      data-gender-id="{{ child.artist.gender_id }}"
+                      onclick="event.stopPropagation();showGenderEdit(event, {{ child.artist.id }}, this, _allGenders, {{ child.artist.gender_id }})">{{ child.artist.gender.gender if child.artist.gender else 'gender' }}</span>
+                <span class="edit-inline" style="cursor: pointer; font-weight: normal; font-size: 11px; color: var(--text-secondary);"
+                      data-country-id="{{ child.artist.country_id }}"
+                      onclick="event.stopPropagation();showCountryEdit(event, {{ child.artist.id }}, this, _allCountries, {{ child.artist.country_id }})">{{ child.artist.country.country if child.artist.country else 'country' }}</span>
+                {% elif child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
                    style="padding: 4px 4px; color: var(--discography-text); text-decoration: none; cursor: pointer;"
                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"
