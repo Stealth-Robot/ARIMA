@@ -32,8 +32,8 @@ function deployingPage() {
         '<p>The app is restarting. This page will refresh automatically.</p>' +
         '<div class="spinner"></div>' +
         '</div>' +
-        '<script>setInterval(function(){fetch("/health").then(function(r){' +
-        'if(r.ok)location.reload();}).catch(function(){});},3000);</script>' +
+        '<script>window.onbeforeunload=null;setInterval(function(){fetch("/health").then(function(r){' +
+        'if(r.ok)location.replace(location.href);}).catch(function(){});},3000);</script>' +
         '</body></html>',
         {status: 503, headers: {'Content-Type': 'text/html'}}
     );
