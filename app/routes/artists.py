@@ -94,7 +94,14 @@ def _render_artist(artist, htmx=False, push_url=None):
     from flask import make_response
 
     artist_id = artist.id
-    discography = _build_discography(artist)
+    # Build child sections (subunits + soloists) — fetched early so parent can reuse
+    subunits, soloists = get_children(artist.id)
+
+    # Prefetch all data for parent + children in bulk (avoids N+1 queries)
+    all_artist_ids = [artist.id] + [c.id for c in subunits + soloists]
+    prefetched = _prefetch_for_artists(all_artist_ids)
+
+    discography = _build_discography(artist, children=(subunits, soloists), prefetched=prefetched)
     users = _get_display_users()
 
     # Compute last updated across artist, albums, and songs
@@ -120,12 +127,11 @@ def _render_artist(artist, htmx=False, push_url=None):
     # Detect soloist parent (for display on the soloist's own page)
     soloist_parent = get_soloist_parent(artist_id)
 
-    # Build child sections (subunits + soloists)
+    # Build child sections
     children_sections = []
-    subunits, soloists = get_children(artist.id)
     soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
-        child_disco = _build_discography(child)
+        child_disco = _build_discography(child, prefetched=prefetched)
         children_sections.append({
             'artist': child,
             'discography': child_disco,
@@ -274,9 +280,137 @@ def _get_collab_labels(song_ids, artist):
     return labels
 
 
-def _build_discography(artist):
+def _get_collab_labels_from_prefetched(song_ids, artist, prefetched):
+    """Same as _get_collab_labels but uses prefetched data instead of querying."""
+    ANIME_GENDER_ID = 3
+    if not song_ids:
+        return {}
+    rows = [r for r in prefetched['collab_artist_songs'] if r.song_id in song_ids]
+    if not rows:
+        return {}
+    artists_by_id = prefetched['collab_artists']
+    is_anime_page = artist.gender_id == ANIME_GENDER_ID
+    song_data = {}
+    for row in rows:
+        other = artists_by_id.get(row.artist_id)
+        if not other:
+            continue
+        d = song_data.setdefault(row.song_id, {'main': [], 'feat': [], 'by': [], 'for': []})
+        is_other_anime = other.gender_id == ANIME_GENDER_ID
+        if is_anime_page and not is_other_anime and row.artist_is_main:
+            d['by'].append(other.name)
+        elif not is_anime_page and is_other_anime:
+            d['for'].append(other.name)
+        elif row.artist_is_main:
+            d['main'].append(other.name)
+        else:
+            d['feat'].append(other.name)
+    labels = {}
+    for sid, d in song_data.items():
+        parts = []
+        if d['main']:
+            parts.append('(with ' + ', '.join(d['main']) + ')')
+        if d['by']:
+            parts.append('(by ' + ', '.join(d['by']) + ')')
+        if d['for']:
+            parts.append('(for ' + ', '.join(d['for']) + ')')
+        if d['feat']:
+            parts.append('(feat. ' + ', '.join(d['feat']) + ')')
+        if parts:
+            labels[sid] = ' '.join(parts)
+    return labels
+
+
+def _prefetch_for_artists(artist_ids):
+    """Bulk-load all data needed by _build_discography for multiple artists.
+
+    Returns a dict with pre-queried data to avoid N+1 queries when building
+    discographies for a parent + its children.
+    """
+    # All song-artist links for all artists
+    all_artist_songs = ArtistSong.query.filter(ArtistSong.artist_id.in_(artist_ids)).all()
+    song_ids_by_artist = {}
+    for row in all_artist_songs:
+        song_ids_by_artist.setdefault(row.artist_id, set()).add(row.song_id)
+    all_song_ids = set()
+    for sids in song_ids_by_artist.values():
+        all_song_ids |= sids
+
+    if not all_song_ids:
+        return {'song_ids_by_artist': song_ids_by_artist, 'albums': [], 'direct_albums_by_artist': {},
+                'album_songs': [], 'ratings': {}, 'song_artists': {}, 'collab_artist_songs': [],
+                'collab_artists': {}}
+
+    # All albums containing any of these songs (with genres eager-loaded)
+    albums = db.session.query(Album).options(
+        selectinload(Album.genres),
+    ).join(
+        AlbumSong, Album.id == AlbumSong.album_id
+    ).filter(
+        AlbumSong.song_id.in_(all_song_ids)
+    ).distinct().all()
+
+    # Direct albums (empty, linked via artist_id) for all artists
+    direct_albums_by_artist = {}
+    seen_album_ids = {a.id for a in albums}
+    direct = db.session.query(Album).options(
+        selectinload(Album.genres),
+    ).filter(
+        Album.artist_id.in_(artist_ids),
+        ~Album.id.in_(seen_album_ids) if seen_album_ids else db.true()
+    ).all()
+    for a in direct:
+        direct_albums_by_artist.setdefault(a.artist_id, []).append(a)
+
+    # All album-song mappings
+    album_songs = db.session.query(AlbumSong.album_id, Song, AlbumSong.track_number).join(
+        Song, Song.id == AlbumSong.song_id
+    ).filter(
+        Song.id.in_(all_song_ids)
+    ).order_by(AlbumSong.album_id, AlbumSong.track_number).all()
+
+    # All ratings
+    all_ratings = Rating.query.filter(Rating.song_id.in_(all_song_ids)).all()
+    ratings = {}
+    for r in all_ratings:
+        ratings.setdefault(r.song_id, {})[r.user_id] = r
+
+    # All song-artist associations (for edit mode + collab labels)
+    song_artists_rows = db.session.query(
+        ArtistSong.song_id, ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
+    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+        ArtistSong.song_id.in_(all_song_ids)
+    ).all()
+    song_artists = {}
+    for sid, aid, is_main, aname, gid in song_artists_rows:
+        song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
+
+    # Collab data: artist_song rows for OTHER artists + artist objects
+    collab_artist_songs = ArtistSong.query.filter(
+        ArtistSong.song_id.in_(all_song_ids),
+        ~ArtistSong.artist_id.in_(artist_ids),
+    ).all()
+    collab_artist_ids = {row.artist_id for row in collab_artist_songs}
+    collab_artists = {a.id: a for a in Artist.query.filter(Artist.id.in_(collab_artist_ids)).all()} if collab_artist_ids else {}
+
+    return {
+        'song_ids_by_artist': song_ids_by_artist,
+        'albums': albums,
+        'direct_albums_by_artist': direct_albums_by_artist,
+        'album_songs': album_songs,
+        'ratings': ratings,
+        'song_artists': song_artists,
+        'collab_artist_songs': collab_artist_songs,
+        'collab_artists': collab_artists,
+    }
+
+
+def _build_discography(artist, children=None, prefetched=None):
     """Build discography data for an artist (own songs only, not children)."""
-    song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
+    if prefetched:
+        song_ids = prefetched['song_ids_by_artist'].get(artist.id, set())
+    else:
+        song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
 
     # Get filter settings — edit mode bypasses remix/featured filters
     from flask import session
@@ -292,31 +426,36 @@ def _build_discography(artist):
         include_featured = True if edit_mode else False
         album_sort_order = session.get('album_sort_order', 'desc')
 
-    # Get all albums containing these songs (NULLs sort last)
-    if album_sort_order == 'asc':
-        order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.asc()
+    if prefetched and song_ids:
+        # Use prefetched albums — filter to those containing this artist's songs
+        album_song_pairs = {(r[0], r[1].id) for r in prefetched['album_songs']}
+        relevant_album_ids = {aid for aid, sid in album_song_pairs if sid in song_ids}
+        albums = [a for a in prefetched['albums'] if a.id in relevant_album_ids]
+        direct_albums = prefetched['direct_albums_by_artist'].get(artist.id, [])
+        seen_ids = {a.id for a in albums}
+        albums.extend(a for a in direct_albums if a.id not in seen_ids)
     else:
-        order = db.case((Album.release_date.is_(None), 1), else_=0).asc(), Album.release_date.desc()
-
-    albums = []
-    if song_ids:
-        albums = db.session.query(Album).options(
+        albums = []
+        if song_ids:
+            albums = db.session.query(Album).options(
+                selectinload(Album.genres),
+            ).join(
+                AlbumSong, Album.id == AlbumSong.album_id
+            ).filter(
+                AlbumSong.song_id.in_(song_ids)
+            ).distinct().all()
+        seen_ids = {a.id for a in albums}
+        direct_albums = db.session.query(Album).options(
             selectinload(Album.genres),
-        ).join(
-            AlbumSong, Album.id == AlbumSong.album_id
         ).filter(
-            AlbumSong.song_id.in_(song_ids)
-        ).distinct().order_by(*order).all()
+            Album.artist_id == artist.id,
+            ~Album.id.in_(seen_ids) if seen_ids else db.true()
+        ).all()
+        albums.extend(direct_albums)
 
-    # Include empty albums directly linked to this artist via artist_id
-    seen_ids = {a.id for a in albums}
-    direct_albums = db.session.query(Album).options(
-        selectinload(Album.genres),
-    ).filter(
-        Album.artist_id == artist.id,
-        ~Album.id.in_(seen_ids) if seen_ids else db.true()
-    ).order_by(*order).all()
-    albums.extend(direct_albums)
+    # Sort albums by release date
+    reverse = album_sort_order != 'asc'
+    albums.sort(key=lambda a: (a.release_date is None, a.release_date or ''), reverse=reverse)
 
     if not albums:
         return []
@@ -328,7 +467,10 @@ def _build_discography(artist):
     # Pre-compute main song IDs for featured filter (once, not per-album)
     main_song_ids = None
     if not include_featured:
-        subunits, soloists = get_children(artist.id)
+        if children is None:
+            subunits, soloists = get_children(artist.id)
+        else:
+            subunits, soloists = children
         all_artist_ids = [artist.id] + [c.id for c in subunits + soloists]
         main_song_ids = {row.song_id for row in
                          ArtistSong.query.filter(
@@ -336,12 +478,15 @@ def _build_discography(artist):
                              ArtistSong.artist_is_main == True
                          ).all()}
 
-    # Bulk-load all album-song mappings for relevant songs in one query
-    all_album_songs = db.session.query(AlbumSong.album_id, Song, AlbumSong.track_number).join(
-        Song, Song.id == AlbumSong.song_id
-    ).filter(
-        Song.id.in_(song_ids)
-    ).order_by(AlbumSong.album_id, AlbumSong.track_number).all()
+    # Album-song mappings — use prefetched or query
+    if prefetched:
+        all_album_songs = [(aid, s, tn) for aid, s, tn in prefetched['album_songs'] if s.id in song_ids]
+    else:
+        all_album_songs = db.session.query(AlbumSong.album_id, Song, AlbumSong.track_number).join(
+            Song, Song.id == AlbumSong.song_id
+        ).filter(
+            Song.id.in_(song_ids)
+        ).order_by(AlbumSong.album_id, AlbumSong.track_number).all()
 
     songs_by_album = {}
     for album_id, song, track_num in all_album_songs:
@@ -380,19 +525,22 @@ def _build_discography(artist):
                 if aid != canonical:
                     songs_by_album[aid] = [(s, tn) for s, tn in songs_by_album[aid] if s.id != sid]
 
-    # Bulk-load all ratings, collab labels, and song-artist associations
-    all_ratings_map = _get_ratings_map(list(song_ids))
-    all_collab_labels = _get_collab_labels(song_ids, artist)
-
-    # Bulk-load all artist associations for songs (for edit mode artist picker)
-    all_song_artists_rows = db.session.query(
-        ArtistSong.song_id, ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
-    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
-        ArtistSong.song_id.in_(song_ids)
-    ).all()
-    all_song_artists = {}
-    for sid, aid, is_main, aname, gid in all_song_artists_rows:
-        all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
+    # Ratings, collab labels, and song-artist associations — use prefetched or query
+    if prefetched:
+        all_ratings_map = {sid: prefetched['ratings'].get(sid, {}) for sid in song_ids}
+        all_collab_labels = _get_collab_labels_from_prefetched(song_ids, artist, prefetched)
+        all_song_artists = {sid: prefetched['song_artists'].get(sid, []) for sid in song_ids}
+    else:
+        all_ratings_map = _get_ratings_map(list(song_ids))
+        all_collab_labels = _get_collab_labels(song_ids, artist)
+        all_song_artists_rows = db.session.query(
+            ArtistSong.song_id, ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
+        ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+            ArtistSong.song_id.in_(song_ids)
+        ).all()
+        all_song_artists = {}
+        for sid, aid, is_main, aname, gid in all_song_artists_rows:
+            all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
 
     # Build album → songs structure (no per-album queries)
     discography = []
