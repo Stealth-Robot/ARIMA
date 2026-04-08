@@ -47,11 +47,17 @@ def views_page():
         'empty_artists': db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
         ).count(),
-        'undated_albums': db.session.query(Album).filter(
-            db.or_(Album.release_date.is_(None), Album.release_date == '')
+        'undated_albums': db.session.query(Album).join(
+            Artist, Album.artist_id == Artist.id
+        ).filter(
+            db.or_(Album.release_date.is_(None), Album.release_date == ''),
+            Artist.name != 'Misc. Artists',
         ).count(),
-        'incomplete_date_albums': db.session.query(Album).filter(
+        'incomplete_date_albums': db.session.query(Album).join(
+            Artist, Album.artist_id == Artist.id
+        ).filter(
             Album.release_date.like('%-01-01'),
+            Artist.name != 'Misc. Artists',
         ).count(),
         'potentially_disbanded': _potentially_disbanded_query().count(),
         'incomplete_tabs': db.session.query(Artist).filter(
@@ -115,8 +121,11 @@ def view_empty_artists():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_undated_albums():
-    albums = db.session.query(Album).filter(
-        db.or_(Album.release_date.is_(None), Album.release_date == '')
+    albums = db.session.query(Album).join(
+        Artist, Album.artist_id == Artist.id
+    ).filter(
+        db.or_(Album.release_date.is_(None), Album.release_date == ''),
+        Artist.name != 'Misc. Artists',
     ).order_by(Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
@@ -129,8 +138,11 @@ def view_undated_albums():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_incomplete_date_albums():
-    albums = db.session.query(Album).filter(
+    albums = db.session.query(Album).join(
+        Artist, Album.artist_id == Artist.id
+    ).filter(
         Album.release_date.like('%-01-01'),
+        Artist.name != 'Misc. Artists',
     ).order_by(Album.release_date.desc(), Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
