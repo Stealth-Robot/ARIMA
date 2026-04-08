@@ -505,6 +505,10 @@ function applyDateTimeFormat(input) {
     input.addEventListener('input', function() {
         var raw = this.value;
         var pos = this.selectionStart;
+
+        // Only auto-format when typing at the end (new input, not mid-edit)
+        if (pos < raw.length) { updateGuide(); return; }
+
         var digitsBefore = (raw.slice(0, pos).match(/[0-9]/g) || []).length;
         var v = raw.replace(/[^0-9]/g, '');
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
