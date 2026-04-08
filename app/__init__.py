@@ -49,7 +49,7 @@ def create_app():
 
     # Let known bot crawlers through auth so OG meta tags render per-page
     _BOT_KEYWORDS = ['bot', 'crawl', 'spider', 'slack', 'discord', 'facebook',
-                     'twitter', 'whatsapp', 'linkedin', 'googlebot', 'preview']
+                     'twitter', 'whatsapp', 'linkedin', 'googlebot']
 
     @login_manager.request_loader
     def load_bot_user(req):
