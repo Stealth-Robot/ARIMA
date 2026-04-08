@@ -77,7 +77,7 @@ function closeUrlPopover() {
     if (_activeUrlPopover) { _activeUrlPopover.remove(); _activeUrlPopover = null; }
 }
 
-function promptUrl(endpoint, currentValue, label) {
+function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
     closeUrlPopover();
     var popover = document.createElement('div');
     popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
@@ -114,6 +114,13 @@ function promptUrl(endpoint, currentValue, label) {
             body: 'value=' + encodeURIComponent(val),
         }).then(function(r) {
             if (!r.ok) { input.style.borderColor = 'var(--delete-button,red)'; return; }
+            // Update the corresponding link icon next to the song name
+            if (btnEl && linkType) {
+                var td = btnEl.closest('td');
+                var links = td ? td.querySelectorAll('.song-links a') : [];
+                var linkEl = linkType === 'spotify' ? links[0] : links[1];
+                if (linkEl && val) linkEl.href = val;
+            }
             closeUrlPopover();
         });
     };

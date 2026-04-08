@@ -96,7 +96,14 @@ def song_spotify_url(song_id):
     url = (request.form.get('value', '') or '').strip() or None
     if url and not url.startswith('https://'):
         abort(400)
+    old = song.spotify_url
     song.spotify_url = url
+    if url and not old:
+        log_change(current_user, f'Added Spotify link to "{song.name}"', song=song, change_type='link')
+    elif not url and old:
+        log_change(current_user, f'Removed Spotify link from "{song.name}"', song=song, change_type='link')
+    elif url != old:
+        log_change(current_user, f'Updated Spotify link on "{song.name}"', song=song, change_type='link')
     db.session.commit()
     return url or ''
 
@@ -112,7 +119,14 @@ def song_youtube_url(song_id):
     url = (request.form.get('value', '') or '').strip() or None
     if url and not url.startswith('https://'):
         abort(400)
+    old = song.youtube_url
     song.youtube_url = url
+    if url and not old:
+        log_change(current_user, f'Added YouTube link to "{song.name}"', song=song, change_type='link')
+    elif not url and old:
+        log_change(current_user, f'Removed YouTube link from "{song.name}"', song=song, change_type='link')
+    elif url != old:
+        log_change(current_user, f'Updated YouTube link on "{song.name}"', song=song, change_type='link')
     db.session.commit()
     return url or ''
 

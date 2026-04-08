@@ -24,7 +24,7 @@ def changelog():
     include = request.args.getlist('include')
     before = request.args.get('before', type=int)
 
-    _type_order = {'Album': 0, 'Artist': 1, 'Rating': 2, 'Song': 3, 'Legacy': 99}
+    _type_order = {'Album': 0, 'Artist': 1, 'Link': 2, 'Rating': 3, 'Song': 4, 'Legacy': 99}
     all_types = sorted(ChangelogType.query.all(), key=lambda t: _type_order.get(t.type, 50))
     all_type_names = [t.type for t in all_types]
 

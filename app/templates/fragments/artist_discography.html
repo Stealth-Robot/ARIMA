@@ -274,9 +274,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
                 <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 4px;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
                 <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 2px;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
                 </span>
                 {% else %}
                 {{ song.name }}
@@ -430,9 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
                 <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 4px;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
                 <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 2px;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
                 </span>
                 {% else %}
                 {{ song.name }}

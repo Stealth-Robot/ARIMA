@@ -93,7 +93,7 @@ def log_change(user, description, artist=None, album=None, song=None, change_typ
     (useful for deletes where the entity is already gone).
     """
     # Resolve change type: song=0, album=1, artist=2, rating=4
-    _type_map = {'song': 0, 'album': 1, 'artist': 2, 'rating': 4}
+    _type_map = {'song': 0, 'album': 1, 'artist': 2, 'rating': 4, 'link': 5}
     if change_type and change_type in _type_map:
         change_type_id = _type_map[change_type]
     elif song:

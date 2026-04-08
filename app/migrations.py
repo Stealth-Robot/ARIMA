@@ -105,6 +105,13 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        # 4. Ensure all changelog types exist
+        from app.models.lookups import ChangelogType
+        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating'), (5, 'Link')]:
+            if not db.session.get(ChangelogType, id_):
+                db.session.add(ChangelogType(id=id_, type=name))
+                logger.info('Added changelog type: %s', name)
+
         db.session.commit()
 
         # 4. Add missing indexes
