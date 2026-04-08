@@ -56,8 +56,8 @@ def updates_page():
         else:
             query = query.filter(db.literal(False))
 
-    updates = query.order_by(Update.date.desc()).all()
-    latest_date = Update.query.order_by(Update.date.desc()).first()
+    updates = query.order_by(Update.date.desc(), Update.id.desc()).all()
+    latest_date = Update.query.order_by(Update.date.desc(), Update.id.desc()).first()
     latest_et = _utc_to_et(latest_date.date) if latest_date else ''
     saved_form = session.pop('_csrf_form_data', {})
     return render_template('updates.html', updates=updates, saved_form=saved_form,
@@ -78,7 +78,7 @@ def updates_timeline():
         else:
             query = query.filter(db.literal(False))
 
-    updates = query.order_by(Update.date.desc()).all()
+    updates = query.order_by(Update.date.desc(), Update.id.desc()).all()
 
     # Stats for the banner
     from collections import Counter
