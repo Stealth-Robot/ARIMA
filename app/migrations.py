@@ -60,15 +60,6 @@ def run_startup_migrations():
                     ))
                 logger.info('Added missing user_settings column: %s', col.name)
 
-        # 1d. Fix boolean columns that were created as VARCHAR by the old generic migration
-        existing_types = {row[1]: row[2] for row in db.session.execute(db.text("PRAGMA table_info('user_settings')"))}
-        for bool_col in ('show_my_key', 'show_default_key'):
-            if existing_types.get(bool_col, '').startswith('VARCHAR'):
-                default = '1' if bool_col == 'show_default_key' else '0'
-                db.session.execute(db.text(f"ALTER TABLE user_settings DROP COLUMN {bool_col}"))
-                db.session.execute(db.text(f"ALTER TABLE user_settings ADD COLUMN {bool_col} INTEGER NOT NULL DEFAULT {default}"))
-                logger.info('Recreated %s as INTEGER', bool_col)
-
         # 2. Create missing personal Theme rows (skip guest/system users with no email)
         existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
         missing = User.query.filter(
