@@ -138,14 +138,22 @@ def create_app():
             }
         return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13}
 
-    # Prevent bfcache so theme/session changes are always reflected on back navigation
+    # TEMPORARY: Convert 302 redirects to client-side redirects (200 + JS) so old
+    # service workers that only pass through 200 responses don't get stuck in a loop.
+    # Remove this once all users have the new SW (after ~1 week from 2026-04-08).
     @flask_app.after_request
-    def no_bfcache(response):
+    def sw_safe_redirect(response):
+        from flask import request
+        if response.status_code in (301, 302, 303, 307, 308) and request.method == 'GET':
+            location = response.headers.get('Location', '/')
+            response = flask_app.make_response(
+                '<html><head><script>location.replace(' + repr(location) + ');</script>'
+                '<meta http-equiv="refresh" content="0;url=' + location + '">'
+                '</head><body></body></html>', 200)
+            response.headers['Content-Type'] = 'text/html'
         content_type = response.content_type or ''
         if 'text/html' in content_type:
             response.headers['Cache-Control'] = 'no-store'
-        # Never cache sw.js so browser always gets the latest service worker
-        from flask import request
         if request.path == '/sw.js':
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
