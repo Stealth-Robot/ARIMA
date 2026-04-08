@@ -82,11 +82,6 @@
                    onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Updates</a>
             </div>
         </div>
-        <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
-        {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
-        <a href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
-        {% endif %}
         {% if current_user.is_authenticated and current_user.can_rate %}
         <div style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.submissions-dd').style.display='block'"
@@ -104,6 +99,11 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
+        <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
+        <a href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
         {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
