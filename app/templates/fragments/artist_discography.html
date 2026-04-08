@@ -122,6 +122,46 @@ function toggleAlbum(e, albumId) {
         state['album-' + albumId] = 1;
     }
     _saveCollapsed(state);
+    _updateToggleAllLabel();
+}
+function toggleAllAlbums() {
+    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
+    var state = _getCollapsed();
+    var expandedCount = 0;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        var rows = document.querySelectorAll('.album-row-' + albumId);
+        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
+    });
+    var shouldCollapse = expandedCount > albumHeaders.length / 2;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        if (shouldCollapse) {
+            _collapseRows('album-row', albumId);
+            state['album-' + albumId] = 1;
+        } else {
+            _expandRows('album-row', albumId);
+            delete state['album-' + albumId];
+        }
+    });
+    _saveCollapsed(state);
+    _updateToggleAllLabel();
+}
+function _updateToggleAllLabel() {
+    var btn = document.getElementById('toggle-all-albums');
+    if (!btn) return;
+    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
+    var expandedCount = 0;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        var rows = document.querySelectorAll('.album-row-' + albumId);
+        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
+    });
+    if (expandedCount > albumHeaders.length / 2) {
+        btn.innerHTML = '&#9660; Collapse All';
+    } else {
+        btn.innerHTML = '&#9654; Expand All';
+    }
 }
 document.addEventListener('DOMContentLoaded', function() {
     var state = _getCollapsed();
@@ -132,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'child') _collapseRows('child-row', id);
         else if (type === 'album') _collapseRows('album-row', id);
     });
+    _updateToggleAllLabel();
 });
 </script>
 
@@ -144,7 +185,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 44px; z-index: 10;">
-            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">DISCOGRAPHY</th>
+            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">
+                <span style="display: flex; justify-content: space-between; align-items: center;">
+                    DISCOGRAPHY
+                    <span id="toggle-all-albums" onclick="toggleAllAlbums()" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); cursor: pointer;">&#9660; Collapse All</span>
+                </span>
+            </th>
             {% if edit_mode %}
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Remix</th>
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Promoted</th>
