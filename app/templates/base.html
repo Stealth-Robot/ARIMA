@@ -253,6 +253,10 @@
                     var styles = getComputedStyle(document.documentElement);
                     btn.style.background = isSelf ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
                     btn.textContent = 'Rating: ' + (isSelf ? 'All' : 'Self');
+                    var disco = document.getElementById('discography');
+                    if (disco) {
+                        fetch(window.location.href, {headers: {'HX-Request': 'true'}}).then(function(r) { return r.text(); }).then(function(html) { disco.innerHTML = html; });
+                    }
                 });
             });
         }
