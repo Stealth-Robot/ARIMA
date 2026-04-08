@@ -9,12 +9,14 @@
     {% set sections = [
         ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs')),
         ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs')),
+        ('Orphaned albums (no songs, no artist)', counts.orphan_albums, url_for('views.view_orphan_albums')),
         ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums')),
         ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
         ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
         ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
+        ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
     ] %}
 
     {% for title, count, url in sections %}
@@ -26,7 +28,7 @@
             data-loaded="false">
             <span class="view-arrow" style="display: inline-block; transition: transform 0.2s; margin-right: 6px;">&#9654;</span>
             {{ title }}
-            <span class="text-sm font-normal" style="color: var(--text-secondary);">— {{ count }}</span>
+            <span class="view-count text-sm font-normal" style="color: var(--text-secondary);">— {{ count }}</span>
         </h2>
         <div class="view-content" style="display: none; padding: 0 16px 12px;"></div>
     </div>
@@ -57,6 +59,11 @@ function openView(header) {
     }).then(function(html) {
         content.innerHTML = html;
         header.dataset.loaded = 'true';
+        var countEl = content.querySelector('[data-view-count]');
+        if (countEl) {
+            var span = header.querySelector('.view-count');
+            if (span) span.textContent = '— ' + countEl.dataset.viewCount;
+        }
     });
 }
 
@@ -102,5 +109,12 @@ _restoreViews();
         });
     });
 })();
+
+function deleteOrphanAlbum(albumId, span) {
+    showDeleteConfirm('Delete empty album?', 'This orphaned album will be permanently deleted.', '/edit/album/' + albumId + '/delete', true, 'Delete');
+}
+</script>
+{% with password_required=false %}{% include "fragments/confirm_modal.html" %}{% endwith %}
+<script>
 </script>
 {% endblock %}

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block title %}A.R.I.M.A. — Updates{% endblock %}
+{% block og_title %}A.R.I.M.A. - Updates{% endblock %}
+{% block og_description %}Recent app updates and features{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto">
@@ -162,8 +164,11 @@
     }
 
     function validateDate() {
-        if (!dateInput.value.trim()) { resetBorder(dateInput); return; }
-        if (!isDateValid() || !isDateNewer()) { errorBorder(dateInput); } else { resetBorder(dateInput); }
+        var v = dateInput.value.trim();
+        if (!v) { resetBorder(dateInput); updateBtn(); return; }
+        if (isDateValid() && isDateNewer()) { resetBorder(dateInput); }
+        else if (v.length >= 16) { errorBorder(dateInput); }
+        else { resetBorder(dateInput); }
         updateBtn();
     }
 

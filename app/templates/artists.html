@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}A.R.I.M.A. — Artists{% endblock %}
+{% block title %}A.R.I.M.A. — {% if artist %}{{ artist.name }}{% else %}Artists{% endif %}{% endblock %}
+{% block og_title %}A.R.I.M.A. - {% if artist %}{{ artist.name }}{% else %}Artists{% endif %}{% endblock %}
+{% block og_description %}{% if artist %}Discography and ratings for {{ artist.name }}{% else %}Artist discographies and ratings{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Discography area — padding-bottom to avoid hiding behind fixed nav -->

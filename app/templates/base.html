@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}A.R.I.M.A.{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Music rating tracker for friends{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}A.R.I.M.A.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/tab_image.jpg', _external=True) }}">
+    <meta property="og:description" content="{% block og_description %}Music rating tracker for friends{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
     <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
     <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
@@ -233,6 +240,10 @@
         }).catch(function() {});
     }
     (function() {
+        if (location.pathname.indexOf('/updates') === 0) {
+            dismissUpdate();
+            return;
+        }
         var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
         if (_latestUpdateId > dismissed) {
             document.getElementById('update-notification').style.display = 'block';
@@ -264,6 +275,10 @@
                     var styles = getComputedStyle(document.documentElement);
                     btn.style.background = isSelf ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
                     btn.textContent = 'Rating: ' + (isSelf ? 'All' : 'Self');
+                    var disco = document.getElementById('discography');
+                    if (disco) {
+                        fetch(window.location.href, {headers: {'HX-Request': 'true'}}).then(function(r) { return r.text(); }).then(function(html) { disco.innerHTML = html; });
+                    }
                 });
             });
         }

@@ -133,31 +133,55 @@ function showRatingInput(event, songId, targetUserId) {
     input.focus();
     input.select();
     const gen = ++inputGeneration;
+    let submitted = false;
     activeInput = { input, cell };
 
-    // Key handlers
+    function doSubmit() {
+        if (submitted) return;
+        submitted = true;
+        const val = input.value.trim();
+        if (val === '') {
+            submitRating(cell, songId, null, targetUserId);
+        } else if (/^[0-5]$/.test(val)) {
+            submitRating(cell, songId, parseInt(val), targetUserId);
+        } else {
+            cancelRating(cell);
+        }
+    }
+
+    // Auto-save immediately when a valid digit is typed
+    input.addEventListener('input', () => {
+        if (/^[0-5]$/.test(input.value)) {
+            doSubmit();
+        }
+    });
+
+    // Key handlers — navigate (submit first if not already saved)
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 's') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'down');
+            doSubmit();
+            navigateToCell(cell, 'down');
         } else if (e.key === 'ArrowUp' || e.key === 'w') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'up');
+            doSubmit();
+            navigateToCell(cell, 'up');
         } else if (e.key === 'ArrowRight' || e.key === 'd') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'right');
+            doSubmit();
+            navigateToCell(cell, 'right');
         } else if (e.key === 'ArrowLeft' || e.key === 'a') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'left');
+            doSubmit();
+            navigateToCell(cell, 'left');
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            cancelRating(cell);
+            if (!submitted) cancelRating(cell);
         } else if (e.key === 'n') {
             e.preventDefault();
-            cancelRating(cell);
+            if (!submitted) cancelRating(cell);
             showNoteInput(cell, songId);
         } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
-            // Block non-0-5 characters
             e.preventDefault();
         }
     });
@@ -165,24 +189,13 @@ function showRatingInput(event, songId, targetUserId) {
     // Blur = submit (save on click-off)
     input.addEventListener('blur', () => {
         setTimeout(() => {
-            if (gen === inputGeneration && activeInput && activeInput.cell === cell) {
-                submitAndNavigate(cell, songId, targetUserId, null);
+            if (gen === inputGeneration && !submitted) {
+                doSubmit();
             }
         }, 100);
     });
 }
 
-function submitAndNavigate(cell, songId, targetUserId, direction) {
-    const val = activeInput ? activeInput.input.value.trim() : '';
-    if (val === '') {
-        submitRating(cell, songId, null, targetUserId);
-    } else if (/^[0-5]$/.test(val)) {
-        submitRating(cell, songId, parseInt(val), targetUserId);
-    } else {
-        cancelRating(cell);
-    }
-    if (direction) navigateToCell(cell, direction);
-}
 
 function submitRating(cell, songId, rating, targetUserId) {
     // Push previous state onto undo stack before mutating
@@ -483,9 +496,23 @@ var _tooltipSelecting = false;
     });
 })();
 
-/* Real-time rating sync via SSE */
+/* Real-time rating sync via SSE with leader election.
+ *
+ * One tab holds the SSE connection and broadcasts updates to others via
+ * BroadcastChannel. When the leader closes, it signals other tabs to elect
+ * a new leader. A heartbeat + stale check ensures recovery if a leader
+ * crashes without a clean close.
+ */
 (function () {
+    var LEADER_KEY = 'sse-leader';
+    var HEARTBEAT_MS = 5000;
+    var STALE_MS = 15000;
+    var tabId = Date.now() + '-' + Math.random().toString(36).slice(2);
     var channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('sse-ratings') : null;
+    var source = null;
+    var heartbeatTimer = null;
+    var staleCheckTimer = null;
+    var isLeader = false;
 
     function handleUpdate(data) {
         var cellId = 'rating-' + data.song_id + '-' + data.user_id;
@@ -501,52 +528,96 @@ var _tooltipSelecting = false;
             });
     }
 
-    if (channel) {
-        channel.addEventListener('message', function (e) {
-            if (e.data && e.data.type === 'rating-update') handleUpdate(e.data);
+    function startSSE() {
+        if (source) return;
+        source = new EventSource('/events/ratings');
+        source.addEventListener('rating-update', function (e) {
+            var data = JSON.parse(e.data);
+            handleUpdate(data);
+            if (channel) {
+                channel.postMessage({ type: 'rating-update', song_id: data.song_id, user_id: data.user_id });
+            }
         });
     }
 
-    var isLeader = false;
-    try {
-        if (!localStorage.getItem('sse-leader')) {
-            localStorage.setItem('sse-leader', Date.now());
-            isLeader = true;
-        }
-    } catch (e) {
-        isLeader = true;
+    function stopSSE() {
+        if (source) { source.close(); source = null; }
     }
 
-    if (!isLeader) {
+    function becomeLeader() {
+        if (isLeader) return;
+        isLeader = true;
+        try { localStorage.setItem(LEADER_KEY, tabId + ':' + Date.now()); } catch (e) {}
+        startSSE();
+        // Heartbeat: update timestamp so other tabs know we're alive
+        heartbeatTimer = setInterval(function () {
+            try { localStorage.setItem(LEADER_KEY, tabId + ':' + Date.now()); } catch (e) {}
+        }, HEARTBEAT_MS);
+    }
+
+    function resign() {
+        isLeader = false;
+        if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+        stopSSE();
+        try { localStorage.removeItem(LEADER_KEY); } catch (e) {}
+        // Tell other tabs to elect a new leader
+        if (channel) channel.postMessage({ type: 'need-leader' });
+    }
+
+    function tryClaimLeadership() {
+        if (isLeader) return;
+        // Atomic-ish claim: write our tabId, read it back after a brief delay
+        try { localStorage.setItem(LEADER_KEY, tabId + ':' + Date.now()); } catch (e) {}
+        setTimeout(function () {
+            try {
+                var val = localStorage.getItem(LEADER_KEY) || '';
+                if (val.indexOf(tabId) === 0) {
+                    becomeLeader();
+                }
+            } catch (e) {
+                // localStorage unavailable — just become leader
+                becomeLeader();
+            }
+        }, 50 + Math.random() * 100);
+    }
+
+    function checkForStaleLeader() {
+        if (isLeader) return;
         try {
-            var ts = parseInt(localStorage.getItem('sse-leader'), 10);
-            if (Date.now() - ts > 60000) {
-                localStorage.setItem('sse-leader', Date.now());
-                isLeader = true;
+            var val = localStorage.getItem(LEADER_KEY);
+            if (!val) { tryClaimLeadership(); return; }
+            var parts = val.split(':');
+            var ts = parseInt(parts[1], 10);
+            if (Date.now() - ts > STALE_MS) {
+                // Leader is stale (crashed without resigning)
+                tryClaimLeadership();
             }
         } catch (e) {
-            isLeader = true;
+            tryClaimLeadership();
         }
     }
 
-    if (!isLeader) return;
+    // Listen for broadcasts from other tabs
+    if (channel) {
+        channel.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'rating-update') {
+                handleUpdate(e.data);
+            } else if (e.data && e.data.type === 'need-leader') {
+                // Leader resigned — try to claim
+                tryClaimLeadership();
+            }
+        });
+    }
 
-    var heartbeat = setInterval(function () {
-        try { localStorage.setItem('sse-leader', Date.now()); } catch (e) {}
-    }, 20000);
+    // Initial election: claim if no leader, or if leader is stale
+    checkForStaleLeader();
 
+    // Periodic stale check in case leader crashed without broadcasting
+    staleCheckTimer = setInterval(checkForStaleLeader, STALE_MS);
+
+    // Clean resignation on tab close
     window.addEventListener('beforeunload', function () {
-        clearInterval(heartbeat);
-        try { localStorage.removeItem('sse-leader'); } catch (e) {}
-    });
-
-    var source = new EventSource('/events/ratings');
-
-    source.addEventListener('rating-update', function (e) {
-        var data = JSON.parse(e.data);
-        handleUpdate(data);
-        if (channel) {
-            channel.postMessage({ type: 'rating-update', song_id: data.song_id, user_id: data.user_id });
-        }
+        if (isLeader) resign();
+        if (staleCheckTimer) clearInterval(staleCheckTimer);
     });
 })();

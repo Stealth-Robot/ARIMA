@@ -25,6 +25,7 @@ def profile():
         theme_list.append({'id': t.id, 'name': display})
 
     # Current settings
+    from app.models.user import DEFAULT_RATING_LABELS
     if current_user.is_system_or_guest:
         settings = {
             'theme': session.get('theme', 1),
@@ -32,6 +33,9 @@ def profile():
             'include_remixes': session.get('include_remixes', False),
             'album_sort_order': session.get('album_sort_order', 'desc'),
             'song_button_size': session.get('song_button_size', 13),
+            'rating_labels': DEFAULT_RATING_LABELS,
+            'show_my_key': False,
+            'show_default_key': True,
         }
     else:
         s = current_user.settings
@@ -41,6 +45,9 @@ def profile():
             'include_remixes': s.include_remixes if s else False,
             'album_sort_order': s.album_sort_order if s else 'desc',
             'song_button_size': s.song_button_size if s else 13,
+            'rating_labels': {score: s.rating_label(score) for score in range(6)} if s else DEFAULT_RATING_LABELS,
+            'show_my_key': s.show_my_key_bool if s else False,
+            'show_default_key': s.show_default_key_bool if s else True,
         }
 
     return render_template('profile.html', themes=theme_list, settings=settings)
@@ -109,6 +116,14 @@ def update_settings():
                 from app.cache import clear_theme_cache_for_user
                 clear_theme_cache_for_user(current_user.id)
             _apply_theme_settings(lambda k, v: setattr(settings, k, v), request.form)
+            # Rating key labels + show_my_key (only from profile page form)
+            if 'theme' in request.form:
+                settings.show_my_key = request.form.get('show_my_key') == 'on'
+                settings.show_default_key = request.form.get('show_default_key') == 'on'
+                for score in range(6):
+                    val = request.form.get(f'rating_label_{score}', '').strip()
+                    if val:
+                        setattr(settings, f'rating_label_{score}', val[:50])
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200

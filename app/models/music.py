@@ -93,6 +93,8 @@ class Song(db.Model):
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
     note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
+    spotify_url = db.Column(db.Text)
+    youtube_url = db.Column(db.Text)
 
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     artists = db.relationship('Artist', secondary=ArtistSong.__table__, back_populates='songs',

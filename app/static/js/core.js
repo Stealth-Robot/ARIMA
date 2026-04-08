@@ -222,6 +222,22 @@ function switchStatMode(val) {
     document.cookie = 'stat_mode=' + val + '; path=/; max-age=31536000; SameSite=Lax';
 }
 
+function toggleHideUnrated(hide) {
+    document.querySelectorAll('.unrated-cell').forEach(function(cell) {
+        if (hide) {
+            if (!cell.dataset.origText) cell.dataset.origText = cell.textContent.trim();
+            cell.style.backgroundColor = '';
+            cell.style.color = '';
+            cell.textContent = '';
+        } else {
+            if (cell.dataset.origBg) cell.style.backgroundColor = cell.dataset.origBg;
+            cell.style.color = 'var(--unrated-text)';
+            cell.textContent = cell.dataset.origText || '';
+        }
+    });
+    document.cookie = 'hide_unrated=' + (hide ? '1' : '0') + '; path=/; max-age=31536000; SameSite=Lax';
+}
+
 (function () {
     var sel = document.getElementById('stat-mode');
     if (!sel) return;
@@ -229,6 +245,13 @@ function switchStatMode(val) {
     if (match && match[1] !== sel.value) {
         sel.value = match[1];
         switchStatMode(match[1]);
+    }
+    // Restore hide-unrated state
+    var cb = document.getElementById('hide-unrated');
+    var hideMatch = document.cookie.match(/(?:^|;\s*)hide_unrated=([^;]+)/);
+    if (cb && hideMatch && hideMatch[1] === '1') {
+        cb.checked = true;
+        toggleHideUnrated(true);
     }
 })();
 
@@ -505,6 +528,10 @@ function applyDateTimeFormat(input) {
     input.addEventListener('input', function() {
         var raw = this.value;
         var pos = this.selectionStart;
+
+        // Only auto-format when typing at the end (new input, not mid-edit)
+        if (pos < raw.length) { updateGuide(); return; }
+
         var digitsBefore = (raw.slice(0, pos).match(/[0-9]/g) || []).length;
         var v = raw.replace(/[^0-9]/g, '');
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
@@ -612,6 +639,29 @@ function highlightRow(tr, fast) {
         var hash = location.hash;
         if (!hash) return;
         var el = document.getElementById(hash.slice(1));
+        if (!el) return;
+        // Expand collapsed parent sections so the element is visible
+        if (el.style.display === 'none') {
+            // Expand child section if song is inside one
+            var childClass = Array.from(el.classList).find(function(c) { return c.indexOf('child-row-') === 0; });
+            if (childClass) {
+                var childId = childClass.replace('child-row-', '');
+                if (typeof _expandRows === 'function') _expandRows('child-row', childId);
+                var state = (typeof _getCollapsed === 'function') ? _getCollapsed() : {};
+                delete state['child-' + childId];
+                if (typeof _saveCollapsed === 'function') _saveCollapsed(state);
+            }
+            // Expand album section if song is inside one
+            var albumClass = Array.from(el.classList).find(function(c) { return c.indexOf('album-row-') === 0; });
+            if (albumClass) {
+                var albumId = albumClass.replace('album-row-', '');
+                if (typeof _expandRows === 'function') _expandRows('album-row', albumId);
+                var state2 = (typeof _getCollapsed === 'function') ? _getCollapsed() : {};
+                delete state2['album-' + albumId];
+                if (typeof _saveCollapsed === 'function') _saveCollapsed(state2);
+            }
+        }
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         highlightRow(el);
     }
     window.addEventListener('load', highlightHash);

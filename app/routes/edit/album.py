@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
-from app.models.lookups import Genre
+from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
 from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -53,6 +53,30 @@ def album_release_date(album_id):
     log_change(current_user, f'Changed release date of "{album.name}" album to {value or "none"}', album=album)
     db.session.commit()
     return value
+
+
+@edit_bp.route('/album/<int:album_id>/type', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_type(album_id):
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    type_id = request.form.get('album_type_id', '').strip()
+    if not type_id:
+        abort(400)
+    type_id = int(type_id)
+    album_type = db.session.get(AlbumType, type_id)
+    if album_type is None:
+        abort(400)
+    if type_id == album.album_type_id:
+        return jsonify(id=album_type.id, type=album_type.type)
+    album.album_type_id = type_id
+    album.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Changed type of "{album.name}" album to {album_type.type}', album=album)
+    db.session.commit()
+    return jsonify(id=album_type.id, type=album_type.type)
 
 
 @edit_bp.route('/album/<int:album_id>/genres', methods=['POST'])
@@ -398,11 +422,14 @@ def delete_album(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    if not _verify_password():
-        return 'Incorrect password', 403
 
     # Get all songs in this album
     song_ids = [r.song_id for r in AlbumSong.query.filter_by(album_id=album_id).all()]
+
+    # Skip password for empty orphaned albums (no songs, no artist)
+    is_orphan = not song_ids and album.artist_id is None
+    if not is_orphan and not _verify_password():
+        return 'Incorrect password', 403
 
     # Capture artist ID before deletions so we can redirect back
     fallback_artist_id = None

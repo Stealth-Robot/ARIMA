@@ -1,29 +1,45 @@
+// Force new SW to activate immediately, replacing any buggy cached version
+self.addEventListener('install', function() { self.skipWaiting(); });
+self.addEventListener('activate', function(event) { event.waitUntil(clients.claim()); });
+
 self.addEventListener('fetch', function(event) {
-    if (event.request.mode !== 'navigate') return;
+    if (event.request.mode !== 'navigate' || event.request.method !== 'GET') return;
     event.respondWith(
-        fetch(event.request).catch(function() {
-            return new Response(
-                '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-                '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-                '<title>A.R.I.M.A.</title>' +
-                '<style>body{background:#111;color:#ccc;font-family:Arial,sans-serif;' +
-                'display:flex;justify-content:center;align-items:center;height:100vh;margin:0;' +
-                'text-align:center;}' +
-                '.box{max-width:400px;}h1{font-size:20px;margin-bottom:8px;}' +
-                'p{font-size:14px;opacity:0.7;}' +
-                '.spinner{width:24px;height:24px;border:3px solid #333;border-top-color:#ccc;' +
-                'border-radius:50%;animation:spin 0.8s linear infinite;margin:16px auto 0;}' +
-                '@keyframes spin{to{transform:rotate(360deg);}}</style>' +
-                '</head><body><div class="box">' +
-                '<h1>Deploying update...</h1>' +
-                '<p>The app is restarting. This page will refresh automatically.</p>' +
-                '<div class="spinner"></div>' +
-                '</div>' +
-                '<script>setInterval(function(){fetch("/health").then(function(r){' +
-                'if(r.ok)location.reload();}).catch(function(){});},3000);</script>' +
-                '</body></html>',
-                {status: 503, headers: {'Content-Type': 'text/html'}}
-            );
+        fetch(event.request).then(function(response) {
+            // Only show deploy page for 502/503 (Railway proxy errors during container swap).
+            // Let everything else through: 200, 302, 404, 500, etc.
+            if (response.status === 502 || response.status === 503) return deployingPage();
+            return response;
+        }).catch(function() {
+            // Network error = container completely unreachable
+            return deployingPage();
         })
     );
 });
+
+function deployingPage() {
+    return new Response(
+        '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>A.R.I.M.A.</title>' +
+        '<style>body{background:#111;color:#ccc;font-family:Arial,sans-serif;' +
+        'display:flex;justify-content:center;align-items:center;height:100vh;margin:0;' +
+        'text-align:center;}' +
+        '.box{max-width:400px;}h1{font-size:20px;margin-bottom:8px;}' +
+        'p{font-size:14px;opacity:0.7;}' +
+        '.spinner{width:24px;height:24px;border:3px solid #333;border-top-color:#ccc;' +
+        'border-radius:50%;animation:spin 0.8s linear infinite;margin:16px auto 0;}' +
+        '@keyframes spin{to{transform:rotate(360deg);}}</style>' +
+        '</head><body><div class="box">' +
+        '<h1>Deploying update...</h1>' +
+        '<p>The app is restarting. This page will refresh automatically.</p>' +
+        '<div class="spinner"></div>' +
+        '</div>' +
+        '<script>window.onbeforeunload=null;' +
+        'if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");' +
+        'setInterval(function(){fetch("/health").then(function(r){' +
+        'if(r.ok)location.replace(location.href);}).catch(function(){});},3000);</script>' +
+        '</body></html>',
+        {status: 503, headers: {'Content-Type': 'text/html'}}
+    );
+}

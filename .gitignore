@@ -30,6 +30,7 @@ out/
 
 # Project-specific
 BASH_RULES.md
+CLAUDE.md
 
 # Flask / SQLite
 instance/

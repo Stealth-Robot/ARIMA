@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block title %}A.R.I.M.A. — Profile{% endblock %}
+{% block og_title %}A.R.I.M.A. - Profile{% endblock %}
+{% block og_description %}User settings{% endblock %}
 
 {% block content %}
 <div class="max-w-xl mx-auto">
@@ -92,6 +94,34 @@
                    class="w-20 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
             <span class="text-xs" style="color: var(--text-secondary);">px (6–30)</span>
         </div>
+
+        <!-- Rating Key -->
+        {% if not current_user.is_system_or_guest %}
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Rating Key</label>
+            <label class="flex items-center gap-2 text-sm mb-1">
+                <input type="checkbox" name="show_default_key"
+                       {% if settings.show_default_key %}checked{% endif %}>
+                Show standard key on artist and stats pages
+            </label>
+            <label class="flex items-center gap-2 text-sm mb-2">
+                <input type="checkbox" name="show_my_key"
+                       {% if settings.show_my_key %}checked{% endif %}>
+                Show my key on artist and stats pages
+            </label>
+            {% for score in range(5, -1, -1) %}
+            {% set kstyle = rating_cell_style(score) %}
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-bold w-8 text-center px-1 py-1 rounded"
+                      style="{% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">{{ score }}</span>
+                <input type="text" name="rating_label_{{ score }}"
+                       value="{{ settings.rating_labels[score] }}"
+                       maxlength="50"
+                       class="flex-1 px-3 py-1 border rounded text-sm" style="border-color: var(--border);">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <button type="submit" class="px-6 py-2 rounded text-white"
                 style="background-color: var(--button-primary);">

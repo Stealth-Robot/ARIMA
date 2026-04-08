@@ -24,13 +24,13 @@
                    onchange="fetch('/edit/artist/{{ artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
                    style="cursor: pointer;"> Complete
         </label>
+        {% endif %}
         {% if current_user.is_admin %}
         <label class="text-sm font-normal" style="color: var(--text-secondary); margin-left: 8px; cursor: pointer;">
             <input type="checkbox" {% if artist.is_tracked %}checked{% endif %}
                    onchange="fetch('/edit/artist/{{ artist.id }}/is-tracked', {method:'POST', headers: _csrfHeaders({})}).then(function(){});"
                    style="cursor: pointer;"> Tracked
         </label>
-        {% endif %}
         {% endif %}
     </h2>
     {% if soloist_parent %}
@@ -57,7 +57,9 @@
 var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbumTypes = [{% for t in album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allSongs = [{% for row in all_songs_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }}, album: {{ row[4] | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
 var _pageArtistName = {{ artist.name | tojson }};
@@ -93,7 +95,8 @@ function _expandRows(prefix, id) {
     rows.forEach(function(r) { r.style.display = ''; });
     if (arrow) arrow.style.transform = 'translateY(-50%)';
 }
-function toggleChildSection(childId) {
+function toggleChildSection(e, childId) {
+    if (e && (e.target.tagName === 'INPUT' || e.target.closest('.edit-inline'))) return;
     var rows = document.querySelectorAll('.child-row-' + childId);
     var hidden = rows.length && rows[0].style.display === 'none';
     var state = _getCollapsed();
@@ -109,7 +112,8 @@ function toggleChildSection(childId) {
     }
     _saveCollapsed(state);
 }
-function toggleAlbum(albumId) {
+function toggleAlbum(e, albumId) {
+    if (e && (e.target.tagName === 'INPUT' || e.target.closest('.edit-inline'))) return;
     var rows = document.querySelectorAll('.album-row-' + albumId);
     var hidden = rows.length && rows[0].style.display === 'none';
     var state = _getCollapsed();
@@ -121,6 +125,46 @@ function toggleAlbum(albumId) {
         state['album-' + albumId] = 1;
     }
     _saveCollapsed(state);
+    _updateToggleAllLabel();
+}
+function toggleAllAlbums() {
+    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
+    var state = _getCollapsed();
+    var expandedCount = 0;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        var rows = document.querySelectorAll('.album-row-' + albumId);
+        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
+    });
+    var shouldCollapse = expandedCount > albumHeaders.length / 2;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        if (shouldCollapse) {
+            _collapseRows('album-row', albumId);
+            state['album-' + albumId] = 1;
+        } else {
+            _expandRows('album-row', albumId);
+            delete state['album-' + albumId];
+        }
+    });
+    _saveCollapsed(state);
+    _updateToggleAllLabel();
+}
+function _updateToggleAllLabel() {
+    var btn = document.getElementById('toggle-all-albums');
+    if (!btn) return;
+    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
+    var expandedCount = 0;
+    albumHeaders.forEach(function(header) {
+        var albumId = header.id.replace('album-', '');
+        var rows = document.querySelectorAll('.album-row-' + albumId);
+        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
+    });
+    if (expandedCount > albumHeaders.length / 2) {
+        btn.innerHTML = '&#9660; Collapse All';
+    } else {
+        btn.innerHTML = '&#9654; Expand All';
+    }
 }
 document.addEventListener('DOMContentLoaded', function() {
     var state = _getCollapsed();
@@ -131,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'child') _collapseRows('child-row', id);
         else if (type === 'album') _collapseRows('album-row', id);
     });
+    _updateToggleAllLabel();
 });
 </script>
 
@@ -143,7 +188,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Sticky header -->
     <thead>
         <tr style="position: sticky; top: 44px; z-index: 10;">
-            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">DISCOGRAPHY</th>
+            <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">
+                <span style="display: flex; justify-content: space-between; align-items: center;">
+                    DISCOGRAPHY
+                    <span id="toggle-all-albums" onclick="toggleAllAlbums()" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); cursor: pointer;">&#9660; Collapse All</span>
+                </span>
+            </th>
             {% if edit_mode %}
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Remix</th>
             <th class="px-1 py-1 text-center" style="width: 30px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Promoted</th>
@@ -167,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
 
         <!-- Album header row -->
-        <tr id="album-{{ album.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
+        <tr id="album-{{ album.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
@@ -179,6 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="event.stopPropagation();showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
+                — <span class="edit-inline text-xs" style="cursor: pointer; font-weight: normal;"
+                        data-album-type-id="{{ album.album_type_id }}"
+                        onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ artist.id }}, this)">&#43;</span>
                 {% else %}
@@ -204,6 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag">duplicate<span class="duplicate-tooltip">Hidden when edit mode is off</span></span>{% endif %}
+                {% set search_terms = song.name + ' ' + artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
+                <span class="song-links" style="display: inline; white-space: nowrap;">{% set sp_url = song.spotify_url or ('https://open.spotify.com/search/' + search_terms | urlencode) %}<a href="{{ sp_url }}" target="_blank" rel="noopener" title="{% if song.spotify_url %}Spotify{% else %}Search Spotify{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a> {% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a></span>
                 <span style="white-space: nowrap; display: block; font-size: {{ song_button_size }}px;"><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Add to another album"
@@ -220,9 +276,15 @@ document.addEventListener('DOMContentLoaded', function() {
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
+                <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 4px;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
+                <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 2px;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
                 </span>
                 {% else %}
                 {{ song.name }}
+                {% set search_terms = song.name + ' ' + artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
+                <span class="song-links" style="display: inline; white-space: nowrap;">{% set sp_url = song.spotify_url or ('https://open.spotify.com/search/' + search_terms | urlencode) %}<a href="{{ sp_url }}" target="_blank" rel="noopener" title="{% if song.spotify_url %}Spotify{% else %}Search Spotify{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a> {% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a></span>
                 {% endif %}
                 {% if song.is_promoted %}<span class="promoted-tag" style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">{{ collab_labels[song.id] }}</span>{% endif %}
@@ -275,14 +337,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <tr><td colspan="100" style="height: 12px; border: none;"></td></tr>
         {# Child name header — black bg, white text, full width #}
         <tr style="background-color: var(--discography-background); border: 1px solid var(--grid-line); cursor: pointer;"
-            onclick="toggleChildSection({{ child.artist.id }})">
+            onclick="toggleChildSection(event, {{ child.artist.id }})">
             <td colspan="100" style="padding: 0 0 0 8px; font-weight: bold; font-size: 13px; color: var(--discography-text); position: relative;">
                 <span id="child-arrow-{{ child.artist.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 10px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--link); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
                       onclick="event.stopPropagation();showDeleteConfirm('Unlink {{ child.artist.name | e }}?', 'This will remove {{ child.artist.name | e }} as a {{ 'soloist' if child.is_soloist else 'subunit' }} and convert them to a standalone artist. Their songs and albums will not be affected.', '/edit/artist/{{ child.artist.id }}/unlink', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}')">&#128279;</span>
-                {% endif %}
-                {% if child.is_soloist %}
+                <span class="edit-inline" style="padding: 4px 4px; cursor: pointer;" onclick="event.stopPropagation();showArtistNameEdit(event, '/edit/artist/{{ child.artist.id }}/name', this)">{{ child.artist.name }}</span>
+                <span class="edit-inline" style="cursor: pointer; font-weight: normal; font-size: 11px; color: var(--text-secondary);"
+                      data-gender-id="{{ child.artist.gender_id }}"
+                      onclick="event.stopPropagation();showGenderEdit(event, {{ child.artist.id }}, this, _allGenders, {{ child.artist.gender_id }})">{{ child.artist.gender.gender if child.artist.gender else 'gender' }}</span>
+                <span class="edit-inline" style="cursor: pointer; font-weight: normal; font-size: 11px; color: var(--text-secondary);"
+                      data-country-id="{{ child.artist.country_id }}"
+                      onclick="event.stopPropagation();showCountryEdit(event, {{ child.artist.id }}, this, _allCountries, {{ child.artist.country_id }})">{{ child.artist.country.country if child.artist.country else 'country' }}</span>
+                {% elif child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
                    style="padding: 4px 4px; color: var(--discography-text); text-decoration: none; cursor: pointer;"
                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"
@@ -307,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
 
         {# Album header — same as main discography #}
-        <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
+        <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
@@ -319,6 +387,9 @@ document.addEventListener('DOMContentLoaded', function() {
                        data-album-id="{{ album.id }}"
                        data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
                        onclick="event.stopPropagation();showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
+                — <span class="edit-inline text-xs" style="cursor: pointer; font-weight: normal;"
+                        data-album-type-id="{{ album.album_type_id }}"
+                        onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ child.artist.id }}, this)">&#43;</span>
                 {% else %}
@@ -342,6 +413,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag">duplicate<span class="duplicate-tooltip">Hidden when edit mode is off</span></span>{% endif %}
+                {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
+                <span class="song-links" style="display: inline; white-space: nowrap;">{% set sp_url = song.spotify_url or ('https://open.spotify.com/search/' + search_terms | urlencode) %}<a href="{{ sp_url }}" target="_blank" rel="noopener" title="{% if song.spotify_url %}Spotify{% else %}Search Spotify{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a> {% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a></span>
                 <span style="white-space: nowrap; display: block; font-size: {{ song_button_size }}px;"><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Add to another album"
@@ -358,9 +432,15 @@ document.addEventListener('DOMContentLoaded', function() {
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Move down"
                       onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>
+                <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 4px;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1);"></span>
+                <span class="edit-inline" style="cursor: pointer; font-size: inherit; margin-left: 2px;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
+                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 10px; height: 10px; vertical-align: middle; filter: grayscale(1) invert(1);"></span>
                 </span>
                 {% else %}
                 {{ song.name }}
+                {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
+                <span class="song-links" style="display: inline; white-space: nowrap;">{% set sp_url = song.spotify_url or ('https://open.spotify.com/search/' + search_terms | urlencode) %}<a href="{{ sp_url }}" target="_blank" rel="noopener" title="{% if song.spotify_url %}Spotify{% else %}Search Spotify{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a> {% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"></a></span>
                 {% endif %}
                 {% if song.is_promoted %}<span class="promoted-tag" style="font-size: 9px; padding: 1px 5px; margin-left: 4px; border-radius: 3px; background-color: var(--promoted-song); color: var(--text-primary);">promoted</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span style="color: var(--text-secondary); font-style: italic;">{{ collab_labels[song.id] }}</span>{% endif %}
@@ -407,15 +487,16 @@ document.addEventListener('DOMContentLoaded', function() {
     </tbody>
 </table>
 
-<!-- Key table — sticky sidebar -->
+<!-- Key tables — standard (if enabled) + user's key (if enabled), sticky sidebar -->
 <div style="position: sticky; top: 44px; align-self: flex-start;">
-    {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
-    {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
-    {% for ki in range(2) %}
-    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if ki == 1 %} margin-top: 8px;{% endif %}">
+    {% set my = current_user.settings if current_user.is_authenticated and current_user.settings else None %}
+    {% set show_default = my.show_default_key_bool if my else True %}
+    {% set is_first_table = True %}
+    {% if show_default %}
+    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
         <thead>
-            <tr style="{% if ki == 0 %}position: sticky; top: 44px; z-index: 10;{% endif %}">
-                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ key_names[ki] }}</th>
+            <tr style="position: sticky; top: 44px; z-index: 10;">
+                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">Standard</th>
             </tr>
         </thead>
         <tbody>
@@ -425,13 +506,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="px-1 py-1"
                     style="border: 1px solid var(--grid-line); white-space: nowrap;
                            {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
-                    {{ score }}.0 {{ key_labels[ki][score] }}
+                    {{ score }}.0 {{ DEFAULT_RATING_LABELS[score] }}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% endfor %}
+    {% set is_first_table = False %}
+    {% endif %}
+    {% if my and my.show_my_key_bool %}
+    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if not is_first_table %} margin-top: 8px;{% endif %}">
+        <thead>
+            <tr{% if is_first_table %} style="position: sticky; top: 44px; z-index: 10;"{% endif %}>
+                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ current_user.username }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in range(5, -1, -1) %}
+            {% set kstyle = rating_cell_style(score) %}
+            <tr>
+                <td class="px-1 py-1"
+                    style="border: 1px solid var(--grid-line); white-space: nowrap;
+                           {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                    {{ score }}.0 {{ my.rating_label(score) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
 </div>
 </div>
 {% endif %}
@@ -587,31 +690,5 @@ function submitConvertArtist() {
 </div>
 
 <!-- Shared delete confirmation modal -->
-<div id="confirm-delete-modal" style="display:none; position:fixed; inset:0; z-index:100;
-     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
-     onclick="if(event.target===this)this.style.display='none'">
-    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
-                padding:24px; width:340px; max-width:90vw;">
-        <h3 id="confirm-delete-title" class="text-lg font-bold mb-2" style="color:var(--text-primary);"></h3>
-        <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary); white-space:pre-line;"></p>
-        <form id="confirm-delete-form" method="POST" action="">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="username" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
-            <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
-            <input type="password" name="password" id="confirm-delete-pw" required autocomplete="current-password"
-                   class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
-            <div class="flex gap-3 justify-end">
-                <button type="button" onclick="document.getElementById('confirm-delete-modal').style.display='none'"
-                        class="px-4 py-2 rounded text-sm"
-                        style="background-color:var(--button-secondary); color:var(--text-primary);">
-                    Cancel
-                </button>
-                <button type="submit" id="confirm-delete-btn" class="px-4 py-2 rounded text-sm text-white"
-                        style="background-color:var(--delete-button);">
-                    Delete
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+{% with password_required=true %}{% include "fragments/confirm_modal.html" %}{% endwith %}
 {% endif %}

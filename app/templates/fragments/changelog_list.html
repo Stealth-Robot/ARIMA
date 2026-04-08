@@ -13,7 +13,7 @@
             {% endif %}
         </tr>
     </thead>
-    <tbody>
+    <tbody id="changelog-tbody">
         {% for e in entries %}
         <tr style="border: 1px solid var(--grid-line);
                    {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
@@ -47,6 +47,18 @@
         {% endfor %}
     </tbody>
 </table>
+<div id="changelog-load-more" class="text-center" style="padding: 1rem 0; margin-top: 1rem;"
+    {% if has_more %}
+    <button hx-get="{{ url_for('changelog.changelog', before=last_id) }}"
+            hx-target="#changelog-tbody"
+            hx-swap="beforeend"
+            hx-include="#changelog-filters"
+            class="px-4 py-2 text-sm rounded border cursor-pointer"
+            style="border-color: var(--border); background: var(--bg-secondary); color: var(--text-primary);">
+        Load More
+    </button>
+    {% endif %}
+</div>
 {% endif %}
 {% if shown is defined %}
 <div id="filter-summary" hx-swap-oob="true" class="text-xs mb-4" style="color: var(--text-secondary);">

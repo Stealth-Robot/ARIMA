@@ -62,6 +62,23 @@ def run_startup_migrations():
                 db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing theme column: %s', col.name)
 
+        # 1c. Add any new user_settings columns
+        from app.models.user import UserSettings
+        import sqlalchemy
+        existing_settings_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('user_settings')"))}
+        for col in UserSettings.__table__.columns:
+            if col.name not in existing_settings_cols:
+                default = (col.server_default.arg if col.server_default else '').replace("'", "''")
+                if isinstance(col.type, sqlalchemy.Boolean):
+                    db.session.execute(db.text(
+                        f"ALTER TABLE user_settings ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT {default}"
+                    ))
+                else:
+                    db.session.execute(db.text(
+                        f"ALTER TABLE user_settings ADD COLUMN {col.name} VARCHAR(50) NOT NULL DEFAULT '{default}'"
+                    ))
+                logger.info('Added missing user_settings column: %s', col.name)
+
         # 2. Create missing personal Theme rows (skip guest/system users with no email)
         existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
         missing = User.query.filter(
@@ -106,6 +123,13 @@ def run_startup_migrations():
                         dark_val = getattr(dark_theme, col)
                         if dark_val:
                             setattr(pt, col, dark_val)
+
+        # 4. Ensure all changelog types exist
+        from app.models.lookups import ChangelogType
+        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating'), (5, 'Link')]:
+            if not db.session.get(ChangelogType, id_):
+                db.session.add(ChangelogType(id=id_, type=name))
+                logger.info('Added changelog type: %s', name)
 
         db.session.commit()
 

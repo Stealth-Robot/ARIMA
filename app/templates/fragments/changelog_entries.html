@@ -1,0 +1,43 @@
+{% for e in entries %}
+<tr style="border: 1px solid var(--grid-line);
+           {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+    <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; padding: 0 4px;">
+            <img src="{{ e.user.profile_image or url_for('static', filename='img/default_image.png') }}"
+                 alt="" referrerpolicy="no-referrer"
+                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+            <span>{{ e.user.username if e.user else 'Unknown' }}</span>
+        </div>
+    </td>
+    <td class="px-3 py-2 text-xs" style="border: 1px solid var(--grid-line);">
+        {{ e.change_type.type if e.change_type else '—' }}
+    </td>
+    <td class="px-3 py-2" style="border: 1px solid var(--grid-line);">{{ e._linked_desc }}</td>
+    <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date" style="border: 1px solid var(--grid-line); font-family: monospace;" data-utc="{{ e.date or '' }}">
+        {{ e.date[:10] if e.date else '-' }}
+    </td>
+    {% if session.get('edit_mode') and current_user.is_admin %}
+    <td class="px-3 py-2 text-center" style="border: 1px solid var(--grid-line);">
+        <button hx-delete="/changelog/{{ e.id }}"
+                hx-target="closest tr"
+                hx-swap="outerHTML"
+                hx-confirm="Delete this changelog entry?"
+                style="background: none; border: none; color: var(--delete-button); cursor: pointer; font-size: inherit;"
+                title="Delete entry">&times;</button>
+    </td>
+    {% endif %}
+</tr>
+{% endfor %}
+<div id="changelog-load-more" hx-swap-oob="true" class="text-center" style="padding: 1rem 0; margin-top: 1rem;"
+    {% if has_more %}
+    <button hx-get="{{ url_for('changelog.changelog', before=last_id) }}"
+            hx-target="#changelog-tbody"
+            hx-swap="beforeend"
+            hx-include="#changelog-filters"
+            class="px-4 py-2 text-sm rounded border cursor-pointer"
+            style="border-color: var(--border); background: var(--bg-secondary); color: var(--text-primary);">
+        Load More
+    </button>
+    {% endif %}
+</div>

@@ -65,8 +65,6 @@ CLASSIC_THEME = {
     'album_header_bg': '#F99FD0',
     'row_alternate': '#F7F9FD',
     'grid_line': '#333333',
-    'key_bg_standard': '#FF8E1E',
-    'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#D9EAD3',
     # Artist navbar
     'artist_button_text': '#000000',
@@ -91,6 +89,9 @@ CLASSIC_THEME = {
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
+    # Duplicate song tag
+    'duplicate_tag_bg': '#5B4A8A',
+    'duplicate_tag_text': '#FFFFFF',
     # Update type badges
     'update_type_feature': '#2563EB',
     'update_type_bugfix': '#DC2626',
@@ -151,8 +152,6 @@ DARK_THEME = {
     'album_header_bg': '#B05A7A',
     'row_alternate': '#16213E',
     'grid_line': '#444444',
-    'key_bg_standard': '#FF8E1E',
-    'key_bg_stealth': '#FEFF2A',
     'header_user_bg': '#1A3A2E',
     # Artist navbar
     'artist_button_text': '#000000',
@@ -177,6 +176,9 @@ DARK_THEME = {
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
+    # Duplicate song tag
+    'duplicate_tag_bg': '#5B4A8A',
+    'duplicate_tag_text': '#FFFFFF',
     # Update type badges
     'update_type_feature': '#3B82F6',
     'update_type_bugfix': '#EF4444',
@@ -229,7 +231,7 @@ def seed(db):
         for id_, name in [(0, 'Subunit'), (1, 'Soloist')]:
             db.session.merge(ArtistRelationship(id=id_, relationship=name))
 
-        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating')]:
+        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating'), (5, 'Link')]:
             db.session.merge(ChangelogType(id=id_, type=name))
 
         for id_, type_, desc in [

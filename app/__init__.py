@@ -47,6 +47,18 @@ def create_app():
         from app.models.user import User
         return db.session.get(User, int(user_id))
 
+    # Let known bot crawlers through auth so OG meta tags render per-page
+    _BOT_KEYWORDS = ['bot', 'crawl', 'spider', 'slack', 'discord', 'facebook',
+                     'twitter', 'whatsapp', 'linkedin', 'googlebot']
+
+    @login_manager.request_loader
+    def load_bot_user(req):
+        ua = (req.headers.get('User-Agent') or '').lower()
+        if any(kw in ua for kw in _BOT_KEYWORDS):
+            from app.models.user import User
+            return db.session.get(User, 1)  # Guest user
+        return None
+
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
@@ -75,7 +87,7 @@ def create_app():
     def inject_theme():
         from app.cache import get_cached_theme
         from app.services.theme import score_to_colour, score_to_style, pct_to_colour, rating_cell_style, unrated_to_colour
-        from app.constants import RATING_KEY_STANDARD, RATING_KEY_STEALTH
+        from app.models.user import DEFAULT_RATING_LABELS
         if current_user.is_authenticated:
             theme = get_cached_theme(current_user)
         else:
@@ -87,8 +99,7 @@ def create_app():
             'pct_to_colour': lambda v: pct_to_colour(v, theme),
             'rating_cell_style': lambda s: rating_cell_style(s, theme),
             'unrated_to_colour': lambda v: unrated_to_colour(v, theme),
-            'RATING_KEY_STANDARD': RATING_KEY_STANDARD,
-            'RATING_KEY_STEALTH': RATING_KEY_STEALTH,
+            'DEFAULT_RATING_LABELS': DEFAULT_RATING_LABELS,
         }
 
     # Filter context processor — injects country/genre filters + dropdown options
@@ -104,23 +115,27 @@ def create_app():
                 country_id = session.get('country')
                 genre_id = session.get('genre')
                 song_button_size = session.get('song_button_size', 13)
-            countries, genres, genders = get_cached_filters()
+            countries, genres, genders, album_types = get_cached_filters()
             return {
                 'current_country': country_id,
                 'current_genre': genre_id,
                 'countries': countries,
                 'genres': genres,
                 'genders': genders,
+                'album_types': album_types,
                 'song_button_size': song_button_size,
             }
-        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'song_button_size': 13}
+        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13}
 
     # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
     def no_bfcache(response):
+        from flask import request
         content_type = response.content_type or ''
         if 'text/html' in content_type:
             response.headers['Cache-Control'] = 'no-store'
+        if request.path == '/sw.js':
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
 
     # CSRF token expired — redirect with flash message instead of silent redirect
