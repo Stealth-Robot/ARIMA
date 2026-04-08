@@ -2,7 +2,7 @@ self.addEventListener('fetch', function(event) {
     if (event.request.mode !== 'navigate') return;
     event.respondWith(
         fetch(event.request).then(function(response) {
-            if (response.ok || response.status === 304) return response;
+            if (response.ok || response.status === 304 || response.redirected || (response.status >= 300 && response.status < 400)) return response;
             return deployingPage();
         }).catch(function() {
             return deployingPage();
