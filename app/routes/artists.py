@@ -194,7 +194,9 @@ def _render_artist(artist, htmx=False, push_url=None):
     # Ensure current artist always appears in navbar regardless of filters
     if artist.id not in {a.id for a in navbar}:
         navbar.append(artist)
-        navbar.sort(key=lambda a: a.name.lower())
+        misc = [a for a in navbar if a.name == 'Misc. Artists']
+        rest = sorted([a for a in navbar if a.name != 'Misc. Artists'], key=lambda a: a.name.lower())
+        navbar = misc + rest
     return render_template('artists.html',
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
