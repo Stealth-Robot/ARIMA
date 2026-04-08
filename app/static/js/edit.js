@@ -79,6 +79,8 @@ function closeUrlPopover() {
 
 function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
     closeUrlPopover();
+    // Use saved value from previous edit if available
+    if (btnEl && btnEl.dataset.savedUrl !== undefined) currentValue = btnEl.dataset.savedUrl;
     var popover = document.createElement('div');
     popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
 
@@ -114,7 +116,8 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
             body: 'value=' + encodeURIComponent(val),
         }).then(function(r) {
             if (!r.ok) { input.style.borderColor = 'var(--delete-button,red)'; return; }
-            // Update the corresponding link icon next to the song name
+            // Store saved value for next edit and update the link icon
+            if (btnEl) btnEl.dataset.savedUrl = val;
             if (btnEl && linkType) {
                 var td = btnEl.closest('td');
                 var links = td ? td.querySelectorAll('.song-links a') : [];
