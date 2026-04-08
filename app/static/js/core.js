@@ -612,6 +612,29 @@ function highlightRow(tr, fast) {
         var hash = location.hash;
         if (!hash) return;
         var el = document.getElementById(hash.slice(1));
+        if (!el) return;
+        // Expand collapsed parent sections so the element is visible
+        if (el.style.display === 'none') {
+            // Expand child section if song is inside one
+            var childClass = Array.from(el.classList).find(function(c) { return c.indexOf('child-row-') === 0; });
+            if (childClass) {
+                var childId = childClass.replace('child-row-', '');
+                if (typeof _expandRows === 'function') _expandRows('child-row', childId);
+                var state = (typeof _getCollapsed === 'function') ? _getCollapsed() : {};
+                delete state['child-' + childId];
+                if (typeof _saveCollapsed === 'function') _saveCollapsed(state);
+            }
+            // Expand album section if song is inside one
+            var albumClass = Array.from(el.classList).find(function(c) { return c.indexOf('album-row-') === 0; });
+            if (albumClass) {
+                var albumId = albumClass.replace('album-row-', '');
+                if (typeof _expandRows === 'function') _expandRows('album-row', albumId);
+                var state2 = (typeof _getCollapsed === 'function') ? _getCollapsed() : {};
+                delete state2['album-' + albumId];
+                if (typeof _saveCollapsed === 'function') _saveCollapsed(state2);
+            }
+        }
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         highlightRow(el);
     }
     window.addEventListener('load', highlightHash);
