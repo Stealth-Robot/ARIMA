@@ -47,6 +47,18 @@ def create_app():
         from app.models.user import User
         return db.session.get(User, int(user_id))
 
+    # Let known bot crawlers through auth so OG meta tags render per-page
+    _BOT_KEYWORDS = ['bot', 'crawl', 'spider', 'slack', 'discord', 'facebook',
+                     'twitter', 'whatsapp', 'linkedin', 'googlebot', 'preview']
+
+    @login_manager.request_loader
+    def load_bot_user(req):
+        ua = (req.headers.get('User-Agent') or '').lower()
+        if any(kw in ua for kw in _BOT_KEYWORDS):
+            from app.models.user import User
+            return db.session.get(User, 1)  # Guest user
+        return None
+
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
