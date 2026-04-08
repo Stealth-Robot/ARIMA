@@ -46,8 +46,8 @@ def profile():
             'album_sort_order': s.album_sort_order if s else 'desc',
             'song_button_size': s.song_button_size if s else 13,
             'rating_labels': {score: s.rating_label(score) for score in range(6)} if s else DEFAULT_RATING_LABELS,
-            'show_my_key': bool(s.show_my_key) if s else False,
-            'show_default_key': bool(s.show_default_key) if s else True,
+            'show_my_key': s.show_my_key_bool if s else False,
+            'show_default_key': s.show_default_key_bool if s else True,
         }
 
     return render_template('profile.html', themes=theme_list, settings=settings)

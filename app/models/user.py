@@ -77,5 +77,23 @@ class UserSettings(db.Model):
 
     user = db.relationship('User', back_populates='settings')
 
+    @staticmethod
+    def _as_bool(val):
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, int):
+            return val != 0
+        if isinstance(val, str):
+            return val not in ('0', '', 'false', 'False')
+        return bool(val)
+
+    @property
+    def show_my_key_bool(self):
+        return self._as_bool(self.show_my_key)
+
+    @property
+    def show_default_key_bool(self):
+        return self._as_bool(self.show_default_key)
+
     def rating_label(self, score):
         return getattr(self, f'rating_label_{score}', DEFAULT_RATING_LABELS.get(score, ''))
