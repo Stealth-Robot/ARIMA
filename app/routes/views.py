@@ -4,10 +4,20 @@ from flask import Blueprint, render_template, session
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong
+from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 views_bp = Blueprint('views', __name__)
+
+
+def _misc_artist_ids():
+    """Return the set of Misc. Artists + all its subunit IDs."""
+    misc = Artist.query.filter_by(name='Misc. Artists').first()
+    if not misc:
+        return set()
+    ids = {misc.id}
+    ids |= {r.artist_2 for r in ArtistArtist.query.filter_by(artist_1=misc.id).all()}
+    return ids
 
 
 def _album_artists(album_ids):
@@ -33,6 +43,7 @@ def _album_artists(album_ids):
 @role_required(EDITOR_OR_ADMIN)
 def views_page():
     """Data integrity monitoring page — shows collapsed sections with counts."""
+    misc_ids = _misc_artist_ids()
     counts = {
         'orphan_songs': db.session.query(Song).filter(
             ~Song.id.in_(db.session.query(AlbumSong.song_id))
@@ -47,17 +58,13 @@ def views_page():
         'empty_artists': db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
         ).count(),
-        'undated_albums': db.session.query(Album).join(
-            Artist, Album.artist_id == Artist.id
-        ).filter(
+        'undated_albums': db.session.query(Album).filter(
             db.or_(Album.release_date.is_(None), Album.release_date == ''),
-            Artist.name != 'Misc. Artists',
+            ~Album.artist_id.in_(misc_ids),
         ).count(),
-        'incomplete_date_albums': db.session.query(Album).join(
-            Artist, Album.artist_id == Artist.id
-        ).filter(
+        'incomplete_date_albums': db.session.query(Album).filter(
             Album.release_date.like('%-01-01'),
-            Artist.name != 'Misc. Artists',
+            ~Album.artist_id.in_(misc_ids),
         ).count(),
         'potentially_disbanded': _potentially_disbanded_query().count(),
         'incomplete_tabs': db.session.query(Artist).filter(
@@ -121,11 +128,10 @@ def view_empty_artists():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_undated_albums():
-    albums = db.session.query(Album).join(
-        Artist, Album.artist_id == Artist.id
-    ).filter(
+    misc_ids = _misc_artist_ids()
+    albums = db.session.query(Album).filter(
         db.or_(Album.release_date.is_(None), Album.release_date == ''),
-        Artist.name != 'Misc. Artists',
+        ~Album.artist_id.in_(misc_ids),
     ).order_by(Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
@@ -138,11 +144,10 @@ def view_undated_albums():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_incomplete_date_albums():
-    albums = db.session.query(Album).join(
-        Artist, Album.artist_id == Artist.id
-    ).filter(
+    misc_ids = _misc_artist_ids()
+    albums = db.session.query(Album).filter(
         Album.release_date.like('%-01-01'),
-        Artist.name != 'Misc. Artists',
+        ~Album.artist_id.in_(misc_ids),
     ).order_by(Album.release_date.desc(), Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
