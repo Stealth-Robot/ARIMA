@@ -92,6 +92,10 @@
         <option value="pct">% Complete</option>
         <option value="unrated"># Songs Remaining to Rate</option>
     </select>
+    <label style="font-size: 12px; color: var(--text-secondary); cursor: pointer; margin-left: 12px; user-select: none;">
+        <input type="checkbox" id="hide-unrated" onchange="toggleHideUnrated(this.checked)" style="vertical-align: middle; cursor: pointer;">
+        Hide unrated
+    </label>
 </div>
 
 <!-- BOTTOM DETAIL TABLE — user columns toggle, Song Count always far right -->
@@ -137,16 +141,19 @@
             </td>
             {# Set 1: % rated per user — heat mapped #}
             {% for u in users %}
-            <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
-                {% if stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(stats.per_user[u.id].pct_rated) }}; color: var(--unrated-text);{% endif %}">
-                {{ stats.per_user[u.id].pct_rated }}
+            {% set pct = stats.per_user[u.id].pct_rated %}
+            <td class="px-1 py-1 text-center col-set1{% if stats.per_user[u.id].rated_count == 0 %} unrated-cell{% endif %}" style="border: 1px solid var(--grid-line);
+                {% if pct is not none %}background-color: {{ pct_to_colour(pct) }}; color: var(--unrated-text);{% endif %}"
+                {% if stats.per_user[u.id].rated_count == 0 %}data-orig-bg="{{ pct_to_colour(pct) }}"{% endif %}>
+                {{ pct }}
             </td>
             {% endfor %}
             {# Set 2: unrated count per user #}
             {% for u in users %}
             {% set uc = stats.per_user[u.id].unrated_count %}
-            <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
-                {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }}; color: var(--unrated-text);{% endif %}">
+            <td class="px-1 py-1 text-center col-set2{% if stats.per_user[u.id].rated_count == 0 %} unrated-cell{% endif %}" style="display: none; border: 1px solid var(--grid-line);
+                {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }}; color: var(--unrated-text);{% endif %}"
+                {% if stats.per_user[u.id].rated_count == 0 %}data-orig-bg="{{ unrated_to_colour(uc) }}"{% endif %}>
                 {{ uc }}
             </td>
             {% endfor %}

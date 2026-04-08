@@ -222,6 +222,22 @@ function switchStatMode(val) {
     document.cookie = 'stat_mode=' + val + '; path=/; max-age=31536000; SameSite=Lax';
 }
 
+function toggleHideUnrated(hide) {
+    document.querySelectorAll('.unrated-cell').forEach(function(cell) {
+        if (hide) {
+            if (!cell.dataset.origText) cell.dataset.origText = cell.textContent.trim();
+            cell.style.backgroundColor = '';
+            cell.style.color = '';
+            cell.textContent = '';
+        } else {
+            if (cell.dataset.origBg) cell.style.backgroundColor = cell.dataset.origBg;
+            cell.style.color = 'var(--unrated-text)';
+            cell.textContent = cell.dataset.origText || '';
+        }
+    });
+    document.cookie = 'hide_unrated=' + (hide ? '1' : '0') + '; path=/; max-age=31536000; SameSite=Lax';
+}
+
 (function () {
     var sel = document.getElementById('stat-mode');
     if (!sel) return;
@@ -229,6 +245,13 @@ function switchStatMode(val) {
     if (match && match[1] !== sel.value) {
         sel.value = match[1];
         switchStatMode(match[1]);
+    }
+    // Restore hide-unrated state
+    var cb = document.getElementById('hide-unrated');
+    var hideMatch = document.cookie.match(/(?:^|;\s*)hide_unrated=([^;]+)/);
+    if (cb && hideMatch && hideMatch[1] === '1') {
+        cb.checked = true;
+        toggleHideUnrated(true);
     }
 })();
 
