@@ -68,9 +68,21 @@
             </div>
         </div>
         <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
-        <a href="{{ url_for('changelog.changelog') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'changelog.changelog' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
+        <div style="flex-shrink: 0; position: relative;"
+             onmouseenter="this.querySelector('.changelog-dd').style.display='block'"
+             onmouseleave="this.querySelector('.changelog-dd').style.display='none'">
+            <a href="{{ url_for('changelog.changelog') }}" style="color:var(--navbar-text); text-decoration:none;
+                         {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
+            <div class="changelog-dd" style="display:none; position:absolute; top:100%; left:0;
+                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
+                        box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
+                <a href="{{ url_for('changelog.changelog') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
+                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
+                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Updates</a>
+            </div>
+        </div>
         <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
-        <a href="{{ url_for('updates.updates_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'updates.updates_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Updates</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
         <a href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
