@@ -72,6 +72,66 @@ function showArtistNameEdit(event, endpoint, span) {
     });
 }
 
+var _activeUrlPopover = null;
+function closeUrlPopover() {
+    if (_activeUrlPopover) { _activeUrlPopover.remove(); _activeUrlPopover = null; }
+}
+
+function promptUrl(endpoint, currentValue, label) {
+    closeUrlPopover();
+    var popover = document.createElement('div');
+    popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
+
+    var title = document.createElement('div');
+    title.textContent = label;
+    title.style.cssText = 'font-size:12px; font-weight:bold; margin-bottom:6px; color:var(--text-primary);';
+    popover.appendChild(title);
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentValue || '';
+    input.placeholder = 'https://...';
+    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
+    popover.appendChild(input);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:4px; justify-content:flex-end;';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--button-secondary,#6B7280); color:var(--button-text,#fff); border:none; border-radius:3px; cursor:pointer;';
+    cancelBtn.onclick = closeUrlPopover;
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    saveBtn.onclick = function() {
+        var val = input.value.trim();
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+            body: 'value=' + encodeURIComponent(val),
+        }).then(function(r) {
+            if (!r.ok) { input.style.borderColor = 'var(--delete-button,red)'; return; }
+            closeUrlPopover();
+        });
+    };
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    popover.appendChild(btnRow);
+    document.body.appendChild(popover);
+    input.focus();
+    input.select();
+    _activeUrlPopover = popover;
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeUrlPopover(); }
+    });
+}
+
 function showInlineEdit(event, endpoint, span) {
     event.stopPropagation();
 

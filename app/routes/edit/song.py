@@ -85,6 +85,38 @@ def song_note(song_id):
     return note or ''
 
 
+@edit_bp.route('/song/<int:song_id>/spotify-url', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_spotify_url(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    song.spotify_url = url
+    db.session.commit()
+    return url or ''
+
+
+@edit_bp.route('/song/<int:song_id>/youtube-url', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_youtube_url(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    song.youtube_url = url
+    db.session.commit()
+    return url or ''
+
+
 @edit_bp.route('/song/<int:song_id>/move-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
