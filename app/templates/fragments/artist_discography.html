@@ -92,7 +92,8 @@ function _expandRows(prefix, id) {
     rows.forEach(function(r) { r.style.display = ''; });
     if (arrow) arrow.style.transform = 'translateY(-50%)';
 }
-function toggleChildSection(childId) {
+function toggleChildSection(e, childId) {
+    if (e && (e.target.tagName === 'INPUT' || e.target.closest('.edit-inline'))) return;
     var rows = document.querySelectorAll('.child-row-' + childId);
     var hidden = rows.length && rows[0].style.display === 'none';
     var state = _getCollapsed();
@@ -108,7 +109,8 @@ function toggleChildSection(childId) {
     }
     _saveCollapsed(state);
 }
-function toggleAlbum(albumId) {
+function toggleAlbum(e, albumId) {
+    if (e && (e.target.tagName === 'INPUT' || e.target.closest('.edit-inline'))) return;
     var rows = document.querySelectorAll('.album-row-' + albumId);
     var hidden = rows.length && rows[0].style.display === 'none';
     var state = _getCollapsed();
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
 
         <!-- Album header row -->
-        <tr id="album-{{ album.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
+        <tr id="album-{{ album.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
@@ -277,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <tr><td colspan="100" style="height: 12px; border: none;"></td></tr>
         {# Child name header — black bg, white text, full width #}
         <tr style="background-color: var(--discography-background); border: 1px solid var(--grid-line); cursor: pointer;"
-            onclick="toggleChildSection({{ child.artist.id }})">
+            onclick="toggleChildSection(event, {{ child.artist.id }})">
             <td colspan="100" style="padding: 0 0 0 8px; font-weight: bold; font-size: 13px; color: var(--discography-text); position: relative;">
                 <span id="child-arrow-{{ child.artist.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 10px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
@@ -315,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
 
         {# Album header — same as main discography #}
-        <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum({{ album.id }})">
+        <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="px-2 py-1 font-bold"
                 style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
