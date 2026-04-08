@@ -27,5 +27,5 @@ if('serviceWorker' in navigator){
 def service_worker():
     resp = send_from_directory(current_app.static_folder, 'sw.js')
     resp.headers['Service-Worker-Allowed'] = '/'
-    resp.headers['Cache-Control'] = 'no-cache'
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return resp

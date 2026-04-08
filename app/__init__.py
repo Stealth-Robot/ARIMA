@@ -32,6 +32,17 @@ def create_app():
 
     login_manager.login_view = 'auth.login'
 
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        """Return login page with 200 instead of 302 redirect.
+
+        This is critical for service worker compatibility — old SWs only pass
+        through 200 responses. A 302 triggers the deploy page, permanently
+        locking out unauthenticated users.
+        """
+        from flask import request, url_for, render_template
+        return render_template('auth/login.html', next=request.url), 200
+
     # SQLite PRAGMAs — must be registered after db.init_app
     with flask_app.app_context():
         @event.listens_for(db.engine, "connect")
