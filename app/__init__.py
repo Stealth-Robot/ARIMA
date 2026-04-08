@@ -149,7 +149,8 @@ def create_app():
             response = flask_app.make_response(
                 '<html><head><script>location.replace(' + repr(location) + ');</script>'
                 '<meta http-equiv="refresh" content="0;url=' + location + '">'
-                '</head><body></body></html>', 200)
+                '</head><body></body></html>')
+            response.status_code = 200
             response.headers['Content-Type'] = 'text/html'
         content_type = response.content_type or ''
         if 'text/html' in content_type:
