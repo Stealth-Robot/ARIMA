@@ -222,6 +222,10 @@
         }).catch(function() {});
     }
     (function() {
+        if (location.pathname.indexOf('/updates') === 0) {
+            dismissUpdate();
+            return;
+        }
         var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
         if (_latestUpdateId > dismissed) {
             document.getElementById('update-notification').style.display = 'block';
