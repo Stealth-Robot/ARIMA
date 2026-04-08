@@ -89,6 +89,9 @@ CLASSIC_THEME = {
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
+    # Duplicate song tag
+    'duplicate_tag_bg': '#5B4A8A',
+    'duplicate_tag_text': '#FFFFFF',
     # Update type badges
     'update_type_feature': '#2563EB',
     'update_type_bugfix': '#DC2626',
@@ -167,6 +170,9 @@ DARK_THEME = {
     # Discography header
     'discography_background': '#000000',
     'discography_text': '#FFFFFF',
+    # Duplicate song tag
+    'duplicate_tag_bg': '#5B4A8A',
+    'duplicate_tag_text': '#FFFFFF',
     # Update type badges
     'update_type_feature': '#3B82F6',
     'update_type_bugfix': '#EF4444',

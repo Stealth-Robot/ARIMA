@@ -89,6 +89,10 @@ class Theme(db.Model):
     discography_background = db.Column(db.Text)
     discography_text = db.Column(db.Text)
 
+    # Duplicate song tag
+    duplicate_tag_bg = db.Column(db.Text)
+    duplicate_tag_text = db.Column(db.Text)
+
     # Update type badge colours
     update_type_feature = db.Column(db.Text)
     update_type_bugfix = db.Column(db.Text)

@@ -208,6 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag">duplicate<span class="duplicate-tooltip">Hidden when edit mode is off</span></span>{% endif %}
                 <span style="white-space: nowrap; display: block; font-size: {{ song_button_size }}px;"><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Add to another album"
@@ -355,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag">duplicate<span class="duplicate-tooltip">Hidden when edit mode is off</span></span>{% endif %}
                 <span style="white-space: nowrap; display: block; font-size: {{ song_button_size }}px;"><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move to another album"
                       onclick="showAlbumMove(event, {{ song.id }}, this, _allAlbums, {{ album.id }})">&#8693;</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 2px;" title="Add to another album"
