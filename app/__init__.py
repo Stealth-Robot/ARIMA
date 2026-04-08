@@ -75,7 +75,7 @@ def create_app():
     def inject_theme():
         from app.cache import get_cached_theme
         from app.services.theme import score_to_colour, score_to_style, pct_to_colour, rating_cell_style, unrated_to_colour
-        from app.constants import RATING_KEY_STANDARD, RATING_KEY_STEALTH
+        from app.models.user import DEFAULT_RATING_LABELS
         if current_user.is_authenticated:
             theme = get_cached_theme(current_user)
         else:
@@ -87,8 +87,7 @@ def create_app():
             'pct_to_colour': lambda v: pct_to_colour(v, theme),
             'rating_cell_style': lambda s: rating_cell_style(s, theme),
             'unrated_to_colour': lambda v: unrated_to_colour(v, theme),
-            'RATING_KEY_STANDARD': RATING_KEY_STANDARD,
-            'RATING_KEY_STEALTH': RATING_KEY_STEALTH,
+            'DEFAULT_RATING_LABELS': DEFAULT_RATING_LABELS,
         }
 
     # Filter context processor — injects country/genre filters + dropdown options

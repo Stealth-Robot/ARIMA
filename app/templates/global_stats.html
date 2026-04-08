@@ -49,15 +49,16 @@
     </tbody>
 </table>
 
-<!-- Key table — sticky sidebar -->
+<!-- Key tables — standard (if enabled) + user's key (if enabled), sticky sidebar -->
 <div style="position: sticky; top: 44px; align-self: flex-start;">
-    {% set key_labels = [RATING_KEY_STANDARD, RATING_KEY_STEALTH] %}
-    {% set key_names = ['Key (Standard)', 'Key (Stealth Ver)'] %}
-    {% for ki in range(2) %}
-    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if ki == 1 %} margin-top: 8px;{% endif %}">
+    {% set my = current_user.settings if current_user.is_authenticated and current_user.settings else None %}
+    {% set show_default = my.show_default_key if my else True %}
+    {% set is_first_table = True %}
+    {% if show_default %}
+    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
         <thead>
             <tr>
-                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ key_names[ki] }}</th>
+                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">Standard</th>
             </tr>
         </thead>
         <tbody>
@@ -67,13 +68,35 @@
                 <td class="px-1 py-1"
                     style="border: 1px solid var(--grid-line); white-space: nowrap;
                            {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
-                    {{ score }}.0 {{ key_labels[ki][score] }}
+                    {{ score }}.0 {{ DEFAULT_RATING_LABELS[score] }}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% endfor %}
+    {% set is_first_table = False %}
+    {% endif %}
+    {% if my and my.show_my_key %}
+    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if not is_first_table %} margin-top: 8px;{% endif %}">
+        <thead>
+            <tr>
+                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ current_user.username }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in range(5, -1, -1) %}
+            {% set kstyle = rating_cell_style(score) %}
+            <tr>
+                <td class="px-1 py-1"
+                    style="border: 1px solid var(--grid-line); white-space: nowrap;
+                           {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                    {{ score }}.0 {{ my.rating_label(score) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
 </div>
 </div>
 {% include "fragments/artist_navbar.html" %}

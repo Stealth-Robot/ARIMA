@@ -44,6 +44,16 @@ class User(UserMixin, db.Model):
         return self.email is None
 
 
+DEFAULT_RATING_LABELS = {
+    5: 'Fucking banger',
+    4: 'Great song',
+    3: 'A vibe',
+    2: 'Eh / Mid / No opinion',
+    1: "This isn't great",
+    0: 'Absolute shit',
+}
+
+
 class UserSettings(db.Model):
     __tablename__ = 'user_settings'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'),
@@ -56,5 +66,16 @@ class UserSettings(db.Model):
     hide_duplicate_songs = db.Column(db.Boolean, nullable=False, default=False)
     album_sort_order = db.Column(db.String(4), nullable=False, default='desc')
     song_button_size = db.Column(db.Integer, nullable=False, default=13)
+    rating_label_5 = db.Column(db.String(50), nullable=False, server_default='Fucking banger')
+    rating_label_4 = db.Column(db.String(50), nullable=False, server_default='Great song')
+    rating_label_3 = db.Column(db.String(50), nullable=False, server_default='A vibe')
+    rating_label_2 = db.Column(db.String(50), nullable=False, server_default='Eh / Mid / No opinion')
+    rating_label_1 = db.Column(db.String(50), nullable=False, server_default="This isn't great")
+    rating_label_0 = db.Column(db.String(50), nullable=False, server_default='Absolute shit')
+    show_my_key = db.Column(db.Boolean, nullable=False, server_default='0')
+    show_default_key = db.Column(db.Boolean, nullable=False, server_default='1')
 
     user = db.relationship('User', back_populates='settings')
+
+    def rating_label(self, score):
+        return getattr(self, f'rating_label_{score}', DEFAULT_RATING_LABELS.get(score, ''))

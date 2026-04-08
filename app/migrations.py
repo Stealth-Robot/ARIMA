@@ -43,6 +43,30 @@ def run_startup_migrations():
                 db.session.execute(db.text(f'ALTER TABLE theme ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing theme column: %s', col.name)
 
+        # 1c. Add any new user_settings columns
+        from app.models.user import UserSettings
+        import sqlalchemy
+        existing_settings_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('user_settings')"))}
+        for col in UserSettings.__table__.columns:
+            if col.name not in existing_settings_cols:
+                default = (col.server_default.arg if col.server_default else '').replace("'", "''")
+                if isinstance(col.type, sqlalchemy.Boolean):
+                    db.session.execute(db.text(
+                        f"ALTER TABLE user_settings ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT {default}"
+                    ))
+                else:
+                    db.session.execute(db.text(
+                        f"ALTER TABLE user_settings ADD COLUMN {col.name} VARCHAR(50) NOT NULL DEFAULT '{default}'"
+                    ))
+                logger.info('Added missing user_settings column: %s', col.name)
+
+        # One-time fix: recreate show_my_key as INTEGER (was VARCHAR from old migration)
+        existing_types = {row[1]: row[2] for row in db.session.execute(db.text("PRAGMA table_info('user_settings')"))}
+        if existing_types.get('show_my_key', '').startswith('VARCHAR'):
+            db.session.execute(db.text("ALTER TABLE user_settings DROP COLUMN show_my_key"))
+            db.session.execute(db.text("ALTER TABLE user_settings ADD COLUMN show_my_key INTEGER NOT NULL DEFAULT 0"))
+            logger.info('Recreated show_my_key as INTEGER')
+
         # 2. Create missing personal Theme rows (skip guest/system users with no email)
         existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
         missing = User.query.filter(
