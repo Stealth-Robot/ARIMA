@@ -40,12 +40,14 @@ def run_startup_migrations():
         db.create_all()
 
         # 0b. Add any new submission columns
+        from app.models.submission import Submission
         existing_sub_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))}
-        for col in ('entity_name', 'artist_id', 'artist_name', 'album_id'):
-            if existing_sub_cols and col not in existing_sub_cols:
-                col_type = 'INTEGER' if col.endswith('_id') else 'TEXT'
-                db.session.execute(db.text(f'ALTER TABLE submission ADD COLUMN {col} {col_type}'))
-                logger.info('Added missing submission column: %s', col)
+        if existing_sub_cols:
+            for col in Submission.__table__.columns:
+                if col.name not in existing_sub_cols:
+                    col_type = 'INTEGER' if 'Integer' in str(col.type) else 'TEXT'
+                    db.session.execute(db.text(f'ALTER TABLE submission ADD COLUMN {col.name} {col_type}'))
+                    logger.info('Added missing submission column: %s', col.name)
 
         # 1a. Add any new song columns (e.g. note)
         from app.models.music import Song
