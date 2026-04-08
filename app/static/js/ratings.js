@@ -133,31 +133,55 @@ function showRatingInput(event, songId, targetUserId) {
     input.focus();
     input.select();
     const gen = ++inputGeneration;
+    let submitted = false;
     activeInput = { input, cell };
 
-    // Key handlers
+    function doSubmit() {
+        if (submitted) return;
+        submitted = true;
+        const val = input.value.trim();
+        if (val === '') {
+            submitRating(cell, songId, null, targetUserId);
+        } else if (/^[0-5]$/.test(val)) {
+            submitRating(cell, songId, parseInt(val), targetUserId);
+        } else {
+            cancelRating(cell);
+        }
+    }
+
+    // Auto-save immediately when a valid digit is typed
+    input.addEventListener('input', () => {
+        if (/^[0-5]$/.test(input.value)) {
+            doSubmit();
+        }
+    });
+
+    // Key handlers — navigate (submit first if not already saved)
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 's') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'down');
+            doSubmit();
+            navigateToCell(cell, 'down');
         } else if (e.key === 'ArrowUp' || e.key === 'w') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'up');
+            doSubmit();
+            navigateToCell(cell, 'up');
         } else if (e.key === 'ArrowRight' || e.key === 'd') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'right');
+            doSubmit();
+            navigateToCell(cell, 'right');
         } else if (e.key === 'ArrowLeft' || e.key === 'a') {
             e.preventDefault();
-            submitAndNavigate(cell, songId, targetUserId, 'left');
+            doSubmit();
+            navigateToCell(cell, 'left');
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            cancelRating(cell);
+            if (!submitted) cancelRating(cell);
         } else if (e.key === 'n') {
             e.preventDefault();
-            cancelRating(cell);
+            if (!submitted) cancelRating(cell);
             showNoteInput(cell, songId);
         } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
-            // Block non-0-5 characters
             e.preventDefault();
         }
     });
@@ -165,24 +189,13 @@ function showRatingInput(event, songId, targetUserId) {
     // Blur = submit (save on click-off)
     input.addEventListener('blur', () => {
         setTimeout(() => {
-            if (gen === inputGeneration && activeInput && activeInput.cell === cell) {
-                submitAndNavigate(cell, songId, targetUserId, null);
+            if (gen === inputGeneration && !submitted) {
+                doSubmit();
             }
         }, 100);
     });
 }
 
-function submitAndNavigate(cell, songId, targetUserId, direction) {
-    const val = activeInput ? activeInput.input.value.trim() : '';
-    if (val === '') {
-        submitRating(cell, songId, null, targetUserId);
-    } else if (/^[0-5]$/.test(val)) {
-        submitRating(cell, songId, parseInt(val), targetUserId);
-    } else {
-        cancelRating(cell);
-    }
-    if (direction) navigateToCell(cell, direction);
-}
 
 function submitRating(cell, songId, rating, targetUserId) {
     // Push previous state onto undo stack before mutating
