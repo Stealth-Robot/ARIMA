@@ -133,6 +133,10 @@ def create_app():
         content_type = response.content_type or ''
         if 'text/html' in content_type:
             response.headers['Cache-Control'] = 'no-store'
+        # Never cache sw.js so browser always gets the latest service worker
+        from flask import request
+        if request.path == '/sw.js':
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
 
     # CSRF token expired — redirect with flash message instead of silent redirect
