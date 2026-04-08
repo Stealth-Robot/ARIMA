@@ -100,24 +100,21 @@ def _render_artist(artist, htmx=False, push_url=None):
     discography = _build_discography(artist, children=(subunits, soloists))
     users = _get_display_users()
 
-    # Compute last updated across artist, albums, and songs
+    # Compute last updated across artist, albums, and songs (single query)
     dates = [artist.last_updated] if artist.last_updated else []
-    album_dates = db.session.query(Album.last_updated).join(
-        AlbumSong, Album.id == AlbumSong.album_id
-    ).join(
-        ArtistSong, AlbumSong.song_id == ArtistSong.song_id
-    ).filter(
-        ArtistSong.artist_id == artist_id,
-        Album.last_updated.isnot(None),
-    ).distinct().all()
-    dates.extend(r[0] for r in album_dates)
-    song_dates = db.session.query(Song.last_updated).join(
-        ArtistSong, Song.id == ArtistSong.song_id
-    ).filter(
-        ArtistSong.artist_id == artist_id,
-        Song.last_updated.isnot(None),
-    ).distinct().all()
-    dates.extend(r[0] for r in song_dates)
+    update_rows = db.session.execute(db.text(
+        'SELECT last_updated FROM ('
+        '  SELECT a.last_updated FROM album a'
+        '  JOIN album_song als ON als.album_id = a.id'
+        '  JOIN artist_song ars ON ars.song_id = als.song_id'
+        '  WHERE ars.artist_id = :aid AND a.last_updated IS NOT NULL'
+        '  UNION'
+        '  SELECT s.last_updated FROM song s'
+        '  JOIN artist_song ars ON ars.song_id = s.id'
+        '  WHERE ars.artist_id = :aid AND s.last_updated IS NOT NULL'
+        ')'
+    ), {'aid': artist_id}).fetchall()
+    dates.extend(r[0] for r in update_rows)
     last_updated = max(dates) if dates else None
 
     # Detect soloist parent (for display on the soloist's own page)
@@ -276,6 +273,41 @@ def _get_collab_labels(song_ids, artist):
     return labels
 
 
+def _collab_labels_from_song_artists(all_song_artists, artist):
+    """Derive collab labels from already-loaded song_artists data (no extra queries)."""
+    ANIME_GENDER_ID = 3
+    is_anime_page = artist.gender_id == ANIME_GENDER_ID
+    song_data = {}
+    for sid, artists_list in all_song_artists.items():
+        for a in artists_list:
+            if a['artist_id'] == artist.id:
+                continue
+            d = song_data.setdefault(sid, {'main': [], 'feat': [], 'by': [], 'for': []})
+            is_other_anime = a['gender_id'] == ANIME_GENDER_ID
+            if is_anime_page and not is_other_anime and a['is_main']:
+                d['by'].append(a['name'])
+            elif not is_anime_page and is_other_anime:
+                d['for'].append(a['name'])
+            elif a['is_main']:
+                d['main'].append(a['name'])
+            else:
+                d['feat'].append(a['name'])
+    labels = {}
+    for sid, d in song_data.items():
+        parts = []
+        if d['main']:
+            parts.append('(with ' + ', '.join(d['main']) + ')')
+        if d['by']:
+            parts.append('(by ' + ', '.join(d['by']) + ')')
+        if d['for']:
+            parts.append('(for ' + ', '.join(d['for']) + ')')
+        if d['feat']:
+            parts.append('(feat. ' + ', '.join(d['feat']) + ')')
+        if parts:
+            labels[sid] = ' '.join(parts)
+    return labels
+
+
 def _build_discography(artist, children=None):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
@@ -385,11 +417,9 @@ def _build_discography(artist, children=None):
                 if aid != canonical:
                     songs_by_album[aid] = [(s, tn) for s, tn in songs_by_album[aid] if s.id != sid]
 
-    # Bulk-load all ratings, collab labels, and song-artist associations
+    # Bulk-load all ratings and song-artist associations
     all_ratings_map = _get_ratings_map(list(song_ids))
-    all_collab_labels = _get_collab_labels(song_ids, artist)
 
-    # Bulk-load all artist associations for songs (for edit mode artist picker)
     all_song_artists_rows = db.session.query(
         ArtistSong.song_id, ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
@@ -398,6 +428,9 @@ def _build_discography(artist, children=None):
     all_song_artists = {}
     for sid, aid, is_main, aname, gid in all_song_artists_rows:
         all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
+
+    # Derive collab labels from the song_artists data (no extra queries)
+    all_collab_labels = _collab_labels_from_song_artists(all_song_artists, artist)
 
     # Build album → songs structure (no per-album queries)
     discography = []
