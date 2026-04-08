@@ -1,3 +1,7 @@
+// Force new SW to activate immediately, replacing any buggy cached version
+self.addEventListener('install', function() { self.skipWaiting(); });
+self.addEventListener('activate', function(event) { event.waitUntil(clients.claim()); });
+
 self.addEventListener('fetch', function(event) {
     if (event.request.mode !== 'navigate') return;
     event.respondWith(
