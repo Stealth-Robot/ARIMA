@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.R.I.M.A.</title>
+    <meta name="description" content="Music rating tracker for friends">
+    <meta property="og:title" content="A.R.I.M.A.">
+    <meta property="og:description" content="Music rating tracker for friends">
+    <meta property="og:image" content="{{ url_for('static', filename='img/og_default.png', _external=True) }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
     <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
     <style>
