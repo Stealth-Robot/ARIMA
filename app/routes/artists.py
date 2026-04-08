@@ -135,6 +135,7 @@ def _render_artist(artist, htmx=False, push_url=None):
     # All artists list + all albums for edit mode (song artist picker, cross-artist move)
     all_artists = []
     all_albums_by_artist = []
+    all_songs_by_artist = []
     artist_parent_map = {}
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(Artist.name).all()
@@ -158,6 +159,22 @@ def _render_artist(artist, htmx=False, push_url=None):
             'WHERE a.artist_id IS NOT NULL '
             'ORDER BY 3, 2'
         )).fetchall()
+        # All songs for merge popover (deduplicated by song id)
+        _song_rows = db.session.execute(db.text(
+            'SELECT s.id, s.name, ar.name, ar.id, al.name '
+            'FROM song s '
+            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'JOIN album_song als ON als.song_id = s.id '
+            'JOIN album al ON al.id = als.album_id '
+            'ORDER BY ar.name, s.name'
+        )).fetchall()
+        _seen_song_ids = set()
+        all_songs_by_artist = []
+        for r in _song_rows:
+            if r[0] not in _seen_song_ids:
+                _seen_song_ids.add(r[0])
+                all_songs_by_artist.append(r)
 
     if htmx:
         resp = make_response(render_template(
@@ -166,6 +183,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             gender_css=GENDER_CSS, children=children_sections,
             soloist_parent=soloist_parent, all_artists=all_artists,
             all_albums_by_artist=all_albums_by_artist,
+            all_songs_by_artist=all_songs_by_artist,
             artist_parent_map=artist_parent_map,
             last_updated=last_updated))
         if push_url:
@@ -183,6 +201,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            gender_css=GENDER_CSS, children=children_sections,
                            soloist_parent=soloist_parent, all_artists=all_artists,
                            all_albums_by_artist=all_albums_by_artist,
+                           all_songs_by_artist=all_songs_by_artist,
                            artist_parent_map=artist_parent_map,
                            last_updated=last_updated)
 

@@ -56,6 +56,7 @@ var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.countr
 var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allAlbumTypes = [{% for t in album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allAlbums = [{% for row in all_albums_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allSongs = [{% for row in all_songs_by_artist %}{ id: {{ row[0] }}, name: {{ row[1] | tojson }}, artist: {{ row[2] | tojson }}, artistId: {{ row[3] }}, album: {{ row[4] | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
 var _pageArtistName = {{ artist.name | tojson }};
