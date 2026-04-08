@@ -32,17 +32,6 @@ def create_app():
 
     login_manager.login_view = 'auth.login'
 
-    @login_manager.unauthorized_handler
-    def unauthorized():
-        """Return login page with 200 instead of 302 redirect.
-
-        This is critical for service worker compatibility — old SWs only pass
-        through 200 responses. A 302 triggers the deploy page, permanently
-        locking out unauthenticated users.
-        """
-        from flask import request, url_for, render_template
-        return render_template('auth/login.html', next=request.url), 200
-
     # SQLite PRAGMAs — must be registered after db.init_app
     with flask_app.app_context():
         @event.listens_for(db.engine, "connect")
@@ -138,20 +127,10 @@ def create_app():
             }
         return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13}
 
-    # TEMPORARY: Convert 302 redirects to client-side redirects (200 + JS) so old
-    # service workers that only pass through 200 responses don't get stuck in a loop.
-    # Remove this once all users have the new SW (after ~1 week from 2026-04-08).
+    # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
-    def sw_safe_redirect(response):
+    def no_bfcache(response):
         from flask import request
-        if response.status_code in (301, 302, 303, 307, 308) and request.method == 'GET':
-            location = response.headers.get('Location', '/')
-            response = flask_app.make_response(
-                '<html><head><script>location.replace(' + repr(location) + ');</script>'
-                '<meta http-equiv="refresh" content="0;url=' + location + '">'
-                '</head><body></body></html>')
-            response.status_code = 200
-            response.headers['Content-Type'] = 'text/html'
         content_type = response.content_type or ''
         if 'text/html' in content_type:
             response.headers['Cache-Control'] = 'no-store'

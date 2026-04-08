@@ -6,9 +6,12 @@ self.addEventListener('fetch', function(event) {
     if (event.request.mode !== 'navigate' || event.request.method !== 'GET') return;
     event.respondWith(
         fetch(event.request).then(function(response) {
-            if (response.ok || response.status === 304 || response.redirected || (response.status >= 300 && response.status < 400)) return response;
-            return deployingPage();
+            // Only show deploy page for 502/503 (Railway proxy errors during container swap).
+            // Let everything else through: 200, 302, 404, 500, etc.
+            if (response.status === 502 || response.status === 503) return deployingPage();
+            return response;
         }).catch(function() {
+            // Network error = container completely unreachable
             return deployingPage();
         })
     );
