@@ -124,6 +124,25 @@
                 <p class="text-xs text-red-400 mb-2">{{ errors['albums'] }}</p>
                 {% endif %}
 
+                <div class="mb-4 p-3 rounded" style="border:1px solid var(--border); background:var(--bg-secondary);">
+                    <label style="display:block; font-size:13px; margin-bottom:6px; color:var(--text-secondary);">Bulk Genres</label>
+                    <div id="bulk-genre-checkboxes" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" onclick="bulkApplyGenres()" class="px-3 py-1 rounded text-xs"
+                                style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer;">
+                            Apply to All
+                        </button>
+                        <button type="button" onclick="bulkRemoveGenres()" class="px-3 py-1 rounded text-xs"
+                                style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border); cursor:pointer;">
+                            Remove from All
+                        </button>
+                        <button type="button" onclick="bulkClearGenres()" class="px-3 py-1 rounded text-xs"
+                                style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">
+                            Clear All Genres
+                        </button>
+                    </div>
+                </div>
+
                 <div id="albums-container"></div>
             </div>
         </div>
@@ -206,6 +225,60 @@ function genreCheckboxes(albumNum) {
     return genres.map(function(g) {
         return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox" style="margin-right:3px;"> ' + g.genre + '</label>';
     }).join('');
+}
+
+// Populate bulk genre checkboxes
+(function() {
+    var genres = {{ genres_js | tojson }};
+    var container = document.getElementById('bulk-genre-checkboxes');
+    container.innerHTML = genres.map(function(g) {
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:3px;"> ' + g.genre + '</label>';
+    }).join('');
+})();
+
+function bulkApplyGenres() {
+    var selected = [];
+    document.querySelectorAll('[data-bulk-genre]:checked').forEach(function(cb) {
+        selected.push(cb.dataset.bulkGenre);
+    });
+    if (!selected.length) return;
+    document.querySelectorAll('#albums-container > [id^="album-"]').forEach(function(albumDiv) {
+        if (albumDiv.dataset.existingAlbumId) return;
+        selected.forEach(function(gid) {
+            var cb = albumDiv.querySelector('[data-genre="' + gid + '"]');
+            if (cb) cb.checked = true;
+        });
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function bulkRemoveGenres() {
+    var selected = [];
+    document.querySelectorAll('[data-bulk-genre]:checked').forEach(function(cb) {
+        selected.push(cb.dataset.bulkGenre);
+    });
+    if (!selected.length) return;
+    document.querySelectorAll('#albums-container > [id^="album-"]').forEach(function(albumDiv) {
+        if (albumDiv.dataset.existingAlbumId) return;
+        selected.forEach(function(gid) {
+            var cb = albumDiv.querySelector('[data-genre="' + gid + '"]');
+            if (cb) cb.checked = false;
+        });
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function bulkClearGenres() {
+    document.querySelectorAll('#albums-container > [id^="album-"] .genre-checkbox').forEach(function(cb) {
+        cb.checked = false;
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
 }
 
 function removeAlbum(num) {
