@@ -57,7 +57,7 @@
              onmouseenter="this.querySelector('.stats-dd').style.display='block'"
              onmouseleave="this.querySelector('.stats-dd').style.display='none'">
             <a href="{{ url_for('stats.global_stats') }}" style="color:var(--navbar-text); text-decoration:none;
-                         {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</a>
+                         {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</a>
             <div class="stats-dd" style="display:none; position:absolute; top:100%; left:0;
                         background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
                         box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
@@ -65,6 +65,8 @@
                    onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
                    onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
+                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Update Stats</a>
             </div>
         </div>
         <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
