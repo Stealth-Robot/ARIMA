@@ -1,5 +1,6 @@
 {% macro render_sub_row(sub, status, css_class='', style='', indent=0, show_expand_col=true) %}
 <tr id="submission-row-{{ sub.id }}" class="{{ css_class }}"
+    data-submitter-id="{{ sub.submitted_by_id }}"
     style="{{ style }} border: 1px solid var(--grid-line);">
     {% if status == 'open' %}
     <td class="text-center px-1 py-2" style="border: 1px solid var(--grid-line);" onclick="event.stopPropagation()">

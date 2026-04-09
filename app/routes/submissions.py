@@ -145,6 +145,7 @@ def submissions_for_me():
     """For Me page — rating/note submissions targeting the current user."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
+    view_filter = request.args.get('view', 'for-me')
 
     query = Submission.query.options(
         joinedload(Submission.submitted_by),
@@ -153,16 +154,23 @@ def submissions_for_me():
         Submission.type.in_(['rating', 'note']),
     )
 
-    if status == 'open':
-        query = query.filter(Submission.target_user_id == current_user.id)
-        query = query.filter_by(status='open')
-    else:
+    # View filter: for-me (target), by-me (submitter), all (both)
+    uid = str(current_user.id)
+    if view_filter == 'by-me':
+        query = query.filter(Submission.submitted_by_id == uid)
+    elif view_filter == 'all':
         query = query.filter(
             db.or_(
-                Submission.target_user_id == current_user.id,
-                Submission.submitted_by_id == current_user.id,
+                Submission.target_user_id == uid,
+                Submission.submitted_by_id == uid,
             )
         )
+    else:
+        query = query.filter(Submission.target_user_id == uid)
+
+    if status == 'open':
+        query = query.filter_by(status='open')
+    else:
         query = query.filter(Submission.status.in_(['approved', 'rejected']))
 
     if type_filter:
@@ -192,7 +200,8 @@ def submissions_for_me():
 
     return render_template('submissions_for_me.html',
                            groups=[], ungrouped=submissions,
-                           status=status, type_filter=type_filter)
+                           status=status, type_filter=type_filter,
+                           view_filter=view_filter)
 
 
 @submissions_bp.route('/submissions')

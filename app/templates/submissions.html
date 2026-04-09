@@ -51,6 +51,10 @@
             {% endfor %}
         </select>
         {% endif %}
+        <label style="font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; display:flex; align-items:center; gap:4px;">
+            <input type="checkbox" id="hide-my-subs" onchange="toggleHideMySubmissions(this.checked)" style="cursor:pointer;">
+            Hide my submissions
+        </label>
     </div>
 
     <!-- Bulk action bar -->
@@ -541,6 +545,15 @@ function bulkRejectPrompt() {
         // Restore normal form behavior
         form.onsubmit = function(ev) { ev.preventDefault(); submitReject(ev); };
     };
+}
+
+var _currentUserId = '{{ current_user.id }}';
+function toggleHideMySubmissions(hide) {
+    document.querySelectorAll('tr[data-submitter-id]').forEach(function(row) {
+        if (row.dataset.submitterId === _currentUserId) {
+            row.style.display = hide ? 'none' : '';
+        }
+    });
 }
 </script>
 {% endblock %}

@@ -9,11 +9,11 @@
     <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;" id="submissions-filters">
         <!-- Status tabs -->
         <div style="display:flex; gap:4px;">
-            <a href="{{ url_for('submissions.submissions_for_me', status='open', type=type_filter) }}"
+            <a href="{{ url_for('submissions.submissions_for_me', status='open', type=type_filter, view=view_filter) }}"
                class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 Open
             </a>
-            <a href="{{ url_for('submissions.submissions_for_me', status='history', type=type_filter) }}"
+            <a href="{{ url_for('submissions.submissions_for_me', status='history', type=type_filter, view=view_filter) }}"
                class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 History
             </a>
@@ -21,11 +21,18 @@
 
         <!-- Type filter: rating/note only -->
         <select name="type" id="submissions-type-filter"
-                onchange="window.location.href='/submissions/for-me?status={{ status }}&type='+this.value"
+                onchange="window.location.href='/submissions/for-me?status={{ status }}&type='+this.value+'&view={{ view_filter }}'"
                 class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
             <option value="">All Types</option>
             <option value="rating" {% if type_filter == 'rating' %}selected{% endif %}>Rating</option>
             <option value="note" {% if type_filter == 'note' %}selected{% endif %}>Note</option>
+        </select>
+        <select name="view" id="submissions-view-filter"
+                onchange="window.location.href='/submissions/for-me?status={{ status }}&type={{ type_filter }}&view='+this.value"
+                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+            <option value="for-me" {% if view_filter == 'for-me' %}selected{% endif %}>For Me</option>
+            <option value="by-me" {% if view_filter == 'by-me' %}selected{% endif %}>By Me</option>
+            <option value="all" {% if view_filter == 'all' %}selected{% endif %}>All</option>
         </select>
     </div>
 
@@ -232,5 +239,6 @@ function bulkRejectPrompt() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && document.getElementById('reject-modal').style.display === 'block') closeRejectModal();
 });
+
 </script>
 {% endblock %}
