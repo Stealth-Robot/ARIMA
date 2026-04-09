@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, album_genres
+from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
 from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parent, get_discography_songs
 
@@ -340,20 +341,34 @@ def _build_discography(artist, children=None):
         for song, _ in song_list:
             song_albums.setdefault(song.id, []).append(aid)
 
+    # Determine canonical album for each duplicate song (auto + overrides)
+    duplicate_sids = {sid for sid, aid_list in song_albums.items() if len(aid_list) >= 2}
+    overrides = {}
+    if duplicate_sids:
+        override_rows = DuplicateDisplayOverride.query.filter(
+            DuplicateDisplayOverride.song_id.in_(duplicate_sids),
+            DuplicateDisplayOverride.artist_id == artist.id,
+        ).all()
+        overrides = {r.song_id: r.preferred_album_id for r in override_rows}
+
     for sid, aid_list in song_albums.items():
         if len(aid_list) < 2:
             continue
-        sorted_aids = sorted(aid_list, key=lambda a: (
-            album_lookup[a].release_date is None,
-            album_lookup[a].release_date or '',
-        ))
-        canonical = None
-        for aid in sorted_aids:
-            if album_lookup[aid].album_type_id != SINGLE_TYPE_ID:
-                canonical = aid
-                break
-        if canonical is None:
-            canonical = sorted_aids[0]
+        # Use override if present, otherwise auto-detect canonical
+        if sid in overrides and overrides[sid] in aid_list:
+            canonical = overrides[sid]
+        else:
+            sorted_aids = sorted(aid_list, key=lambda a: (
+                album_lookup[a].release_date is None,
+                album_lookup[a].release_date or '',
+            ))
+            canonical = None
+            for aid in sorted_aids:
+                if album_lookup[aid].album_type_id != SINGLE_TYPE_ID:
+                    canonical = aid
+                    break
+            if canonical is None:
+                canonical = sorted_aids[0]
         for aid in aid_list:
             if aid != canonical:
                 if edit_mode:

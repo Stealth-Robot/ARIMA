@@ -2144,3 +2144,13 @@ document.addEventListener('click', function (e) {
         closeSongNoteInput();
     }
 });
+
+function setDuplicateOverride(songId, albumId, artistId) {
+    fetch('/edit/song/' + songId + '/duplicate-override', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+        body: 'album_id=' + albumId + '&artist_id=' + artistId
+    }).then(function (r) {
+        if (r.ok) { location.reload(); }
+    });
+}

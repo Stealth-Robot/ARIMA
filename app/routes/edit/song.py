@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
+from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.services.audit import log_change
 from app.services.submission import _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -610,3 +611,26 @@ def merge_song(kept_song_id):
     if artist_link:
         return redirect(url_for('artists.artist_detail', artist_id=artist_link.artist_id))
     return redirect(request.referrer or url_for('home.home'))
+
+
+@edit_bp.route('/song/<int:song_id>/duplicate-override', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def duplicate_override(song_id):
+    """Set which album a duplicate song should be displayed under on an artist page."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    album_id = request.form.get('album_id', type=int)
+    artist_id = request.form.get('artist_id', type=int)
+    if album_id is None or artist_id is None:
+        abort(400)
+    override = db.session.get(DuplicateDisplayOverride, (song_id, artist_id))
+    if override:
+        override.preferred_album_id = album_id
+    else:
+        override = DuplicateDisplayOverride(song_id=song_id, artist_id=artist_id, preferred_album_id=album_id)
+        db.session.add(override)
+    db.session.commit()
+    return '', 204
