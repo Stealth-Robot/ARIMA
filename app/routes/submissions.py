@@ -137,22 +137,6 @@ def _resolve_artist_for_submission(sub, cache=None):
     return None
 
 
-@submissions_bp.route('/submissions/debug')
-@login_required
-def submissions_debug():
-    """Temporary debug endpoint — remove after investigation."""
-    subs = Submission.query.filter_by(status='open').all()
-    rows = []
-    for s in subs:
-        rows.append(f'id={s.id} type={s.type} entity={s.entity_id} submitter={s.submitted_by_id}({type(s.submitted_by_id).__name__}) target={s.target_user_id}({type(s.target_user_id).__name__})')
-    rows.append(f'current_user.id={current_user.id}({type(current_user.id).__name__})')
-    # Column types
-    col_info = db.session.execute(db.text("PRAGMA table_info('submission')")).fetchall()
-    rows.append('--- columns ---')
-    for c in col_info:
-        rows.append(f'  {c[1]}: {c[2]}')
-    return '<pre>' + '\n'.join(rows) + '</pre>', 200, {'Content-Type': 'text/html'}
-
 
 @submissions_bp.route('/submissions/for-me')
 @login_required
@@ -189,8 +173,10 @@ def submissions_for_me():
     for sub in submissions:
         sub._entity_name = _entity_name(sub, cache)
         sub._entity_url = _entity_url(sub, cache)
-        is_target = sub.target_user_id == current_user.id
-        not_submitter = sub.submitted_by_id != current_user.id
+        target_id = int(sub.target_user_id) if sub.target_user_id is not None else None
+        submitter_id = int(sub.submitted_by_id) if sub.submitted_by_id is not None else None
+        is_target = target_id == current_user.id
+        not_submitter = submitter_id != current_user.id
         sub._can_approve = is_target and not_submitter
         sub._can_reject = is_target and not_submitter
 
@@ -258,7 +244,8 @@ def submissions_page():
         sub._entity_name = _entity_name(sub, cache)
         sub._entity_url = _entity_url(sub, cache)
         # Any user can approve/reject except their own submissions
-        can_act = sub.submitted_by_id != current_user.id
+        submitter_id = int(sub.submitted_by_id) if sub.submitted_by_id is not None else None
+        can_act = submitter_id != current_user.id
         sub._can_approve = can_act
         sub._can_reject = can_act
 
@@ -448,10 +435,12 @@ def approve(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
+    target_id = int(sub.target_user_id) if sub.target_user_id is not None else None
+    submitter_id = int(sub.submitted_by_id) if sub.submitted_by_id is not None else None
     # Target user can approve their own rating/note submissions (unless they submitted it)
-    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id and sub.submitted_by_id != current_user.id
+    is_target = sub.type in ('rating', 'note') and target_id == current_user.id and submitter_id != current_user.id
     # Editors can approve any submission except their own
-    is_editor_allowed = current_user.is_editor_or_admin and sub.submitted_by_id != current_user.id
+    is_editor_allowed = current_user.is_editor_or_admin and submitter_id != current_user.id
     if not is_target and not is_editor_allowed:
         abort(403)
     _mark_approved(sub, current_user)
@@ -479,10 +468,12 @@ def reject(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
+    target_id = int(sub.target_user_id) if sub.target_user_id is not None else None
+    submitter_id = int(sub.submitted_by_id) if sub.submitted_by_id is not None else None
     # Target user can reject their own rating/note submissions (unless they submitted it)
-    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id and sub.submitted_by_id != current_user.id
+    is_target = sub.type in ('rating', 'note') and target_id == current_user.id and submitter_id != current_user.id
     # Editors can reject any submission except their own
-    is_editor_allowed = current_user.is_editor_or_admin and sub.submitted_by_id != current_user.id
+    is_editor_allowed = current_user.is_editor_or_admin and submitter_id != current_user.id
     if not is_target and not is_editor_allowed:
         abort(403)
 
