@@ -315,18 +315,30 @@ def submissions_page():
             for row in AlbumSong.query.filter(AlbumSong.song_id.in_(song_sub_ids)).all():
                 all_album_links.setdefault(row.song_id, set()).add(row.album_id)
 
+        def _find_album_child(song_album_ids, search_groups):
+            """Find an album child matching any of the given album IDs."""
+            for group in search_groups:
+                for child in group['children']:
+                    if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
+                        return child
+            return None
+
         for sub, artist_id in song_subs:
             placed = False
-            if artist_id in groups:
-                song_album_ids = all_album_links.get(sub.entity_id, set())
-                if not song_album_ids and sub.album_id:
-                    song_album_ids = {sub.album_id}
+            song_album_ids = all_album_links.get(sub.entity_id, set())
+            if sub.album_id:
+                song_album_ids = song_album_ids | {sub.album_id}
 
-                for child in groups[artist_id]['children']:
-                    if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
-                        child['songs'].append(sub)
-                        placed = True
-                        break
+            if song_album_ids:
+                # Try own group first, then all groups
+                own = [groups[artist_id]] if artist_id in groups else []
+                match = _find_album_child(song_album_ids, own)
+                if not match:
+                    match = _find_album_child(song_album_ids, groups.values())
+                if match:
+                    match['songs'].append(sub)
+                    placed = True
+
             if not placed:
                 if artist_id in groups:
                     groups[artist_id]['children'].append(sub)
