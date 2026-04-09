@@ -137,6 +137,17 @@ def _resolve_artist_for_submission(sub, cache=None):
     return None
 
 
+@submissions_bp.route('/submissions/debug')
+@login_required
+def submissions_debug():
+    """Temporary debug endpoint — remove after investigation."""
+    subs = Submission.query.filter_by(status='open').all()
+    rows = []
+    for s in subs:
+        rows.append(f'id={s.id} type={s.type} entity={s.entity_id} submitter={s.submitted_by_id} target={s.target_user_id}')
+    return '<pre>' + '\n'.join(rows) + '</pre>', 200, {'Content-Type': 'text/html'}
+
+
 @submissions_bp.route('/submissions/for-me')
 @login_required
 @role_required(USER_OR_ABOVE)
