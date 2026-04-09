@@ -22,7 +22,7 @@
     </td>
     <td style="border: 1px solid var(--grid-line); padding: 8px 12px 8px {{ indent if indent > 12 else 12 }}px;">
         {% if sub._entity_url %}
-        <a href="{{ sub._entity_url }}" style="color:var(--text-primary); text-decoration:underline;">{{ sub._entity_name }}</a>
+        <a href="{{ sub._entity_url }}" onclick="event.stopPropagation()" style="color:var(--text-primary); text-decoration:underline;">{{ sub._entity_name }}</a>
         {% else %}
         {{ sub._entity_name }}
         {% endif %}

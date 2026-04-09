@@ -93,15 +93,17 @@ def _entity_url(sub, cache=None):
         entity = albums.get(sub.entity_id)
         if entity and entity.artist_id:
             artist = artists.get(entity.artist_id)
-            if artist and artist.slug:
-                return f'/artists/{artist.slug}#album-{entity.id}'
+            base = _artist_slug_url(artist)
+            if base:
+                return f'{base}#album-{entity.id}'
     elif sub.type in ('song', 'rating', 'note'):
         entity = songs.get(sub.entity_id)
         if entity:
             artist_id = song_artist_links.get(entity.id)
             artist = artists.get(artist_id) if artist_id else None
-            if artist and artist.slug:
-                return f'/artists/{artist.slug}#song-{entity.id}'
+            base = _artist_slug_url(artist)
+            if base:
+                return f'{base}#song-{entity.id}'
     return None
 
 
