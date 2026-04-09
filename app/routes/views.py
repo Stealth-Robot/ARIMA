@@ -65,11 +65,11 @@ def views_page():
         ).count(),
         'undated_albums': db.session.query(Album).filter(
             db.or_(Album.release_date.is_(None), Album.release_date == ''),
-            ~Album.artist_id.in_(misc_ids),
+            db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
         ).count(),
         'incomplete_date_albums': db.session.query(Album).filter(
             Album.release_date.like('%-01-01'),
-            ~Album.artist_id.in_(misc_ids),
+            db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
         ).count(),
         'potentially_disbanded': _potentially_disbanded_query().count(),
         'incomplete_tabs': db.session.query(Artist).filter(
@@ -135,7 +135,7 @@ def view_empty_albums():
     items = db.session.query(Album).filter(
         ~Album.id.in_(db.session.query(AlbumSong.album_id)),
         Album.artist_id.isnot(None),
-        ~Album.artist_id.in_(misc_ids),
+        db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).all()
     result = []
     for a in items:
@@ -164,7 +164,7 @@ def view_undated_albums():
     misc_ids = _misc_artist_ids()
     albums = db.session.query(Album).filter(
         db.or_(Album.release_date.is_(None), Album.release_date == ''),
-        ~Album.artist_id.in_(misc_ids),
+        db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).order_by(Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
@@ -180,7 +180,7 @@ def view_incomplete_date_albums():
     misc_ids = _misc_artist_ids()
     albums = db.session.query(Album).filter(
         Album.release_date.like('%-01-01'),
-        ~Album.artist_id.in_(misc_ids),
+        db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).order_by(Album.release_date.desc(), Album.name).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
