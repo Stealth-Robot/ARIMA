@@ -172,6 +172,7 @@ def add_album_to_artist(artist_id):
                 submitted_by_id=current_user.id,
                 is_promoted=song_data.get('is_promoted', False),
                 is_remix=song_data.get('is_remix', False),
+                spotify_url=song_data.get('spotify_url') or None,
             )
             db.session.add(song)
             db.session.flush()
@@ -471,3 +472,20 @@ def delete_album(album_id):
     if fallback_artist_id:
         return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))
     return redirect(request.referrer or url_for('home.home'))
+
+
+@edit_bp.route('/spotify-album')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def spotify_album():
+    """Fetch album metadata from a Spotify URL for pre-filling the add-album form."""
+    _require_edit_mode()
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    from app.services.spotify import fetch_album, SpotifyError
+    try:
+        data = fetch_album(url)
+    except SpotifyError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify(data)

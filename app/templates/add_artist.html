@@ -19,6 +19,15 @@
     <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+        <div class="mb-4 p-3 rounded" style="border:1px dashed var(--border);">
+            <label class="block text-sm mb-1" style="color:var(--text-secondary);">Import from Spotify</label>
+            <div class="flex gap-2">
+                <input type="text" id="spotify-artist-url" placeholder="https://open.spotify.com/artist/..." class="flex-1 px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
+                <button type="button" id="spotify-artist-import-btn" onclick="importArtistFromSpotify()" class="px-4 py-1 rounded text-sm" style="background:var(--button-secondary); color:var(--text-primary);">Import</button>
+            </div>
+            <p class="text-xs mt-1" style="color:var(--text-secondary);">Imports artist name and full discography. You still need to set gender, country, and genres.</p>
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-6">
             <!-- Left column: Artist Info -->
             <div class="lg:w-5/12">
@@ -526,12 +535,14 @@ function collectFormState() {
                     var role = row.querySelector('.song-artist-role');
                     artists.push({ artist_id: isNew ? null : aid, is_main: role ? role.value === 'main' : true });
                 });
-                album.songs.push({
+                var songEntry = {
                     name: name,
                     is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
                     is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
                     artists: artists,
-                });
+                };
+                if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
+                album.songs.push(songEntry);
             }
         });
         albums.push(album);
@@ -772,5 +783,96 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
     }
     validateForm();
 })();
+
+function importArtistFromSpotify() {
+    var urlInput = document.getElementById('spotify-artist-url');
+    var btn = document.getElementById('spotify-artist-import-btn');
+    if (!urlInput || !urlInput.value.trim()) return;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    fetch('/edit/spotify-artist?url=' + encodeURIComponent(urlInput.value.trim()))
+        .then(function (r) {
+            if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Import failed'); });
+            return r.json();
+        })
+        .then(function (data) {
+            // Set artist name
+            var nameEl = document.getElementById('artist_name');
+            if (nameEl) {
+                nameEl.value = data.name;
+                nameEl.dispatchEvent(new Event('input'));
+            }
+            // Clear existing albums
+            document.getElementById('albums-container').innerHTML = '';
+            albumCount = 0;
+            songCounters = {};
+            // Add each album
+            data.albums.forEach(function (albumData) {
+                albumCount++;
+                var num = albumCount;
+                var container = document.getElementById('albums-container');
+                var div = document.createElement('div');
+                div.className = 'mb-6 p-4 border rounded';
+                div.style.borderColor = 'var(--border)';
+                div.id = 'album-' + num;
+                div.innerHTML =
+                    '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                        '<span style="font-weight:600;">Album ' + num + '</span>' +
+                        '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+                    '</div>' +
+                    '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+                        '<div style="flex:1;">' +
+                            '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                            '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                        '</div>' +
+                        '<div style="width:160px;">' +
+                            '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                            '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+                        '</div>' +
+                        '<div style="width:128px;">' +
+                            '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                            '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                                albumTypeOptions() +
+                            '</select>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="margin-bottom:12px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                        '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
+                    '</div>' +
+                    '<div style="margin-bottom:12px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                        '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+                        '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+                    '</div>';
+                container.appendChild(div);
+                if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+                // Set album type
+                var sel = div.querySelector('[data-album="' + num + '"][data-field="album_type_id"]');
+                if (sel) sel.value = String(albumData.album_type_id);
+                // Add songs
+                albumData.tracks.forEach(function (track) {
+                    addSong(num);
+                    var sNum = songCounters[num];
+                    var songDiv = document.getElementById('song-' + num + '-' + sNum);
+                    if (songDiv) {
+                        var nameInput = songDiv.querySelector('[data-field="name"]');
+                        if (nameInput) nameInput.value = track.name;
+                        if (track.spotify_url) songDiv.dataset.spotifyUrl = track.spotify_url;
+                    }
+                });
+            });
+            validateForm();
+            formDirty = true;
+            saveDraft();
+        })
+        .catch(function (e) {
+            alert(e.message || 'Spotify import failed');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            btn.textContent = 'Import';
+        });
+}
 </script>
 {% endblock %}

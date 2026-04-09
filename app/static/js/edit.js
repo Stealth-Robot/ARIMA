@@ -1564,6 +1564,8 @@ function resetAddAlbumModal() {
     if (searchInput) searchInput.value = '';
     var searchResults = document.getElementById('album-song-search-results');
     if (searchResults) { searchResults.style.display = 'none'; searchResults.innerHTML = ''; }
+    var spotifyUrl = document.getElementById('spotify-album-url');
+    if (spotifyUrl) spotifyUrl.value = '';
     validateAddAlbum();
 }
 
@@ -1733,12 +1735,14 @@ function submitNewAlbum(artistId) {
                 is_main: role ? role.value === 'main' : true,
             });
         });
-        songs.push({
+        var songEntry = {
             name: n,
             is_promoted: songDiv.querySelector('.new-song-promoted') ? songDiv.querySelector('.new-song-promoted').checked : false,
             is_remix: songDiv.querySelector('.new-song-remix') ? songDiv.querySelector('.new-song-remix').checked : false,
             artists: artists,
-        });
+        };
+        if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
+        songs.push(songEntry);
     });
 
     if (!songs.length) { showToast('Add at least one song'); return; }
@@ -2153,4 +2157,41 @@ function setDuplicateOverride(songId, albumId, artistId) {
     }).then(function (r) {
         if (r.ok) { location.reload(); }
     });
+}
+
+function importAlbumFromSpotify(artistId) {
+    var urlInput = document.getElementById('spotify-album-url');
+    var btn = document.getElementById('spotify-album-import-btn');
+    if (!urlInput || !urlInput.value.trim()) return;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    fetch('/edit/spotify-album?url=' + encodeURIComponent(urlInput.value.trim()))
+        .then(function (r) {
+            if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Import failed'); });
+            return r.json();
+        })
+        .then(function (data) {
+            var nameEl = document.getElementById('new-album-name');
+            if (nameEl) nameEl.value = data.name;
+            var dateEl = document.getElementById('new-album-date');
+            if (dateEl) dateEl.value = data.release_date;
+            var typeEl = document.getElementById('new-album-type');
+            if (typeEl) typeEl.value = String(data.album_type_id);
+            // Clear existing songs and add imported tracks
+            _newAlbumSongCount = 0;
+            var songsContainer = document.getElementById('new-album-songs');
+            if (songsContainer) songsContainer.innerHTML = '';
+            data.tracks.forEach(function (track) {
+                addNewAlbumSong(artistId);
+                var songDiv = document.getElementById('new-song-' + _newAlbumSongCount);
+                if (songDiv) {
+                    var nameInput = songDiv.querySelector('.new-album-song-name');
+                    if (nameInput) nameInput.value = track.name;
+                    if (track.spotify_url) songDiv.dataset.spotifyUrl = track.spotify_url;
+                }
+            });
+            validateAddAlbum();
+        })
+        .catch(function (e) { showToast(e.message || 'Spotify import failed'); })
+        .finally(function () { btn.disabled = false; btn.textContent = 'Import'; });
 }

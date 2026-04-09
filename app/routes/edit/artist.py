@@ -573,6 +573,7 @@ def add_artist_submit():
                     submitted_by_id=current_user.id,
                     is_promoted=song_data.get('is_promoted', False),
                     is_remix=song_data.get('is_remix', False),
+                    spotify_url=song_data.get('spotify_url') or None,
                 )
                 db.session.add(song_obj)
                 db.session.flush()
@@ -624,3 +625,21 @@ def add_artist_submit():
                                countries=Country.query.all(),
                                genres=Genre.query.all(),
                                artists=Artist.query.order_by(Artist.name).all()), 422
+
+
+@edit_bp.route('/spotify-artist')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def spotify_artist():
+    """Fetch artist + discography from a Spotify URL for pre-filling the add-artist form."""
+    if not session.get('edit_mode'):
+        abort(403)
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    from app.services.spotify import fetch_artist, SpotifyError
+    try:
+        data = fetch_artist(url)
+    except SpotifyError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify(data)
