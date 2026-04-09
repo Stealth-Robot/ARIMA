@@ -151,12 +151,18 @@ def submissions_for_me():
         joinedload(Submission.resolved_by),
     ).filter(
         Submission.type.in_(['rating', 'note']),
-        Submission.target_user_id == current_user.id,
     )
 
     if status == 'open':
+        query = query.filter(Submission.target_user_id == current_user.id)
         query = query.filter_by(status='open')
     else:
+        query = query.filter(
+            db.or_(
+                Submission.target_user_id == current_user.id,
+                Submission.submitted_by_id == current_user.id,
+            )
+        )
         query = query.filter(Submission.status.in_(['approved', 'rejected']))
 
     if type_filter:
