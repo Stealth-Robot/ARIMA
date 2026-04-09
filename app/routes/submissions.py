@@ -144,7 +144,13 @@ def submissions_debug():
     subs = Submission.query.filter_by(status='open').all()
     rows = []
     for s in subs:
-        rows.append(f'id={s.id} type={s.type} entity={s.entity_id} submitter={s.submitted_by_id} target={s.target_user_id}')
+        rows.append(f'id={s.id} type={s.type} entity={s.entity_id} submitter={s.submitted_by_id}({type(s.submitted_by_id).__name__}) target={s.target_user_id}({type(s.target_user_id).__name__})')
+    rows.append(f'current_user.id={current_user.id}({type(current_user.id).__name__})')
+    # Column types
+    col_info = db.session.execute(db.text("PRAGMA table_info('submission')")).fetchall()
+    rows.append('--- columns ---')
+    for c in col_info:
+        rows.append(f'  {c[1]}: {c[2]}')
     return '<pre>' + '\n'.join(rows) + '</pre>', 200, {'Content-Type': 'text/html'}
 
 
