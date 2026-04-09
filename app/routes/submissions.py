@@ -20,104 +20,118 @@ from app.services.events import publish
 submissions_bp = Blueprint('submissions', __name__)
 
 
-def _entity_name(sub):
-    """Resolve the display name for a submission's entity.
+def _bulk_resolve(submissions):
+    """Batch-load all entities for a list of submissions to avoid N+1 queries."""
+    artist_ids = {s.entity_id for s in submissions if s.type == 'artist'}
+    album_ids = {s.entity_id for s in submissions if s.type == 'album'}
+    song_ids = {s.entity_id for s in submissions if s.type in ('song', 'rating', 'note')}
 
-    Falls back to sub.entity_name (stored at creation time) if entity is deleted.
-    """
+    artists = {a.id: a for a in Artist.query.filter(Artist.id.in_(artist_ids)).all()} if artist_ids else {}
+    albums = {a.id: a for a in Album.query.filter(Album.id.in_(album_ids)).all()} if album_ids else {}
+    songs = {s.id: s for s in Song.query.filter(Song.id.in_(song_ids)).all()} if song_ids else {}
+
+    # Batch-load main artist links for songs
+    all_song_ids = song_ids | {a.id for a in albums.values() if a.artist_id}
+    song_artist_links = {}
+    if song_ids:
+        links = ArtistSong.query.filter(ArtistSong.song_id.in_(song_ids), ArtistSong.artist_is_main == True).all()
+        for link in links:
+            song_artist_links[link.song_id] = link.artist_id
+
+    # Load artists referenced by songs/albums
+    extra_artist_ids = set(song_artist_links.values()) | {a.artist_id for a in albums.values() if a.artist_id}
+    extra_artist_ids -= set(artists.keys())
+    if extra_artist_ids:
+        for a in Artist.query.filter(Artist.id.in_(extra_artist_ids)).all():
+            artists[a.id] = a
+
+    return artists, albums, songs, song_artist_links
+
+
+def _entity_name(sub, cache=None):
+    """Resolve the display name for a submission's entity."""
+    artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
     fallback = sub.entity_name or f'{sub.type} {sub.entity_id}'
     if sub.type == 'artist':
-        entity = db.session.get(Artist, sub.entity_id)
+        entity = artists.get(sub.entity_id)
         return entity.name if entity else fallback
     elif sub.type == 'album':
-        entity = db.session.get(Album, sub.entity_id)
+        entity = albums.get(sub.entity_id)
         return entity.name if entity else fallback
     elif sub.type == 'song':
-        entity = db.session.get(Song, sub.entity_id)
+        entity = songs.get(sub.entity_id)
         return entity.name if entity else fallback
     elif sub.type in ('rating', 'note'):
-        entity = db.session.get(Song, sub.entity_id)
+        entity = songs.get(sub.entity_id)
         song_name = entity.name if entity else fallback
         artist_ctx = ''
         if sub.artist_name:
             artist_ctx = f' ({sub.artist_name})'
         elif entity:
-            link = ArtistSong.query.filter_by(song_id=entity.id, artist_is_main=True).first()
-            if link:
-                artist = db.session.get(Artist, link.artist_id)
-                if artist:
-                    artist_ctx = f' ({artist.name})'
+            artist_id = song_artist_links.get(entity.id)
+            artist = artists.get(artist_id) if artist_id else None
+            if artist:
+                artist_ctx = f' ({artist.name})'
         return f'{song_name}{artist_ctx}'
     return fallback
 
 
-def _entity_url(sub):
+def _entity_url(sub, cache=None):
     """Return a URL to the entity, or None if deleted."""
+    artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
+
+    def _artist_slug_url(artist):
+        if artist and artist.slug:
+            return f'/artists/{artist.slug}'
+        elif artist:
+            return f'/artists/{artist.id}'
+        return None
+
     if sub.type == 'artist':
-        entity = db.session.get(Artist, sub.entity_id)
-        if entity and entity.slug:
-            return f'/artists/{entity.slug}'
-        elif entity:
-            return f'/artists/{entity.id}'
+        return _artist_slug_url(artists.get(sub.entity_id))
     elif sub.type == 'album':
-        entity = db.session.get(Album, sub.entity_id)
+        entity = albums.get(sub.entity_id)
         if entity and entity.artist_id:
-            artist = db.session.get(Artist, entity.artist_id)
+            artist = artists.get(entity.artist_id)
             if artist and artist.slug:
                 return f'/artists/{artist.slug}#album-{entity.id}'
-    elif sub.type == 'song':
-        entity = db.session.get(Song, sub.entity_id)
+    elif sub.type in ('song', 'rating', 'note'):
+        entity = songs.get(sub.entity_id)
         if entity:
-            from app.models.music import ArtistSong
-            link = ArtistSong.query.filter_by(song_id=entity.id, artist_is_main=True).first()
-            if link:
-                artist = db.session.get(Artist, link.artist_id)
-                if artist and artist.slug:
-                    return f'/artists/{artist.slug}#song-{entity.id}'
-    elif sub.type in ('rating', 'note'):
-        entity = db.session.get(Song, sub.entity_id)
-        if entity:
-            from app.models.music import ArtistSong
-            link = ArtistSong.query.filter_by(song_id=entity.id, artist_is_main=True).first()
-            if link:
-                artist = db.session.get(Artist, link.artist_id)
-                if artist and artist.slug:
-                    return f'/artists/{artist.slug}#song-{entity.id}'
+            artist_id = song_artist_links.get(entity.id)
+            artist = artists.get(artist_id) if artist_id else None
+            if artist and artist.slug:
+                return f'/artists/{artist.slug}#song-{entity.id}'
     return None
 
 
-def _resolve_artist_for_submission(sub):
-    """Return (artist_id, artist_name, artist_url) for a submission, or None.
+def _resolve_artist_for_submission(sub, cache=None):
+    """Return (artist_id, artist_name, artist_url) for a submission, or None."""
+    artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
 
-    Tries live DB lookup first. Falls back to stored artist_id/artist_name
-    for deleted entities (history view).
-    """
-    # Try live lookup
+    def _url(artist):
+        return f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
+
     if sub.type == 'artist':
-        artist = db.session.get(Artist, sub.entity_id)
+        artist = artists.get(sub.entity_id)
         if artist:
-            url = f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
-            return artist.id, artist.name, url
+            return artist.id, artist.name, _url(artist)
     elif sub.type == 'album':
-        album = db.session.get(Album, sub.entity_id)
+        album = albums.get(sub.entity_id)
         if album and album.artist_id:
-            artist = db.session.get(Artist, album.artist_id)
+            artist = artists.get(album.artist_id)
             if artist:
-                url = f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
-                return artist.id, artist.name, url
-    elif sub.type == 'song':
-        song = db.session.get(Song, sub.entity_id)
+                return artist.id, artist.name, _url(artist)
+    elif sub.type in ('song', 'rating', 'note'):
+        song = songs.get(sub.entity_id)
         if song:
-            link = ArtistSong.query.filter_by(song_id=song.id, artist_is_main=True).first()
-            if link:
-                artist = db.session.get(Artist, link.artist_id)
-                if artist:
-                    url = f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
-                    return artist.id, artist.name, url
+            artist_id = song_artist_links.get(song.id)
+            artist = artists.get(artist_id) if artist_id else None
+            if artist:
+                return artist.id, artist.name, _url(artist)
 
     # Fallback to stored fields (entity deleted)
     if sub.artist_id and sub.artist_name:
-        # Use negative key so deleted-artist groups don't collide with live artist IDs
         return -sub.artist_id, sub.artist_name, None
 
     return None
@@ -153,10 +167,11 @@ def submissions_for_me():
         query = query.order_by(Submission.resolved_at.desc(), Submission.id.desc())
 
     submissions = query.all()
+    cache = _bulk_resolve(submissions)
 
     for sub in submissions:
-        sub._entity_name = _entity_name(sub)
-        sub._entity_url = _entity_url(sub)
+        sub._entity_name = _entity_name(sub, cache)
+        sub._entity_url = _entity_url(sub, cache)
         is_target = sub.target_user_id == current_user.id
         sub._can_approve = is_target
         sub._can_reject = is_target
@@ -218,13 +233,14 @@ def submissions_page():
         query = query.order_by(Submission.resolved_at.desc(), Submission.id.desc())
 
     submissions = query.all()
+    cache = _bulk_resolve(submissions)
 
     # Attach display info
     is_editor = current_user.is_editor_or_admin
     edit_mode = session.get('edit_mode', False)
     for sub in submissions:
-        sub._entity_name = _entity_name(sub)
-        sub._entity_url = _entity_url(sub)
+        sub._entity_name = _entity_name(sub, cache)
+        sub._entity_url = _entity_url(sub, cache)
         # Data Approvals: requires edit mode + editor/admin except submitter
         can_act = is_editor and edit_mode and (current_user.is_admin or sub.submitted_by_id != current_user.id)
         sub._can_approve = can_act
@@ -246,7 +262,7 @@ def submissions_page():
                 ungrouped.append(sub)
                 continue
 
-            artist_info = _resolve_artist_for_submission(sub)
+            artist_info = _resolve_artist_for_submission(sub, cache)
             if not artist_info:
                 ungrouped.append(sub)
                 continue
