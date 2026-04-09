@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, request, abort
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist
+from app.models.not_duplicate import NotDuplicate
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 views_bp = Blueprint('views', __name__)
@@ -311,7 +312,7 @@ def view_potential_duplicates():
     for song_id, song_name, is_remix, artist_name, artist_slug, album_name in rows:
         key = song_name.lower()
         if key not in groups:
-            groups[key] = {'name': song_name, 'songs': []}
+            groups[key] = {'name': song_name, 'songs': [], 'pairs': []}
         existing = next((s for s in groups[key]['songs'] if s['id'] == song_id), None)
         if existing:
             if album_name and album_name not in existing['albums']:
@@ -326,8 +327,44 @@ def view_potential_duplicates():
                 'albums': [album_name] if album_name else [],
             })
 
-    sorted_groups = sorted(groups.values(), key=lambda g: g['name'].lower())
-    return render_template('fragments/view_duplicates.html', groups=sorted_groups)
+    # Load dismissed pairs
+    dismissed = {(r.song_id_1, r.song_id_2) for r in NotDuplicate.query.all()}
+
+    # Split into pairs (2 songs each), filtering dismissed
+    pair_groups = []
+    for group in groups.values():
+        song_list = group['songs']
+        for i in range(len(song_list)):
+            for j in range(i + 1, len(song_list)):
+                a, b = song_list[i], song_list[j]
+                lo, hi = min(a['id'], b['id']), max(a['id'], b['id'])
+                if (lo, hi) not in dismissed:
+                    pair_groups.append({
+                        'name': group['name'],
+                        'songs': [a, b],
+                        'id_lo': lo,
+                        'id_hi': hi,
+                    })
+
+    pair_groups.sort(key=lambda g: g['name'].lower())
+    return render_template('fragments/view_duplicates.html', groups=pair_groups)
+
+
+@views_bp.route('/views/not-duplicate', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def mark_not_duplicate():
+    """Mark a pair of songs as not duplicates."""
+    song_id_1 = request.form.get('song_id_1', type=int)
+    song_id_2 = request.form.get('song_id_2', type=int)
+    if not song_id_1 or not song_id_2 or song_id_1 == song_id_2:
+        abort(400)
+    lo, hi = min(song_id_1, song_id_2), max(song_id_1, song_id_2)
+    existing = NotDuplicate.query.get((lo, hi))
+    if not existing:
+        db.session.add(NotDuplicate(song_id_1=lo, song_id_2=hi))
+        db.session.commit()
+    return '', 204
 
 
 @views_bp.route('/views/incomplete-tabs')

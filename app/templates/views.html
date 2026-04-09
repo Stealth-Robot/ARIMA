@@ -116,5 +116,18 @@ function deleteOrphanAlbum(albumId, span) {
 </script>
 {% with password_required=false %}{% include "fragments/confirm_modal.html" %}{% endwith %}
 <script>
+function dismissDuplicate(id1, id2, btn) {
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    fetch('/views/not-duplicate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+        body: 'song_id_1=' + id1 + '&song_id_2=' + id2,
+    }).then(function(r) {
+        if (r.ok) {
+            var group = document.getElementById('dup-group-' + id1 + '-' + id2);
+            if (group) group.remove();
+        }
+    });
+}
 </script>
 {% endblock %}
