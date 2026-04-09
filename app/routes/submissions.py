@@ -173,8 +173,9 @@ def submissions_for_me():
         sub._entity_name = _entity_name(sub, cache)
         sub._entity_url = _entity_url(sub, cache)
         is_target = sub.target_user_id == current_user.id
-        sub._can_approve = is_target
-        sub._can_reject = is_target
+        not_submitter = sub.submitted_by_id != current_user.id
+        sub._can_approve = is_target and not_submitter
+        sub._can_reject = is_target and not_submitter
 
     if request.headers.get('HX-Request'):
         return render_template('fragments/submissions_list.html',
@@ -189,7 +190,7 @@ def submissions_for_me():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def submissions_page():
-    """Data Approvals page — entity submissions for editors/admins."""
+    """Data Approvals page — song/album/artist submissions for editors/admins."""
     status = request.args.get('status', 'open')
     type_filter = request.args.get('type', '')
     search = request.args.get('q', '').strip()
@@ -236,13 +237,11 @@ def submissions_page():
     cache = _bulk_resolve(submissions)
 
     # Attach display info
-    is_editor = current_user.is_editor_or_admin
-    edit_mode = session.get('edit_mode', False)
     for sub in submissions:
         sub._entity_name = _entity_name(sub, cache)
         sub._entity_url = _entity_url(sub, cache)
-        # Data Approvals: requires edit mode + editor/admin except submitter
-        can_act = is_editor and edit_mode and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+        # Any user can approve/reject except their own submissions
+        can_act = sub.submitted_by_id != current_user.id
         sub._can_approve = can_act
         sub._can_reject = can_act
 
@@ -288,16 +287,19 @@ def submissions_page():
                 song_subs.append((sub, artist_id))
 
         # Second pass: attach songs to their album groups
+        # Batch-load album links for all song submissions
+        song_sub_ids = {sub.entity_id for sub, _ in song_subs}
+        all_album_links = {}
+        if song_sub_ids:
+            for row in AlbumSong.query.filter(AlbumSong.song_id.in_(song_sub_ids)).all():
+                all_album_links.setdefault(row.song_id, set()).add(row.album_id)
+
         for sub, artist_id in song_subs:
             placed = False
             if artist_id in groups:
-                song_obj = db.session.get(Song, sub.entity_id)
-                if song_obj:
-                    song_album_ids = {r.album_id for r in AlbumSong.query.filter_by(song_id=song_obj.id).all()}
-                elif sub.album_id:
+                song_album_ids = all_album_links.get(sub.entity_id, set())
+                if not song_album_ids and sub.album_id:
                     song_album_ids = {sub.album_id}
-                else:
-                    song_album_ids = set()
 
                 for child in groups[artist_id]['children']:
                     if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
@@ -429,16 +431,15 @@ def approve(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Target user can always act on their own rating/note submissions
-    # Editors need edit mode to act on Data Approvals
-    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id
-    is_editor_allowed = current_user.is_editor_or_admin and session.get('edit_mode') and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+    # Target user can approve their own rating/note submissions (unless they submitted it)
+    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id and sub.submitted_by_id != current_user.id
+    # Editors can approve any submission except their own
+    is_editor_allowed = current_user.is_editor_or_admin and sub.submitted_by_id != current_user.id
     if not is_target and not is_editor_allowed:
         abort(403)
     _mark_approved(sub, current_user)
 
-    # Bulk-approve additional related submissions (validated against actual related set)
-    # Only editors in edit mode can bulk-approve related items
+    # Bulk-approve additional related submissions
     also_approve = request.form.getlist('also_approve')
     if also_approve and is_editor_allowed:
         allowed = {s.id for s in _get_related_open_submissions(sub)}
@@ -461,12 +462,12 @@ def reject(sub_id):
     sub = db.session.get(Submission, sub_id)
     if not sub or sub.status != 'open':
         abort(404)
-    # Target user can always act on their own rating/note submissions
-    # Editors need edit mode to act on Data Approvals
-    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id
-    is_editor_allowed = current_user.is_editor_or_admin and session.get('edit_mode') and (current_user.is_admin or sub.submitted_by_id != current_user.id)
+    # Target user can reject their own rating/note submissions (unless they submitted it)
+    is_target = sub.type in ('rating', 'note') and sub.target_user_id == current_user.id and sub.submitted_by_id != current_user.id
+    # Editors can reject any submission except their own
+    is_editor_allowed = current_user.is_editor_or_admin and sub.submitted_by_id != current_user.id
     if not is_target and not is_editor_allowed:
-            abort(403)
+        abort(403)
 
     reason = request.form.get('reason', '').strip()
     if not reason:
@@ -497,7 +498,7 @@ def reject(sub_id):
 
 @submissions_bp.route('/submissions/<int:sub_id>/cascade-preview')
 @login_required
-@role_required(EDITOR_OR_ADMIN)
+@role_required(USER_OR_ABOVE)
 def cascade_preview(sub_id):
     """Return cascade preview data for entity rejection modal."""
     sub = db.session.get(Submission, sub_id)
