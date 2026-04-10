@@ -170,7 +170,28 @@ def get_filtered_navbar():
         genre_id = session.get('genre')
 
     if country_id is not None:
-        artists = [a for a in artists if a.country_id == country_id or a.name == 'Misc. Artists']
+        # Include parent artists if any of their children match the country
+        artist_ids = {a.id for a in artists}
+        child_rels = ArtistArtist.query.filter(ArtistArtist.artist_1.in_(artist_ids)).all()
+        child_ids_by_parent = {}
+        for rel in child_rels:
+            child_ids_by_parent.setdefault(rel.artist_1, []).append(rel.artist_2)
+        from app.models.music import Artist as ArtistModel
+        child_country = {}
+        all_child_ids = [cid for cids in child_ids_by_parent.values() for cid in cids]
+        if all_child_ids:
+            for row in db.session.query(ArtistModel.id, ArtistModel.country_id).filter(ArtistModel.id.in_(all_child_ids)).all():
+                child_country[row[0]] = row[1]
+        def matches_country(a):
+            if a.name == 'Misc. Artists':
+                return True
+            if a.country_id == country_id:
+                return True
+            for cid in child_ids_by_parent.get(a.id, []):
+                if child_country.get(cid) == country_id:
+                    return True
+            return False
+        artists = [a for a in artists if matches_country(a)]
 
     if genre_id is not None:
         # Single query: find all artist IDs that have at least one song in an album with this genre

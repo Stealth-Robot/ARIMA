@@ -121,10 +121,17 @@ def _render_artist(artist, htmx=False, push_url=None):
     # Detect soloist parent (for display on the soloist's own page)
     soloist_parent = get_soloist_parent(artist_id)
 
-    # Build child sections
+    # Build child sections (filtered by active country filter)
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        active_country = current_user.settings.country
+    else:
+        active_country = session.get('country')
+
     children_sections = []
     soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
+        if active_country is not None and child.country_id != active_country:
+            continue
         child_disco = _build_discography(child)
         children_sections.append({
             'artist': child,
