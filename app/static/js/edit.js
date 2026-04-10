@@ -815,6 +815,7 @@ function showAlbumArtistMove(event, albumId, sourceArtistId, span) {
     var allArtists = (typeof _allArtists !== 'undefined') ? _allArtists : [];
     var others = allArtists.filter(function(a) { return a.id !== sourceArtistId; });
     if (!others.length) {
+        closeAlbumArtistMovePopover();
         showToast('No other artists available');
         return;
     }

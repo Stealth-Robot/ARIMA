@@ -42,12 +42,13 @@ def song_is_remix(song_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
-    song.is_remix = not song.is_remix
+    val = request.form.get('checked')
+    song.is_remix = (val == 'true') if val is not None else (not song.is_remix)
     label = 'Marked' if song.is_remix else 'Unmarked'
     log_change(current_user, f'{label} "{song.name}" song as remix', song=song)
     db.session.commit()
     checked = 'checked' if song.is_remix else ''
-    return f'<input type="checkbox" {checked} hx-post="/edit/song/{song_id}/is-remix" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
+    return f'<input type="checkbox" {checked} hx-post="/edit/song/{song_id}/is-remix" hx-vals="js:{{checked: event.target.checked ? \'true\' : \'false\'}}" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
 
 
 @edit_bp.route('/song/<int:song_id>/is-promoted', methods=['POST'])
@@ -58,12 +59,14 @@ def song_is_promoted(song_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
-    song.is_promoted = not song.is_promoted
+    # Use explicit value from form if provided, otherwise toggle
+    val = request.form.get('checked')
+    song.is_promoted = (val == 'true') if val is not None else (not song.is_promoted)
     label = 'Marked' if song.is_promoted else 'Unmarked'
     log_change(current_user, f'{label} "{song.name}" song as promoted', song=song)
     db.session.commit()
     checked = 'checked' if song.is_promoted else ''
-    return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
+    return f'<input type="checkbox" {checked} onchange="updatePromotedStyle(this)" hx-post="/edit/song/{song_id}/is-promoted" hx-vals="js:{{checked: event.target.checked ? \'true\' : \'false\'}}" hx-trigger="change" hx-swap="outerHTML" hx-target="this">'
 
 
 @edit_bp.route('/song/<int:song_id>/note', methods=['POST'])
@@ -398,6 +401,7 @@ def split_song(song_id):
 
     album = db.session.get(Album, album_id)
     album_name = album.name if album else '?'
+    db.session.commit()
     log_change(current_user, f'Split "{song.name}" in "{album_name}" into new song (id {clone.id})', song=clone)
     db.session.commit()
 

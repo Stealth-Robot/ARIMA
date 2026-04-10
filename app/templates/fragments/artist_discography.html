@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
             <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
                 <input type="checkbox" {% if song.is_remix %}checked{% endif %}
                        hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-vals="js:{checked: event.target.checked ? 'true' : 'false'}"
                        hx-trigger="change"
                        hx-swap="outerHTML"
                        hx-target="this">
@@ -289,6 +290,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
                        onchange="updatePromotedStyle(this)"
                        hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-vals="js:{checked: event.target.checked ? 'true' : 'false'}"
                        hx-trigger="change"
                        hx-swap="outerHTML"
                        hx-target="this">
@@ -437,6 +439,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
             <td class="text-center px-1 py-1" style="border: 1px solid var(--grid-line);">
                 <input type="checkbox" {% if song.is_remix %}checked{% endif %}
                        hx-post="/edit/song/{{ song.id }}/is-remix"
+                       hx-vals="js:{checked: event.target.checked ? 'true' : 'false'}"
                        hx-trigger="change"
                        hx-swap="outerHTML"
                        hx-target="this">
@@ -445,6 +448,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 <input type="checkbox" {% if song.is_promoted %}checked{% endif %}
                        onchange="updatePromotedStyle(this)"
                        hx-post="/edit/song/{{ song.id }}/is-promoted"
+                       hx-vals="js:{checked: event.target.checked ? 'true' : 'false'}"
                        hx-trigger="change"
                        hx-swap="outerHTML"
                        hx-target="this">

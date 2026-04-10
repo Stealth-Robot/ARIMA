@@ -137,7 +137,7 @@ def album_move_artist(album_id):
         existing = db.session.get(ArtistSong, (target_id, sid))
         if not existing:
             db.session.add(ArtistSong(artist_id=target_id, song_id=sid, artist_is_main=was_main))
-        moved += 1
+            moved += 1
 
     log_change(current_user,
                f'Moved {moved} songs in "{album.name}" from "{source.name}" to "{target.name}"',
