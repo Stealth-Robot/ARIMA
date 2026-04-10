@@ -670,51 +670,54 @@ window.addEventListener('beforeunload', function(e) {
 
 function validateForm() {
     var btn = document.getElementById('submit-btn');
-    var valid = true;
+    var reasons = [];
 
     // Artist name, gender, country
-    if (!document.getElementById('artist_name').value.trim()) valid = false;
-    if (!document.querySelector('[name="gender_id"]').value) valid = false;
-    if (!document.querySelector('[name="country_id"]').value) valid = false;
+    if (!document.getElementById('artist_name').value.trim()) reasons.push('Artist name is required');
+    if (!document.querySelector('[name="gender_id"]').value) reasons.push('Gender is required');
+    if (!document.querySelector('[name="country_id"]').value) reasons.push('Country is required');
 
     // At least one album
     var albums = document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]');
-    if (!albums.length) valid = false;
+    if (!albums.length) reasons.push('At least one album is required');
 
     albums.forEach(function(albumDiv) {
         if (albumDiv.dataset.existingAlbumId) return;
         var num = albumDiv.id.split('-')[1];
+        var label = 'Album ' + num;
         // Album name required
         var nameInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="name"]');
-        if (!nameInput || !nameInput.value.trim()) valid = false;
+        if (!nameInput || !nameInput.value.trim()) reasons.push(label + ': name is required');
         // Release date required
         var dateInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="release_date"]');
-        if (!dateInput || !dateInput.value) valid = false;
+        if (!dateInput || !dateInput.value) reasons.push(label + ': release date is required');
         // At least one genre checked
         var genreChecked = albumDiv.querySelectorAll('[data-album="' + num + '"][data-genre]:checked');
-        if (!genreChecked.length) valid = false;
+        if (!genreChecked.length) reasons.push(label + ': at least one genre is required');
         // At least one song
         var songs = albumDiv.querySelectorAll('[id^="song-' + num + '-"]');
-        if (!songs.length) valid = false;
+        if (!songs.length) reasons.push(label + ': at least one song is required');
         // Each song needs a name and at least one main artist (unless it's an existing song)
         songs.forEach(function(songDiv) {
             var sNum = songDiv.id.split('-')[2];
             var songName = songDiv.querySelector('[data-song="' + sNum + '"][data-field="name"]');
-            if (!songName || !songName.value.trim()) valid = false;
+            if (!songName || !songName.value.trim()) reasons.push(label + ' song ' + sNum + ': name is required');
             if (!songDiv.dataset.existingSongId) {
                 var hasMain = false;
                 songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
                     var role = row.querySelector('.song-artist-role');
                     if (role && role.value === 'main') hasMain = true;
                 });
-                if (!hasMain) valid = false;
+                if (!hasMain) reasons.push(label + ' song ' + sNum + ': needs a main artist');
             }
         });
     });
 
+    var valid = reasons.length === 0;
     btn.disabled = !valid;
     btn.style.opacity = valid ? '1' : '0.5';
     btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+    btn.title = valid ? '' : reasons.join('\n');
 }
 
 // Event delegation: validate on any input/change/click inside the form
