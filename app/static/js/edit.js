@@ -159,11 +159,13 @@ function showInlineEdit(event, endpoint, span) {
 
     span.replaceWith(input);
     var settled = false;
+    var submitted = false;
     setTimeout(function() { settled = true; }, 300);
     input.focus();
     input.select();
 
     function commit() {
+        submitted = true;
         const val = input.value.trim();
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
@@ -202,7 +204,7 @@ function showInlineEdit(event, endpoint, span) {
 
     input.addEventListener('blur', function() {
         setTimeout(function() {
-            if (settled && document.activeElement !== input) restore();
+            if (settled && !submitted && document.activeElement !== input) restore();
         }, 200);
     });
 }
@@ -279,7 +281,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
 
     input.addEventListener('blur', function() {
         setTimeout(function() {
-            if (document.activeElement !== input) restore();
+            if (!committed && document.activeElement !== input) restore();
         }, 300);
     });
 }
