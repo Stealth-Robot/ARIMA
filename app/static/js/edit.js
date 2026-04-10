@@ -646,10 +646,16 @@ function _createSearchPopover(opts) {
     document.body.appendChild(popover);
     var zoom = parseFloat(document.documentElement.style.zoom) || 1;
     var viewH = window.innerHeight / zoom;
-    if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
-        popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
-    } else {
+    var pH = parseInt(opts.maxHeight || '320', 10);
+    if (rect.bottom + 2 + pH <= viewH) {
+        // Fits below anchor
         popover.style.top = rect.bottom + 2 + 'px';
+    } else if (rect.top - 2 - pH >= 0) {
+        // Fits above anchor
+        popover.style.top = (rect.top - 2 - pH) + 'px';
+    } else {
+        // Doesn't fit either way — pin to bottom of viewport
+        popover.style.top = Math.max(0, viewH - pH - 10) + 'px';
     }
     searchInput.focus();
 
