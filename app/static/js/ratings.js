@@ -134,7 +134,7 @@ function showRatingInput(event, songId, targetUserId) {
     input.select();
     const gen = ++inputGeneration;
     let submitted = false;
-    activeInput = { input, cell };
+    activeInput = { input, cell, submit: function() { doSubmit(); } };
 
     function doSubmit() {
         if (submitted) return;
@@ -148,13 +148,6 @@ function showRatingInput(event, songId, targetUserId) {
             cancelRating(cell);
         }
     }
-
-    // Auto-save immediately when a valid digit is typed
-    input.addEventListener('input', () => {
-        if (/^[0-5]$/.test(input.value)) {
-            doSubmit();
-        }
-    });
 
     // Key handlers — navigate (submit first if not already saved)
     input.addEventListener('keydown', (e) => {
@@ -250,9 +243,13 @@ function cancelRating(cell) {
 
 function closeRatingInput() {
     if (activeInput) {
-        cancelRating(activeInput.cell);
+        activeInput.submit();
     }
 }
+
+window.addEventListener('beforeunload', function() {
+    if (activeInput) activeInput.submit();
+});
 
 /* Note overlay — right-click or N key to add/edit notes */
 
