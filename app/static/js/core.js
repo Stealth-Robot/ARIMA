@@ -482,6 +482,8 @@ function _setupDateGuide(input, pattern) {
 }
 
 function applyDateFormat(input) {
+    if (input._dateFormatApplied) return;
+    input._dateFormatApplied = true;
     input.type = 'text';
     input.placeholder = 'yyyy-mm-dd';
     input.maxLength = 10;
@@ -518,6 +520,8 @@ function applyDateFormat(input) {
  * Apply yyyy-mm-dd hh:mm auto-formatting to a text input.
  */
 function applyDateTimeFormat(input) {
+    if (input._dateFormatApplied) return;
+    input._dateFormatApplied = true;
     input.type = 'text';
     input.placeholder = 'YYYY-MM-DD HH:MM';
     input.maxLength = 16;
@@ -561,11 +565,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* HTMX after-settle handlers */
 document.addEventListener('htmx:afterSettle', function(e) {
-    e.detail.elt.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
-    formatUtcDates(e.detail.elt);
+    var root = e.detail.target || e.detail.elt;
+    root.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+    root.querySelectorAll('[data-datetime-format]').forEach(applyDateTimeFormat);
+    formatUtcDates(root);
 
     // Update artist navbar active indicator after HTMX navigation
-    var header = e.detail.elt.querySelector('[data-current-artist-id]');
+    var header = root.querySelector('[data-current-artist-id]');
     if (header) {
         var activeId = header.dataset.currentArtistId;
         document.querySelectorAll('[data-artist-id]').forEach(function(link) {

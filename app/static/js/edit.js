@@ -1554,7 +1554,7 @@ function resetAddAlbumModal() {
     var name = document.getElementById('new-album-name');
     if (name) name.value = '';
     var date = document.getElementById('new-album-date');
-    if (date) date.value = '';
+    if (date) { date.value = ''; date.dispatchEvent(new Event('input', {bubbles: true})); }
     var type = document.getElementById('new-album-type');
     if (type) type.selectedIndex = 0;
     document.querySelectorAll('#new-album-genres input').forEach(function(cb) { cb.checked = false; });
@@ -1773,12 +1773,14 @@ function submitNewAlbum(artistId) {
     });
 }
 
-// Validate add-album modal on any input/change inside it
-var _addAlbumModal = document.getElementById('add-album-modal');
-if (_addAlbumModal) {
-    _addAlbumModal.addEventListener('input', validateAddAlbum);
-    _addAlbumModal.addEventListener('change', validateAddAlbum);
-}
+// Validate add-album modal on any input/change inside it (event delegation
+// so it works even when the modal is loaded later via HTMX)
+document.addEventListener('input', function(e) {
+    if (e.target.closest('#add-album-modal')) validateAddAlbum();
+});
+document.addEventListener('change', function(e) {
+    if (e.target.closest('#add-album-modal')) validateAddAlbum();
+});
 
 /* Search existing songs for add-album modal */
 
@@ -2174,7 +2176,7 @@ function importAlbumFromSpotify(artistId) {
             var nameEl = document.getElementById('new-album-name');
             if (nameEl) nameEl.value = data.name;
             var dateEl = document.getElementById('new-album-date');
-            if (dateEl) dateEl.value = data.release_date;
+            if (dateEl) { dateEl.value = data.release_date; dateEl.dispatchEvent(new Event('input', {bubbles: true})); }
             var typeEl = document.getElementById('new-album-type');
             if (typeEl) typeEl.value = String(data.album_type_id);
             // Clear existing songs and add imported tracks
