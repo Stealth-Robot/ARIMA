@@ -42,7 +42,7 @@ def _get_token():
     return _access_token
 
 
-def _api_get(path_or_url):
+def _api_get(path_or_url, _retries=3):
     """GET from Spotify API with auth header. Accepts a path or full URL."""
     token = _get_token()
     url = path_or_url if path_or_url.startswith('http') else f'{_BASE}{path_or_url}'
@@ -51,6 +51,10 @@ def _api_get(path_or_url):
                         timeout=15)
     if resp.status_code == 404:
         raise SpotifyError('Not found on Spotify')
+    if resp.status_code == 429 and _retries > 0:
+        wait = int(resp.headers.get('Retry-After', 2))
+        time.sleep(min(wait, 10))
+        return _api_get(path_or_url, _retries=_retries - 1)
     if resp.status_code != 200:
         raise SpotifyError(f'Spotify API error: {resp.status_code}')
     return resp.json()
