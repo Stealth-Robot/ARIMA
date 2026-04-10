@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
 <p style="color: var(--text-secondary);">No albums found.</p>
 {% else %}
 
-<div style="margin: 0 auto; max-width: fit-content; display: flex; gap: 12px; align-items: flex-start;">
+<div class="discography-scroll-wrapper" style="margin: 0 auto; max-width: fit-content;">
+<div style="display: flex; gap: 12px; align-items: flex-start;">
 <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line); margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
     <!-- Sticky header -->
     <thead>
@@ -547,6 +548,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
         </tbody>
     </table>
     {% endif %}
+</div>
 </div>
 </div>
 {% endif %}

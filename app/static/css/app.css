@@ -280,3 +280,57 @@ textarea {
 .duplicate-tag:hover .duplicate-tooltip {
     display: block;
 }
+
+/* ── Mobile responsive ── */
+.nav-spacer { display: none; }
+
+@media (max-width: 768px) {
+    .nav-spacer { display: block !important; }
+    html { zoom: 1 !important; }
+
+    /* Discography table: horizontal scroll on mobile */
+    .discography-scroll-wrapper {
+        max-width: 100% !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Discography table: sticky song name column */
+    .song-name-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: var(--bg-primary);
+    }
+    tr:nth-child(even) .song-name-cell {
+        background-color: var(--row-alternate, var(--bg-primary));
+    }
+
+    /* Top navbar: collapse to essentials */
+    .mobile-hide { display: none !important; }
+    #mobile-menu-wrapper { display: flex !important; }
+    .search-label { display: none; }
+    #search-trigger { font-size: 16px !important; padding: 4px 10px !important; }
+
+    /* Adjust content offset for taller mobile navbar */
+    #main-content { padding-top: 52px !important; }
+    thead tr[style*="sticky"] { top: 52px !important; }
+
+    nav { gap: 10px !important; font-size: 16px !important; height: 52px !important; }
+
+    /* Artist bottom bar: bigger touch targets */
+    .artist-nav a {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    #hamburger-btn {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Rating cells: bigger font on mobile */
+    table.text-xs td { font-size: 14px; }
+}

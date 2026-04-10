@@ -53,9 +53,10 @@
                 gap: 10px; padding: 0 12px; overflow: visible;
                 white-space: nowrap; font-size: 15px;">
         <a href="{{ url_for('home.home') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'home.home' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Home</a>
-        <div style="flex-shrink: 0; position: relative;"
+        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.stats-dd').style.display='block'"
-             onmouseleave="this.querySelector('.stats-dd').style.display='none'">
+             onmouseleave="this.querySelector('.stats-dd').style.display='none'"
+             onclick="var d=this.querySelector('.stats-dd');d.style.display=d.style.display==='block'?'none':'block'">
             <a href="{{ url_for('stats.global_stats') }}" style="color:var(--navbar-text); text-decoration:none;
                          {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</a>
             <div class="stats-dd" style="display:none; position:absolute; top:100%; left:0;
@@ -70,9 +71,10 @@
             </div>
         </div>
         <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
-        <div style="flex-shrink: 0; position: relative;"
+        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.changelog-dd').style.display='block'"
-             onmouseleave="this.querySelector('.changelog-dd').style.display='none'">
+             onmouseleave="this.querySelector('.changelog-dd').style.display='none'"
+             onclick="var d=this.querySelector('.changelog-dd');d.style.display=d.style.display==='block'?'none':'block'">
             <a href="{{ url_for('changelog.changelog') }}" style="color:var(--navbar-text); text-decoration:none;
                          {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
             <div class="changelog-dd" style="display:none; position:absolute; top:100%; left:0;
@@ -85,9 +87,10 @@
             </div>
         </div>
         {% if current_user.is_authenticated and current_user.can_rate %}
-        <div style="flex-shrink: 0; position: relative;"
+        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
              onmouseenter="this.querySelector('.submissions-dd').style.display='block'"
-             onmouseleave="this.querySelector('.submissions-dd').style.display='none'">
+             onmouseleave="this.querySelector('.submissions-dd').style.display='none'"
+             onclick="var d=this.querySelector('.submissions-dd');d.style.display=d.style.display==='block'?'none':'block'">
             <a href="{{ url_for('submissions.submissions_for_me') }}" style="color:var(--navbar-text); text-decoration:none;
                          {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
             <div class="submissions-dd" style="display:none; position:absolute; top:100%; left:0;
@@ -102,13 +105,14 @@
             </div>
         </div>
         {% endif %}
-        <a href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
+        <a class="mobile-hide" href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
-        <a href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
+        <a class="mobile-hide" href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
+        <a class="mobile-hide" href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
         {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+        <span class="nav-spacer" style="flex:1;"></span>
         <form id="rating-mode-form" method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" style="display:inline; margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="rating-mode-btn" type="submit"
@@ -127,26 +131,99 @@
                 &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
             </button>
         </form>
+        <span class="nav-spacer" style="flex:1;"></span>
         {% if session.get('edit_mode') %}
-        <a id="add-artist-link" href="{{ url_for('edit.add_artist_form') }}"
+        <a id="add-artist-link" class="mobile-hide" href="{{ url_for('edit.add_artist_form') }}"
            style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
                   background:var(--edit-on-button); color:var(--button-text); text-decoration:none;">
             + Artist
         </a>
-        <a id="views-link" href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
+        <a id="views-link" class="mobile-hide" href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
         {% endif %}
         {% endif %}
 
         <!-- Search trigger (compact in navbar) -->
+        <!-- Mobile menu button (hidden on desktop) -->
+        <div id="mobile-menu-wrapper" style="display:none; flex-shrink:0; position:relative; margin-left:auto;">
+            <button onclick="var m=document.getElementById('mobile-menu-panel');m.style.display=m.style.display==='block'?'none':'block'" type="button"
+                    style="background:none; border:1px solid var(--border); color:var(--navbar-text); font-size:18px; padding:2px 8px; border-radius:3px; cursor:pointer;">&#9776;</button>
+            <div id="mobile-menu-panel" style="display:none; position:absolute; top:100%; right:0; margin-top:4px;
+                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:6px;
+                        box-shadow:0 4px 16px rgba(0,0,0,0.4); z-index:60; min-width:200px; padding:8px 0;">
+                <a href="{{ url_for('stats.artist_stats') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Artist Stats</a>
+                <a href="{{ url_for('stats.global_stats') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Update Stats</a>
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <a href="{{ url_for('changelog.changelog') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Updates</a>
+                <a href="{{ url_for('rules.rules') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Rules</a>
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <a href="{{ url_for('users.user_list') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Users</a>
+                <a href="{{ url_for('admin.admin_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Admin</a>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.can_rate %}
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <a href="{{ url_for('submissions.submissions_for_me') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Submissions</a>
+                {% if current_user.is_editor_or_admin %}
+                <a href="{{ url_for('submissions.submissions_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Data Approvals</a>
+                {% endif %}
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <form method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" style="display:block; width:100%; text-align:left; padding:10px 16px; color:var(--navbar-text); font-size:15px; background:none; border:none; cursor:pointer;">
+                        Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" style="display:block; width:100%; text-align:left; padding:10px 16px; color:var(--navbar-text); font-size:15px; background:none; border:none; cursor:pointer;">
+                        Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <div style="padding:8px 16px;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Country</label>
+                    <select onchange="this.form.submit()" form="mobile-country-form" name="country"
+                            style="width:100%; padding:6px 8px; font-size:14px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px;">
+                        <option value="">All</option>
+                        {% for c in countries %}
+                        <option value="{{ c.id }}" {% if current_country == c.id %}selected{% endif %}>{{ c.country }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="padding:4px 16px 8px;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Genre</label>
+                    <select onchange="this.form.submit()" form="mobile-genre-form" name="genre"
+                            style="width:100%; padding:6px 8px; font-size:14px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px;">
+                        <option value="">All</option>
+                        {% for g in genres %}
+                        <option value="{{ g.id }}" {% if current_genre == g.id %}selected{% endif %}>{{ g.genre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <form id="mobile-country-form" method="POST" action="{{ url_for('profile.update_settings') }}" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+                <form id="mobile-genre-form" method="POST" action="{{ url_for('profile.update_settings') }}" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+                {% if current_user.is_authenticated %}
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <a href="{{ url_for('profile.profile') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Profile</a>
+                <a href="{{ url_for('auth.logout') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+
         <button id="search-trigger" onclick="openSearchOverlay()"
                 style="flex-shrink: 0; margin-left: auto; background: none; border: 1px solid var(--border);
                        color: var(--navbar-text); font-size: 13px; padding: 2px 8px;
-                       border-radius: 3px; cursor: pointer;">&#128269; Search</button>
+                       border-radius: 3px; cursor: pointer;">&#128269; <span class="search-label">Search</span></button>
 
         <!-- Right: Filters + Profile -->
         <div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
             <!-- Country filter -->
-            <select name="country"
+            <select class="mobile-hide" name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
                     hx-on::after-request="if(event.detail.successful) window.location.reload()"
@@ -160,7 +237,7 @@
             </select>
 
             <!-- Genre filter -->
-            <select name="genre"
+            <select class="mobile-hide" name="genre"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
                     hx-on::after-request="if(event.detail.successful) window.location.reload()"
@@ -180,9 +257,9 @@
                      referrerpolicy="no-referrer"
                      onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
                      style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
-                {{ current_user.username }}
+                <span class="mobile-hide">{{ current_user.username }}</span>
             </a>
-            <a href="{{ url_for('auth.logout') }}" class="hover:opacity-80" style="color: var(--navbar-text);">
+            <a href="{{ url_for('auth.logout') }}" class="mobile-hide hover:opacity-80" style="color: var(--navbar-text);">
                 Logout
             </a>
             {% endif %}
@@ -271,6 +348,17 @@
         var _hb = document.getElementById('hamburger-btn');
         if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:22px; height:22px; border-radius:2px;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
     }
+    </script>
+    <script>
+    // Close navbar dropdowns and mobile menu when tapping elsewhere
+    document.addEventListener('click', function(e) {
+        document.querySelectorAll('.stats-dd, .changelog-dd, .submissions-dd').forEach(function(dd) {
+            if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
+        });
+        var mp = document.getElementById('mobile-menu-panel');
+        var mw = document.getElementById('mobile-menu-wrapper');
+        if (mp && mw && !mw.contains(e.target)) mp.style.display = 'none';
+    });
     </script>
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
