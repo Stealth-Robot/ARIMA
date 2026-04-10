@@ -1,5 +1,6 @@
 import json
 import re
+import time
 import logging
 from datetime import datetime, timezone
 
@@ -629,6 +630,15 @@ def add_artist_submit():
 
 _import_jobs = {}
 _import_cancels = {}
+_JOB_TTL = 300  # 5 minutes
+
+
+def _sweep_old_jobs():
+    """Evict import jobs older than _JOB_TTL seconds."""
+    now = time.time()
+    stale = [k for k, v in _import_jobs.items() if now - v.get('_ts', 0) > _JOB_TTL]
+    for k in stale:
+        _import_jobs.pop(k, None)
 
 
 @edit_bp.route('/spotify-artist', methods=['POST'])
@@ -645,6 +655,8 @@ def spotify_artist_start():
     import uuid
     import threading
 
+    _sweep_old_jobs()
+
     # Cancel any existing import for this user
     user_id = current_user.id
     old_cancel = _import_cancels.pop(user_id, None)
@@ -654,20 +666,22 @@ def spotify_artist_start():
     job_id = uuid.uuid4().hex[:12]
     cancel = threading.Event()
     _import_cancels[user_id] = cancel
-    _import_jobs[job_id] = {'progress': 'Connecting to Spotify...', 'percent': 0}
+    _import_jobs[job_id] = {'progress': 'Connecting to Spotify...', 'percent': 0, '_ts': time.time()}
 
     def on_progress(msg, pct):
-        _import_jobs[job_id] = {'progress': msg, 'percent': pct}
+        _import_jobs[job_id] = {'progress': msg, 'percent': pct, '_ts': time.time()}
 
     def run():
         try:
             data = fetch_artist(url, on_progress=on_progress, cancel=cancel)
-            _import_jobs[job_id] = {'done': True, 'data': data}
+            _import_jobs[job_id] = {'done': True, 'data': data, '_ts': time.time()}
         except Exception as e:
             if not cancel.is_set():
-                _import_jobs[job_id] = {'error': str(e) or 'Import failed unexpectedly'}
+                _import_jobs[job_id] = {'error': str(e) or 'Import failed unexpectedly', '_ts': time.time()}
         finally:
             _import_cancels.pop(user_id, None)
+            if cancel.is_set():
+                _import_jobs.pop(job_id, None)
 
     threading.Thread(target=run, daemon=True).start()
     return jsonify({'job_id': job_id})
@@ -682,6 +696,4 @@ def spotify_artist_progress():
     job = _import_jobs.get(job_id)
     if not job:
         return jsonify({'error': 'Unknown import job'}), 404
-    if 'done' in job or 'error' in job:
-        _import_jobs.pop(job_id, None)
-    return jsonify(job)
+    return jsonify({k: v for k, v in job.items() if k != '_ts'})

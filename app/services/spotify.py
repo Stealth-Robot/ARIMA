@@ -65,7 +65,10 @@ def _get_token(_retries=3):
     resp = requests.post(_TOKEN_URL, data={'grant_type': 'client_credentials'},
                          auth=(cid, secret), timeout=10)
     if resp.status_code == 429:
-        wait = int(resp.headers.get('Retry-After', 5))
+        try:
+            wait = int(resp.headers.get('Retry-After', 5))
+        except (ValueError, TypeError):
+            wait = 5
         if wait > 30:
             mins = (wait + 59) // 60
             raise SpotifyError(f'Spotify rate limit too long ({mins} min). Please wait and try again later.')
@@ -99,7 +102,10 @@ def _api_get(path_or_url, _retries=3):
     if resp.status_code == 404:
         raise SpotifyError('Not found on Spotify')
     if resp.status_code == 429:
-        wait = int(resp.headers.get('Retry-After', 5))
+        try:
+            wait = int(resp.headers.get('Retry-After', 5))
+        except (ValueError, TypeError):
+            wait = 5
         if wait > 30:
             mins = (wait + 59) // 60
             raise SpotifyError(f'Spotify rate limit too long ({mins} min). Please wait and try again later.')
