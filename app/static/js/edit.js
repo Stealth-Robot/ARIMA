@@ -603,6 +603,7 @@ document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         closeArtistMenu();
         closeAlbumMovePopover();
+        closeAlbumArtistMovePopover();
         closeAlbumAddPopover();
         closeAlbumSongSearchPopover();
         closeSongArtistPopover();
@@ -669,6 +670,7 @@ function closeAlbumMovePopover() {
 function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
     event.stopPropagation();
     closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
     closeAlbumAddPopover();
     closeAlbumSongSearchPopover();
 
@@ -758,10 +760,12 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
                         return r.json();
                     }).then(function() {
                         closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
                         window.location.reload();
                     }).catch(function() {
                         showToast('Failed to move song — try again');
                         closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
                     });
                 });
                 listContainer.appendChild(btn);
@@ -780,6 +784,112 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
     activeAlbumMovePopover = parts.popover;
 }
 
+/* Move album songs to another artist popover */
+
+var activeAlbumArtistMovePopover = null;
+
+function closeAlbumArtistMovePopover() {
+    if (activeAlbumArtistMovePopover) {
+        activeAlbumArtistMovePopover.remove();
+        activeAlbumArtistMovePopover = null;
+    }
+}
+
+function showAlbumArtistMove(event, albumId, sourceArtistId, span) {
+    event.stopPropagation();
+    closeAlbumArtistMovePopover();
+    closeAlbumMovePopover();
+    closeAlbumAddPopover();
+
+    var children = (typeof _childArtists !== 'undefined') ? _childArtists : [];
+    var allArtists = (typeof _allArtists !== 'undefined') ? _allArtists : [];
+    var others = allArtists.filter(function(a) { return a.id !== sourceArtistId; });
+    if (!others.length) {
+        showToast('No other artists available');
+        return;
+    }
+
+    var pinnedIds = {};
+    children.forEach(function(c) { pinnedIds[c.id] = true; });
+    // Also pin the page artist (parent) so subunit albums can move to it
+    if (typeof _currentArtistId !== 'undefined') pinnedIds[_currentArtistId] = true;
+
+    var parts = _createSearchPopover({
+        title: 'Move songs to artist:',
+        placeholder: 'Search artists...',
+        anchor: span,
+    });
+    var listContainer = parts.listContainer;
+
+    function renderList(filter) {
+        listContainer.innerHTML = '';
+        var lc = (filter || '').toLowerCase();
+        var pinned = [];
+        var rest = [];
+        others.forEach(function(a) {
+            if (lc && a.name.toLowerCase().indexOf(lc) === -1) return;
+            if (pinnedIds[a.id]) {
+                pinned.push(a);
+            } else {
+                rest.push(a);
+            }
+        });
+
+        if (pinned.length) {
+            var header = document.createElement('div');
+            header.textContent = 'Subunits / Soloists';
+            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+            listContainer.appendChild(header);
+            pinned.forEach(function(a) { listContainer.appendChild(makeRow(a)); });
+        }
+        if (rest.length) {
+            var header2 = document.createElement('div');
+            header2.textContent = 'All Artists';
+            header2.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+            listContainer.appendChild(header2);
+            rest.forEach(function(a) { listContainer.appendChild(makeRow(a)); });
+        }
+        if (!pinned.length && !rest.length) {
+            var empty = document.createElement('div');
+            empty.textContent = 'No matches';
+            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+            listContainer.appendChild(empty);
+        }
+    }
+
+    function makeRow(a) {
+        var btn = document.createElement('div');
+        btn.textContent = a.name;
+        btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
+        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
+        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+        btn.addEventListener('click', function() {
+            var csrfToken = document.querySelector('meta[name="csrf-token"]');
+            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+            fetch('/edit/album/' + albumId + '/move-artist', {
+                method: 'POST',
+                headers: headers,
+                body: 'source_artist_id=' + sourceArtistId + '&target_artist_id=' + a.id,
+            }).then(function(r) {
+                if (!r.ok) throw new Error('move failed');
+                return r.json();
+            }).then(function(data) {
+                closeAlbumArtistMovePopover();
+                window.location.reload();
+            }).catch(function() {
+                showToast('Failed to move — try again');
+                closeAlbumArtistMovePopover();
+            });
+        });
+        return btn;
+    }
+
+    renderList('');
+    parts.searchInput.addEventListener('input', function() { renderList(parts.searchInput.value); });
+    activeAlbumArtistMovePopover = parts.popover;
+}
+
 /* Add song to additional album popover */
 
 var activeAlbumAddPopover = null;
@@ -795,6 +905,7 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
     event.stopPropagation();
     closeAlbumAddPopover();
     closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
     closeAlbumSongSearchPopover();
 
     var others = allAlbums.filter(function(a) { return a.id !== currentAlbumId; });
@@ -914,6 +1025,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
     event.stopPropagation();
     closeAlbumSongSearchPopover();
     closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
     closeAlbumAddPopover();
 
     var parts = _createSearchPopover({
@@ -1181,6 +1293,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
 document.addEventListener('click', function(e) {
     if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
         closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
     }
     if (activeAlbumAddPopover && !activeAlbumAddPopover.contains(e.target)) {
         closeAlbumAddPopover();
@@ -1409,6 +1522,7 @@ function showSongArtists(event, songId, span) {
     event.stopPropagation();
     closeSongArtistPopover();
     closeAlbumMovePopover();
+    closeAlbumArtistMovePopover();
     closeAlbumAddPopover();
     closeAlbumSongSearchPopover();
 

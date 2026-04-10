@@ -106,6 +106,46 @@ def album_genres_edit(album_id):
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/album/<int:album_id>/move-artist', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_move_artist(album_id):
+    """Reassign all songs in an album from one artist to another."""
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    source_id = request.form.get('source_artist_id', type=int)
+    target_id = request.form.get('target_artist_id', type=int)
+    if not source_id or not target_id or source_id == target_id:
+        abort(400)
+    source = db.session.get(Artist, source_id)
+    target = db.session.get(Artist, target_id)
+    if not source or not target:
+        abort(400)
+
+    song_ids = [row.song_id for row in AlbumSong.query.filter_by(album_id=album_id).all()]
+    moved = 0
+    for sid in song_ids:
+        link = db.session.get(ArtistSong, (source_id, sid))
+        if not link:
+            continue
+        was_main = link.artist_is_main
+        # Remove source artist
+        db.session.delete(link)
+        # Add target artist with same role (skip if already linked)
+        existing = db.session.get(ArtistSong, (target_id, sid))
+        if not existing:
+            db.session.add(ArtistSong(artist_id=target_id, song_id=sid, artist_is_main=was_main))
+        moved += 1
+
+    log_change(current_user,
+               f'Moved {moved} songs in "{album.name}" from "{source.name}" to "{target.name}"',
+               album=album)
+    db.session.commit()
+    return json.dumps({'ok': True, 'moved': moved}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/artist/<int:artist_id>/add-album', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

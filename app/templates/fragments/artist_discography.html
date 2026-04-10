@@ -65,6 +65,7 @@ var _currentArtistId = {{ artist.id }};
 var _pageArtistName = {{ artist.name | tojson }};
 var _isAnimePage = {{ 'true' if artist.gender_id == 3 else 'false' }};
 var _artistParentMap = {{ artist_parent_map | default({}) | tojson }};
+var _childArtists = [{% for child in children %}{ id: {{ child.artist.id }}, name: {{ child.artist.name | tojson }}, isSoloist: {{ 'true' if child.is_soloist else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _songArtists = {
 {% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}
@@ -217,6 +218,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                         onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ artist.id }}, this)">&#43;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move album songs to another artist"
+                      onclick="event.stopPropagation();showAlbumArtistMove(event, {{ album.id }}, {{ artist.id }}, this)">&#8644;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
@@ -375,6 +378,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                         onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
                 <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 6px;" title="Add song to album"
                       onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ child.artist.id }}, this)">&#43;</span>
+                <span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Move album songs to another artist"
+                      onclick="event.stopPropagation();showAlbumArtistMove(event, {{ album.id }}, {{ child.artist.id }}, this)">&#8644;</span>
                 {% else %}
                 {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}
                 {% endif %}
