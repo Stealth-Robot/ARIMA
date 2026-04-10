@@ -76,7 +76,7 @@ var _songArtists = {
 {% endif %}
 
 <script>
-var _collapseKey = 'collapse-' + location.pathname;
+var _collapseKey = 'collapse-artist-{{ artist.id }}';
 function _getCollapsed() {
     try { return JSON.parse(sessionStorage.getItem(_collapseKey)) || {}; }
     catch(e) { return {}; }
@@ -93,7 +93,17 @@ function _collapseRows(prefix, id) {
 function _expandRows(prefix, id) {
     var rows = document.querySelectorAll('.' + prefix + '-' + id);
     var arrow = document.getElementById(prefix.replace('row', 'arrow') + '-' + id);
-    rows.forEach(function(r) { r.style.display = ''; });
+    var state = _getCollapsed();
+    rows.forEach(function(r) {
+        // Don't show rows inside a collapsed child section
+        var skip = false;
+        if (prefix === 'album-row') {
+            r.classList.forEach(function(c) {
+                if (c.indexOf('child-row-') === 0 && state['child-' + c.replace('child-row-', '')]) skip = true;
+            });
+        }
+        if (!skip) r.style.display = '';
+    });
     if (arrow) arrow.style.transform = 'translateY(-50%)';
 }
 function toggleChildSection(e, childId) {
@@ -121,6 +131,7 @@ function toggleAlbum(e, albumId) {
     if (hidden) {
         _expandRows('album-row', albumId);
         delete state['album-' + albumId];
+        _reapplyChildCollapses();
     } else {
         _collapseRows('album-row', albumId);
         state['album-' + albumId] = 1;
@@ -134,6 +145,7 @@ function expandAllAlbums() {
         _expandRows('album-row', albumId);
         delete state['album-' + albumId];
     });
+    _reapplyChildCollapses();
     _saveCollapsed(state);
 }
 function collapseAllAlbums() {
@@ -144,6 +156,12 @@ function collapseAllAlbums() {
         state['album-' + albumId] = 1;
     });
     _saveCollapsed(state);
+}
+function _reapplyChildCollapses() {
+    var state = _getCollapsed();
+    Object.keys(state).forEach(function(k) {
+        if (k.indexOf('child-') === 0) _collapseRows('child-row', k.split('-')[1]);
+    });
 }
 function _updateToggleAllLabel() {}
 function _restoreCollapseState() {

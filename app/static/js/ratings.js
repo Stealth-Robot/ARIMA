@@ -521,7 +521,7 @@ var _tooltipSelecting = false;
                 cell.outerHTML = html;
                 var row = document.getElementById(cellId);
                 if (row) row = row.closest('tr');
-                if (row) { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
+                if (row && row.style.display !== 'none') { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
             });
     }
 

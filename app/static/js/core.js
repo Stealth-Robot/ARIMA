@@ -597,7 +597,9 @@ document.addEventListener('htmx:afterSettle', function(e) {
              : elt.querySelector('[id^="rating-"]');
     if (cell) {
         var row = cell.closest('tr');
-        if (row) { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
+        if (row && row.style.display !== 'none') {
+            row.style.display = 'none'; row.offsetHeight; row.style.display = '';
+        }
     }
 });
 
