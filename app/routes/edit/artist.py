@@ -627,19 +627,61 @@ def add_artist_submit():
                                artists=Artist.query.order_by(Artist.name).all()), 422
 
 
-@edit_bp.route('/spotify-artist')
+_import_jobs = {}
+_import_cancels = {}
+
+
+@edit_bp.route('/spotify-artist', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
-def spotify_artist():
-    """Fetch artist + discography from a Spotify URL for pre-filling the add-artist form."""
+def spotify_artist_start():
+    """Start a Spotify artist import in the background."""
     if not session.get('edit_mode'):
         abort(403)
-    url = request.args.get('url', '').strip()
+    url = request.form.get('url', '').strip()
     if not url:
         return jsonify({'error': 'No URL provided'}), 400
-    from app.services.spotify import fetch_artist, SpotifyError
-    try:
-        data = fetch_artist(url)
-    except SpotifyError as e:
-        return jsonify({'error': str(e)}), 400
-    return jsonify(data)
+    from app.services.spotify import fetch_artist
+    import uuid
+    import threading
+
+    # Cancel any existing import for this user
+    user_id = current_user.id
+    old_cancel = _import_cancels.pop(user_id, None)
+    if old_cancel:
+        old_cancel.set()
+
+    job_id = uuid.uuid4().hex[:12]
+    cancel = threading.Event()
+    _import_cancels[user_id] = cancel
+    _import_jobs[job_id] = {'progress': 'Connecting to Spotify...', 'percent': 0}
+
+    def on_progress(msg, pct):
+        _import_jobs[job_id] = {'progress': msg, 'percent': pct}
+
+    def run():
+        try:
+            data = fetch_artist(url, on_progress=on_progress, cancel=cancel)
+            _import_jobs[job_id] = {'done': True, 'data': data}
+        except Exception as e:
+            if not cancel.is_set():
+                _import_jobs[job_id] = {'error': str(e) or 'Import failed unexpectedly'}
+        finally:
+            _import_cancels.pop(user_id, None)
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({'job_id': job_id})
+
+
+@edit_bp.route('/spotify-artist/progress')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def spotify_artist_progress():
+    """Poll progress of a Spotify artist import."""
+    job_id = request.args.get('job_id', '')
+    job = _import_jobs.get(job_id)
+    if not job:
+        return jsonify({'error': 'Unknown import job'}), 404
+    if 'done' in job or 'error' in job:
+        _import_jobs.pop(job_id, None)
+    return jsonify(job)
