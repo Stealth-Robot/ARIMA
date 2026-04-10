@@ -116,7 +116,13 @@ def _api_get(path_or_url, _retries=3):
             return _api_get(path_or_url, _retries=_retries - 1)
         raise SpotifyError('Spotify is rate-limiting requests. Please wait a minute and try again.')
     if resp.status_code != 200:
-        raise SpotifyError(f'Spotify API error: {resp.status_code}')
+        body = ''
+        try:
+            body = resp.json().get('error', {}).get('message', '')
+        except Exception:
+            pass
+        detail = f' — {body}' if body else ''
+        raise SpotifyError(f'Spotify API error: {resp.status_code}{detail} ({label})')
     _status(f'Got {label} (HTTP {resp.status_code})')
     return resp.json()
 
@@ -198,49 +204,46 @@ def fetch_artist(url, on_progress=None, cancel=None):
         artist_name = artist_data['name']
         _progress(f'Found: {artist_name}', 10)
 
-        # Fetch all albums (paginated, follow next URLs)
+        # Fetch all albums (paginated)
         albums_raw = []
-        next_url = f'/artists/{artist_id}/albums?include_groups=album,single&limit=50'
-        while next_url:
+        offset = 0
+        while True:
             _check()
-            page = _api_get(next_url)
-            albums_raw.extend(page.get('items', []))
-            next_url = page.get('next')
+            page = _api_get(f'/artists/{artist_id}/albums?include_groups=album,single&limit=10&offset={offset}')
+            items = page.get('items', [])
+            albums_raw.extend(items)
             _progress(f'Scanning discography... ({len(albums_raw)} albums found)', 20)
+            if not items or not page.get('next'):
+                break
+            offset += len(items)
 
         total = len(albums_raw)
         _progress(f'Found {total} albums', 30)
 
-        # Fetch full track listings in batches of 20 (Spotify's max)
+        # Filter out entries without valid IDs
+        albums_raw = [a for a in albums_raw if a and a.get('id')]
+        total = len(albums_raw)
+
+        # Fetch full track listings one album at a time
         albums = []
-        total_batches = max(1, (total + 19) // 20)
-        for i in range(0, total, 20):
+        for idx, raw in enumerate(albums_raw):
             _check()
-            batch_end = min(i + 20, total)
-            batch_num = i // 20
-            pct = 30 + int(65 * (batch_num / total_batches))
-            if total <= 20:
-                _progress('Loading tracks...', pct)
-            else:
-                _progress(f'Loading tracks ({i + 1}-{batch_end} of {total})', pct)
-            batch_ids = ','.join(a['id'] for a in albums_raw[i:i + 20])
+            pct = 30 + int(65 * ((idx + 1) / max(total, 1)))
+            _progress(f'Loading tracks ({idx + 1} of {total})', pct)
             try:
-                batch = _api_get(f'/albums?ids={batch_ids}')
-            except SpotifyError:
-                logger.warning('Failed to fetch album batch starting at %d, skipping', i)
+                full = _api_get(f'/albums/{raw["id"]}')
+            except SpotifyError as e:
+                logger.warning('Failed to fetch album %s: %s', raw['id'], e)
                 continue
-            for full in batch.get('albums', []):
-                if not full:
-                    continue
-                tracks = [{'name': t['name'], 'track_number': t['track_number'],
-                           'spotify_url': t.get('external_urls', {}).get('spotify', '')}
-                          for t in full.get('tracks', {}).get('items', [])]
-                albums.append({
-                    'name': full['name'],
-                    'release_date': _normalize_date(full.get('release_date', '')),
-                    'album_type_id': _album_type_id(full.get('album_type', ''), full.get('total_tracks', 0)),
-                    'tracks': tracks,
-                })
+            tracks = [{'name': t['name'], 'track_number': t['track_number'],
+                       'spotify_url': t.get('external_urls', {}).get('spotify', '')}
+                      for t in full.get('tracks', {}).get('items', [])]
+            albums.append({
+                'name': full['name'],
+                'release_date': _normalize_date(full.get('release_date', '')),
+                'album_type_id': _album_type_id(full.get('album_type', ''), full.get('total_tracks', 0)),
+                'tracks': tracks,
+            })
 
         _progress('Almost done...', 95)
         return {

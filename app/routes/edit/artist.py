@@ -674,7 +674,10 @@ def spotify_artist_start():
     def run():
         try:
             data = fetch_artist(url, on_progress=on_progress, cancel=cancel)
-            _import_jobs[job_id] = {'done': True, 'data': data, '_ts': time.time()}
+            if not data.get('albums'):
+                _import_jobs[job_id] = {'error': f'No albums found for "{data.get("name", "artist")}". Spotify may have changed their API — try again or add albums manually.', '_ts': time.time()}
+            else:
+                _import_jobs[job_id] = {'done': True, 'data': data, '_ts': time.time()}
         except Exception as e:
             if not cancel.is_set():
                 _import_jobs[job_id] = {'error': str(e) or 'Import failed unexpectedly', '_ts': time.time()}
