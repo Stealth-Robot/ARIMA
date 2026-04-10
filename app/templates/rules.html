@@ -14,122 +14,166 @@
     <hr style="border-color: var(--border); margin: 2rem 0;">
 
     <h1 class="text-2xl font-bold mb-2">How It Works</h1>
-    <p class="text-sm mb-6" style="color: var(--text-secondary);">A quick guide to getting the most out of A.R.I.M.A.</p>
-    <div class="prose text-sm" style="color: var(--text-primary);">
+    <p class="text-sm mb-4" style="color: var(--text-secondary);">A quick guide to getting the most out of A.R.I.M.A.</p>
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">Rating Songs</h2>
-        <p class="mb-2">Click any cell in your column to rate a song from 0 to 5. The colour-coded key on the artist page shows what each score means. You can also leave notes on any cell — even unrated ones. Cells with notes have a small triangle in the corner; hover to read them.</p>
-        <p class="mb-2">Ratings from other users show up in real time — no need to refresh.</p>
+    <!-- Jump nav -->
+    <div class="flex flex-wrap gap-2 mb-6 text-xs">
+        <a href="#hw-rating" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Rating</a>
+        <a href="#hw-navigation" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Navigation</a>
+        <a href="#hw-personalisation" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Personalisation</a>
+        <a href="#hw-pages" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Pages</a>
+        <a href="#hw-editors" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Editors &amp; Admins</a>
+        <a href="#hw-profile" style="color: var(--link); text-decoration: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 3px;">Profile</a>
+    </div>
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">Keyboard Shortcuts</h2>
-        <p class="mb-2">You can rate quickly without touching the mouse once you've clicked into a cell.</p>
-        <table class="text-xs mt-2 mb-4" style="border-collapse: collapse; width: 100%;">
-            <thead>
-                <tr style="border-bottom: 2px solid var(--border);">
-                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">Key</th>
-                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">What it does</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>0–5</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Set the rating</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Enter</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Save and move to the next song</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Arrow keys</strong> / <strong>WASD</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Save and move in any direction</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Escape</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Cancel without saving</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Right-click</strong> / <strong>N</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add or edit a note</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Undo last rating change</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Ctrl+Shift+Z</strong> / <strong>Cmd+Shift+Z</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Redo last rating change</td></tr>
-            </tbody>
-        </table>
+    <div class="text-sm" style="color: var(--text-primary);">
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">Finding Your Way Around</h2>
-        <ul class="list-disc ml-4 mb-4 space-y-1">
-            <li><strong>Artists</strong> — The main page. Pick an artist from the bottom bar and see their full discography with everyone's ratings side by side. Artist names are colour-coded by gender (pink / blue / green). On smaller screens, tap the hamburger menu to find an artist.</li>
-            <li><strong>Global Stats</strong> — See average scores per artist, colour-coded so you can spot who rates what at a glance. Expand an artist to see subunits and soloists.</li>
-            <li><strong>Artist Stats</strong> — Check how much each person has rated. Switch between "% complete" and "songs remaining" with the dropdown.</li>
-            <li><strong>Changelog</strong> — A searchable log of everything that's been added, edited, or deleted.</li>
-            <li><strong>Search</strong> — Hit the search icon in the top bar and type at least 2 characters. Click a result to jump straight to it.</li>
-        </ul>
+        <!-- Rating -->
+        <div id="hw-rating" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">Rating Songs</h2>
+            <p class="mb-2">Click any cell in your column to rate a song <strong>0 to 5</strong>. Type a number, then use arrow keys to move to the next song. Notes can be added to any cell (right-click or press <strong>N</strong>) — cells with notes show a small triangle on hover.</p>
+            <p class="mb-3">Ratings from other users show up in real time.</p>
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">Personalisation</h2>
-        <ul class="list-disc ml-4 mb-4 space-y-1">
-            <li><strong>Filters</strong> — Use the genre and country dropdowns to narrow what you see. You can also toggle remixes and featured tracks on or off, and sort albums newest- or oldest-first.</li>
-            <li><strong>Themes</strong> — Switch between Classic, Dark, or a custom theme on your profile page.</li>
-            <li>All your settings are saved automatically and stick between sessions.</li>
-        </ul>
+            <details class="mb-1">
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Keyboard shortcuts</summary>
+                <table class="text-xs mt-2" style="border-collapse: collapse; width: 100%;">
+                    <tbody>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>0–5</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Set rating (saves instantly, stays active for arrow navigation)</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Arrows / WASD / Enter</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Save and move in any direction</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Escape</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Cancel without saving</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Right-click / N</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add or edit a note</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);"><strong>Ctrl+Z / Cmd+Z</strong></td><td class="px-2 py-1" style="border: 1px solid var(--border);">Undo / Redo (add Shift for redo)</td></tr>
+                    </tbody>
+                </table>
+            </details>
+        </div>
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">For Editors &amp; Admins</h2>
-        <p class="mb-2">Toggle <strong>Edit Mode</strong> in the navbar to unlock all editing tools on the artist page. Everything saves instantly — no separate save button needed.</p>
+        <!-- Navigation & Discography -->
+        <div id="hw-navigation" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">Navigation &amp; Discography</h2>
+            <ul class="list-disc ml-4 mb-2 space-y-1">
+                <li>Click <strong>album headers</strong> to collapse or expand them. Use <strong>Expand All / Collapse All</strong> in the discography header. Collapse state is remembered across edit mode toggles and artist navigation.</li>
+                <li>Songs with a Spotify link show a <img src="{{ url_for('static', filename='img/spotify.png') }}" style="display: inline; width: 12px; height: 12px; vertical-align: middle;"> icon. YouTube icons link directly or fall back to a search.</li>
+                <li>Collaborations show as <em>"with Artist"</em> (main) or <em>"feat. Artist"</em> (featured) next to song names.</li>
+            </ul>
+        </div>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">What you can edit inline</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Artist name</strong> — Click the artist name at the top of the page to rename them.</li>
-            <li><strong>Album name &amp; genres</strong> — Click any of these in the album header to edit. Genres open a checkbox picker.</li>
-            <li><strong>Release date</strong> — Click the year in the album header to open a date picker.</li>
-            <li><strong>Song name</strong> — Click a song name to rename it.</li>
-            <li><strong>Remix / Promoted</strong> — Tick the checkboxes in the extra columns that appear in edit mode.</li>
-            <li><strong>Artist gender &amp; country</strong> — Click the labels next to the artist name to change them.</li>
-            <li><strong>Rate for other users</strong> — In edit mode, editors and admins can click any user's rating cell to rate on their behalf.</li>
-        </ul>
+        <!-- Pages -->
+        <div id="hw-pages" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">Pages</h2>
+            <ul class="list-disc ml-4 space-y-1">
+                <li><strong>Artists</strong> — Full discography with everyone's ratings side by side. Artist names are colour-coded by gender. Use the bottom bar or hamburger menu to switch.</li>
+                <li><strong>Global Stats</strong> — Average scores per artist, colour-coded. Expand to see subunits and soloists.</li>
+                <li><strong>Artist Stats</strong> — Rating completion per person. Toggle between "% complete" and "songs remaining". Use "Hide unrated" to filter.</li>
+                <li><strong>Data Approvals</strong> — Approve or reject ratings submitted on your behalf. Only shows newly added songs. Filter by For Me, By Me, or All.</li>
+                <li><strong>Changelog &amp; Updates</strong> — Searchable log of all edits plus app updates. Filter by user or type.</li>
+                <li><strong>Search</strong> — Search icon in the top bar. Type 2+ characters to find artists, albums, or songs.</li>
+            </ul>
+        </div>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Song controls</h3>
-        <p class="mb-2">Each song row shows a set of icon buttons in edit mode:</p>
-        <table class="text-xs mt-2 mb-4" style="border-collapse: collapse; width: 100%;">
-            <thead>
-                <tr style="border-bottom: 2px solid var(--border);">
-                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">Icon</th>
-                    <th class="px-2 py-1 text-left" style="border: 1px solid var(--border);">What it does</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#8693;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Move song to a different album (searchable picker, current artist shown first)</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#43;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add song to an additional album (the song appears in both)</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border); color: var(--delete-button);">&#10005;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Delete song permanently (password required)</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#128279;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Remove song from this album only (if it's the song's only album, the song is deleted)</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#9834;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Manage artists — add/remove artists and toggle between Main and Featured</td></tr>
-                <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#10697;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Merge with another song (combines ratings and removes the duplicate)</td></tr>
-            </tbody>
-        </table>
+        <!-- Personalisation -->
+        <div id="hw-personalisation" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">Personalisation</h2>
+            <p class="mb-2">All settings are on your <strong>Profile</strong> page and saved between sessions.</p>
+            <ul class="list-disc ml-4 space-y-1">
+                <li><strong>Themes</strong> — Classic, Dark, or a custom theme.</li>
+                <li><strong>Filters</strong> — Genre, country, remixes, featured tracks, album sort order.</li>
+                <li><strong>Link visibility</strong> — Hide autogenerated YouTube links, all YouTube links, or all Spotify links.</li>
+                <li><strong>Rating key</strong> — Customise labels for each score (0–5) and choose which keys to show.</li>
+                <li><strong>Song button size</strong> — Adjust edit-mode icon button size (6–30px).</li>
+            </ul>
+        </div>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Collaborations</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li>Songs with additional main artists show <em>"with Artist"</em> next to the song name.</li>
-            <li>Songs with featured artists show <em>"feat. Artist"</em>.</li>
-            <li>These labels update automatically when you change artist roles via the &#9834; popover.</li>
-        </ul>
+        <!-- Editors & Admins -->
+        <div id="hw-editors" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">For Editors &amp; Admins</h2>
+            <p class="mb-3">Toggle <strong>Edit Mode</strong> in the navbar. Everything saves instantly.</p>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Adding content</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Add Album</strong> — The green button at the bottom of the artist page. Set a name, type, date, genres, and songs. You can add collaborating artists to each song.</li>
-            <li><strong>Add song to album</strong> — Click the &#43; icon in the album header row (after genres). Search for an existing song to link it, or create a brand-new song with full artist management (main/featured roles).</li>
-            <li><strong>Add Artist</strong> — Available from the navbar in edit mode. Create a new artist with albums, songs, genres, and collaborations.</li>
-        </ul>
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Inline editing</summary>
+                <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
+                    <li><strong>Artist name, gender, country</strong> — Click to edit.</li>
+                    <li><strong>Album name, genres, type, release date</strong> — Click any in the album header.</li>
+                    <li><strong>Song name</strong> — Click to rename.</li>
+                    <li><strong>Remix / Promoted</strong> — Checkboxes in the extra columns.</li>
+                    <li><strong>Spotify &amp; YouTube URLs</strong> — Click the greyed-out icons on a song row.</li>
+                    <li><strong>Rate for other users</strong> — Click any user's rating cell.</li>
+                </ul>
+            </details>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Subunits &amp; Soloists</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Convert to Subunit / Soloist</strong> — Use the buttons at the bottom of an artist page to link them under a parent artist. You'll pick the parent from a dropdown and confirm with your password. Disabled if the artist already has their own subunits or soloists.</li>
-            <li><strong>Unlink</strong> — Click the &#128279; icon next to a subunit or soloist header to convert them back to a standalone artist. Their songs and albums are not affected.</li>
-        </ul>
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Song controls</summary>
+                <table class="text-xs mt-2 mb-1" style="border-collapse: collapse; width: 100%;">
+                    <tbody>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#8693;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Move to a different album</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#43;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add to an additional album</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border); color: var(--delete-button);">&#10005;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Delete song (password required)</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#128279;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Remove from this album only</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#9834;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Manage artists (main / featured)</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#10697;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Merge with another song</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#9986;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Split duplicate into independent copy (clones ratings &amp; notes)</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#9650; &#9660;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Reorder within album</td></tr>
+                    </tbody>
+                </table>
+            </details>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Deleting</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li><strong>Delete a song</strong> — The red &#10005; next to each song name. Password required. Shows the song name in the confirmation popup.</li>
-            <li><strong>Delete an album</strong> — The red &#10005; to the left of the album header. The confirmation popup shows how many songs and ratings will be deleted. Password required.</li>
-            <li><strong>Delete an artist</strong> — The red button at the bottom of the page. Removes the artist and everything under them. Password required.</li>
-            <li><strong>Delete a changelog entry</strong> — Admins only. A small &#10005; appears next to each entry on the Changelog page in edit mode.</li>
-        </ul>
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Album controls</summary>
+                <table class="text-xs mt-2 mb-1" style="border-collapse: collapse; width: 100%;">
+                    <tbody>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#43;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Add a song (search existing or create new)</td></tr>
+                        <tr><td class="px-2 py-1" style="border: 1px solid var(--border);">&#8644;</td><td class="px-2 py-1" style="border: 1px solid var(--border);">Move all songs to another artist (subunits/parent pinned at top)</td></tr>
+                    </tbody>
+                </table>
+            </details>
 
-        <h2 class="text-lg font-semibold mt-6 mb-2">Profile &amp; Account</h2>
-        <ul class="list-disc ml-4 mb-4 space-y-1">
-            <li><strong>Profile image</strong> — Set a custom image URL on your profile page.</li>
-            <li><strong>Reset password</strong> — Change your password from the profile page. Enter your new password and confirm it.</li>
-            <li><strong>Settings</strong> — Theme, filters (featured/remix), and album sort order are all configurable from your profile and saved between sessions.</li>
-        </ul>
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Duplicates</summary>
+                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
+                    <li>Songs in multiple albums are tagged <strong>duplicate</strong> (hidden outside edit mode).</li>
+                    <li>Click the tag to override which album is primary.</li>
+                    <li>Use &#9986; to split into an independent copy with all ratings cloned.</li>
+                </ul>
+            </details>
 
-        <h3 class="text-sm font-bold mt-5 mb-1 uppercase tracking-wide" style="color: var(--text-secondary);">Changelog</h3>
-        <ul class="list-disc ml-4 mb-3 space-y-1">
-            <li>Every edit is automatically logged with details of what changed, which artist/album/song was affected, and who made the change.</li>
-            <li>Use the search bar, user filter, and type filter on the Changelog page to find specific entries.</li>
-        </ul>
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Adding content</summary>
+                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
+                    <li><strong>Add Album</strong> — Green button at the bottom of the artist page.</li>
+                    <li><strong>Add song to album</strong> — &#43; icon in the album header.</li>
+                    <li><strong>Add Artist</strong> — From the navbar. Tooltip on submit shows missing fields.</li>
+                    <li><strong>Spotify import</strong> — Paste a Spotify URL to auto-fill albums, tracks, and links.</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Subunits &amp; Soloists</summary>
+                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
+                    <li><strong>Convert</strong> — Buttons at the bottom of an artist page to link under a parent (password required).</li>
+                    <li><strong>Unlink</strong> — &#128279; next to a subunit/soloist header to make them standalone again.</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary class="cursor-pointer text-xs font-semibold" style="color: var(--text-secondary);">Deleting</summary>
+                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
+                    <li><strong>Song</strong> — Red &#10005; next to the name (password required).</li>
+                    <li><strong>Album</strong> — Red &#10005; left of the header (shows impact count, password required).</li>
+                    <li><strong>Artist</strong> — Red button at the bottom of the page (password required).</li>
+                    <li><strong>Changelog entry</strong> — Admins only, small &#10005; on each entry.</li>
+                </ul>
+            </details>
+        </div>
+
+        <!-- Profile -->
+        <div id="hw-profile" class="p-4 mb-4 border rounded" style="border-color: var(--border);">
+            <h2 class="text-lg font-semibold mb-2">Profile &amp; Account</h2>
+            <ul class="list-disc ml-4 space-y-1">
+                <li><strong>Profile image</strong> — Set a custom image URL.</li>
+                <li><strong>Reset password</strong> — Change your password anytime.</li>
+                <li><strong>Settings</strong> — Theme, filters, album sort, button size, rating key labels, and link visibility.</li>
+            </ul>
+        </div>
 
     </div>
 </div>
