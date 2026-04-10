@@ -344,7 +344,10 @@
                 if (disco) {
                     fetch(window.location.href, { headers: { 'HX-Request': 'true' } })
                     .then(function(r) { return r.text(); })
-                    .then(function(html) { disco.innerHTML = html; });
+                    .then(function(html) {
+                        disco.innerHTML = html;
+                        if (typeof _restoreCollapseState === 'function') _restoreCollapseState();
+                    });
                 }
             });
         });

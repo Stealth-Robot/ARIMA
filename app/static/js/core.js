@@ -584,6 +584,9 @@ document.addEventListener('htmx:afterSettle', function(e) {
             }
         });
     }
+
+    // Restore album/subunit collapse state after content swap
+    if (typeof _restoreCollapseState === 'function') _restoreCollapseState();
 });
 
 // Force repaint on row after HTMX outerHTML swap to fix collapsed borders

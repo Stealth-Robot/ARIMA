@@ -125,48 +125,27 @@ function toggleAlbum(e, albumId) {
         state['album-' + albumId] = 1;
     }
     _saveCollapsed(state);
-    _updateToggleAllLabel();
 }
-function toggleAllAlbums() {
-    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
+function expandAllAlbums() {
     var state = _getCollapsed();
-    var expandedCount = 0;
-    albumHeaders.forEach(function(header) {
+    document.querySelectorAll('tr[id^="album-"]').forEach(function(header) {
         var albumId = header.id.replace('album-', '');
-        var rows = document.querySelectorAll('.album-row-' + albumId);
-        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
-    });
-    var shouldCollapse = expandedCount > albumHeaders.length / 2;
-    albumHeaders.forEach(function(header) {
-        var albumId = header.id.replace('album-', '');
-        if (shouldCollapse) {
-            _collapseRows('album-row', albumId);
-            state['album-' + albumId] = 1;
-        } else {
-            _expandRows('album-row', albumId);
-            delete state['album-' + albumId];
-        }
+        _expandRows('album-row', albumId);
+        delete state['album-' + albumId];
     });
     _saveCollapsed(state);
-    _updateToggleAllLabel();
 }
-function _updateToggleAllLabel() {
-    var btn = document.getElementById('toggle-all-albums');
-    if (!btn) return;
-    var albumHeaders = document.querySelectorAll('tr[id^="album-"]');
-    var expandedCount = 0;
-    albumHeaders.forEach(function(header) {
+function collapseAllAlbums() {
+    var state = _getCollapsed();
+    document.querySelectorAll('tr[id^="album-"]').forEach(function(header) {
         var albumId = header.id.replace('album-', '');
-        var rows = document.querySelectorAll('.album-row-' + albumId);
-        if (rows.length && rows[0].style.display !== 'none') expandedCount++;
+        _collapseRows('album-row', albumId);
+        state['album-' + albumId] = 1;
     });
-    if (expandedCount > albumHeaders.length / 2) {
-        btn.innerHTML = '&#9660; Collapse All';
-    } else {
-        btn.innerHTML = '&#9654; Expand All';
-    }
+    _saveCollapsed(state);
 }
-document.addEventListener('DOMContentLoaded', function() {
+function _updateToggleAllLabel() {}
+function _restoreCollapseState() {
     var state = _getCollapsed();
     Object.keys(state).forEach(function(key) {
         var parts = key.split('-');
@@ -176,7 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (type === 'album') _collapseRows('album-row', id);
     });
     _updateToggleAllLabel();
-});
+}
+document.addEventListener('DOMContentLoaded', _restoreCollapseState);
 </script>
 
 {% if not discography and not children %}
@@ -191,7 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <th class="text-left px-2 py-1" style="width: 300px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--discography-background); color: var(--discography-text);">
                 <span style="display: flex; justify-content: space-between; align-items: center;">
                     DISCOGRAPHY
-                    <span id="toggle-all-albums" onclick="toggleAllAlbums()" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); cursor: pointer;">&#9660; Collapse All</span>
+                    <span style="font-size: 11px; font-weight: normal; display: flex; gap: 8px;">
+                        <span onclick="expandAllAlbums()" style="color: var(--text-secondary); cursor: pointer;">&#9654; Expand</span>
+                        <span onclick="collapseAllAlbums()" style="color: var(--text-secondary); cursor: pointer;">&#9660; Collapse</span>
+                    </span>
                 </span>
             </th>
             {% if edit_mode %}
