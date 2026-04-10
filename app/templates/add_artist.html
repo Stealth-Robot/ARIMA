@@ -725,9 +725,32 @@ function validateForm() {
     btn.title = valid ? '' : reasons.join('\n');
 }
 
+function _autofillSingleSongName(albumDiv) {
+    if (!albumDiv) return;
+    var albumNum = albumDiv.id.split('-')[1];
+    var typeSelect = albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]');
+    if (!typeSelect || typeSelect.value !== '2') return;
+    var albumName = (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '';
+    if (!albumName.trim()) return;
+    // Add a song if none exist
+    var firstSong = albumDiv.querySelector('[data-field="name"][data-song]');
+    if (!firstSong) {
+        addSong(parseInt(albumNum));
+        firstSong = albumDiv.querySelector('[data-field="name"][data-song]');
+    }
+    if (firstSong && !firstSong.value.trim()) {
+        firstSong.value = albumName.trim();
+        firstSong.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+}
 // Event delegation: validate on any input/change/click inside the form
 document.getElementById('add-artist-form').addEventListener('input', validateForm);
-document.getElementById('add-artist-form').addEventListener('change', validateForm);
+document.getElementById('add-artist-form').addEventListener('change', function(e) {
+    validateForm();
+    if (e.target.dataset.field === 'album_type_id' || (e.target.dataset.field === 'name' && e.target.dataset.album && !e.target.dataset.song)) {
+        _autofillSingleSongName(e.target.closest('[id^="album-"]'));
+    }
+});
 document.getElementById('add-artist-form').addEventListener('click', function() { setTimeout(validateForm, 0); });
 
 // Also validate after DOM mutations (add/remove album/song/artist)

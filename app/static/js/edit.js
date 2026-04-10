@@ -1757,7 +1757,30 @@ function _onTargetArtistChange() {
 
 document.addEventListener('change', function(e) {
     if (e.target.id === 'add-album-target-artist') _onTargetArtistChange();
+    if (e.target.id === 'new-album-type') _autofillSingleName();
 });
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'new-album-name') _autofillSingleName();
+});
+
+function _autofillSingleName() {
+    var type = document.getElementById('new-album-type');
+    if (!type || type.value !== '2') return;
+    var albumName = (document.getElementById('new-album-name') || {}).value || '';
+    if (!albumName.trim()) return;
+    // Add a song if none exist
+    var firstSong = document.querySelector('#new-album-songs .new-album-song-name');
+    if (!firstSong) {
+        var targetSelect = document.getElementById('add-album-target-artist');
+        var artistId = targetSelect ? parseInt(targetSelect.value) : (typeof _currentArtistId !== 'undefined' ? _currentArtistId : 0);
+        addNewAlbumSong(artistId);
+        firstSong = document.querySelector('#new-album-songs .new-album-song-name');
+    }
+    if (firstSong && !firstSong.value.trim()) {
+        firstSong.value = albumName.trim();
+        firstSong.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+}
 
 function resetAddAlbumModal() {
     _newAlbumSongCount = 0;
