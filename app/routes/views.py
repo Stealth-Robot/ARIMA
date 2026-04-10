@@ -362,6 +362,10 @@ def mark_not_duplicate():
     if not song_id_1 or not song_id_2 or song_id_1 == song_id_2:
         abort(400)
     lo, hi = min(song_id_1, song_id_2), max(song_id_1, song_id_2)
+    # Verify both songs still exist (they may have been merged/deleted)
+    from app.models.music import Song
+    if not db.session.get(Song, lo) or not db.session.get(Song, hi):
+        return '', 204  # silently ignore stale pairs
     existing = NotDuplicate.query.get((lo, hi))
     if not existing:
         db.session.add(NotDuplicate(song_id_1=lo, song_id_2=hi))
@@ -369,7 +373,6 @@ def mark_not_duplicate():
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            abort(400)
     return '', 204
 
 
