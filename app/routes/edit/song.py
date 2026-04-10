@@ -343,6 +343,67 @@ def remove_song_from_album(song_id, album_id):
     return redirect(request.referrer or url_for('home.home'))
 
 
+@edit_bp.route('/song/<int:song_id>/split', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def split_song(song_id):
+    """Clone a song and its ratings, then replace it in the given album."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    album_id = request.form.get('album_id', type=int)
+    if not album_id:
+        abort(400)
+    link = AlbumSong.query.filter_by(song_id=song_id, album_id=album_id).first()
+    if link is None:
+        abort(404)
+
+    # Create the clone
+    clone = Song(
+        name=song.name,
+        is_promoted=song.is_promoted,
+        is_remix=song.is_remix,
+        note=song.note,
+        spotify_url=song.spotify_url,
+        youtube_url=song.youtube_url,
+        submitted_by_id=current_user.id,
+        last_updated=datetime.now(timezone.utc).isoformat(),
+    )
+    db.session.add(clone)
+    db.session.flush()  # get clone.id
+
+    # Copy artist links
+    for artist_link in ArtistSong.query.filter_by(song_id=song_id).all():
+        db.session.add(ArtistSong(
+            artist_id=artist_link.artist_id,
+            song_id=clone.id,
+            artist_is_main=artist_link.artist_is_main,
+        ))
+
+    # Copy ratings and notes
+    for r in Rating.query.filter_by(song_id=song_id).all():
+        db.session.add(Rating(
+            song_id=clone.id,
+            user_id=r.user_id,
+            rating=r.rating,
+            note=r.note,
+        ))
+
+    # Remove original from this album and attach clone
+    track = link.track_number
+    db.session.delete(link)
+    db.session.flush()
+    db.session.add(AlbumSong(album_id=album_id, song_id=clone.id, track_number=track))
+
+    album = db.session.get(Album, album_id)
+    album_name = album.name if album else '?'
+    log_change(current_user, f'Split "{song.name}" in "{album_name}" into new song (id {clone.id})', song=clone)
+    db.session.commit()
+
+    return json.dumps({'ok': True, 'new_song_id': clone.id}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/song/<int:song_id>/delete', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

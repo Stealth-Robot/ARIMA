@@ -2265,6 +2265,24 @@ document.addEventListener('click', function (e) {
     }
 });
 
+function splitSong(songId, albumId) {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    fetch('/edit/song/' + songId + '/split', {
+        method: 'POST',
+        headers: headers,
+        body: 'album_id=' + albumId,
+    }).then(function(r) {
+        if (!r.ok) throw new Error('split failed');
+        return r.json();
+    }).then(function() {
+        window.location.reload();
+    }).catch(function() {
+        showToast('Failed to split song — try again');
+    });
+}
+
 function setDuplicateOverride(songId, albumId, artistId) {
     fetch('/edit/song/' + songId + '/duplicate-override', {
         method: 'POST',
