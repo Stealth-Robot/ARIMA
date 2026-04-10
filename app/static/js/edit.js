@@ -302,7 +302,11 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
     var popover = document.createElement('div');
     popover.style.cssText =
         'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
+        'border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; display:flex; flex-direction:column;';
+
+    var listWrap = document.createElement('div');
+    listWrap.style.cssText = 'overflow-y:auto; flex:1; padding:8px 8px 0;';
+    popover.appendChild(listWrap);
 
     var selected = currentIds.slice();
 
@@ -320,11 +324,11 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
         });
         label.appendChild(cb);
         label.appendChild(document.createTextNode(g.name));
-        popover.appendChild(label);
+        listWrap.appendChild(label);
     });
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:4px; margin-top:6px; justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex; gap:4px; padding:6px 8px; justify-content:flex-end; flex-shrink:0; border-top:1px solid var(--border,#ccc);';
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
