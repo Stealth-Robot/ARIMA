@@ -74,6 +74,9 @@ class UserSettings(db.Model):
     rating_label_0 = db.Column(db.String(50), nullable=False, server_default='Absolute shit')
     show_my_key = db.Column(db.Boolean, nullable=False, server_default='0')
     show_default_key = db.Column(db.Boolean, nullable=False, server_default='1')
+    hide_autogen_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
+    hide_all_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
+    hide_all_spotify = db.Column(db.Boolean, nullable=False, server_default='0')
 
     user = db.relationship('User', back_populates='settings')
 

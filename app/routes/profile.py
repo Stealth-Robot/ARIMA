@@ -36,6 +36,9 @@ def profile():
             'rating_labels': DEFAULT_RATING_LABELS,
             'show_my_key': False,
             'show_default_key': True,
+            'hide_autogen_youtube': session.get('hide_autogen_youtube', False),
+            'hide_all_youtube': session.get('hide_all_youtube', False),
+            'hide_all_spotify': session.get('hide_all_spotify', False),
         }
     else:
         s = current_user.settings
@@ -48,6 +51,9 @@ def profile():
             'rating_labels': {score: s.rating_label(score) for score in range(6)} if s else DEFAULT_RATING_LABELS,
             'show_my_key': s.show_my_key_bool if s else False,
             'show_default_key': s.show_default_key_bool if s else True,
+            'hide_autogen_youtube': getattr(s, 'hide_autogen_youtube', False) if s else False,
+            'hide_all_youtube': getattr(s, 'hide_all_youtube', False) if s else False,
+            'hide_all_spotify': getattr(s, 'hide_all_spotify', False) if s else False,
         }
 
     return render_template('profile.html', themes=theme_list, settings=settings)
@@ -97,6 +103,10 @@ def update_settings():
             from app.cache import clear_theme_cache_for_user
             clear_theme_cache_for_user(current_user.id)
         _apply_theme_settings(lambda k, v: session.__setitem__(k, v), request.form)
+        if 'link_visibility' in request.form:
+            session['hide_autogen_youtube'] = request.form.get('hide_autogen_youtube') == 'on'
+            session['hide_all_youtube'] = request.form.get('hide_all_youtube') == 'on'
+            session['hide_all_spotify'] = request.form.get('hide_all_spotify') == 'on'
     else:
         settings = current_user.settings
         if not settings:
@@ -116,6 +126,10 @@ def update_settings():
                 from app.cache import clear_theme_cache_for_user
                 clear_theme_cache_for_user(current_user.id)
             _apply_theme_settings(lambda k, v: setattr(settings, k, v), request.form)
+            if 'link_visibility' in request.form:
+                settings.hide_autogen_youtube = request.form.get('hide_autogen_youtube') == 'on'
+                settings.hide_all_youtube = request.form.get('hide_all_youtube') == 'on'
+                settings.hide_all_spotify = request.form.get('hide_all_spotify') == 'on'
             # Rating key labels + show_my_key (only from profile page form)
             if 'theme' in request.form:
                 settings.show_my_key = request.form.get('show_my_key') == 'on'

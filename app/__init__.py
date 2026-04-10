@@ -115,6 +115,10 @@ def create_app():
                 country_id = session.get('country')
                 genre_id = session.get('genre')
                 song_button_size = session.get('song_button_size', 13)
+            s = current_user.settings if not current_user.is_system_or_guest else None
+            hide_autogen_youtube = getattr(s, 'hide_autogen_youtube', False) if s else session.get('hide_autogen_youtube', False)
+            hide_all_youtube = getattr(s, 'hide_all_youtube', False) if s else session.get('hide_all_youtube', False)
+            hide_all_spotify = getattr(s, 'hide_all_spotify', False) if s else session.get('hide_all_spotify', False)
             countries, genres, genders, album_types = get_cached_filters()
             return {
                 'current_country': country_id,
@@ -124,8 +128,11 @@ def create_app():
                 'genders': genders,
                 'album_types': album_types,
                 'song_button_size': song_button_size,
+                'hide_autogen_youtube': hide_autogen_youtube,
+                'hide_all_youtube': hide_all_youtube,
+                'hide_all_spotify': hide_all_spotify,
             }
-        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13}
+        return {'current_country': None, 'current_genre': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False}
 
     # Prevent bfcache so theme/session changes are always reflected on back navigation
     @flask_app.after_request
