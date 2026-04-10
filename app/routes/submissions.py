@@ -20,6 +20,17 @@ from app.services.events import publish
 submissions_bp = Blueprint('submissions', __name__)
 
 
+def _int_eid(sub):
+    """Return entity_id as int. Handles TEXT column affinity in SQLite."""
+    v = sub.entity_id
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return None
+
+
 def _bulk_resolve(submissions):
     """Batch-load all entities for a list of submissions to avoid N+1 queries."""
     artist_ids = {s.entity_id for s in submissions if s.type == 'artist'}
@@ -51,18 +62,19 @@ def _bulk_resolve(submissions):
 def _entity_name(sub, cache=None):
     """Resolve the display name for a submission's entity."""
     artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
+    eid = _int_eid(sub)
     fallback = sub.entity_name or f'{sub.type} {sub.entity_id}'
     if sub.type == 'artist':
-        entity = artists.get(sub.entity_id)
+        entity = artists.get(eid)
         return entity.name if entity else fallback
     elif sub.type == 'album':
-        entity = albums.get(sub.entity_id)
+        entity = albums.get(eid)
         return entity.name if entity else fallback
     elif sub.type == 'song':
-        entity = songs.get(sub.entity_id)
+        entity = songs.get(eid)
         return entity.name if entity else fallback
     elif sub.type in ('rating', 'note'):
-        entity = songs.get(sub.entity_id)
+        entity = songs.get(eid)
         song_name = entity.name if entity else fallback
         artist_ctx = ''
         if sub.artist_name:
@@ -87,17 +99,18 @@ def _entity_url(sub, cache=None):
             return f'/artists/{artist.id}'
         return None
 
+    eid = _int_eid(sub)
     if sub.type == 'artist':
-        return _artist_slug_url(artists.get(sub.entity_id))
+        return _artist_slug_url(artists.get(eid))
     elif sub.type == 'album':
-        entity = albums.get(sub.entity_id)
+        entity = albums.get(eid)
         if entity and entity.artist_id:
             artist = artists.get(entity.artist_id)
             base = _artist_slug_url(artist)
             if base:
                 return f'{base}#album-{entity.id}'
     elif sub.type in ('song', 'rating', 'note'):
-        entity = songs.get(sub.entity_id)
+        entity = songs.get(eid)
         if entity:
             artist_id = song_artist_links.get(entity.id)
             artist = artists.get(artist_id) if artist_id else None
@@ -114,18 +127,19 @@ def _resolve_artist_for_submission(sub, cache=None):
     def _url(artist):
         return f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
 
+    eid = _int_eid(sub)
     if sub.type == 'artist':
-        artist = artists.get(sub.entity_id)
+        artist = artists.get(eid)
         if artist:
             return artist.id, artist.name, _url(artist)
     elif sub.type == 'album':
-        album = albums.get(sub.entity_id)
+        album = albums.get(eid)
         if album and album.artist_id:
             artist = artists.get(album.artist_id)
             if artist:
                 return artist.id, artist.name, _url(artist)
     elif sub.type in ('song', 'rating', 'note'):
-        song = songs.get(sub.entity_id)
+        song = songs.get(eid)
         if song:
             artist_id = song_artist_links.get(song.id)
             artist = artists.get(artist_id) if artist_id else None
@@ -309,7 +323,7 @@ def submissions_page():
 
         # Second pass: attach songs to their album groups
         # Batch-load album links for all song submissions
-        song_sub_ids = {sub.entity_id for sub, _ in song_subs}
+        song_sub_ids = {_int_eid(sub) for sub, _ in song_subs}
         all_album_links = {}
         if song_sub_ids:
             for row in AlbumSong.query.filter(AlbumSong.song_id.in_(song_sub_ids)).all():
@@ -319,13 +333,13 @@ def submissions_page():
             """Find an album child matching any of the given album IDs."""
             for group in search_groups:
                 for child in group['children']:
-                    if isinstance(child, dict) and child.get('album_sub') and child['album_sub'].entity_id in song_album_ids:
+                    if isinstance(child, dict) and child.get('album_sub') and _int_eid(child['album_sub']) in song_album_ids:
                         return child
             return None
 
         for sub, artist_id in song_subs:
             placed = False
-            song_album_ids = all_album_links.get(sub.entity_id, set())
+            song_album_ids = all_album_links.get(_int_eid(sub), set())
             if sub.album_id:
                 song_album_ids = song_album_ids | {sub.album_id}
 

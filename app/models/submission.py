@@ -4,6 +4,9 @@ from app.extensions import db
 class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     type = db.Column(db.Text, nullable=False)
+    # NOTE: entity_id has TEXT affinity in SQLite due to ALTER TABLE migration.
+    # Use _int_eid() in app/routes/submissions.py for Python dict lookups.
+    # SQLAlchemy queries and session.get() handle coercion automatically.
     entity_id = db.Column(db.Integer, nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     submitted_at = db.Column(db.Text, nullable=False)
