@@ -3,6 +3,8 @@ from datetime import datetime
 from flask import Blueprint, render_template, session, request, abort
 from flask_login import login_required, current_user
 
+from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist
 from app.models.not_duplicate import NotDuplicate
@@ -363,7 +365,11 @@ def mark_not_duplicate():
     existing = NotDuplicate.query.get((lo, hi))
     if not existing:
         db.session.add(NotDuplicate(song_id_1=lo, song_id_2=hi))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            abort(400)
     return '', 204
 
 
