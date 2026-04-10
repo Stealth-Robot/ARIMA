@@ -1737,8 +1737,32 @@ function showSongArtists(event, songId, span) {
 
 var _newAlbumSongCount = 0;
 
+function _onTargetArtistChange() {
+    var select = document.getElementById('add-album-target-artist');
+    if (!select) return;
+    var newId = select.value;
+    var newName = select.options[select.selectedIndex].text;
+    // Update the first (auto-added) artist on every song row
+    for (var i = 1; i <= _newAlbumSongCount; i++) {
+        var container = document.getElementById('new-song-artists-' + i);
+        if (!container) continue;
+        var firstRow = container.querySelector('.new-song-artist-row');
+        if (!firstRow) continue;
+        firstRow.dataset.artistId = newId;
+        var nameSpan = firstRow.querySelector('span');
+        if (nameSpan) nameSpan.textContent = newName;
+        updateNewSongArtistDropdown(i);
+    }
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'add-album-target-artist') _onTargetArtistChange();
+});
+
 function resetAddAlbumModal() {
     _newAlbumSongCount = 0;
+    var targetArtist = document.getElementById('add-album-target-artist');
+    if (targetArtist) targetArtist.selectedIndex = 0;
     var name = document.getElementById('new-album-name');
     if (name) name.value = '';
     var date = document.getElementById('new-album-date');
@@ -1812,8 +1836,11 @@ function addNewAlbumSong(currentArtistId) {
             '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(row);
-    // Auto-add current artist as main
-    addNewSongArtist(n, currentArtistId, _currentArtistName(), true);
+    // Auto-add target artist (from dropdown or page artist) as main
+    var targetSelect = document.getElementById('add-album-target-artist');
+    var targetId = targetSelect ? parseInt(targetSelect.value) : currentArtistId;
+    var targetName = targetSelect ? targetSelect.options[targetSelect.selectedIndex].text : _currentArtistName();
+    addNewSongArtist(n, targetId, targetName, true);
     validateAddAlbum();
     // Scroll modal so the new song and buttons stay visible
     var modal = container.closest('[style*="overflow-y"]');

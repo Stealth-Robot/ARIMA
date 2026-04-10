@@ -648,13 +648,24 @@ function submitConvertArtist() {
     <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
                 width:420px; max-width:90vw; max-height:80vh; display:flex; flex-direction:column;">
         <div style="padding:24px 24px 0; overflow-y:auto; flex:1;">
-            <h3 class="text-lg font-bold mb-3" style="color:var(--text-primary);">Add Album to {{ artist.name }}</h3>
+            <h3 class="text-lg font-bold mb-3" style="color:var(--text-primary);">Add Album to
+                {% if children %}
+                <select id="add-album-target-artist" style="font-size:inherit; font-weight:inherit; background:var(--bg-primary); color:var(--link); border:1px solid var(--border); border-radius:4px; padding:0 4px; cursor:pointer;">
+                    <option value="{{ artist.id }}">{{ artist.name }}</option>
+                    {% for child in children %}
+                    <option value="{{ child.artist.id }}">{{ child.artist.name }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                {{ artist.name }}
+                {% endif %}
+            </h3>
 
             <div class="mb-3 p-2 rounded" style="border:1px dashed var(--border);">
                 <label class="block text-xs mb-1" style="color:var(--text-secondary);">Import from Spotify</label>
                 <div class="flex gap-2">
                     <input type="text" id="spotify-album-url" placeholder="https://open.spotify.com/album/..." class="flex-1 px-2 py-1 border rounded text-xs" style="border-color:var(--border);">
-                    <button type="button" onclick="importAlbumFromSpotify({{ artist.id }})" id="spotify-album-import-btn" class="px-3 py-1 rounded text-xs" style="background:var(--button-secondary); color:var(--text-primary);">Import</button>
+                    <button type="button" onclick="importAlbumFromSpotify(parseInt((document.getElementById('add-album-target-artist')||{}).value||'{{ artist.id }}'))" id="spotify-album-import-btn" class="px-3 py-1 rounded text-xs" style="background:var(--button-secondary); color:var(--text-primary);">Import</button>
                 </div>
             </div>
 
@@ -700,7 +711,7 @@ function submitConvertArtist() {
                     style="background-color:var(--button-secondary); color:var(--text-primary);">
                 Cancel
             </button>
-            <button type="button" id="add-album-submit-btn" onclick="submitNewAlbum({{ artist.id }})"
+            <button type="button" id="add-album-submit-btn" onclick="submitNewAlbum(parseInt((document.getElementById('add-album-target-artist')||{}).value||'{{ artist.id }}'))"
                     class="px-4 py-2 rounded text-sm" disabled
                     style="background-color:var(--edit-on-button); color:var(--button-text); opacity:0.5; cursor:not-allowed;">
                 Add Album
