@@ -77,6 +77,14 @@
             </label>
         </div>
 
+        <div class="mb-4">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="show_track_numbers"
+                       {% if settings.show_track_numbers %}checked{% endif %}>
+                Show track numbers on artist pages
+            </label>
+        </div>
+
         <!-- Album Sort Order -->
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Album Sort Order</label>

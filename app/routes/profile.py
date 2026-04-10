@@ -39,6 +39,7 @@ def profile():
             'hide_autogen_youtube': session.get('hide_autogen_youtube', False),
             'hide_all_youtube': session.get('hide_all_youtube', False),
             'hide_all_spotify': session.get('hide_all_spotify', False),
+            'show_track_numbers': session.get('show_track_numbers', True),
         }
     else:
         s = current_user.settings
@@ -54,6 +55,7 @@ def profile():
             'hide_autogen_youtube': getattr(s, 'hide_autogen_youtube', False) if s else False,
             'hide_all_youtube': getattr(s, 'hide_all_youtube', False) if s else False,
             'hide_all_spotify': getattr(s, 'hide_all_spotify', False) if s else False,
+            'show_track_numbers': getattr(s, 'show_track_numbers', True) if s else True,
         }
 
     return render_template('profile.html', themes=theme_list, settings=settings)
@@ -70,6 +72,7 @@ def _apply_theme_settings(set_field, form):
     if from_profile_page:
         set_field('include_featured', form.get('include_featured') == 'on')
         set_field('include_remixes', form.get('include_remixes') == 'on')
+        set_field('show_track_numbers', form.get('show_track_numbers') == 'on')
         val = form.get('album_sort_order')
         set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
         sbs = form.get('song_button_size', type=int)

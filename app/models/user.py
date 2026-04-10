@@ -77,6 +77,7 @@ class UserSettings(db.Model):
     hide_autogen_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
     hide_all_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
     hide_all_spotify = db.Column(db.Boolean, nullable=False, server_default='0')
+    show_track_numbers = db.Column(db.Boolean, nullable=False, server_default='1')
 
     user = db.relationship('User', back_populates='settings')
 

@@ -220,8 +220,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
 
         <!-- Album header row -->
         <tr id="album-{{ album.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
-            <td class="px-2 py-1 font-bold"
-                style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
+            <td class="py-1 font-bold"
+                style="padding-left: 8px; padding-right: 8px; border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
@@ -257,8 +257,9 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
             <td class="song-name-cell{% if song.note %} has-song-note{% endif %}"
                 data-song-id="{{ song.id }}"
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
-                style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line); position: relative;
+                style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px; border: 1px solid var(--grid-line); position: relative;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
+                {% if show_track_numbers %}<span style="color: var(--text-secondary); font-size: 10px; margin-right: 4px;">{{ track_num }}.</span>{% endif %}
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag" style="cursor: pointer;" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
@@ -382,8 +383,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
 
         {# Album header — same as main discography #}
         <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }}" style="border: 1px solid var(--grid-line); cursor: pointer;" onclick="toggleAlbum(event, {{ album.id }})">
-            <td class="px-2 py-1 font-bold"
-                style="border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
+            <td class="py-1 font-bold"
+                style="padding-left: 8px; padding-right: 8px; border: 1px solid var(--grid-line); background-color: var(--album-header-bg); position: relative;">
                 <span id="album-arrow-{{ album.id }}" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); transition: transform 0.2s; font-size: 8px; cursor: pointer;">&#9660;</span>
                 {% if edit_mode %}
                 <span style="cursor: pointer; color: var(--delete-button); position: absolute; left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
@@ -417,8 +418,9 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                         <td class="song-name-cell{% if song.note %} has-song-note{% endif %}"
                 data-song-id="{{ song.id }}"
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
-                style="padding: 4px 8px 4px 16px; border: 1px solid var(--grid-line); position: relative;
+                style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px; border: 1px solid var(--grid-line); position: relative;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
+                {% if show_track_numbers %}<span style="color: var(--text-secondary); font-size: 10px; margin-right: 4px;">{{ track_num }}.</span>{% endif %}
                 {% if edit_mode %}
                 <span class="edit-inline" style="cursor: pointer;" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag" style="cursor: pointer;" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ child.artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline" style="cursor: pointer; color: var(--text-secondary); font-size: inherit; margin-left: 4px;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
