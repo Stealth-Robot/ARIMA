@@ -575,6 +575,7 @@ def add_artist_submit():
                     is_promoted=song_data.get('is_promoted', False),
                     is_remix=song_data.get('is_remix', False),
                     spotify_url=song_data.get('spotify_url') or None,
+                    youtube_url=song_data.get('youtube_url') or None,
                 )
                 db.session.add(song_obj)
                 db.session.flush()

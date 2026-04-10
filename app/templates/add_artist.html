@@ -181,6 +181,7 @@
 <script>
 var allArtists = {{ artists_js | tojson }};
 let albumCount = 0;
+var _ytIconUrl = '{{ url_for("static", filename="img/youtube.png") }}';
 
 function getNewArtistName() {
     return (document.getElementById('artist_name').value || '').trim() || 'New Artist';
@@ -394,6 +395,9 @@ function addSong(albumNum) {
             '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
                 artistSelectOptions([]) +
             '</select>' +
+        '</div>' +
+        '<div style="margin-left:24px; margin-top:4px;">' +
+            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(div);
     addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
@@ -628,6 +632,7 @@ function collectFormState() {
                     artists: artists,
                 };
                 if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
+                if (songDiv.dataset.youtubeUrl) songEntry.youtube_url = songDiv.dataset.youtubeUrl;
                 album.songs.push(songEntry);
             }
         });
@@ -848,7 +853,11 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                         '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
                             artistSelectOptions([]) +
                         '</select>' +
+                    '</div>' +
+                    '<div style="margin-left:24px; margin-top:4px;">' +
+                        '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
                     '</div>';
+                if (songData.youtube_url) sdiv.dataset.youtubeUrl = songData.youtube_url;
                 sc.appendChild(sdiv);
 
                 // Restore artist rows

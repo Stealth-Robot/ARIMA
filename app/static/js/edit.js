@@ -142,6 +142,61 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
     });
 }
 
+function promptLocalUrl(btnEl, dataKey, label) {
+    closeUrlPopover();
+    var songDiv = btnEl.closest('[id^="song-"], [id^="new-song-"]');
+    var currentValue = songDiv ? (songDiv.dataset[dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();})] || '') : '';
+
+    var popover = document.createElement('div');
+    popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
+
+    var title = document.createElement('div');
+    title.textContent = label;
+    title.style.cssText = 'font-size:12px; font-weight:bold; margin-bottom:6px; color:var(--text-primary);';
+    popover.appendChild(title);
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentValue;
+    input.placeholder = 'https://...';
+    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
+    popover.appendChild(input);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:4px; justify-content:flex-end;';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--button-secondary,#6B7280); color:var(--button-text,#fff); border:none; border-radius:3px; cursor:pointer;';
+    cancelBtn.onclick = closeUrlPopover;
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    saveBtn.onclick = function() {
+        var val = input.value.trim();
+        var camelKey = dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();});
+        if (songDiv) {
+            if (val) songDiv.dataset[camelKey] = val;
+            else delete songDiv.dataset[camelKey];
+        }
+        closeUrlPopover();
+    };
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    popover.appendChild(btnRow);
+    document.body.appendChild(popover);
+    input.focus();
+    input.select();
+    _activeUrlPopover = popover;
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeUrlPopover(); }
+    });
+}
+
 function showInlineEdit(event, endpoint, span) {
     event.stopPropagation();
 
@@ -1752,6 +1807,9 @@ function addNewAlbumSong(currentArtistId) {
             '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:150px;" onchange="onNewSongArtistChange(this,' + n + ')">' +
                 newSongArtistOptions(n) +
             '</select>' +
+        '</div>' +
+        '<div style="padding: 2px 8px;">' +
+            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(row);
     // Auto-add current artist as main
@@ -1875,6 +1933,7 @@ function submitNewAlbum(artistId) {
             artists: artists,
         };
         if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
+        if (songDiv.dataset.youtubeUrl) songEntry.youtube_url = songDiv.dataset.youtubeUrl;
         songs.push(songEntry);
     });
 
