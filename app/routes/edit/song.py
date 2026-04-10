@@ -401,7 +401,6 @@ def split_song(song_id):
 
     album = db.session.get(Album, album_id)
     album_name = album.name if album else '?'
-    db.session.commit()
     log_change(current_user, f'Split "{song.name}" in "{album_name}" into new song (id {clone.id})', song=clone)
     db.session.commit()
 

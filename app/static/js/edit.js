@@ -185,7 +185,7 @@ function showInlineEdit(event, endpoint, span) {
             newSpan.setAttribute('onclick', 'showInlineEdit(event, \'' + endpoint + '\', this)');
             newSpan.textContent = text || original;
             input.replaceWith(newSpan);
-        });
+        }).catch(function() { restore(); });
     }
 
     function restore() {
@@ -258,7 +258,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
             newSpan.setAttribute('onclick', "showInlineDateEdit(event, '" + endpoint + "', this, this.dataset.fullDate)");
             newSpan.textContent = displayYear;
             dateWrapper.replaceWith(newSpan);
-        });
+        }).catch(function() { restore(); });
     }
 
     function restore() {
