@@ -1594,6 +1594,12 @@ function showSongArtists(event, songId, span) {
                         headers: _csrfHeaders({}),
                     }).then(function(r) {
                         if (!r.ok) throw new Error('failed');
+                        // If removed artist is the page artist or a child, the song leaves this discography
+                        var childIds = (typeof _childArtists !== 'undefined') ? _childArtists.map(function(c) { return c.id; }) : [];
+                        if (a.artist_id === _currentArtistId || childIds.indexOf(a.artist_id) !== -1) {
+                            window.location.reload();
+                            return;
+                        }
                         artists = artists.filter(function(x) { return x.artist_id !== a.artist_id; });
                         _songArtists[songId] = artists;
                         renderList();
