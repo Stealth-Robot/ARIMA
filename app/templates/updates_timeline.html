@@ -144,11 +144,19 @@ var chartTip = (function() {
         show: function(html, colRect, barRect) {
             el.innerHTML = html;
             el.style.opacity = '1';
-            var x = colRect.left + colRect.width/2 - el.offsetWidth/2;
-            var y = barRect.top - el.offsetHeight - 8;
-            if (y < 4) y = barRect.bottom + 8;
+            var zoom = parseFloat(document.documentElement.style.zoom) || 1;
+            var cx = colRect.left / zoom;
+            var cw = colRect.width / zoom;
+            var bx = barRect.top / zoom;
+            var bb = barRect.bottom / zoom;
+            var ew = el.offsetWidth;
+            var eh = el.offsetHeight;
+            var vw = window.innerWidth / zoom;
+            var x = cx + cw/2 - ew/2;
+            var y = bx - eh - 8;
+            if (y < 4) y = bb + 8;
             if (x < 4) x = 4;
-            if (x + el.offsetWidth > window.innerWidth - 4) x = window.innerWidth - el.offsetWidth - 4;
+            if (x + ew > vw - 4) x = vw - ew - 4;
             el.style.left = x + 'px';
             el.style.top = y + 'px';
         },
