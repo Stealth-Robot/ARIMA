@@ -288,11 +288,22 @@ textarea {
     .nav-spacer { display: block !important; }
     html { zoom: 1 !important; }
 
-    /* Discography table: horizontal scroll on mobile */
+    /* Discography table: no overflow container — page handles horizontal scroll
+       so position:sticky on the thead still works against the viewport */
     .discography-scroll-wrapper {
-        max-width: 100% !important;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        max-width: none !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+    .discography-scroll-wrapper table {
+        margin-left: 0 !important;
+    }
+
+    /* Song name column: narrower on mobile */
+    .discography-scroll-wrapper th:first-child {
+        width: 160px !important;
+        min-width: 160px !important;
+        max-width: 160px !important;
     }
 
     /* Discography table: sticky song name column */
@@ -301,6 +312,10 @@ textarea {
         left: 0;
         z-index: 2;
         background-color: var(--bg-primary);
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     tr:nth-child(even) .song-name-cell {
         background-color: var(--row-alternate, var(--bg-primary));
@@ -308,17 +323,28 @@ textarea {
 
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
+    .mobile-show { display: inline !important; }
     #mobile-menu-wrapper { display: flex !important; }
     .search-label { display: none; }
     #search-trigger { font-size: 16px !important; padding: 4px 10px !important; }
 
     /* Adjust content offset for taller mobile navbar */
-    #main-content { padding-top: 52px !important; }
-    thead tr[style*="sticky"] { top: 52px !important; }
+    #main-content { padding-top: 52px !important; padding-bottom: 48px !important; }
+    /* Sticky header on mobile — pin below the taller mobile navbar */
+    thead tr[style*="sticky"] { top: 52px !important; z-index: 10 !important; }
 
     nav { gap: 10px !important; font-size: 16px !important; height: 52px !important; }
 
-    /* Artist bottom bar: bigger touch targets */
+    /* Artist bottom bar: taller on mobile for touch targets */
+    .artist-nav-container {
+        height: 44px !important;
+    }
+    .artist-menu {
+        bottom: 44px !important;
+    }
+    #artist-menu {
+        bottom: 44px !important;
+    }
     .artist-nav a {
         padding: 8px 12px !important;
         font-size: 14px !important;
