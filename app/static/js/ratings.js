@@ -95,6 +95,236 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+/* Mobile detection helper */
+function _isMobile() {
+    return window.innerWidth <= 768;
+}
+
+/* Mobile rating modal — score picker + note editor */
+
+let activeMobileModal = null;
+
+function _getSongNameFromRow(cell) {
+    var row = cell.parentElement;
+    var firstCell = row ? row.children[0] : null;
+    var link = firstCell ? firstCell.querySelector('a') : null;
+    var mergeBtn = firstCell ? firstCell.querySelector('[data-song-name]') : null;
+    return link ? link.textContent.trim() : mergeBtn ? mergeBtn.dataset.songName : (firstCell ? firstCell.childNodes[0].textContent.trim() : '');
+}
+
+function closeMobileModal() {
+    if (activeMobileModal) {
+        activeMobileModal.remove();
+        activeMobileModal = null;
+    }
+}
+
+function showMobileRatingModal(cell, songId, targetUserId) {
+    closeMobileModal();
+    closeRatingInput();
+    closeNoteInput();
+
+    var songName = _getSongNameFromRow(cell);
+    var currentRating = cell.textContent.trim();
+    var currentNote = cell.getAttribute('data-note') || '';
+
+    // Backdrop
+    var backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+
+    // Modal
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+
+    // Song name
+    var title = document.createElement('div');
+    title.textContent = songName;
+    title.style.cssText = 'font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    modal.appendChild(title);
+
+    // Score label
+    var scoreLabel = document.createElement('div');
+    scoreLabel.textContent = 'Score';
+    scoreLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+    modal.appendChild(scoreLabel);
+
+    // Score buttons row
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:8px; margin-bottom:14px;';
+    var selectedScore = /^[0-5]$/.test(currentRating) ? currentRating : null;
+
+    function makeScoreBtn(label) {
+        var btn = document.createElement('button');
+        btn.textContent = label;
+        var isSelected = label === selectedScore;
+        btn.style.cssText = 'flex:1; padding:10px 0; font-size:16px; font-weight:600; border:2px solid ' +
+            (isSelected ? 'var(--link,#2563EB)' : 'var(--border,#ccc)') + '; border-radius:6px; cursor:pointer; background:' +
+            (isSelected ? 'var(--link,#2563EB)' : 'var(--bg-primary,#fff)') + '; color:' +
+            (isSelected ? '#fff' : 'var(--text-primary)') + ';';
+        btn.onclick = function() {
+            selectedScore = label;
+            btnRow.querySelectorAll('button').forEach(function(b) {
+                var sel = b.textContent === selectedScore;
+                b.style.background = sel ? 'var(--link,#2563EB)' : 'var(--bg-primary,#fff)';
+                b.style.color = sel ? '#fff' : 'var(--text-primary)';
+                b.style.borderColor = sel ? 'var(--link,#2563EB)' : 'var(--border,#ccc)';
+            });
+        };
+        return btn;
+    }
+
+    for (var i = 0; i <= 5; i++) {
+        btnRow.appendChild(makeScoreBtn(String(i)));
+    }
+    modal.appendChild(btnRow);
+
+    // Note label
+    var noteLabel = document.createElement('div');
+    noteLabel.textContent = 'Note';
+    noteLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+    modal.appendChild(noteLabel);
+
+    // Note textarea
+    var textarea = document.createElement('textarea');
+    textarea.value = currentNote;
+    textarea.rows = 3;
+    textarea.placeholder = 'Add a note...';
+    textarea.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:14px;';
+    modal.appendChild(textarea);
+
+    // Action buttons
+    var actionRow = document.createElement('div');
+    actionRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end;';
+
+    var clearBtn = document.createElement('button');
+    clearBtn.textContent = 'Clear';
+    clearBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+    clearBtn.onclick = function() {
+        // Push undo state
+        var prevText = currentRating;
+        var previousRating = /^[0-5]$/.test(prevText) ? parseInt(prevText) : null;
+        var previousNote = cell.getAttribute('data-note') || '';
+        var artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
+        if (undoStack.length >= 50) undoStack.shift();
+        undoStack.push({ songId: songId, previousRating: previousRating, previousNote: previousNote, cellHTML: cell.outerHTML, artistSlug: artistSlug });
+        redoStack.length = 0;
+
+        closeMobileModal();
+        var extraValues = targetUserId !== undefined ? { user_id: targetUserId } : {};
+        guardedAjax('/rate/delete', {
+            target: cell,
+            swap: 'outerHTML',
+            values: Object.assign({ song_id: songId }, extraValues),
+        }, cell, cell.outerHTML);
+    };
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc); border-radius:6px; cursor:pointer;';
+    cancelBtn.onclick = function() { closeMobileModal(); };
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+    saveBtn.onclick = function() {
+        var newRating = selectedScore !== null ? parseInt(selectedScore) : null;
+        var newNote = textarea.value.trim();
+
+        // Push undo state
+        var prevText = currentRating;
+        var previousRating = /^[0-5]$/.test(prevText) ? parseInt(prevText) : null;
+        var previousNote = cell.getAttribute('data-note') || '';
+        var artistSlug = window.location.pathname.replace(/^\/artists\//, '').replace(/\/$/, '');
+        if (undoStack.length >= 50) undoStack.shift();
+        undoStack.push({ songId: songId, previousRating: previousRating, previousNote: previousNote, cellHTML: cell.outerHTML, artistSlug: artistSlug });
+        redoStack.length = 0;
+
+        closeMobileModal();
+
+        var extraValues = targetUserId !== undefined ? { user_id: targetUserId } : {};
+
+        if (newRating === null && !newNote) {
+            guardedAjax('/rate/delete', {
+                target: cell,
+                swap: 'outerHTML',
+                values: Object.assign({ song_id: songId }, extraValues),
+            }, cell, cell.outerHTML);
+        } else {
+            var values = Object.assign({ song_id: songId, note: newNote || '' }, extraValues);
+            if (newRating !== null) values.rating = newRating;
+            guardedAjax('/rate', {
+                target: cell,
+                swap: 'outerHTML',
+                values: values,
+            }, cell, cell.outerHTML);
+        }
+    };
+
+    actionRow.appendChild(clearBtn);
+    actionRow.appendChild(cancelBtn);
+    actionRow.appendChild(saveBtn);
+    modal.appendChild(actionRow);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    activeMobileModal = backdrop;
+
+    // Close on backdrop click (not modal)
+    backdrop.addEventListener('click', function(e) {
+        if (e.target === backdrop) closeMobileModal();
+    });
+}
+
+function showMobileNoteModal(cell) {
+    closeMobileModal();
+    var note = cell.getAttribute('data-note');
+    if (!note) return;
+
+    var songName = _getSongNameFromRow(cell);
+
+    var backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+
+    var title = document.createElement('div');
+    title.textContent = songName;
+    title.style.cssText = 'font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    modal.appendChild(title);
+
+    var noteDiv = document.createElement('div');
+    noteDiv.textContent = note;
+    noteDiv.style.cssText = 'font-size:14px; color:var(--text-primary); white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow-y:auto;';
+    modal.appendChild(noteDiv);
+
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.cssText = 'margin-top:14px; padding:8px 16px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc); border-radius:6px; cursor:pointer; float:right;';
+    closeBtn.onclick = function() { closeMobileModal(); };
+    modal.appendChild(closeBtn);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    activeMobileModal = backdrop;
+
+    backdrop.addEventListener('click', function(e) {
+        if (e.target === backdrop) closeMobileModal();
+    });
+}
+
+// Mobile: tap non-editable rating cells with notes to view them
+document.addEventListener('click', function(e) {
+    if (!_isMobile()) return;
+    var cell = e.target.closest('td.has-note');
+    if (!cell) return;
+    // Skip if it's an editable cell (those have their own onclick)
+    if (cell.getAttribute('onclick')) return;
+    // Skip if it's a song-name-cell (those have song-level notes, not rating notes)
+    if (cell.classList.contains('song-name-cell')) return;
+    showMobileNoteModal(cell);
+});
+
 /* Inline rating — spreadsheet-style type-and-go */
 
 let activeInput = null;
@@ -102,6 +332,13 @@ let inputGeneration = 0;
 
 function showRatingInput(event, songId, targetUserId) {
     event.stopPropagation();
+
+    // On mobile, use the modal instead of inline input
+    if (_isMobile()) {
+        showMobileRatingModal(event.currentTarget, songId, targetUserId);
+        return;
+    }
+
     closeRatingInput();
 
     const cell = event.currentTarget;
@@ -416,6 +653,7 @@ var _tooltipSelecting = false;
     if (!tooltip) return;
 
     document.addEventListener('mouseover', function (e) {
+        if (_isMobile()) return;
         const td = e.target.closest('td.has-note');
         if (!td) return;
         const note = td.getAttribute('data-note');
@@ -465,6 +703,7 @@ var _tooltipSelecting = false;
     if (!tooltip) return;
 
     document.addEventListener('mouseover', function (e) {
+        if (_isMobile()) return;
         const td = e.target.closest('td.song-name-cell.has-song-note');
         if (!td) return;
         const note = td.getAttribute('data-song-note');
