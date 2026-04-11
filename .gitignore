@@ -38,6 +38,7 @@ instance/
 *.db-wal
 *.db-shm
 venv/
+spreadsheet/
 
 # Data files
 *.xlsx
