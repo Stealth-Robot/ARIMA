@@ -41,3 +41,15 @@ def register_cli(flask_app):
         from scripts.export_spreadsheet import main as export_main
         export_main()
         click.echo('Export complete.')
+
+    @flask_app.cli.command('export-notes')
+    def export_notes_command():
+        """Export song-level notes (column A comments) from spreadsheets to JSON."""
+        from scripts.export_notes import export_notes
+        export_notes()
+
+    @flask_app.cli.command('import-notes')
+    def import_notes_command():
+        """Import song-level notes from JSON into Song.note fields."""
+        from scripts.import_notes import import_notes
+        import_notes()
