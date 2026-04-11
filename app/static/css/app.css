@@ -285,7 +285,7 @@ textarea {
 .nav-spacer { display: none; }
 
 @media (max-width: 768px) {
-    .nav-spacer { display: block !important; }
+    .nav-spacer { display: none !important; }
     html { zoom: 1 !important; }
 
     /* Discography table: no overflow container — page handles horizontal scroll
@@ -324,16 +324,16 @@ textarea {
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
     .mobile-show { display: inline !important; }
-    #mobile-menu-wrapper { display: flex !important; }
+    #mobile-menu-wrapper { display: flex !important; margin-left: 0 !important; }
     .search-label { display: none; }
-    #search-trigger { font-size: 16px !important; padding: 4px 10px !important; }
+    #search-trigger { font-size: 16px !important; padding: 4px 10px !important; margin-left: 0 !important; }
 
     /* Adjust content offset for taller mobile navbar */
     #main-content { padding-top: 52px !important; padding-bottom: 48px !important; }
     /* Sticky header on mobile — pin below the taller mobile navbar */
     thead tr[style*="sticky"] { top: 52px !important; z-index: 10 !important; }
 
-    nav { gap: 10px !important; font-size: 16px !important; height: 52px !important; }
+    nav { gap: 4px !important; font-size: 14px !important; height: 52px !important; padding: 0 8px !important; }
 
     /* Artist bottom bar: taller on mobile for touch targets */
     .artist-nav-container {
