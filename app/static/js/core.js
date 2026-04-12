@@ -217,8 +217,8 @@ function closeSearchOverlay() {
 function switchStatMode(val) {
     var show = val === 'pct' ? 'col-set1' : 'col-set2';
     var hide = val === 'pct' ? 'col-set2' : 'col-set1';
-    document.querySelectorAll('.' + show).forEach(function (el) { el.style.display = ''; });
-    document.querySelectorAll('.' + hide).forEach(function (el) { el.style.display = 'none'; });
+    document.querySelectorAll('.' + show).forEach(function (el) { el.classList.remove('hidden'); el.style.display = ''; });
+    document.querySelectorAll('.' + hide).forEach(function (el) { el.classList.add('hidden'); el.style.display = ''; });
     document.cookie = 'stat_mode=' + val + '; path=/; max-age=31536000; SameSite=Lax';
 }
 

@@ -10,7 +10,7 @@
 
     <!-- Profile Image -->
     {% if not current_user.is_system_or_guest %}
-    <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+    <div class="mb-6 p-4 border rounded border-border">
         <h2 class="font-semibold mb-3">Profile Image</h2>
         <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt="Profile"
              onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
@@ -21,16 +21,14 @@
                 <input type="text" name="profile_image"
                        value="{{ current_user.profile_image or '' }}"
                        placeholder="Image URL"
-                       class="flex-1 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
-                <button type="submit" class="px-4 py-2 rounded text-sm text-white"
-                        style="background-color: var(--button-primary);">Save</button>
+                       class="flex-1 px-3 py-2 border rounded text-sm border-border">
+                <button type="submit" class="px-4 py-2 rounded text-sm text-white bg-button-primary">Save</button>
             </form>
             {% if current_user.profile_image %}
             <form method="POST" action="{{ url_for('profile.update_image') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="profile_image" value="">
-                <button type="submit" class="px-4 py-2 rounded text-sm"
-                        style="background-color: var(--delete-button); color: var(--button-text);">Delete</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-delete text-button-text">Delete</button>
             </form>
             {% endif %}
         </div>
@@ -42,20 +40,19 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- Appearance -->
-        <div class="p-4 border rounded mb-4" style="border-color: var(--border);">
+        <div class="p-4 border rounded mb-4 border-border">
         <h2 class="font-semibold mb-3">Appearance</h3>
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Theme</label>
             <div class="flex gap-2">
-                <select name="theme" class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border);">
+                <select name="theme" class="flex-1 px-3 py-2 border rounded border-border">
                     {% for t in themes %}
                     <option value="{{ t.id }}" {% if t.id == settings.theme %}selected{% endif %}>
                         {{ t.name }}
                     </option>
                     {% endfor %}
                 </select>
-                <a href="{{ url_for('themes.themes_list') }}" class="px-3 py-2 rounded text-sm"
-                   style="background-color: var(--button-primary); color: white; text-decoration: none; white-space: nowrap;">
+                <a href="{{ url_for('themes.themes_list') }}" class="px-3 py-2 rounded text-sm bg-button-primary text-white no-underline whitespace-nowrap">
                     Browse Themes
                 </a>
             </div>
@@ -64,14 +61,14 @@
             <label class="block text-sm font-medium mb-1">Song Button Text Size</label>
             <input type="number" name="song_button_size" min="6" max="30"
                    value="{{ settings.song_button_size }}"
-                   class="w-20 px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
-            <span class="text-xs" style="color: var(--text-secondary);">px (6–30)</span>
+                   class="w-20 px-3 py-2 border rounded text-sm border-border">
+            <span class="text-xs text-secondary-text">px (6–30)</span>
         </div>
 
         </div>
 
         <!-- Discography Display -->
-        <div class="p-4 border rounded mb-4" style="border-color: var(--border);">
+        <div class="p-4 border rounded mb-4 border-border">
         <h2 class="font-semibold mb-3">Discography Display</h3>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
@@ -96,7 +93,7 @@
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Album Sort Order</label>
-            <select name="album_sort_order" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+            <select name="album_sort_order" class="w-full px-3 py-2 border rounded border-border">
                 <option value="desc" {% if settings.album_sort_order == 'desc' %}selected{% endif %}>Newest first</option>
                 <option value="asc" {% if settings.album_sort_order == 'asc' %}selected{% endif %}>Oldest first</option>
             </select>
@@ -106,7 +103,7 @@
 
         <!-- Rating Key -->
         {% if not current_user.is_system_or_guest %}
-        <div class="p-4 border rounded mb-4" style="border-color: var(--border);">
+        <div class="p-4 border rounded mb-4 border-border">
         <h2 class="font-semibold mb-3">Rating Key</h3>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
@@ -131,7 +128,7 @@
                 <input type="text" name="rating_label_{{ score }}"
                        value="{{ settings.rating_labels[score] }}"
                        maxlength="50"
-                       class="flex-1 px-3 py-1 border rounded text-sm" style="border-color: var(--border);">
+                       class="flex-1 px-3 py-1 border rounded text-sm border-border">
             </div>
             {% endfor %}
         </div>
@@ -141,7 +138,7 @@
     </form>
 
     <!-- Link Visibility -->
-    <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
+    <div class="mt-6 p-4 border rounded border-border">
         <h2 class="font-semibold mb-3">Link Visibility</h2>
         <form method="POST" action="{{ url_for('profile.update_settings') }}" id="link-visibility-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -150,7 +147,7 @@
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="hide_autogen_youtube"
                            {% if settings.hide_autogen_youtube %}checked{% endif %}>
-                    <img src="{{ url_for('static', filename='img/youtube.png') }}" style="width: 14px; height: 14px;">
+                    <img src="{{ url_for('static', filename='img/youtube.png') }}" class="w-3.5 h-3.5">
                     Hide autogenerated YouTube links
                 </label>
             </div>
@@ -158,7 +155,7 @@
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="hide_all_youtube"
                            {% if settings.hide_all_youtube %}checked{% endif %}>
-                    <img src="{{ url_for('static', filename='img/youtube.png') }}" style="width: 14px; height: 14px;">
+                    <img src="{{ url_for('static', filename='img/youtube.png') }}" class="w-3.5 h-3.5">
                     Hide all YouTube links
                 </label>
             </div>
@@ -166,7 +163,7 @@
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="hide_all_spotify"
                            {% if settings.hide_all_spotify %}checked{% endif %}>
-                    <img src="{{ url_for('static', filename='img/spotify.png') }}" style="width: 14px; height: 14px;">
+                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-3.5 h-3.5">
                     Hide all Spotify links
                 </label>
             </div>
@@ -175,34 +172,33 @@
 
     <!-- Reset Password -->
     {% if not current_user.is_system_or_guest %}
-    <div class="mt-6 p-4 border rounded" style="border-color: var(--border);">
+    <div class="mt-6 p-4 border rounded border-border">
         <h2 class="font-semibold mb-3">Reset Password</h2>
         {% if session.get('pw_error') %}
-        <p class="text-sm mb-3" style="color: var(--delete-button);">{{ session.pop('pw_error') }}</p>
+        <p class="text-sm mb-3 text-delete">{{ session.pop('pw_error') }}</p>
         {% elif session.get('pw_success') %}
-        <p class="text-sm mb-3" style="color: var(--edit-on-button);">{{ session.pop('pw_success') }}</p>
+        <p class="text-sm mb-3 text-edit-on">{{ session.pop('pw_success') }}</p>
         {% endif %}
         <form method="POST" action="{{ url_for('profile.reset_password') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1">New Password</label>
                 <input type="password" name="new_password" required autocomplete="new-password"
-                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                       class="w-full px-3 py-2 border rounded text-sm border-border">
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1">Confirm Password</label>
                 <input type="password" name="confirm_password" required autocomplete="new-password"
-                       class="w-full px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                       class="w-full px-3 py-2 border rounded text-sm border-border">
             </div>
-            <button type="submit" class="px-6 py-2 rounded text-white"
-                    style="background-color: var(--button-primary);">
+            <button type="submit" class="px-6 py-2 rounded text-white bg-button-primary">
                 Reset Password
             </button>
         </form>
     </div>
     {% endif %}
 
-    <p class="mt-4 text-xs" style="color: var(--text-secondary);">
+    <p class="mt-4 text-xs text-secondary-text">
         Logged in as <strong>{{ current_user.username }}</strong>
         ({{ current_user.role.role }})
     </p>

@@ -9,66 +9,64 @@
     <h1 class="text-2xl font-bold mb-6">Updates</h1>
 
     {% if current_user.is_admin %}
-    <div class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+    <div class="mb-6 p-4 border rounded border-border">
         <h2 class="text-sm font-bold mb-3">New Update</h2>
         <form method="POST" action="{{ url_for('updates.add_update') }}" class="flex flex-col gap-2"
               id="add-update-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex gap-2">
                 <input type="text" name="commit_id" placeholder="Commit ID" required value="{{ saved_form.get('commit_id', '') }}"
-                       class="text-xs px-3 py-1 rounded border flex-1" style="font-family: monospace; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                       class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border" style="font-family: monospace;">
                 <input type="text" name="date" data-datetime-format placeholder="YYYY-MM-DD HH:MM" required value="{{ saved_form.get('date', '') }}"
-                       class="text-xs px-3 py-1 rounded border" style="width: 160px; font-family: monospace; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                       class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border" style="width: 160px; font-family: monospace;">
             </div>
             <div class="flex gap-2">
-                <select name="type_id" class="text-xs px-3 py-1 rounded border"
-                        style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                <select name="type_id" class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border">
                     {% for t in all_types %}
                     <option value="{{ t.id }}">{{ t.type }}</option>
                     {% endfor %}
                 </select>
                 <input type="text" name="description" placeholder="brief description" required value="{{ saved_form.get('description', '') }}"
-                       class="text-xs px-3 py-1 rounded border flex-1" style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
-                <button type="submit" id="add-update-btn" class="text-xs px-4 py-1 rounded"
-                        style="background: var(--button-primary); color: var(--button-text); opacity: 0.4; cursor: not-allowed;" disabled>Add</button>
+                       class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border">
+                <button type="submit" id="add-update-btn" class="text-xs px-4 py-1 rounded bg-button-primary text-button-text"
+                        style="opacity: 0.4; cursor: not-allowed;" disabled>Add</button>
             </div>
         </form>
     </div>
     {% endif %}
 
     <div class="flex gap-2 mb-4 flex-wrap items-center" id="updates-filters">
-        <div style="position: relative; display: inline-block;">
+        <div class="relative inline-block">
             <button type="button" id="type-filter-toggle"
                     onclick="toggleTypeDropdown()"
-                    class="px-3 py-2 border rounded text-xs" style="border-color: var(--border); background: var(--bg-secondary); cursor: pointer; white-space: nowrap;">
+                    class="px-3 py-2 border rounded text-xs border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} &#9662;
             </button>
-            <div id="type-filter-dropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; margin-top: 2px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 {% for t in all_types %}
-                <label style="display: block; padding: 2px 0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" class="type-filter-cb" value="{{ t.type }}"
-                           {% if t.type in include %}checked{% endif %}
-                           style="margin-right: 4px;">
+                <label class="block py-0.5 px-0 text-sm- cursor-pointer">
+                    <input type="checkbox" class="type-filter-cb mr-1" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}>
                     {{ t.type }} — {{ t.description }}
                 </label>
                 {% endfor %}
             </div>
         </div>
         <a href="{{ url_for('updates.updates_timeline', **request.args) }}"
-           style="margin-left: auto; font-size: 12px; color: var(--link); text-decoration: none;">
+           class="ml-auto text-xs text-link no-underline">
             See as timeline &rarr;
         </a>
     </div>
 
-    <table class="w-full text-xs updates-table" style="border-spacing: 0;">
+    <table class="w-full text-xs updates-table border-spacing-0">
         <thead>
-            <tr style="background-color: var(--header-row);">
-                <th class="text-left px-3 py-2" style="width: 140px; border-bottom: 1px solid var(--grid-line);">Date</th>
-                <th class="text-left px-3 py-2" style="width: 80px; border-bottom: 1px solid var(--grid-line);">Type</th>
-                <th class="text-left px-3 py-2" style="border-bottom: 1px solid var(--grid-line);">Description</th>
-                <th class="text-left px-3 py-2" style="width: 80px; border-bottom: 1px solid var(--grid-line);">Commit</th>
+            <tr class="bg-header-row">
+                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 140px;">Date</th>
+                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 80px;">Type</th>
+                <th class="text-left px-3 py-2 border-b border-grid-line">Description</th>
+                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 80px;">Commit</th>
                 {% if current_user.is_admin %}
-                <th class="px-3 py-2" style="width: 100px; border-bottom: 1px solid var(--grid-line);">Actions</th>
+                <th class="px-3 py-2 border-b border-grid-line" style="width: 100px;">Actions</th>
                 {% endif %}
             </tr>
         </thead>
@@ -76,25 +74,24 @@
             {% for u in updates %}
             <tr id="row-{{ u.id }}" data-desc="{{ u.description | e }}" data-commit="{{ u.commit_id }}" data-date="{{ u.date }}" data-type-id="{{ u.type_id or '' }}"
                 style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
-                <td class="update-date" style="white-space: nowrap; font-family: monospace; padding: 8px 10px; border-bottom: 1px solid var(--grid-line);" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
-                <td style="padding: 8px 10px; border-bottom: 1px solid var(--grid-line);">
+                <td class="update-date whitespace-nowrap border-b border-grid-line py-2 px-2.5" style="font-family: monospace;" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
+                <td class="border-b border-grid-line py-2 px-2.5">
                     {% if u.type %}
-                    <span style="display: inline-block; padding: 1px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;
-                                 background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
+                    <span class="inline-block rounded-full text-2xs font-medium" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
                         {{ u.type.type }}
                     </span>
                     {% endif %}
                 </td>
-                <td style="padding: 8px 10px; border-bottom: 1px solid var(--grid-line);" id="desc-{{ u.id }}">{{ u.description }}</td>
-                <td style="font-family: monospace; padding: 8px 10px; border-bottom: 1px solid var(--grid-line);">{{ u.commit_id[:7] }}</td>
+                <td class="border-b border-grid-line py-2 px-2.5" id="desc-{{ u.id }}">{{ u.description }}</td>
+                <td class="border-b border-grid-line py-2 px-2.5" style="font-family: monospace;">{{ u.commit_id[:7] }}</td>
                 {% if current_user.is_admin %}
-                <td class="px-3 py-2 text-center" style="white-space: nowrap; border-bottom: 1px solid var(--grid-line);">
-                    <button type="button" class="text-xs hover:underline" style="color: var(--link);"
+                <td class="px-3 py-2 text-center whitespace-nowrap border-b border-grid-line">
+                    <button type="button" class="text-xs hover:underline text-link"
                             onclick="editRow({{ u.id }})">Edit</button>
                     <form method="POST" action="{{ url_for('updates.delete_update', update_id=u.id) }}" class="inline"
                           onsubmit="return confirm('Delete this update?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="text-xs hover:underline" style="color: var(--delete-button);">Delete</button>
+                        <button type="submit" class="text-xs hover:underline text-delete">Delete</button>
                     </form>
                 </td>
                 {% endif %}
@@ -102,7 +99,7 @@
             {% endfor %}
             {% if not updates %}
             <tr>
-                <td colspan="{% if current_user.is_admin %}5{% else %}4{% endif %}" class="px-3 py-4 text-center" style="color: var(--text-secondary);">No updates yet.</td>
+                <td colspan="{% if current_user.is_admin %}5{% else %}4{% endif %}" class="px-3 py-4 text-center text-secondary-text">No updates yet.</td>
             </tr>
             {% endif %}
         </tbody>

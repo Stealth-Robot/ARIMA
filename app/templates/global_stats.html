@@ -5,15 +5,15 @@
 {% block og_description %}Cross-artist scoring and averages{% endblock %}
 
 {% block content %}
-<div style="margin: 0 auto; max-width: fit-content; padding-bottom: 44px; display: flex; gap: 12px; align-items: flex-start;">
-<table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+<div class="mx-auto flex gap-3 items-start" style="max-width: fit-content; padding-bottom: 44px;">
+<table class="text-xs border-collapse border border-grid-line">
     <!-- Sticky header -->
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Global</th>
-            <th class="px-2 py-1 text-left" style="position: sticky; top: 44px; z-index: 10; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">Group</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row" style="top: 44px; outline: 1px solid var(--grid-line);">Global</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row" style="top: 44px; outline: 1px solid var(--grid-line);">Group</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center" style="position: sticky; top: 44px; z-index: 10; width: 65px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--header-row);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center sticky z-10 border border-grid-line bg-header-row" style="top: 44px; width: 65px; outline: 1px solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -22,27 +22,24 @@
         {% set a = row.artist %}
         {% set scores = row.scores %}
 
-        <tr style="border: 1px solid var(--grid-line);
-                   {% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        <tr class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             {# Global Average — coloured with text #}
             {% set global_style = score_to_style(scores.global_avg) %}
-            <td class="px-2 py-1 text-center"
-                style="border: 1px solid var(--grid-line);
-                       {% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
+            <td class="px-2 py-1 text-center border border-grid-line"
+                style="{% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
                 {% if scores.global_avg is not none %}{{ "%.3f"|format(scores.global_avg) }}{% endif %}
             </td>
             {# Artist name — black text on gender bg, clickable #}
-            <td class="px-2 py-1" style="border: 1px solid var(--grid-line); background-color: var({{ gender_css[a.gender_id] }}); color: var(--artist-button-text);">
+            <td class="px-2 py-1 border border-grid-line text-artist-button-text" style="background-color: var({{ gender_css[a.gender_id] }});">
                 {% if row.has_subunits %}<button class="expand-btn" data-artist-id="{{ a.id }}" data-url="{{ url_for('stats.expand_subunit_scores', artist_id=a.id) }}" data-expanded="false">&rsaquo;</button>{% endif %}
-                <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" style="color: var(--artist-button-text); text-decoration: none;">{{ a.name }}</a>
+                <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-artist-button-text no-underline">{{ a.name }}</a>
             </td>
             {# Per-user scores — coloured with text #}
             {% for u in users %}
             {% set user_score = scores.per_user[u.id] %}
             {% set user_style = score_to_style(user_score) %}
-            <td class="px-1 py-1 text-center"
-                style="border: 1px solid var(--grid-line);
-                       {% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
+            <td class="px-1 py-1 text-center border border-grid-line"
+                style="{% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
                 {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% endif %}
             </td>
             {% endfor %}
@@ -52,24 +49,23 @@
 </table>
 
 <!-- Key tables — standard (if enabled) + user's key (if enabled), sticky sidebar -->
-<div style="position: sticky; top: 44px; align-self: flex-start;">
+<div class="sticky self-start" style="top: 44px;">
     {% set my = current_user.settings if current_user.is_authenticated and current_user.settings else None %}
     {% set show_default = my.show_default_key_bool if my else True %}
     {% set is_first_table = True %}
     {% if show_default %}
-    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);">
+    <table class="text-xs border-collapse border border-grid-line">
         <thead>
             <tr>
-                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">Standard</th>
+                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 180px; outline: 1px solid var(--grid-line);">Standard</th>
             </tr>
         </thead>
         <tbody>
             {% for score in range(5, -1, -1) %}
             {% set kstyle = rating_cell_style(score) %}
             <tr>
-                <td class="px-1 py-1"
-                    style="border: 1px solid var(--grid-line); white-space: nowrap;
-                           {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                <td class="px-1 py-1 border border-grid-line whitespace-nowrap"
+                    style="{% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                     {{ score }}.0 {{ DEFAULT_RATING_LABELS[score] }}
                 </td>
             </tr>
@@ -79,19 +75,18 @@
     {% set is_first_table = False %}
     {% endif %}
     {% if my and my.show_my_key_bool %}
-    <table class="text-xs border-collapse" style="border: 1px solid var(--grid-line);{% if not is_first_table %} margin-top: 8px;{% endif %}">
+    <table class="text-xs border-collapse border border-grid-line" style="{% if not is_first_table %} margin-top: 8px;{% endif %}">
         <thead>
             <tr>
-                <th class="px-1 py-1 text-center" style="width: 180px; border: 1px solid var(--grid-line); outline: 1px solid var(--grid-line); background-color: var(--bg-primary); font-weight: bold;">{{ current_user.username }}</th>
+                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 180px; outline: 1px solid var(--grid-line);">{{ current_user.username }}</th>
             </tr>
         </thead>
         <tbody>
             {% for score in range(5, -1, -1) %}
             {% set kstyle = rating_cell_style(score) %}
             <tr>
-                <td class="px-1 py-1"
-                    style="border: 1px solid var(--grid-line); white-space: nowrap;
-                           {% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
+                <td class="px-1 py-1 border border-grid-line whitespace-nowrap"
+                    style="{% if kstyle %}background-color: {{ kstyle.bg }}; color: {{ kstyle.text }};{% endif %}">
                     {{ score }}.0 {{ my.rating_label(score) }}
                 </td>
             </tr>

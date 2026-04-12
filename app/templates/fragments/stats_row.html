@@ -1,35 +1,34 @@
 {% for row in rows %}
 <tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
-    style="border: 1px solid var(--grid-line); background-color: var(--row-alternate);">
-    <td class="px-2 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
-        {% if row.stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
+    class="border border-grid-line" style="background-color: var(--row-alternate);">
+    <td class="px-2 py-1 text-center col-set1 border border-grid-line"
+        style="{% if row.stats.global_avg_pct is not none %}background-color: {{ pct_to_colour(row.stats.global_avg_pct) }};{% endif %}">
         {{ row.stats.global_avg_pct }}
     </td>
-    <td class="py-1 col-set2" style="display: none; border: 1px solid var(--grid-line); text-align: right; padding-right: 14px;">
+    <td class="py-1 col-set2 border border-grid-line text-right" style="display: none; padding-right: 14px;">
         {{ row.stats.global_avg_unrated }}
     </td>
-    <td class="px-2 py-1 pl-8" style="border: 1px solid var(--grid-line);
-        background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));
-        color: var(--text-primary);">
+    <td class="px-2 py-1 pl-8 border border-grid-line text-primary-text"
+        style="background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) 20%, var(--bg-primary));">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>
     {# Set 1: pct_rated per user #}
     {% for u in users %}
-    <td class="px-1 py-1 text-center col-set1" style="border: 1px solid var(--grid-line);
-        {% if row.stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(row.stats.per_user[u.id].pct_rated) }};{% endif %}">
+    <td class="px-1 py-1 text-center col-set1 border border-grid-line"
+        style="{% if row.stats.per_user[u.id].pct_rated is not none %}background-color: {{ pct_to_colour(row.stats.per_user[u.id].pct_rated) }};{% endif %}">
         {{ row.stats.per_user[u.id].pct_rated }}
     </td>
     {% endfor %}
     {# Set 2: unrated count per user #}
     {% for u in users %}
     {% set uc = row.stats.per_user[u.id].unrated_count %}
-    <td class="px-1 py-1 text-center col-set2" style="display: none; border: 1px solid var(--grid-line);
-        {% if uc is not none %}background-color: {{ unrated_to_colour(uc) }};{% endif %}">
+    <td class="px-1 py-1 text-center col-set2 border border-grid-line"
+        style="display: none;{% if uc is not none %} background-color: {{ unrated_to_colour(uc) }};{% endif %}">
         {{ uc }}
     </td>
     {% endfor %}
     {# Song Count — always far right #}
-    <td class="px-1 py-1 text-center" style="border: 1px solid var(--grid-line);">
+    <td class="px-1 py-1 text-center border border-grid-line">
         {{ row.stats.song_count }}
     </td>
 </tr>

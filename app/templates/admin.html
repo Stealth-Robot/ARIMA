@@ -10,16 +10,16 @@
         <h2 class="text-lg font-bold mb-3">Genres</h2>
         <div class="flex flex-wrap gap-2 mb-3">
             {% for g in genres %}
-            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-secondary); border: 1px solid var(--border);">{{ g.genre }}</span>
+            <span class="text-xs px-2 py-1 rounded bg-secondary-bg border border-border">{{ g.genre }}</span>
             {% endfor %}
         </div>
         <form method="POST" action="{{ url_for('admin.add_genre') }}" class="flex gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="name" placeholder="New genre name" required
                    class="text-sm px-3 py-1 rounded border"
-                   style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                   class="bg-secondary-bg text-primary-text border-border">
             <button type="submit" class="text-sm px-4 py-1 rounded"
-                    style="background: var(--button-primary); color: var(--button-text);">Add Genre</button>
+                    class="bg-button-primary text-button-text">Add Genre</button>
         </form>
     </div>
 
@@ -27,23 +27,22 @@
         <h2 class="text-lg font-bold mb-3">Countries</h2>
         <div class="flex flex-wrap gap-2 mb-3">
             {% for c in countries %}
-            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-secondary); border: 1px solid var(--border);">{{ c.country }}</span>
+            <span class="text-xs px-2 py-1 rounded bg-secondary-bg border border-border">{{ c.country }}</span>
             {% endfor %}
         </div>
         <form method="POST" action="{{ url_for('admin.add_country') }}" class="flex gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="name" placeholder="New country name" required
                    class="text-sm px-3 py-1 rounded border"
-                   style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                   class="bg-secondary-bg text-primary-text border-border">
             <button type="submit" class="text-sm px-4 py-1 rounded"
-                    style="background: var(--button-primary); color: var(--button-text);">Add Country</button>
+                    class="bg-button-primary text-button-text">Add Country</button>
         </form>
     </div>
 
     <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Database</h2>
-        <a href="{{ url_for('admin.replace_database') }}" class="text-sm px-4 py-1 rounded inline-block"
-           style="background: var(--delete-button); color: var(--button-text); text-decoration: none;">
+        <a href="{{ url_for('admin.replace_database') }}" class="text-sm px-4 py-1 rounded inline-block bg-delete text-button-text no-underline">
             Replace Database
         </a>
     </div>

@@ -281,6 +281,79 @@ textarea {
     display: block;
 }
 
+/* ── Navigation utility classes ── */
+
+/* Desktop navbar link */
+.nav-link {
+    flex-shrink: 0;
+    color: var(--navbar-text);
+    text-decoration: none;
+}
+
+/* Desktop dropdown panel (hidden by default, shown on hover) */
+.nav-dropdown-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--navbar-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 50;
+    min-width: 140px;
+}
+
+/* Desktop dropdown link item */
+.nav-dropdown-item {
+    display: block;
+    padding: 8px 14px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.nav-dropdown-item:hover {
+    background: var(--hover-bg);
+}
+
+/* Mobile hamburger menu item */
+.mobile-menu-item {
+    display: block;
+    padding: 10px 16px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-size: 15px;
+}
+.mobile-menu-item:hover {
+    background: var(--hover-bg);
+}
+
+/* ── Table utility classes ── */
+
+/* Sticky table header row (below fixed navbar) */
+.thead-sticky {
+    position: sticky;
+    top: 44px;
+    z-index: 10;
+}
+
+/* Table header cell with grid-line border + outline */
+.th-cell {
+    border: 1px solid var(--grid-line);
+    outline: 1px solid var(--grid-line);
+}
+
+/* Album collapse/expand arrow */
+.collapse-arrow {
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
 /* ── Mobile responsive ── */
 .nav-spacer { display: none; }
 

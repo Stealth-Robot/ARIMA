@@ -3,42 +3,42 @@
 {% block title %}A.R.I.M.A. — Add Artist{% endblock %}
 
 {% block content %}
-<div id="spotify-progress-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px 32px; min-width:320px; max-width:400px; text-align:center;">
-        <div id="spotify-progress-icon" style="font-size:20px; margin-bottom:8px;">&#10227;</div>
-        <div id="spotify-progress-title" style="font-weight:600; margin-bottom:12px;">Importing from Spotify...</div>
-        <div id="spotify-progress-msg" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">Connecting to Spotify...</div>
-        <div style="background:var(--border); border-radius:4px; height:8px; overflow:hidden; margin-bottom:6px;">
-            <div id="spotify-progress-bar" style="background:var(--link); height:100%; width:0%; transition:width 0.3s ease;"></div>
+<div id="spotify-progress-modal" class="hidden fixed inset-0 items-center justify-center" style="z-index:9999; background:rgba(0,0,0,0.5);">
+    <div class="bg-secondary-bg border border-border rounded-lg text-center" style="padding:24px 32px; min-width:320px; max-width:400px;">
+        <div id="spotify-progress-icon" class="mb-2" style="font-size:20px;">&#10227;</div>
+        <div id="spotify-progress-title" class="font-semibold mb-3">Importing from Spotify...</div>
+        <div id="spotify-progress-msg" class="text-sm text-secondary-text mb-3">Connecting to Spotify...</div>
+        <div class="rounded overflow-hidden h-2 mb-1.5" style="background:var(--border);">
+            <div id="spotify-progress-bar" class="h-full" style="background:var(--link); width:0%; transition:width 0.3s ease;"></div>
         </div>
-        <div id="spotify-progress-pct" style="font-size:12px; color:var(--text-secondary);">0%</div>
-        <button id="spotify-progress-ok" type="button" onclick="document.getElementById('spotify-progress-modal').style.display='none'" style="display:none; margin-top:12px; padding:6px 24px; border-radius:4px; background:var(--button-secondary); color:var(--text-primary); border:none; cursor:pointer;">OK</button>
+        <div id="spotify-progress-pct" class="text-xs text-secondary-text">0%</div>
+        <button id="spotify-progress-ok" type="button" onclick="document.getElementById('spotify-progress-modal').style.display='none'" class="rounded cursor-pointer mt-3 text-primary-text" style="display:none; padding:6px 24px; background:var(--button-secondary); border:none;">OK</button>
     </div>
 </div>
 
 <div class="max-w-5xl mx-auto">
     <div class="flex items-center gap-6 mb-6">
         <h1 class="text-2xl font-bold">Add Artist</h1>
-        <button type="button" onclick="clearAddArtistDraft()" class="text-xs px-3 py-1 rounded"
-                style="background:var(--delete-button); color:var(--button-text);">
+        <button type="button" onclick="clearAddArtistDraft()" class="text-xs px-3 py-1 rounded text-button-text"
+                style="background:var(--delete-button);">
             Clear All
         </button>
     </div>
 
     {% if errors and errors.get('general') %}
-    <div class="mb-4 p-3 rounded text-sm" style="background:var(--delete-button); color:var(--button-text);">{{ errors['general'] }}</div>
+    <div class="mb-4 p-3 rounded text-sm text-button-text" style="background:var(--delete-button);">{{ errors['general'] }}</div>
     {% endif %}
 
     <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="mb-4 p-3 rounded" style="border:1px dashed var(--border);">
-            <label class="block text-sm mb-1" style="color:var(--text-secondary);">Import from Spotify</label>
+            <label class="block text-sm mb-1 text-secondary-text">Import from Spotify</label>
             <div class="flex gap-2">
                 <input type="text" id="spotify-artist-url" placeholder="https://open.spotify.com/artist/..." class="flex-1 px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
-                <button type="button" id="spotify-artist-import-btn" onclick="importArtistFromSpotify()" class="px-4 py-1 rounded text-sm" style="background:var(--button-secondary); color:var(--text-primary);">Import</button>
+                <button type="button" id="spotify-artist-import-btn" onclick="importArtistFromSpotify()" class="px-4 py-1 rounded text-sm text-primary-text" style="background:var(--button-secondary);">Import</button>
             </div>
-            <p class="text-xs mt-1" style="color:var(--text-secondary);">Imports artist name and full discography. You still need to set gender, country, and genres.</p>
+            <p class="text-xs mt-1 text-secondary-text">Imports artist name and full discography. You still need to set gender, country, and genres.</p>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-6">
@@ -90,18 +90,18 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-3" style="display:flex; gap:16px;">
-                        <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_disbanded" value="1" style="margin-right:3px;"
+                    <div class="mb-3 flex gap-4">
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_disbanded" value="1" class="mr-1"
                                    {% if form_data.get('is_disbanded') %}checked{% endif %}> Disbanded
                         </label>
-                        <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_complete" value="1" style="margin-right:3px;"
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_complete" value="1" class="mr-1"
                                    {% if form_data.get('is_complete') %}checked{% endif %}> Complete
                         </label>
                         {% if current_user.is_admin %}
-                        <label class="text-sm" style="cursor: pointer;">
-                            <input type="checkbox" name="is_tracked" value="1" style="margin-right:3px;"
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_tracked" value="1" class="mr-1"
                                    {% if form_data.get('is_tracked') %}checked{% endif %}> Tracked
                         </label>
                         {% endif %}
@@ -114,20 +114,20 @@
                 <div class="flex items-center justify-between mb-3">
                     <span class="font-semibold">Discography</span>
                     <div class="flex gap-2">
-                        <div style="position: relative;">
+                        <div class="relative">
                             <button type="button" onclick="toggleAlbumSearch()"
-                                    class="px-3 py-1 rounded text-sm"
-                                    style="background-color: var(--button-secondary); color: var(--text-primary);">
+                                    class="px-3 py-1 rounded text-sm text-primary-text"
+                                    style="background-color: var(--button-secondary);">
                                 + Existing Album
                             </button>
-                            <div id="album-search-box" style="display:none; position:absolute; right:0; top:100%; z-index:50; width:320px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:8px; margin-top:4px;">
+                            <div id="album-search-box" class="absolute bg-secondary-bg border border-border rounded-md p-2 mt-1" style="display:none; right:0; top:100%; z-index:50; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
                                 <input type="text" id="album-search-input" placeholder="Search albums..." class="w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="albumSearchDebounce()">
-                                <div id="album-search-results" style="max-height:250px; overflow-y:auto; margin-top:4px;"></div>
+                                <div id="album-search-results" class="overflow-y-auto mt-1" style="max-height:250px;"></div>
                             </div>
                         </div>
                         <button type="button" onclick="addAlbum()"
-                                class="px-3 py-1 rounded text-sm"
-                                style="background-color: var(--button-secondary); color: var(--text-primary);">
+                                class="px-3 py-1 rounded text-sm text-primary-text"
+                                style="background-color: var(--button-secondary);">
                             + Add Album
                         </button>
                     </div>
@@ -137,20 +137,20 @@
                 <p class="text-xs text-red-400 mb-2">{{ errors['albums'] }}</p>
                 {% endif %}
 
-                <div class="mb-4 p-3 rounded" style="border:1px solid var(--border); background:var(--bg-secondary);">
-                    <label style="display:block; font-size:13px; margin-bottom:6px; color:var(--text-secondary);">Bulk Genres</label>
-                    <div id="bulk-genre-checkboxes" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
-                    <div style="display:flex; gap:6px;">
-                        <button type="button" onclick="bulkApplyGenres()" class="px-3 py-1 rounded text-xs"
-                                style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer;">
+                <div class="mb-4 p-3 rounded border border-border bg-secondary-bg">
+                    <label class="block text-sm- mb-1.5 text-secondary-text">Bulk Genres</label>
+                    <div id="bulk-genre-checkboxes" class="flex gap-2 flex-wrap mb-2"></div>
+                    <div class="flex gap-1.5">
+                        <button type="button" onclick="bulkApplyGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-button-text"
+                                style="background:var(--edit-on-button); border:none;">
                             Apply to All
                         </button>
-                        <button type="button" onclick="bulkRemoveGenres()" class="px-3 py-1 rounded text-xs"
-                                style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border); cursor:pointer;">
+                        <button type="button" onclick="bulkRemoveGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-primary-text border border-border"
+                                style="background:var(--button-secondary);">
                             Remove from All
                         </button>
-                        <button type="button" onclick="bulkClearGenres()" class="px-3 py-1 rounded text-xs"
-                                style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">
+                        <button type="button" onclick="bulkClearGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-button-text"
+                                style="background:var(--delete-button); border:none;">
                             Clear All Genres
                         </button>
                     </div>
@@ -163,15 +163,15 @@
         <!-- Hidden serialised album data -->
         <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
 
-        <div class="flex gap-3" style="position: sticky; bottom: 0; padding: 12px 0; margin-top: 16px; background: var(--bg-primary); border-top: 1px solid var(--border); z-index: 10;">
+        <div class="flex gap-3 sticky bottom-0 py-3 mt-4 bg-primary-bg z-10" style="border-top: 1px solid var(--border);">
             <button type="submit" id="submit-btn" disabled
-                    class="px-6 py-2 rounded font-semibold"
-                    style="background-color: var(--edit-on-button); color: var(--button-text);">
+                    class="px-6 py-2 rounded font-semibold text-button-text"
+                    style="background-color: var(--edit-on-button);">
                 Add Artist
             </button>
             <a href="{{ url_for('artists.artists_list') }}"
-               class="px-6 py-2 rounded"
-               style="background-color: var(--button-secondary); color: var(--text-primary);">
+               class="px-6 py-2 rounded text-primary-text"
+               style="background-color: var(--button-secondary);">
                 Cancel
             </a>
         </div>

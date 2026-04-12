@@ -1,8 +1,8 @@
-<div class="prose text-sm" style="color: var(--text-primary);">
+<div class="prose text-sm text-primary-text">
     {% if rendered %}{{ rendered | safe }}{% else %}No rules set.{% endif %}
 </div>
 {% if rule and rule.last_edited_by %}
-<p class="text-xs mt-2" style="color: var(--text-secondary);">
+<p class="text-xs mt-2 text-secondary-text">
     Last edited by {{ rule.editor.username if rule.editor else 'Unknown' }}
     {% if rule.last_edited_at %} on {{ rule.last_edited_at[:10] }}{% endif %}
 </p>
@@ -11,8 +11,7 @@
 <button hx-get="{{ url_for('rules.rules_edit') }}"
         hx-target="#rules-content"
         hx-swap="innerHTML"
-        class="mt-4 px-4 py-2 rounded text-sm text-white"
-        style="background-color: var(--button-primary);">
+        class="mt-4 px-4 py-2 rounded text-sm text-white bg-button-primary">
     Edit
 </button>
 {% endif %}

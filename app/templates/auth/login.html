@@ -49,20 +49,20 @@
         <!-- Header image -->
         <div class="flex justify-center mb-6">
             <img src="{{ url_for('static', filename='img/tab_image.jpg') }}"
-                 class="w-32 h-32 rounded-full object-cover" style="border: 0.25px solid #000000;" alt="A.R.I.M.A.">
+                 class="w-32 h-32 rounded-full object-cover border border-black" alt="A.R.I.M.A.">
         </div>
 
         <!-- Title -->
-        <h1 class="text-3xl font-bold text-center mb-2" style="color: var(--text-primary);">A.R.I.M.A.</h1>
+        <h1 class="text-3xl font-bold text-center mb-2 text-primary-text">A.R.I.M.A.</h1>
 
         <!-- Mission statement -->
-        <p class="text-center mb-2" style="color: var(--text-secondary);">App for Rating and Indexing Music Albums</p>
+        <p class="text-center mb-2 text-secondary-text">App for Rating and Indexing Music Albums</p>
 
         <!-- Horizontal line -->
-        <hr class="mb-4" style="border-color: var(--border);">
+        <hr class="mb-4 border-border">
 
         <!-- Description -->
-        <p class="text-center text-sm mb-8" style="color: var(--text-secondary);">
+        <p class="text-center text-sm mb-8 text-secondary-text">
             A lightweight app for friends to rate and compare music.
         </p>
 
@@ -85,12 +85,12 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-4">
-                <label class="text-sm" style="color: var(--text-secondary);">Username<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Username<span class="required-star">*</span></label>
                 <input type="text" name="username" placeholder="Username"
                        class="login-input" required>
             </div>
             <div class="mb-6">
-                <label class="text-sm" style="color: var(--text-secondary);">Password<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Password<span class="required-star">*</span></label>
                 <input type="password" name="password" placeholder="Password"
                        class="login-input" required>
             </div>
@@ -102,24 +102,24 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-4">
-                <label class="text-sm" style="color: var(--text-secondary);">Email<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Email<span class="required-star">*</span></label>
                 <input type="email" name="email" id="create-email" placeholder="Email"
                        value="{{ create_email or '' }}"
                        class="login-input" required>
             </div>
             <div class="mb-4">
-                <label class="text-sm" style="color: var(--text-secondary);">Username<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Username<span class="required-star">*</span></label>
                 <input type="text" name="username" id="create-username" placeholder="Username"
                        value="{{ create_username or '' }}"
                        class="login-input" required>
             </div>
             <div class="mb-4">
-                <label class="text-sm" style="color: var(--text-secondary);">Password<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Password<span class="required-star">*</span></label>
                 <input type="password" name="password" placeholder="Create Password"
                        class="login-input" required>
             </div>
             <div class="mb-6">
-                <label class="text-sm" style="color: var(--text-secondary);">Confirm Password<span class="required-star">*</span></label>
+                <label class="text-sm text-secondary-text">Confirm Password<span class="required-star">*</span></label>
                 <input type="password" name="confirm_password" placeholder="Confirm Password"
                        class="login-input" required>
             </div>

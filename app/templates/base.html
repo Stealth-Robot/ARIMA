@@ -44,190 +44,158 @@
         }
     </style>
 </head>
-<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: Arial, Helvetica, sans-serif;">
+<body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar — all inline styles to guarantee single line -->
-    <nav style="position: fixed; top: 0; left: 0; right: 0; z-index: 30;
-                height: 44px; box-sizing: border-box;
-                background-color: var(--navbar-bg); color: var(--navbar-text);
-                display: flex; flex-wrap: nowrap; align-items: center;
-                gap: 10px; padding: 0 12px; overflow: visible;
-                white-space: nowrap; font-size: 15px;">
-        <a href="{{ url_for('home.home') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'home.home' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Home</a>
-        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
+    <nav class="fixed top-0 left-0 right-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 10px; padding: 0 12px; overflow: visible;">
+        <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint == 'home.home' %}border-b-3 border-navbar-active{% endif %}">Home</a>
+        <div class="mobile-hide flex-shrink-0 relative"
              onmouseenter="this.querySelector('.stats-dd').style.display='block'"
              onmouseleave="this.querySelector('.stats-dd').style.display='none'"
              onclick="var d=this.querySelector('.stats-dd');d.style.display=d.style.display==='block'?'none':'block'">
-            <a href="{{ url_for('stats.global_stats') }}" style="color:var(--navbar-text); text-decoration:none;
-                         {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Stats</a>
-            <div class="stats-dd" style="display:none; position:absolute; top:100%; left:0;
-                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
-                <a href="{{ url_for('stats.artist_stats') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Artist Stats</a>
-                <a href="{{ url_for('stats.global_stats') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Global Stats</a>
-                <a href="{{ url_for('updates.updates_timeline') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Update Stats</a>
+            <a href="{{ url_for('stats.global_stats') }}" class="nav-link {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Stats</a>
+            <div class="stats-dd nav-dropdown-panel">
+                <a href="{{ url_for('stats.artist_stats') }}" class="nav-dropdown-item">Artist Stats</a>
+                <a href="{{ url_for('stats.global_stats') }}" class="nav-dropdown-item">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" class="nav-dropdown-item">Update Stats</a>
             </div>
         </div>
-        <a href="{{ url_for('artists.artists_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Artists</a>
-        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
+        <a href="{{ url_for('artists.artists_list') }}" class="nav-link {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-b-3 border-navbar-active{% endif %}">Artists</a>
+        <div class="mobile-hide flex-shrink-0 relative"
              onmouseenter="this.querySelector('.changelog-dd').style.display='block'"
              onmouseleave="this.querySelector('.changelog-dd').style.display='none'"
              onclick="var d=this.querySelector('.changelog-dd');d.style.display=d.style.display==='block'?'none':'block'">
-            <a href="{{ url_for('changelog.changelog') }}" style="color:var(--navbar-text); text-decoration:none;
-                         {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Changelog</a>
-            <div class="changelog-dd" style="display:none; position:absolute; top:100%; left:0;
-                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
-                <a href="{{ url_for('changelog.changelog') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Changelog</a>
-                <a href="{{ url_for('updates.updates_page') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Updates</a>
+            <a href="{{ url_for('changelog.changelog') }}" class="nav-link {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Changelog</a>
+            <div class="changelog-dd nav-dropdown-panel">
+                <a href="{{ url_for('changelog.changelog') }}" class="nav-dropdown-item">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" class="nav-dropdown-item">Updates</a>
             </div>
         </div>
         {% if current_user.is_authenticated and current_user.can_rate %}
-        <div class="mobile-hide" style="flex-shrink: 0; position: relative;"
+        <div class="mobile-hide flex-shrink-0 relative"
              onmouseenter="this.querySelector('.submissions-dd').style.display='block'"
              onmouseleave="this.querySelector('.submissions-dd').style.display='none'"
              onclick="var d=this.querySelector('.submissions-dd');d.style.display=d.style.display==='block'?'none':'block'">
-            <a href="{{ url_for('submissions.submissions_for_me') }}" style="color:var(--navbar-text); text-decoration:none;
-                         {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Submissions</a>
-            <div class="submissions-dd" style="display:none; position:absolute; top:100%; left:0;
-                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:4px;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:50; min-width:140px;">
-                <a href="{{ url_for('submissions.submissions_for_me') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">For Me</a>
+            <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-link {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-b-3 border-navbar-active{% endif %}">Submissions</a>
+            <div class="submissions-dd nav-dropdown-panel">
+                <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-dropdown-item">For Me</a>
                 {% if current_user.is_editor_or_admin %}
-                <a href="{{ url_for('submissions.submissions_page') }}" style="display:block; padding:8px 14px; color:var(--navbar-text); text-decoration:none; font-size:14px; white-space:nowrap;"
-                   onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">Data Approvals</a>
+                <a href="{{ url_for('submissions.submissions_page') }}" class="nav-dropdown-item">Data Approvals</a>
                 {% endif %}
             </div>
         </div>
         {% endif %}
-        <a class="mobile-hide" href="{{ url_for('rules.rules') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'rules.rules' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Rules</a>
+        <a class="mobile-hide nav-link {% if request.endpoint == 'rules.rules' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('rules.rules') }}">Rules</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
-        <a class="mobile-hide" href="{{ url_for('users.user_list') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'users.user_list' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Users</a>
-        <a class="mobile-hide" href="{{ url_for('admin.admin_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint and request.endpoint.startswith('admin.') %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Admin</a>
+        <a class="mobile-hide nav-link {% if request.endpoint == 'users.user_list' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('users.user_list') }}">Users</a>
+        <a class="mobile-hide nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('admin.admin_page') }}">Admin</a>
         {% endif %}
 
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
-        <span class="nav-spacer" style="flex:1;"></span>
-        <form id="rating-mode-form" method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" style="display:inline; margin:0;">
+        <span class="nav-spacer flex-1"></span>
+        <form id="rating-mode-form" method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" class="inline m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="rating-mode-btn" type="submit"
-                    style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
-                           border-radius:3px; cursor:pointer;
-                           {% if session.get('rating_mode', 'self') == 'all' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--edit-off-button); color:var(--button-text);{% endif %}">
+                    class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('rating_mode', 'self') == 'all' %}bg-edit-on{% else %}bg-edit-off{% endif %}">
                 Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
             </button>
         </form>
-        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="display:inline; margin:0;">
+        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="inline m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="edit-mode-btn" type="submit"
-                    style="flex-shrink:0; border:none; font-size:13px; padding:2px 8px;
-                           border-radius:3px; cursor:pointer;
-                           {% if session.get('edit_mode') %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--edit-off-button); color:var(--button-text);{% endif %}">
+                    class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('edit_mode') %}bg-edit-on{% else %}bg-edit-off{% endif %}">
                 &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
             </button>
         </form>
-        <span class="nav-spacer" style="flex:1;"></span>
+        <span class="nav-spacer flex-1"></span>
         {% if session.get('edit_mode') %}
-        <a id="add-artist-link" class="mobile-hide" href="{{ url_for('edit.add_artist_form') }}"
-           style="flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px;
-                  background:var(--edit-on-button); color:var(--button-text); text-decoration:none;">
+        <a id="add-artist-link" class="mobile-hide flex-shrink-0 text-sm- py-0.5 px-2 rounded bg-edit-on text-button-text no-underline" href="{{ url_for('edit.add_artist_form') }}">
             + Artist
         </a>
-        <a id="views-link" class="mobile-hide" href="{{ url_for('views.views_page') }}" style="flex-shrink: 0; color: var(--navbar-text); text-decoration: none; {% if request.endpoint == 'views.views_page' %}border-bottom: 3px solid var(--navbar-active);{% endif %}">Views</a>
+        <a id="views-link" class="mobile-hide nav-link {% if request.endpoint == 'views.views_page' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('views.views_page') }}">Views</a>
         {% endif %}
         {% endif %}
 
         <!-- Search trigger (compact in navbar) -->
         <!-- Mobile menu button (hidden on desktop) -->
-        <div id="mobile-menu-wrapper" style="display:none; flex-shrink:0; position:relative; margin-left:auto;">
+        <div id="mobile-menu-wrapper" class="hidden flex-shrink-0 relative ml-auto">
             <button onclick="var m=document.getElementById('mobile-menu-panel');m.style.display=m.style.display==='block'?'none':'block'" type="button"
-                    style="background:none; border:1px solid var(--border); color:var(--navbar-text); font-size:18px; padding:2px 8px; border-radius:3px; cursor:pointer;">&#9776;</button>
-            <div id="mobile-menu-panel" style="display:none; position:absolute; top:100%; right:0; margin-top:4px;
-                        background:var(--navbar-bg); border:1px solid var(--border); border-radius:6px;
-                        box-shadow:0 4px 16px rgba(0,0,0,0.4); z-index:60; min-width:200px; padding:8px 0;">
-                <a href="{{ url_for('stats.artist_stats') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Artist Stats</a>
-                <a href="{{ url_for('stats.global_stats') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Global Stats</a>
-                <a href="{{ url_for('updates.updates_timeline') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Update Stats</a>
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <a href="{{ url_for('changelog.changelog') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Changelog</a>
-                <a href="{{ url_for('updates.updates_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Updates</a>
-                <a href="{{ url_for('rules.rules') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Rules</a>
+                    class="bg-transparent border border-border text-navbar-text text-lg py-0.5 px-2 rounded cursor-pointer">&#9776;</button>
+            <div id="mobile-menu-panel" class="hidden absolute right-0 mt-1 bg-navbar-bg border border-border rounded-md z-50 py-2" style="top:100%; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px;">
+                <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
+                <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('changelog.changelog') }}" class="mobile-menu-item">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" class="mobile-menu-item">Updates</a>
+                <a href="{{ url_for('rules.rules') }}" class="mobile-menu-item">Rules</a>
                 {% if current_user.is_authenticated and current_user.is_admin %}
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <a href="{{ url_for('users.user_list') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Users</a>
-                <a href="{{ url_for('admin.admin_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Admin</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('users.user_list') }}" class="mobile-menu-item">Users</a>
+                <a href="{{ url_for('admin.admin_page') }}" class="mobile-menu-item">Admin</a>
                 {% endif %}
                 {% if current_user.is_authenticated and current_user.can_rate %}
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <a href="{{ url_for('submissions.submissions_for_me') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Submissions</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('submissions.submissions_for_me') }}" class="mobile-menu-item">Submissions</a>
                 {% if current_user.is_editor_or_admin %}
-                <a href="{{ url_for('submissions.submissions_page') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Data Approvals</a>
+                <a href="{{ url_for('submissions.submissions_page') }}" class="mobile-menu-item">Data Approvals</a>
                 {% endif %}
                 {% endif %}
                 {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <form method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" style="margin:0;">
+                <div class="border-t border-border my-1"></div>
+                <form method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" style="display:block; width:100%; text-align:left; padding:10px 16px; color:var(--navbar-text); font-size:15px; background:none; border:none; cursor:pointer;">
+                    <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
                         Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
                     </button>
                 </form>
-                <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" style="margin:0;">
+                <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" style="display:block; width:100%; text-align:left; padding:10px 16px; color:var(--navbar-text); font-size:15px; background:none; border:none; cursor:pointer;">
+                    <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
                         Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
                     </button>
                 </form>
                 {% endif %}
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <div style="padding:8px 16px;">
-                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Country</label>
+                <div class="border-t border-border my-1"></div>
+                <div class="py-2 px-4">
+                    <label class="block text-xs text-secondary-text mb-1">Country</label>
                     <select onchange="this.form.submit()" form="mobile-country-form" name="country"
-                            style="width:100%; padding:6px 8px; font-size:14px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px;">
+                            class="w-full py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded">
                         <option value="">All</option>
                         {% for c in countries %}
                         <option value="{{ c.id }}" {% if current_country == c.id %}selected{% endif %}>{{ c.country }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div style="padding:4px 16px 8px;">
-                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Genre</label>
+                <div class="px-4" style="padding-top:4px; padding-bottom:8px;">
+                    <label class="block text-xs text-secondary-text mb-1">Genre</label>
                     <select onchange="this.form.submit()" form="mobile-genre-form" name="genre"
-                            style="width:100%; padding:6px 8px; font-size:14px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px;">
+                            class="w-full py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded">
                         <option value="">All</option>
                         {% for g in genres %}
                         <option value="{{ g.id }}" {% if current_genre == g.id %}selected{% endif %}>{{ g.genre }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <form id="mobile-country-form" method="POST" action="{{ url_for('profile.update_settings') }}" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
-                <form id="mobile-genre-form" method="POST" action="{{ url_for('profile.update_settings') }}" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+                <form id="mobile-country-form" method="POST" action="{{ url_for('profile.update_settings') }}" class="hidden"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+                <form id="mobile-genre-form" method="POST" action="{{ url_for('profile.update_settings') }}" class="hidden"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
                 {% if current_user.is_authenticated %}
-                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
-                <a href="{{ url_for('profile.profile') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Profile</a>
-                <a href="{{ url_for('auth.logout') }}" style="display:block; padding:10px 16px; color:var(--navbar-text); text-decoration:none; font-size:15px;">Logout</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('profile.profile') }}" class="mobile-menu-item">Profile</a>
+                <a href="{{ url_for('auth.logout') }}" class="mobile-menu-item">Logout</a>
                 {% endif %}
             </div>
         </div>
 
         <button id="search-trigger" onclick="openSearchOverlay()"
-                style="flex-shrink: 0; margin-left: auto; background: none; border: 1px solid var(--border);
-                       color: var(--navbar-text); font-size: 13px; padding: 2px 8px;
-                       border-radius: 3px; cursor: pointer;">&#128269; <span class="search-label">Search</span></button>
+                class="flex-shrink-0 ml-auto bg-transparent border border-border text-navbar-text text-sm- py-0.5 px-2 rounded cursor-pointer">&#128269; <span class="search-label">Search</span></button>
 
         <!-- Right: Filters + Profile -->
-        <div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+        <div class="flex-shrink-0 flex items-center gap-2 whitespace-nowrap">
             <!-- Country filter -->
-            <select class="mobile-hide" name="country"
+            <select class="mobile-hide flex-shrink-0 bg-navbar-bg text-navbar-text border-border text-sm- py-0.5 px-1.5 rounded border border-border" name="country"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    hx-on::after-request="if(event.detail.successful) window.location.reload()"
-                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                    hx-on::after-request="if(event.detail.successful) window.location.reload()">
                 <option value="">All</option>
                 {% for c in countries %}
                 <option value="{{ c.id }}" {% if current_country == c.id %}selected{% endif %}>
@@ -237,11 +205,10 @@
             </select>
 
             <!-- Genre filter -->
-            <select class="mobile-hide" name="genre"
+            <select class="mobile-hide flex-shrink-0 bg-navbar-bg text-navbar-text border-border text-sm- py-0.5 px-1.5 rounded border border-border" name="genre"
                     hx-post="{{ url_for('profile.update_settings') }}"
                     hx-swap="none"
-                    hx-on::after-request="if(event.detail.successful) window.location.reload()"
-                    style="flex-shrink: 0; background-color: var(--navbar-bg); color: var(--navbar-text); border-color: var(--border); font-size: 13px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                    hx-on::after-request="if(event.detail.successful) window.location.reload()">
                 <option value="">All</option>
                 {% for g in genres %}
                 <option value="{{ g.id }}" {% if current_genre == g.id %}selected{% endif %}>
@@ -252,14 +219,14 @@
 
             <!-- Profile + Logout -->
             {% if current_user.is_authenticated %}
-            <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80" style="color: var(--navbar-text); display: flex; align-items: center; gap: 4px; text-decoration: none;">
+            <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80 text-navbar-text flex items-center gap-1 no-underline">
                 <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
                      referrerpolicy="no-referrer"
                      onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                     style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                     style="width: 22px; height: 22px;" class="rounded-full object-cover flex-shrink-0">
                 <span class="mobile-hide">{{ current_user.username }}</span>
             </a>
-            <a href="{{ url_for('auth.logout') }}" class="mobile-hide hover:opacity-80" style="color: var(--navbar-text);">
+            <a href="{{ url_for('auth.logout') }}" class="mobile-hide hover:opacity-80 text-navbar-text">
                 Logout
             </a>
             {% endif %}
@@ -268,18 +235,14 @@
 
     <!-- Search overlay (outside nav, positioned by JS near trigger button) -->
     <div id="search-overlay"
-         style="display: none; position: fixed; top: 44px; z-index: 40; width: 320px;">
+         class="hidden fixed top-11 z-40" style="width: 320px;">
         <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                autocomplete="off"
-               style="background-color: var(--bg-secondary); color: var(--text-primary);
-                      border: 1px solid var(--border); font-size: 14px; padding: 6px 10px;
-                      border-radius: 4px; width: 100%; box-sizing: border-box;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+               class="bg-secondary-bg text-primary-text border border-border text-sm rounded w-full"
+               style="padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div id="search-results"
-             style="display: none; max-height: 400px; overflow-y: auto;
-                    background-color: var(--bg-secondary);
-                    border: 1px solid var(--border); border-top: none;
-                    border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+             class="hidden overflow-y-auto bg-secondary-bg border border-border border-t-0"
+             style="max-height: 400px; border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         </div>
     </div>
 
@@ -289,11 +252,10 @@
     <!-- Flash messages (error category only) -->
     {% with messages = get_flashed_messages(with_categories=true, category_filter=['error']) %}
     {% if messages %}
-    <div style="position:fixed; top:50px; left:50%; transform:translateX(-50%); z-index:100; width:auto; max-width:500px;">
+    <div class="fixed z-50" style="top:50px; left:50%; transform:translateX(-50%); width:auto; max-width:500px;">
         {% for category, message in messages %}
-        <div style="padding:10px 20px; margin-bottom:6px; border-radius:6px; font-size:13px;
-                    background:var(--delete-button); color:var(--button-text);
-                    box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:pointer;"
+        <div class="py-2.5 px-6 mb-1.5 rounded-md text-sm- bg-delete text-button-text cursor-pointer"
+             style="box-shadow:0 2px 8px rgba(0,0,0,0.3);"
              onclick="this.remove()">
             {{ message }}
         </div>
@@ -303,17 +265,15 @@
     {% endwith %}
 
     <!-- Main content -->
-    <main id="main-content" class="p-4" style="padding-top: 44px;">
+    <main id="main-content" class="p-4 pt-11">
         {% block content %}{% endblock %}
     </main>
 
     {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
-    <div id="update-notification" onclick="dismissUpdate()" style="display:none; position:fixed; bottom:20px; right:20px; z-index:60;
-         background:var(--edit-on-button); color:var(--button-text); padding:12px 28px 12px 18px; border-radius:8px;
-         box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px; max-width:320px; line-height:1.5; cursor:pointer;">
-        <div style="font-weight:bold; margin-bottom:4px;">A new update to ARIMA was deployed!</div>
-        <div>Check the <a href="{{ url_for('updates.updates_page') }}" style="color:var(--button-text); text-decoration:underline; font-weight:bold;">Updates</a> tab for details</div>
-        <button onclick="dismissUpdate()" style="position:absolute; top:4px; right:4px; background:none; border:none; color:var(--button-text); cursor:pointer; font-size:14px; padding:4px 6px;">&times;</button>
+    <div id="update-notification" onclick="dismissUpdate()" class="hidden fixed z-50 bg-edit-on text-button-text rounded-lg text-sm- cursor-pointer" style="bottom:20px; right:20px; padding:12px 28px 12px 18px; box-shadow:0 4px 12px rgba(0,0,0,0.3); max-width:320px; line-height:1.5;">
+        <div class="font-bold mb-1">A new update to ARIMA was deployed!</div>
+        <div>Check the <a href="{{ url_for('updates.updates_page') }}" class="text-button-text underline font-bold">Updates</a> tab for details</div>
+        <button onclick="dismissUpdate()" class="absolute bg-transparent border-0 text-button-text cursor-pointer text-sm" style="top:4px; right:4px; padding:4px 6px;">&times;</button>
     </div>
     <script>
     var _latestUpdateId = {{ latest_update_id or 0 }};

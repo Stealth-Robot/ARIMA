@@ -17,14 +17,14 @@
                hx-target="#changelog-list"
                hx-swap="innerHTML"
                hx-include="#changelog-filters"
-               class="flex-1 px-3 py-2 border rounded" style="border-color: var(--border); min-width: 200px;">
+               class="flex-1 px-3 py-2 border rounded border-border" style="min-width: 200px;">
         <select name="user_id" id="changelog-user-filter"
                 hx-get="{{ url_for('changelog.changelog') }}"
                 hx-trigger="change"
                 hx-target="#changelog-list"
                 hx-swap="innerHTML"
                 hx-include="#changelog-filters"
-                class="px-3 py-2 border rounded" style="border-color: var(--border);">
+                class="px-3 py-2 border rounded border-border">
             <option value="">All users</option>
             {% for u in users %}
             <option value="{{ u.id }}" {% if user_id == u.id|string %}selected{% endif %}>{{ u.username }}</option>
@@ -32,15 +32,15 @@
         </select>
 
         <!-- Include types dropdown -->
-        <div style="position: relative; display: inline-block;">
+        <div class="relative inline-block">
             <button type="button" id="include-toggle"
                     onclick="toggleDropdown('include-dropdown')"
-                    class="px-3 py-2 border rounded" style="border-color: var(--border); background: var(--bg-secondary); cursor: pointer; white-space: nowrap;">
+                    class="px-3 py-2 border rounded border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} ▾
             </button>
-            <div id="include-dropdown" class="filter-dropdown" style="display: none; position: absolute; top: 100%; right: 0; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; margin-top: 2px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="include-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 {% for t in all_types %}
-                <label style="display: block; padding: 2px 0; font-size: 13px; cursor: pointer;">
+                <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" name="include" value="{{ t.type }}"
                            {% if t.type in include %}checked{% endif %}
                            hx-get="{{ url_for('changelog.changelog') }}"
@@ -48,7 +48,7 @@
                            hx-target="#changelog-list"
                            hx-swap="innerHTML"
                            hx-include="#changelog-filters"
-                           style="margin-right: 4px;">
+                           class="mr-1">
                     {{ t.type }}
                 </label>
                 {% endfor %}
@@ -58,9 +58,9 @@
     </div>
 
     <!-- Filter summary -->
-    <div id="filter-summary" class="text-xs mb-4" style="color: var(--text-secondary);">
+    <div id="filter-summary" class="text-xs mb-4 text-secondary-text">
         Showing: {{ shown | join(', ') or 'None' }}
-        {% if hidden %}<span style="margin-left: 16px;">Hiding: {{ hidden | join(', ') }}</span>{% endif %}
+        {% if hidden %}<span class="ml-4">Hiding: {{ hidden | join(', ') }}</span>{% endif %}
     </div>
 
     <div id="changelog-list">

@@ -19,17 +19,16 @@
 
     <div class="space-y-6">
     {% for data in themes %}
-    <div class="p-4 border rounded" style="border-color: var(--border);">
+    <div class="p-4 border rounded border-border">
         <!-- Header: name + actions -->
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
                 <h2 class="font-semibold">{{ data.display_name }}</h2>
                 {% if data.theme.user_id != current_user.id %}
-                <form method="POST" action="{{ url_for('themes.theme_copy', theme_id=data.theme.id) }}" style="margin: 0;"
+                <form method="POST" action="{{ url_for('themes.theme_copy', theme_id=data.theme.id) }}" class="m-0"
                       onsubmit="return confirm('This will overwrite your personal theme colours. This cannot be undone. Continue?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="text-xs px-2 py-1 rounded"
-                            style="background: var(--button-secondary); color: var(--text-primary); cursor: pointer; border: none;">
+                    <button type="submit" class="text-xs px-2 py-1 rounded bg-button-secondary text-primary-text cursor-pointer border-0">
                         Copy to mine
                     </button>
                 </form>
@@ -37,16 +36,14 @@
             </div>
             <div class="flex items-center gap-2">
                 {% if data.theme.user_id == current_user.id %}
-                <button type="button" class="text-sm px-3 py-1 rounded"
-                        style="background-color: var(--delete-button); color: var(--button-text); border: none; cursor: pointer;"
+                <button type="button" class="text-sm px-3 py-1 rounded bg-delete text-button-text border-0 cursor-pointer"
                         onclick="document.getElementById('theme-reset-modal').style.display='flex';">
                     Reset
                 </button>
                 {% endif %}
                 {% if data.can_edit %}
                 <a href="{{ url_for('themes.theme_edit', theme_id=data.theme.id) }}"
-                   class="text-sm px-3 py-1 rounded"
-                   style="background-color: var(--button-primary); color: var(--button-text); text-decoration: none;">
+                   class="text-sm px-3 py-1 rounded bg-button-primary text-button-text no-underline">
                     Edit
                 </a>
                 {% endif %}
@@ -54,31 +51,30 @@
         </div>
 
         <!-- Colour preview strip — key colours at a glance -->
-        <div style="display: flex; gap: 3px; height: 40px; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+        <div class="flex overflow-hidden rounded mb-2 gap-0.75 h-10">
             {% for col in preview_cols %}
             {% set val = data.colours[col] %}
             {% if val %}
-            <div style="flex: 1; background-color: {{ val }};" title="{{ col }}: {{ val }}"></div>
+            <div class="flex-1" style="background-color: {{ val }};" title="{{ col }}: {{ val }}"></div>
             {% endif %}
             {% endfor %}
         </div>
 
         <!-- Expandable full grid -->
         <div>
-            <button type="button" class="text-xs mb-2"
-                    style="background: none; border: none; cursor: pointer; color: var(--text-secondary);"
+            <button type="button" class="text-xs mb-2 bg-transparent border-0 cursor-pointer text-secondary-text"
                     onclick="var d=this.nextElementSibling;d.style.display=d.style.display==='none'?'grid':'none';this.textContent=d.style.display==='none'?'▸ Show all colours':'▾ Hide colours';">
                 ▸ Show all colours
             </button>
-            <div style="display: none; grid-template-columns: repeat(auto-fill, 60px); gap: 6px; justify-content: center;">
+            <div class="justify-center" style="display: none; grid-template-columns: repeat(auto-fill, 60px); gap: 6px;">
                 {% for col in colour_cols %}
                 {% set val = data.colours[col] %}
                 {% if val %}
-                <div style="text-align: center;">
-                    <span style="font-size: 9px; color: var(--text-secondary); display: block; font-family: monospace;">{{ val }}</span>
-                    <div style="width: 100%; height: 28px; border-radius: 3px; border: 1px solid var(--grid-line); background-color: {{ val }};"
+                <div class="text-center">
+                    <span class="block font-mono text-secondary-text" style="font-size: 9px;">{{ val }}</span>
+                    <div class="w-full rounded border border-grid-line" style="height: 28px; background-color: {{ val }};"
                          title="{{ col }}: {{ val }}"></div>
-                    <span style="font-size: 9px; color: var(--text-secondary); display: block; line-height: 1.2; margin-top: 1px;">{{ col[:10] }}</span>
+                    <span class="block text-secondary-text" style="font-size: 9px; line-height: 1.2; margin-top: 1px;">{{ col[:10] }}</span>
                 </div>
                 {% endif %}
                 {% endfor %}
@@ -95,22 +91,20 @@
      onclick="if(event.target===this)this.style.display='none'">
     <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
                 padding:24px; width:340px; max-width:90vw;">
-        <h3 class="text-lg font-bold mb-2" style="color:var(--text-primary);">Reset Theme</h3>
-        <p class="text-sm mb-4" style="color:var(--text-secondary);">This will reset all colours in your personal theme to default.</p>
+        <h3 class="text-lg font-bold mb-2 text-primary-text">Reset Theme</h3>
+        <p class="text-sm mb-4 text-secondary-text">This will reset all colours in your personal theme to default.</p>
         <form method="POST" action="{{ url_for('themes.theme_reset') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
-            <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
+            <label class="block text-sm mb-1 text-primary-text">Enter your password to confirm</label>
             <input type="password" name="password" required autocomplete="current-password"
-                   class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
+                   class="w-full px-3 py-2 border rounded mb-4 border-border">
             <div class="flex gap-3 justify-end">
                 <button type="button" onclick="document.getElementById('theme-reset-modal').style.display='none'"
-                        class="px-4 py-2 rounded text-sm"
-                        style="background-color:var(--button-secondary); color:var(--text-primary);">
+                        class="px-4 py-2 rounded text-sm bg-button-secondary text-primary-text">
                     Cancel
                 </button>
-                <button type="submit" class="px-4 py-2 rounded text-sm"
-                        style="background-color:var(--delete-button); color:var(--button-text);">
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-delete text-button-text">
                     Reset
                 </button>
             </div>

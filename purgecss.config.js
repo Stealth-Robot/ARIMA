@@ -1,7 +1,9 @@
 module.exports = {
   content: [
     'app/templates/**/*.html',
-    'app/static/js/app.js',
+    'app/static/js/core.js',
+    'app/static/js/edit.js',
+    'app/static/js/ratings.js',
   ],
   css: ['app/static/vendor/tailwind.min.css'],
   output: 'app/static/vendor/',

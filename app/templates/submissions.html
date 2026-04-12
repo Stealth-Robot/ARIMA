@@ -8,24 +8,24 @@
 
     <div class="flex gap-2 mb-4 flex-wrap" id="submissions-filters">
         <!-- Status tabs -->
-        <div style="display:flex; gap:4px;">
+        <div class="flex gap-1">
             <a href="#" onclick="event.preventDefault(); switchStatus('open')"
-               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+               class="px-3 py-2 rounded text-sm no-underline cursor-pointer" style="{% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 Open
             </a>
             <a href="#" onclick="event.preventDefault(); switchStatus('history')"
-               class="px-3 py-2 rounded text-sm" style="text-decoration:none; cursor:pointer; {% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+               class="px-3 py-2 rounded text-sm no-underline cursor-pointer" style="{% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
                 History
             </a>
         </div>
 
         <input type="text" id="submissions-search" placeholder="Search..." value="{{ search or '' }}"
                oninput="debouncedSearch()"
-               class="px-3 py-2 border rounded text-sm" style="border-color: var(--border); width:160px;">
+               class="px-3 py-2 border rounded text-sm border-border w-40">
 
         <select name="type" id="submissions-type-filter"
                 onchange="applySubmissionFilters()"
-                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                class="px-3 py-2 border rounded text-sm border-border">
             <option value="">All Types</option>
             <option value="artist" {% if type_filter == 'artist' %}selected{% endif %}>Artist</option>
             <option value="album" {% if type_filter == 'album' %}selected{% endif %}>Album</option>
@@ -34,7 +34,7 @@
 
         <select name="submitted_by" id="submissions-submitted-by-filter"
                 onchange="applySubmissionFilters()"
-                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                class="px-3 py-2 border rounded text-sm border-border">
             <option value="">Submitted By</option>
             {% for u in filter_users %}
             <option value="{{ u.id }}" {% if submitted_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
@@ -44,24 +44,24 @@
         {% if status == 'history' %}
         <select name="resolved_by" id="submissions-resolved-by-filter"
                 onchange="applySubmissionFilters()"
-                class="px-3 py-2 border rounded text-sm" style="border-color: var(--border);">
+                class="px-3 py-2 border rounded text-sm border-border">
             <option value="">Resolved By</option>
             {% for u in filter_users %}
             <option value="{{ u.id }}" {% if resolved_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
             {% endfor %}
         </select>
         {% endif %}
-        <label style="font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; display:flex; align-items:center; gap:4px;">
-            <input type="checkbox" id="hide-my-subs" onchange="toggleHideMySubmissions(this.checked)" style="cursor:pointer;">
+        <label class="text-sm- text-secondary-text cursor-pointer select-none flex items-center gap-1">
+            <input type="checkbox" id="hide-my-subs" onchange="toggleHideMySubmissions(this.checked)" class="cursor-pointer">
             Hide my submissions
         </label>
     </div>
 
     <!-- Bulk action bar -->
-    <div id="bulk-actions" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:var(--bg-secondary); border:1px solid var(--border); display:none;">
-        <span id="bulk-count" class="text-sm" style="margin-right:12px;"></span>
-        <button id="bulk-approve-btn" onclick="bulkApprove()" class="px-3 py-1 rounded text-sm" style="background:var(--edit-on-button); color:var(--button-text); border:none; cursor:pointer; margin-right:6px;">Approve Selected</button>
-        <button id="bulk-reject-btn" onclick="bulkRejectPrompt()" class="px-3 py-1 rounded text-sm" style="background:var(--delete-button); color:var(--button-text); border:none; cursor:pointer;">Reject Selected</button>
+    <div id="bulk-actions" class="hidden mb-3 py-2 px-3 rounded-md bg-secondary-bg border border-border">
+        <span id="bulk-count" class="text-sm mr-3"></span>
+        <button id="bulk-approve-btn" onclick="bulkApprove()" class="px-3 py-1 rounded text-sm bg-edit-on text-button-text border-0 cursor-pointer mr-1.5">Approve Selected</button>
+        <button id="bulk-reject-btn" onclick="bulkRejectPrompt()" class="px-3 py-1 rounded text-sm bg-delete text-button-text border-0 cursor-pointer">Reject Selected</button>
     </div>
 
     <div id="submissions-list">
@@ -81,9 +81,8 @@
             <div id="approve-modal-related" class="mb-3"></div>
             <div class="flex gap-2 justify-end">
                 <button type="button" onclick="closeApproveModal()"
-                        class="px-4 py-2 rounded text-sm" style="background:var(--bg-primary); border:1px solid var(--border);">Cancel</button>
-                <button type="submit" class="px-4 py-2 rounded text-sm"
-                        style="background:var(--edit-on-button); color:var(--button-text);">Approve</button>
+                        class="px-4 py-2 rounded text-sm bg-primary-bg border border-border">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-edit-on text-button-text">Approve</button>
             </div>
         </form>
     </div>
@@ -101,20 +100,17 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="block text-sm mb-1">Reason (required)</label>
-                <textarea name="reason" required rows="2" class="w-full px-3 py-2 border rounded text-sm"
-                          style="border-color:var(--border);"></textarea>
+                <textarea name="reason" required rows="2" class="w-full px-3 py-2 border rounded text-sm border-border"></textarea>
             </div>
-            <div id="reject-password-field" class="mb-3" style="display:none;">
+            <div id="reject-password-field" class="mb-3 hidden">
                 <label class="block text-sm mb-1">Password (required)</label>
-                <input type="password" name="password" class="w-full px-3 py-2 border rounded text-sm"
-                       style="border-color:var(--border);">
+                <input type="password" name="password" class="w-full px-3 py-2 border rounded text-sm border-border">
             </div>
-            <div id="reject-error" class="text-sm mb-2" style="color:var(--delete-button); display:none;"></div>
+            <div id="reject-error" class="text-sm mb-2 text-delete hidden"></div>
             <div class="flex gap-2 justify-end">
                 <button type="button" onclick="closeRejectModal()"
-                        class="px-4 py-2 rounded text-sm" style="background:var(--bg-primary); border:1px solid var(--border);">Cancel</button>
-                <button type="submit" class="px-4 py-2 rounded text-sm"
-                        style="background:var(--delete-button); color:var(--button-text);">Reject</button>
+                        class="px-4 py-2 rounded text-sm bg-primary-bg border border-border">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-delete text-button-text">Reject</button>
             </div>
         </form>
     </div>
@@ -171,17 +167,17 @@ var _approveSubId = null;
 function toggleGroup(artistId) {
     var children = document.querySelectorAll('.artist-group-' + artistId + '-child');
     var icon = document.getElementById('expand-icon-' + artistId);
-    var visible = children.length > 0 && children[0].style.display !== 'none';
+    var visible = children.length > 0 && !children[0].classList.contains('hidden');
     for (var i = 0; i < children.length; i++) {
         var el = children[i];
         if (visible) {
             // Collapse: hide all children and album sub-children
-            el.style.display = 'none';
+            el.classList.add('hidden');
         } else {
             // Expand: only show direct children (albums + loose songs), not album sub-children
             // Album sub-children have the album-group-*-child class
             if (!el.className.match(/album-group-\d+-child/)) {
-                el.style.display = '';
+                el.classList.remove('hidden');
             }
         }
     }
@@ -198,9 +194,10 @@ function toggleGroup(artistId) {
 function toggleAlbum(artistId, albumId) {
     var children = document.querySelectorAll('.album-group-' + albumId + '-child');
     var icon = document.getElementById('expand-album-icon-' + albumId);
-    var visible = children.length > 0 && children[0].style.display !== 'none';
+    var visible = children.length > 0 && !children[0].classList.contains('hidden');
     for (var i = 0; i < children.length; i++) {
-        children[i].style.display = visible ? 'none' : '';
+        if (visible) children[i].classList.add('hidden');
+        else children[i].classList.remove('hidden');
     }
     if (icon) icon.innerHTML = visible ? '&#9654;' : '&#9660;';
 }
@@ -468,10 +465,10 @@ function updateBulkActions() {
     var checked = document.querySelectorAll('.submission-checkbox:checked');
     var bar = document.getElementById('bulk-actions');
     if (checked.length === 0) {
-        bar.style.display = 'none';
+        bar.classList.add('hidden');
         return;
     }
-    bar.style.display = '';
+    bar.classList.remove('hidden');
     var approveCount = getSelectedIds('canApprove').length;
     var rejectCount = getSelectedIds('canReject').length;
     document.getElementById('bulk-count').textContent = checked.length + ' selected';

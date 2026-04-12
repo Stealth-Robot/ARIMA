@@ -1,7 +1,7 @@
 <form hx-post="{{ url_for('rules.rules_save') }}"
       hx-target="#rules-content"
       hx-swap="innerHTML">
-    <p class="text-xs mb-2" style="color: var(--text-secondary);">
+    <p class="text-xs mb-2 text-secondary-text">
         Markdown supported:
         <code>## Heading</code> &nbsp;
         <code>**bold**</code> &nbsp;
@@ -14,20 +14,18 @@
         <code>---</code> (horizontal rule)
     </p>
     <textarea name="content" rows="20"
-              class="w-full px-3 py-2 border rounded text-sm font-mono"
-              style="border-color: var(--border);">{{ rule.content if rule else '' }}</textarea>
+              class="w-full px-3 py-2 border rounded text-sm font-mono border-border">{{ rule.content if rule else '' }}</textarea>
     <div class="flex gap-3 mt-3">
         <button type="submit"
-                class="px-4 py-2 rounded text-sm text-white"
-                style="background-color: var(--button-primary);">
+                class="px-4 py-2 rounded text-sm text-white bg-button-primary">
             Save
         </button>
         <button type="button"
                 hx-get="{{ url_for('rules.rules_display') }}"
                 hx-target="#rules-content"
                 hx-swap="innerHTML"
-                class="px-4 py-2 rounded text-sm"
-                style="background-color: var(--button-secondary); color: var(--text-primary);">
+                class="px-4 py-2 rounded text-sm text-primary-text"
+                style="background-color: var(--button-secondary);">
             Cancel
         </button>
     </div>

@@ -2,7 +2,9 @@ module.exports = {
   purge: {
     content: [
       'app/templates/**/*.html',
-      'app/static/js/app.js',
+      'app/static/js/core.js',
+      'app/static/js/edit.js',
+      'app/static/js/ratings.js',
     ],
     enabled: true,
     options: {
@@ -20,6 +22,22 @@ module.exports = {
   },
   theme: {
     extend: {
+      spacing: {
+        '0.75': '3px',
+        '2.5': '10px',
+        '3.5': '14px',
+        '4.5': '18px',
+        '11': '44px',
+      },
+      fontSize: {
+        'xxs': ['10px', { lineHeight: '1.2' }],
+        '2xs': ['11px', { lineHeight: '1.3' }],
+        'sm-': ['13px', { lineHeight: '1.4' }],
+        'base-': ['15px', { lineHeight: '1.5' }],
+      },
+      borderWidth: {
+        '3': '3px',
+      },
       colors: {
         // background colors
         "primary-bg": "var(--bg-primary)",

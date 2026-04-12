@@ -1,26 +1,24 @@
-<div id="confirm-delete-modal" style="display:none; position:fixed; inset:0; z-index:100;
-     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+<div id="confirm-delete-modal" class="fixed inset-0 z-100 items-center justify-center"
+     style="display:none; background:rgba(0,0,0,0.5);"
      onclick="if(event.target===this)this.style.display='none'">
-    <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
-                padding:24px; width:340px; max-width:90vw;">
-        <h3 id="confirm-delete-title" class="text-lg font-bold mb-2" style="color:var(--text-primary);"></h3>
-        <p id="confirm-delete-msg" class="text-sm mb-4" style="color:var(--text-secondary); white-space:pre-line;"></p>
+    <div class="bg-secondary-bg border border-border rounded-lg p-6" style="width:340px; max-width:90vw;">
+        <h3 id="confirm-delete-title" class="text-lg font-bold mb-2 text-primary-text"></h3>
+        <p id="confirm-delete-msg" class="text-sm mb-4 text-secondary-text" style="white-space:pre-line;"></p>
         <form id="confirm-delete-form" method="POST" action="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if password_required %}
             <input type="text" name="username" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
-            <label class="block text-sm mb-1" style="color:var(--text-primary);">Enter your password to confirm</label>
+            <label class="block text-sm mb-1 text-primary-text">Enter your password to confirm</label>
             <input type="password" name="password" id="confirm-delete-pw" required autocomplete="current-password"
-                   class="w-full px-3 py-2 border rounded mb-4" style="border-color:var(--border);">
+                   class="w-full px-3 py-2 border rounded mb-4 border-border">
             {% endif %}
             <div class="flex gap-3 justify-end">
                 <button type="button" onclick="document.getElementById('confirm-delete-modal').style.display='none'"
-                        class="px-4 py-2 rounded text-sm"
-                        style="background-color:var(--button-secondary); color:var(--text-primary);">
+                        class="px-4 py-2 rounded text-sm text-primary-text"
+                        style="background-color:var(--button-secondary);">
                     Cancel
                 </button>
-                <button type="submit" id="confirm-delete-btn" class="px-4 py-2 rounded text-sm text-white"
-                        style="background-color:var(--delete-button);">
+                <button type="submit" id="confirm-delete-btn" class="px-4 py-2 rounded text-sm text-white bg-delete">
                     Delete
                 </button>
             </div>

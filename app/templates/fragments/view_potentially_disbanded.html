@@ -3,15 +3,15 @@
     {% for a in artists %}
     <li id="disbanded-row-{{ a.id }}" class="flex items-center gap-2">
         {% if session.get('edit_mode') and current_user.is_editor_or_admin %}
-        <label style="cursor: pointer; color: var(--text-secondary); font-size: 11px; white-space: nowrap;">
-            Mark Disbanded <input type="checkbox" style="cursor: pointer;"
+        <label class="cursor-pointer text-secondary-text text-2xs whitespace-nowrap">
+            Mark Disbanded <input type="checkbox" class="cursor-pointer"
                    onchange="var cb=this,csrf=document.querySelector('meta[name=csrf-token]');fetch('/edit/artist/{{ a.id }}/is-disbanded',{method:'POST',headers:csrf?{'X-CSRFToken':csrf.content}:{}}).then(function(r){if(!r.ok){cb.checked=false;return;}var row=document.getElementById('disbanded-row-{{ a.id }}');if(row){row.style.opacity='0.4';row.style.textDecoration='line-through';cb.disabled=true;}}).catch(function(){cb.checked=false;});">
         </label>
         {% endif %}
-        <a href="/artists/{{ a.slug }}" style="color: var(--link);">{{ a.name }}</a>
+        <a href="/artists/{{ a.slug }}" class="text-link">{{ a.name }}</a>
     </li>
     {% endfor %}
 </ul>
 {% else %}
-<p class="text-sm" style="color: var(--text-secondary);">None found.</p>
+<p class="text-sm text-secondary-text">None found.</p>
 {% endif %}

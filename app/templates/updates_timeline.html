@@ -9,47 +9,46 @@
     <h1 class="text-2xl font-bold mb-6">Updates</h1>
 
     <div class="flex gap-2 mb-6 flex-wrap items-center" id="updates-filters">
-        <div style="position: relative; display: inline-block;">
+        <div class="relative inline-block">
             <button type="button" id="type-filter-toggle"
                     onclick="toggleTypeDropdown()"
-                    class="px-3 py-2 border rounded text-xs" style="border-color: var(--border); background: var(--bg-secondary); cursor: pointer; white-space: nowrap;">
+                    class="px-3 py-2 border rounded text-xs border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} &#9662;
             </button>
-            <div id="type-filter-dropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; margin-top: 2px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 {% for t in all_types %}
-                <label style="display: block; padding: 2px 0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" class="type-filter-cb" value="{{ t.type }}"
-                           {% if t.type in include %}checked{% endif %}
-                           style="margin-right: 4px;">
+                <label class="block py-0.5 px-0 text-sm- cursor-pointer">
+                    <input type="checkbox" class="type-filter-cb mr-1" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}>
                     {{ t.type }} — {{ t.description }}
                 </label>
                 {% endfor %}
             </div>
         </div>
         <a href="{{ url_for('updates.updates_page', **request.args) }}"
-           style="margin-left: auto; font-size: 12px; color: var(--link); text-decoration: none;">
+           class="ml-auto text-xs text-link no-underline">
             &larr; See as table
         </a>
     </div>
 
     {% if not updates %}
-    <p style="color: var(--text-secondary);">No updates yet.</p>
+    <p class="text-secondary-text">No updates yet.</p>
     {% else %}
 
     <!-- Stats banner -->
-    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
-        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-            <div style="font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1;">{{ total }}</div>
-            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.3;">
+    <div class="bg-secondary-bg border border-border rounded-lg py-4 px-5 mb-6">
+        <div class="flex items-center gap-4 flex-wrap">
+            <div class="font-extrabold text-primary-text leading-none" style="font-size: 28px;">{{ total }}</div>
+            <div class="text-sm- text-secondary-text leading-snug">
                 Update{{ 's' if total != 1 else '' }} Shipped
             </div>
-            <div style="display: flex; gap: 12px; margin-left: auto; flex-wrap: wrap;">
+            <div class="flex gap-3 ml-auto flex-wrap">
                 {% for t in all_types %}
                 {% set count = type_counts.get(t.type, 0) %}
                 {% if count > 0 %}
-                <div style="text-align: center;">
-                    <div style="font-size: 20px; font-weight: 700; color: var(--update-type-{{ t.type | lower | replace('.', '') }});">{{ count }}</div>
-                    <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ t.type }}</div>
+                <div class="text-center">
+                    <div class="text-xl font-bold" style="color: var(--update-type-{{ t.type | lower | replace('.', '') }});">{{ count }}</div>
+                    <div class="text-xxs text-secondary-text uppercase" style="letter-spacing: 0.5px;">{{ t.type }}</div>
                 </div>
                 {% endif %}
                 {% endfor %}
@@ -57,52 +56,49 @@
         </div>
         <!-- Bar chart -->
         {% if total > 0 %}
-        <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 12px; gap: 2px;">
+        <div class="flex h-1.5 rounded overflow-hidden mt-3 gap-0.5">
             {% for t in all_types %}
             {% set count = type_counts.get(t.type, 0) %}
             {% if count > 0 %}
-            <div style="flex: {{ count }}; background: var(--update-type-{{ t.type | lower | replace('.', '') }}); border-radius: 3px;" title="{{ t.type }}: {{ count }}"></div>
+            <div class="rounded" style="flex: {{ count }}; background: var(--update-type-{{ t.type | lower | replace('.', '') }});" title="{{ t.type }}: {{ count }}"></div>
             {% endif %}
             {% endfor %}
         </div>
         {% endif %}
 
         <!-- Daily bar chart (built by JS using local dates) -->
-        <div id="daily-chart-bars" style="display: flex; align-items: flex-end; gap: 3px; height: 80px; margin-top: 16px;"></div>
-        <div id="daily-chart-labels" style="display: flex; gap: 3px; margin-top: 4px;"></div>
+        <div id="daily-chart-bars" class="flex items-end gap-0.75 mt-4" style="height: 80px;"></div>
+        <div id="daily-chart-labels" class="flex gap-0.75 mt-1"></div>
 
         <!-- Hourly bar chart (all updates, ET timezone) -->
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Updates By Hour Of Day <span style="font-weight: 400;">(ET, All Time)</span></div>
-            <div id="hourly-chart-bars" style="display: flex; align-items: flex-end; gap: 3px; height: 80px;"></div>
-            <div id="hourly-chart-labels" style="display: flex; gap: 3px; margin-top: 4px;"></div>
+        <div class="mt-5 pt-4 border-t border-border">
+            <div class="text-2xs font-semibold text-secondary-text mb-2">Updates By Hour Of Day <span class="font-normal">(ET, All Time)</span></div>
+            <div id="hourly-chart-bars" class="flex items-end gap-0.75" style="height: 80px;"></div>
+            <div id="hourly-chart-labels" class="flex gap-0.75 mt-1"></div>
         </div>
     </div>
 
     <!-- Cards rendered flat, JS regroups by local date -->
-    <div id="timeline-cards" style="display: none;">
+    <div id="timeline-cards" class="hidden">
         {% for u in updates %}
-        <div class="tl-card" data-utc="{{ u.date }}" data-type="{{ u.type.type | lower | replace('.', '') if u.type else '' }}"
-             style="flex: 0 0 280px; scroll-snap-align: start; border-radius: 8px; overflow: hidden;
-                    border: 1px solid var(--border); background: var(--bg-secondary);
-                    border-top: 3px solid var(--update-type-{{ u.type.type | lower | replace('.', '') if u.type else 'feature' }});">
-            <div style="padding: 14px 16px;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <div class="tl-card flex-shrink-0 rounded-lg overflow-hidden border border-border bg-secondary-bg" data-utc="{{ u.date }}" data-type="{{ u.type.type | lower | replace('.', '') if u.type else '' }}"
+             style="flex: 0 0 280px; scroll-snap-align: start; border-top: 3px solid var(--update-type-{{ u.type.type | lower | replace('.', '') if u.type else 'feature' }});">
+            <div class="py-3.5 px-4">
+                <div class="flex items-center gap-2 mb-2">
                     {% if u.type %}
-                    <span style="font-size: 16px;">
+                    <span class="text-base">
                         {% if u.type.type == 'Feature' %}&#10024;{% elif u.type.type == 'Bugfix' %}&#128295;{% elif u.type.type == 'Style' %}&#127912;{% elif u.type.type == 'Perf.' %}&#128640;{% endif %}
                     </span>
-                    <span style="display: inline-block; padding: 1px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;
-                                 background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
+                    <span class="inline-block rounded-full text-2xs font-medium" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
                         {{ u.type.type }}
                     </span>
                     {% endif %}
                 </div>
-                <div style="font-size: 14px; line-height: 1.5; color: var(--text-primary);">{{ u.description }}</div>
-                <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 11px; font-family: monospace; color: var(--text-secondary);">{{ u.commit_id[:7] }}</span>
-                    <span class="update-date" data-utc="{{ u.date }}"
-                          style="font-size: 11px; font-family: monospace; color: var(--text-secondary);"></span>
+                <div class="text-sm leading-normal text-primary-text">{{ u.description }}</div>
+                <div class="flex items-center gap-2 mt-2.5">
+                    <span class="text-2xs text-secondary-text" style="font-family: monospace;">{{ u.commit_id[:7] }}</span>
+                    <span class="update-date text-2xs text-secondary-text" data-utc="{{ u.date }}"
+                          style="font-family: monospace;"></span>
                 </div>
             </div>
         </div>

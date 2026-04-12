@@ -6,11 +6,11 @@
 
 {% block content %}
 <!-- Discography area — padding-bottom to avoid hiding behind fixed nav -->
-<div id="discography" class="mb-4" style="padding-bottom: 36px;">
+<div id="discography" class="mb-4 pb-9">
     {% if artist %}
     {% include "fragments/artist_discography.html" %}
     {% else %}
-    <p class="text-center mt-8" style="color: var(--text-secondary);">Select an artist below.</p>
+    <p class="text-center mt-8 text-secondary-text">Select an artist below.</p>
     {% endif %}
 </div>
 
