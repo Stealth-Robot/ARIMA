@@ -150,13 +150,16 @@ function mergeDuplicate(idLo, idHi, btn) {
     });
     if (songs.length < 2 || !songs[0].id || !songs[1].id) return;
     var kept = songs[0], absorbed = songs[1];
-    var msg = 'Merge "' + absorbed.name + ' \u2014 ' + absorbed.artist + ' (' + absorbed.album + ')" into "' + kept.name + ' \u2014 ' + kept.artist + ' (' + kept.album + ')"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.';
-    showDeleteConfirm('Merge songs?', msg, '/views/merge-duplicate', true, 'Merge');
-    var form = document.getElementById('confirm-delete-form');
-    // Add hidden inputs for merge IDs
-    ['kept_id', 'absorbed_id'].forEach(function(n) { var p = form.querySelector('input[name="' + n + '"]'); if (p) p.remove(); });
-    var h1 = document.createElement('input'); h1.type = 'hidden'; h1.name = 'kept_id'; h1.value = kept.id; form.appendChild(h1);
-    var h2 = document.createElement('input'); h2.type = 'hidden'; h2.name = 'absorbed_id'; h2.value = absorbed.id; form.appendChild(h2);
+    if (!confirm('Merge "' + absorbed.name + ' \u2014 ' + absorbed.artist + '" into "' + kept.name + ' \u2014 ' + kept.artist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    fetch('/views/merge-duplicate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+        body: 'kept_id=' + kept.id + '&absorbed_id=' + absorbed.id,
+    }).then(function(r) {
+        if (r.ok) group.remove();
+        else r.text().then(function(t) { alert(t || 'Merge failed'); });
+    });
 }
 </script>
 {% endblock %}
