@@ -657,6 +657,12 @@ def merge_song(kept_song_id):
                 'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
             ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': next_track})
 
+    # Step 3b: Carry over flags
+    if absorbed.is_promoted:
+        kept.is_promoted = True
+    if absorbed.is_remix:
+        kept.is_remix = True
+
     # Step 4: Delete absorbed song and all remaining references
     Rating.query.filter_by(song_id=absorbed_song_id).delete()
     ArtistSong.query.filter_by(song_id=absorbed_song_id).delete()
