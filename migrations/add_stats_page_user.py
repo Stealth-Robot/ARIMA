@@ -20,5 +20,14 @@ def migrate():
     db.session.commit()
     print('Created stats_page_user table.')
 
+    try:
+        db.session.execute(db.text(
+            "ALTER TABLE user_settings ADD COLUMN stats_users_mobile_only BOOLEAN NOT NULL DEFAULT 1"
+        ))
+        db.session.commit()
+        print('Added stats_users_mobile_only column.')
+    except Exception as e:
+        print(f'stats_users_mobile_only: {e}')
+
 
 migrate()

@@ -11,6 +11,13 @@ SCORED_GROUP_THRESHOLD = 0.80
 SUBUNIT = 0
 
 
+def _is_mobile():
+    """Check if the current request is from a mobile device."""
+    from flask import request as _req
+    ua = (_req.headers.get('User-Agent') or '').lower()
+    return any(k in ua for k in ('iphone', 'android', 'mobile', 'ipod'))
+
+
 def get_display_users(viewer=None):
     """Users shown in stats columns, respecting viewer's stats page user preferences."""
     from flask_login import current_user as _cu
@@ -21,6 +28,11 @@ def get_display_users(viewer=None):
 
     if not viewer.is_authenticated or viewer.is_system_or_guest:
         return default
+
+    # If mobile-only is on and we're not on mobile, skip prefs
+    if viewer.settings and getattr(viewer.settings, 'stats_users_mobile_only', True):
+        if not _is_mobile():
+            return default
 
     prefs = StatsPageUser.query.filter_by(owner_id=viewer.id).all()
     if not prefs:

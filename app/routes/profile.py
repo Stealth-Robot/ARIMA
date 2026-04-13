@@ -61,8 +61,12 @@ def profile():
     # Stats page users — build ordered list with visibility flags
     stats_users = _get_stats_page_users()
 
+    stats_mobile_only = True
+    if not current_user.is_system_or_guest and current_user.settings:
+        stats_mobile_only = getattr(current_user.settings, 'stats_users_mobile_only', True)
+
     return render_template('profile.html', themes=theme_list, settings=settings,
-                           stats_users=stats_users)
+                           stats_users=stats_users, stats_mobile_only=stats_mobile_only)
 
 
 def _apply_theme_settings(set_field, form):
@@ -269,6 +273,22 @@ def reset_stats_users():
     if current_user.is_system_or_guest:
         return '', 403
     StatsPageUser.query.filter_by(owner_id=current_user.id).delete()
+    db.session.commit()
+    return '', 200
+
+
+@profile_bp.route('/profile/stats-users/mobile-only', methods=['POST'])
+@login_required
+def toggle_stats_mobile_only():
+    """Toggle whether stats page user prefs apply only on mobile."""
+    if current_user.is_system_or_guest:
+        return '', 403
+    settings = current_user.settings
+    if not settings:
+        settings = UserSettings(user_id=current_user.id)
+        db.session.add(settings)
+        current_user.settings = settings
+    settings.stats_users_mobile_only = not settings.stats_users_mobile_only
     db.session.commit()
     return '', 200
 
