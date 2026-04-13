@@ -4,6 +4,8 @@ import shutil
 from flask import Blueprint, request, render_template, redirect, url_for, current_app
 from flask_login import login_required
 
+from sqlalchemy import func
+
 from app.extensions import db
 from app.models.lookups import Genre, Country
 from app.decorators import role_required, ADMIN
@@ -17,8 +19,8 @@ admin_bp = Blueprint('admin', __name__)
 @login_required
 @role_required(ADMIN)
 def admin_page():
-    genres = Genre.query.order_by(Genre.genre).all()
-    countries = Country.query.order_by(Country.country).all()
+    genres = Genre.query.order_by(func.lower(Genre.genre)).all()
+    countries = Country.query.order_by(func.lower(Country.country)).all()
     return render_template('admin.html', genres=genres, countries=countries)
 
 

@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, session, request, abort
 from flask_login import login_required, current_user
 
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
@@ -168,7 +169,7 @@ def view_undated_albums():
     albums = db.session.query(Album).filter(
         db.or_(Album.release_date.is_(None), Album.release_date == ''),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(Album.name).all()
+    ).order_by(func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
@@ -184,7 +185,7 @@ def view_incomplete_date_albums():
     albums = db.session.query(Album).filter(
         Album.release_date.like('%-01-01'),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(Album.release_date.desc(), Album.name).all()
+    ).order_by(Album.release_date.desc(), func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
@@ -214,7 +215,7 @@ def _potentially_disbanded_query():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_potentially_disbanded():
-    artists = _potentially_disbanded_query().order_by(Artist.name).all()
+    artists = _potentially_disbanded_query().order_by(func.lower(Artist.name)).all()
     return render_template('fragments/view_potentially_disbanded.html', artists=artists)
 
 
@@ -307,7 +308,7 @@ def view_potential_duplicates():
         Album, Album.id == AlbumSong.album_id
     ).filter(
         Song.id.in_(song_ids)
-    ).order_by(db.func.lower(Song.name), Artist.name, Song.id).all()
+    ).order_by(db.func.lower(Song.name), db.func.lower(Artist.name), Song.id).all()
 
     # Group by lowercase song name
     groups = {}

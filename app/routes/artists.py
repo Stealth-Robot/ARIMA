@@ -1,6 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, abort, session
 from flask_login import login_required, current_user
 
+from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
@@ -145,7 +146,7 @@ def _render_artist(artist, htmx=False, push_url=None):
     all_songs_by_artist = []
     artist_parent_map = {}
     if session.get('edit_mode') and current_user.is_editor_or_admin:
-        all_artists = Artist.query.order_by(Artist.name).all()
+        all_artists = Artist.query.order_by(func.lower(Artist.name)).all()
         # Build child→parent name map for grouping subunits under parents
         parent_rows = db.session.execute(db.text(
             'SELECT c.name, p.name FROM artist_artist aa '

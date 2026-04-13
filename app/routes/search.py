@@ -51,7 +51,7 @@ def search():
             album_genres, AlbumSong.album_id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id == genre_id).distinct().all()}
         artist_query = artist_query.filter(Artist.id.in_(artist_ids_with_genre))
-    artists = artist_query.all()
+    artists = artist_query.order_by(func.lower(Artist.name)).all()
 
     # --- Albums ---
     album_query = db.session.query(Album, Artist).join(
@@ -83,7 +83,7 @@ def search():
                 )
     else:
         album_query = album_query.filter(Album.name.ilike(like))
-    albums = album_query.distinct().all()
+    albums = album_query.order_by(func.lower(Album.name), func.lower(Artist.name)).distinct().all()
 
     # --- Songs ---
     song_query = db.session.query(Song, Album, Artist).join(
@@ -117,7 +117,7 @@ def search():
                 )
     else:
         song_query = song_query.filter(Song.name.ilike(like))
-    songs = song_query.distinct().all()
+    songs = song_query.order_by(func.lower(Song.name), func.lower(Artist.name)).distinct().all()
 
     return render_template('fragments/search_results.html',
                            artists=artists, albums=albums, songs=songs,

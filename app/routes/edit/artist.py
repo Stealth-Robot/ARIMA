@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from flask import request, session, abort, render_template, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
+from sqlalchemy import func
+
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
@@ -407,7 +409,7 @@ def add_artist_form():
     genres = Genre.query.order_by(Genre.id).all()
     album_types = AlbumType.query.order_by(AlbumType.id).all()
     genders = GroupGender.query.order_by(GroupGender.id).all()
-    artists = Artist.query.order_by(Artist.name).all()
+    artists = Artist.query.order_by(func.lower(Artist.name)).all()
     album_types_js = [{'id': t.id, 'type': t.type} for t in album_types]
     genres_js = [{'id': g.id, 'genre': g.genre} for g in genres]
     artists_js = [{'id': a.id, 'name': a.name} for a in artists]
@@ -484,7 +486,7 @@ def add_artist_submit():
         genres = Genre.query.order_by(Genre.id).all()
         album_types = AlbumType.query.order_by(AlbumType.id).all()
         genders = GroupGender.query.order_by(GroupGender.id).all()
-        artists = Artist.query.order_by(Artist.name).all()
+        artists = Artist.query.order_by(func.lower(Artist.name)).all()
         album_types_js = [{'id': t.id, 'type': t.type} for t in album_types]
         genres_js = [{'id': g.id, 'genre': g.genre} for g in genres]
         artists_js = [{'id': a.id, 'name': a.name} for a in artists]
@@ -626,7 +628,7 @@ def add_artist_submit():
                                genders=GroupGender.query.all(),
                                countries=Country.query.all(),
                                genres=Genre.query.all(),
-                               artists=Artist.query.order_by(Artist.name).all()), 422
+                               artists=Artist.query.order_by(func.lower(Artist.name)).all()), 422
 
 
 _import_jobs = {}
