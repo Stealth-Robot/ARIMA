@@ -382,7 +382,7 @@ function getExpandedState() {
         if (m) {
             var gid = m[1];
             var firstChild = document.querySelector('.artist-group-' + gid + '-child');
-            if (firstChild && firstChild.style.display !== 'none') {
+            if (firstChild && !firstChild.classList.contains('hidden')) {
                 state.groups.push(gid);
             }
         }
@@ -390,7 +390,7 @@ function getExpandedState() {
     document.querySelectorAll('[id^="expand-album-icon-"]').forEach(function(icon) {
         var aid = icon.id.replace('expand-album-icon-', '');
         var firstChild = document.querySelector('.album-group-' + aid + '-child');
-        if (firstChild && firstChild.style.display !== 'none') {
+        if (firstChild && !firstChild.classList.contains('hidden')) {
             state.albums.push(aid);
         }
     });
