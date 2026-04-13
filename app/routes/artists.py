@@ -216,10 +216,9 @@ def _render_artist(artist, htmx=False, push_url=None):
 
 
 def _get_display_users():
-    """Get users to show in rating columns (sorted by sort_order, exclude system/guest)."""
-    return User.query.filter(
-        User.sort_order.isnot(None)
-    ).order_by(User.sort_order).all()
+    """Get users to show in rating columns, respecting viewer's stats page preferences."""
+    from app.services.stats import get_display_users
+    return get_display_users()
 
 
 def _get_filtered_navbar():

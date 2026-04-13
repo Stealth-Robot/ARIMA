@@ -101,3 +101,17 @@ class UserSettings(db.Model):
 
     def rating_label(self, score):
         return getattr(self, f'rating_label_{score}', DEFAULT_RATING_LABELS.get(score, ''))
+
+
+class StatsPageUser(db.Model):
+    """Per-user preference for which users appear on stats/artist pages and in what order."""
+    __tablename__ = 'stats_page_user'
+    __table_args__ = (
+        db.UniqueConstraint('owner_id', 'target_user_id', name='uq_stats_page_user'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    target_user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    visible = db.Column(db.Boolean, nullable=False, default=True)
+    sort_order = db.Column(db.Integer, nullable=False)

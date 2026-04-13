@@ -1,9 +1,9 @@
-from flask import Blueprint, request, session, render_template, redirect, url_for
+from flask import Blueprint, request, session, render_template, redirect, url_for, Response
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.theme import Theme
-from app.models.user import UserSettings
+from app.models.user import User, UserSettings, StatsPageUser
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -58,7 +58,11 @@ def profile():
             'show_track_numbers': getattr(s, 'show_track_numbers', True) if s else True,
         }
 
-    return render_template('profile.html', themes=theme_list, settings=settings)
+    # Stats page users — build ordered list with visibility flags
+    stats_users = _get_stats_page_users()
+
+    return render_template('profile.html', themes=theme_list, settings=settings,
+                           stats_users=stats_users)
 
 
 def _apply_theme_settings(set_field, form):
@@ -181,6 +185,146 @@ def toggle_edit_mode():
         return '', 403
     session['edit_mode'] = not session.get('edit_mode', False)
     return redirect(request.referrer or url_for('home.home'))
+
+
+def _get_stats_page_users():
+    """Return ordered list of dicts with user info + visibility for the stats page users section."""
+    if current_user.is_system_or_guest:
+        return []
+
+    # All ratable users (have sort_order = displayed on stats pages)
+    all_users = User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
+    prefs = {p.target_user_id: p for p in
+             StatsPageUser.query.filter_by(owner_id=current_user.id).all()}
+
+    if not prefs:
+        # No preferences saved yet — show all users in default order, all visible
+        return [{'user': u, 'visible': True, 'sort_order': i} for i, u in enumerate(all_users)]
+
+    # Build list: users with prefs in their saved order, then any new users not yet in prefs
+    result = []
+    seen_ids = set()
+    # First pass: users that have a pref entry, ordered by pref sort_order
+    ordered_prefs = sorted(prefs.values(), key=lambda p: p.sort_order)
+    for p in ordered_prefs:
+        u = next((u for u in all_users if u.id == p.target_user_id), None)
+        if u:
+            result.append({'user': u, 'visible': p.visible, 'sort_order': p.sort_order})
+            seen_ids.add(u.id)
+    # Second pass: any users not yet in prefs (new users added after prefs were saved)
+    max_order = max((p.sort_order for p in ordered_prefs), default=-1)
+    for u in all_users:
+        if u.id not in seen_ids:
+            max_order += 1
+            result.append({'user': u, 'visible': True, 'sort_order': max_order})
+    return result
+
+
+@profile_bp.route('/profile/stats-users/toggle', methods=['POST'])
+@login_required
+def toggle_stats_user():
+    """Toggle visibility of a user on the stats page."""
+    if current_user.is_system_or_guest:
+        return '', 403
+
+    target_id = request.form.get('target_user_id', type=int)
+    if not target_id:
+        return '', 400
+
+    _ensure_stats_prefs()
+    pref = StatsPageUser.query.filter_by(
+        owner_id=current_user.id, target_user_id=target_id
+    ).first()
+    if pref:
+        # Don't allow unchecking if it's the last visible user
+        if pref.visible:
+            visible_count = StatsPageUser.query.filter_by(
+                owner_id=current_user.id, visible=True
+            ).count()
+            if visible_count <= 1:
+                return '', 400
+        pref.visible = not pref.visible
+        db.session.commit()
+    return '', 200
+
+
+@profile_bp.route('/profile/stats-users/move-up', methods=['POST'])
+@login_required
+def stats_user_move_up():
+    """Move a user up in the stats page order."""
+    return _stats_user_move(request.form.get('target_user_id', type=int), 'up')
+
+
+@profile_bp.route('/profile/stats-users/move-down', methods=['POST'])
+@login_required
+def stats_user_move_down():
+    """Move a user down in the stats page order."""
+    return _stats_user_move(request.form.get('target_user_id', type=int), 'down')
+
+
+@profile_bp.route('/profile/stats-users/reset', methods=['POST'])
+@login_required
+def reset_stats_users():
+    """Reset stats page user preferences to defaults."""
+    if current_user.is_system_or_guest:
+        return '', 403
+    StatsPageUser.query.filter_by(owner_id=current_user.id).delete()
+    db.session.commit()
+    return '', 200
+
+
+def _ensure_stats_prefs():
+    """Ensure the current user has StatsPageUser rows for all ratable users."""
+    existing = {p.target_user_id for p in
+                StatsPageUser.query.filter_by(owner_id=current_user.id).all()}
+    all_users = User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
+    if len(existing) == len(all_users) and all(u.id in existing for u in all_users):
+        return
+    max_order = db.session.query(db.func.max(StatsPageUser.sort_order)).filter_by(
+        owner_id=current_user.id
+    ).scalar()
+    max_order = max_order if max_order is not None else -1
+    for u in all_users:
+        if u.id not in existing:
+            max_order += 1
+            db.session.add(StatsPageUser(
+                owner_id=current_user.id, target_user_id=u.id,
+                visible=True, sort_order=max_order
+            ))
+    db.session.commit()
+
+
+def _stats_user_move(target_id, direction):
+    """Swap sort_order between a stats page user and their neighbour."""
+    if current_user.is_system_or_guest or not target_id:
+        return '', 400
+
+    _ensure_stats_prefs()
+    prefs = StatsPageUser.query.filter_by(
+        owner_id=current_user.id
+    ).order_by(StatsPageUser.sort_order).all()
+
+    idx = next((i for i, p in enumerate(prefs) if p.target_user_id == target_id), None)
+    if idx is None:
+        return '', 400
+
+    if direction == 'up' and idx > 0:
+        neighbour = prefs[idx - 1]
+    elif direction == 'down' and idx < len(prefs) - 1:
+        neighbour = prefs[idx + 1]
+    else:
+        return '', 200
+
+    target = prefs[idx]
+    orig_target = target.sort_order
+    orig_neighbour = neighbour.sort_order
+    target.sort_order = -1
+    db.session.flush()
+    neighbour.sort_order = orig_target
+    db.session.flush()
+    target.sort_order = orig_neighbour
+    db.session.commit()
+    return '', 200
 
 
 @profile_bp.route('/profile/reset-password', methods=['POST'])

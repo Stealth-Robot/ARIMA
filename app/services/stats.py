@@ -11,9 +11,36 @@ SCORED_GROUP_THRESHOLD = 0.80
 SUBUNIT = 0
 
 
-def get_display_users():
-    """Users shown in stats columns (exclude system/guest, sorted by sort_order)."""
-    return User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
+def get_display_users(viewer=None):
+    """Users shown in stats columns, respecting viewer's stats page user preferences."""
+    from flask_login import current_user as _cu
+    from app.models.user import StatsPageUser
+
+    viewer = viewer or _cu
+    default = User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
+
+    if not viewer.is_authenticated or viewer.is_system_or_guest:
+        return default
+
+    prefs = StatsPageUser.query.filter_by(owner_id=viewer.id).all()
+    if not prefs:
+        return default
+
+    pref_map = {p.target_user_id: p for p in prefs}
+    user_map = {u.id: u for u in default}
+
+    # Users with prefs: visible ones sorted by pref order
+    result = []
+    for p in sorted(prefs, key=lambda p: p.sort_order):
+        if p.visible and p.target_user_id in user_map:
+            result.append(user_map[p.target_user_id])
+
+    # Append any new users not in prefs (visible by default)
+    for u in default:
+        if u.id not in pref_map:
+            result.append(u)
+
+    return result
 
 
 class _BulkData:

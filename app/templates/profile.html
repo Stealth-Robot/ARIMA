@@ -101,6 +101,36 @@
 
         </div>
 
+        <!-- Stats Page Users -->
+        {% if not current_user.is_system_or_guest and stats_users %}
+        <div class="p-4 border rounded mb-4 border-border">
+        <h2 class="font-semibold mb-1">Stats Page Users</h2>
+        <p class="text-xs text-secondary-text mb-3">Choose which users appear on the Artists &amp; Stats pages and their order.</p>
+        <div id="stats-users-list">
+            {% for entry in stats_users %}
+            <div class="flex items-center gap-2 py-1" data-user-id="{{ entry.user.id }}">
+                <input type="checkbox" {% if entry.visible %}checked{% endif %}
+                       onchange="toggleStatsUser({{ entry.user.id }})">
+                <button type="button" onclick="moveStatsUser({{ entry.user.id }}, 'up')"
+                        class="text-xs px-1{% if loop.first %} opacity-30 pointer-events-none{% endif %}"
+                        title="Move up">&uarr;</button>
+                <button type="button" onclick="moveStatsUser({{ entry.user.id }}, 'down')"
+                        class="text-xs px-1{% if loop.last %} opacity-30 pointer-events-none{% endif %}"
+                        title="Move down">&darr;</button>
+                <img src="{{ entry.user.profile_image or url_for('static', filename='img/default_image.png') }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                     class="w-6 h-6 rounded-full object-cover">
+                <span class="text-sm{% if not entry.visible %} opacity-50{% endif %}">{{ entry.user.username }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-2 text-center">
+            <button type="button" id="stats-users-reset-btn" onclick="resetStatsUsers()"
+                    class="text-xs text-secondary-text underline">Reset to Default</button>
+        </div>
+        </div>
+        {% endif %}
+
         <!-- Rating Key -->
         {% if not current_user.is_system_or_guest %}
         <div class="p-4 border rounded mb-4 border-border">
@@ -231,6 +261,46 @@
         });
     });
 })();
+
+function _statsPost(url, targetId) {
+    var data = new URLSearchParams();
+    data.append('csrf_token', document.querySelector('[name=csrf_token]').value);
+    data.append('target_user_id', targetId);
+    return fetch(url, {method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'}});
+}
+
+function toggleStatsUser(userId) {
+    _statsPost('{{ url_for("profile.toggle_stats_user") }}', userId).then(function(r) {
+        if (r.ok) window.location.reload();
+    });
+}
+
+function moveStatsUser(userId, dir) {
+    var url = dir === 'up'
+        ? '{{ url_for("profile.stats_user_move_up") }}'
+        : '{{ url_for("profile.stats_user_move_down") }}';
+    _statsPost(url, userId).then(function(r) {
+        if (r.ok) window.location.reload();
+    });
+}
+
+function resetStatsUsers() {
+    var btn = document.getElementById('stats-users-reset-btn');
+    if (btn.dataset.confirming) {
+        var data = new URLSearchParams();
+        data.append('csrf_token', document.querySelector('[name=csrf_token]').value);
+        fetch('{{ url_for("profile.reset_stats_users") }}', {
+            method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+        return;
+    }
+    btn.dataset.confirming = '1';
+    btn.textContent = 'Sure? Reset';
+    setTimeout(function() {
+        delete btn.dataset.confirming;
+        btn.textContent = 'Reset to Default';
+    }, 3000);
+}
 
 (function() {
     var _seq = '';
