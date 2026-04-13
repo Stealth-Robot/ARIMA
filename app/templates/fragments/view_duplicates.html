@@ -8,7 +8,7 @@
                 class="px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer">
             Not a duplicate
         </button>
-        <button onclick="mergeDuplicate({{ group.id_lo }}, {{ group.id_hi }}, this)"
+        <button onclick="mergeDuplicate({{ group.songs[0].id }}, {{ group.songs[0].name | tojson }}, {{ group.songs[0].artist_name | tojson }}, {{ group.songs[1].id }}, {{ group.songs[1].name | tojson }}, {{ group.songs[1].artist_name | tojson }}, {{ group.id_lo }}, {{ group.id_hi }})"
                 class="px-2 py-1 rounded text-xs bg-button-primary text-button-text border-0 cursor-pointer">
             Duplicate - Perform Merge
         </button>

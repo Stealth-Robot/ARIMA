@@ -130,35 +130,23 @@ function dismissDuplicate(id1, id2, btn) {
     });
 }
 
-function mergeDuplicate(idLo, idHi, btn) {
-    var group = document.getElementById('dup-group-' + idLo + '-' + idHi);
-    if (!group) return;
-    var rows = group.querySelectorAll('tbody tr');
-    var songs = [];
-    rows.forEach(function(tr) {
-        var link = tr.querySelector('a');
-        var cells = tr.querySelectorAll('td');
-        if (link && cells.length >= 3) {
-            var idMatch = link.href.match(/#song-(\d+)/);
-            songs.push({
-                id: idMatch ? parseInt(idMatch[1]) : 0,
-                name: link.textContent.trim(),
-                artist: cells[2].textContent.trim(),
-                album: cells[1].textContent.trim(),
-            });
-        }
-    });
-    if (songs.length < 2 || !songs[0].id || !songs[1].id) return;
-    var kept = songs[0], absorbed = songs[1];
-    if (!confirm('Merge "' + absorbed.name + ' \u2014 ' + absorbed.artist + '" into "' + kept.name + ' \u2014 ' + kept.artist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
+function mergeDuplicate(keptId, keptName, keptArtist, absorbedId, absorbedName, absorbedArtist, idLo, idHi) {
+    if (!confirm('Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + '" into "' + keptName + ' \u2014 ' + keptArtist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
     var csrf = document.querySelector('meta[name="csrf-token"]');
     fetch('/views/merge-duplicate', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
-        body: 'kept_id=' + kept.id + '&absorbed_id=' + absorbed.id,
+        body: 'kept_id=' + keptId + '&absorbed_id=' + absorbedId,
     }).then(function(r) {
-        if (r.ok) group.remove();
-        else r.text().then(function(t) { alert(t || 'Merge failed'); });
+        if (r.ok) {
+            // Remove this group and any other groups referencing the absorbed song
+            document.querySelectorAll('[id^="dup-group-"]').forEach(function(el) {
+                var parts = el.id.replace('dup-group-', '').split('-');
+                if (parseInt(parts[0]) === absorbedId || parseInt(parts[1]) === absorbedId) el.remove();
+            });
+        } else {
+            r.text().then(function(t) { alert(t || 'Merge failed'); });
+        }
     });
 }
 </script>
