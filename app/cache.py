@@ -29,7 +29,7 @@ def get_cached_filters():
                 db.session.query(Country, func.count(Artist.id).label('cnt'))
                 .outerjoin(Artist, Artist.country_id == Country.id)
                 .group_by(Country.id)
-                .order_by(desc('cnt'), Country.country)
+                .order_by(desc('cnt'), func.lower(Country.country))
                 .all()
             ]
             _filter_cache['genres'] = [
@@ -37,7 +37,7 @@ def get_cached_filters():
                 db.session.query(Genre, func.count(album_genres.c.album_id).label('cnt'))
                 .outerjoin(album_genres, album_genres.c.genre_id == Genre.id)
                 .group_by(Genre.id)
-                .order_by(desc('cnt'), Genre.genre)
+                .order_by(desc('cnt'), func.lower(Genre.genre))
                 .all()
             ]
             _filter_cache['genders'] = GroupGender.query.order_by(GroupGender.id).all()

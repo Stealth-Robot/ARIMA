@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, abort, session
 from flask_login import login_required
 from markupsafe import Markup, escape
-from sqlalchemy import distinct
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import joinedload
 
 from app.extensions import db
@@ -72,7 +72,7 @@ def changelog():
 
     # Get distinct users who have changelog entries
     user_ids = [r[0] for r in Changelog.query.with_entities(distinct(Changelog.user_id)).all() if r[0]]
-    users = User.query.filter(User.id.in_(user_ids)).order_by(User.username).all()
+    users = User.query.filter(User.id.in_(user_ids)).order_by(func.lower(User.username)).all()
 
     return render_template('changelog.html', entries=entries, search=search, user_id=user_id,
                            users=users, all_types=all_types, include=include,

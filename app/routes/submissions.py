@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from flask import Blueprint, request, render_template, abort, jsonify, session
 from flask_login import login_required, current_user
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app.extensions import db
@@ -394,7 +395,7 @@ def submissions_page():
     for r in db.session.query(distinct(Submission.resolved_by_id)).all():
         if r[0]:
             user_ids.add(r[0])
-    filter_users = User.query.filter(User.id.in_(user_ids)).order_by(User.username).all() if user_ids else []
+    filter_users = User.query.filter(User.id.in_(user_ids)).order_by(func.lower(User.username)).all() if user_ids else []
 
     return render_template('submissions.html',
                            groups=list(groups.values()), ungrouped=ungrouped,
