@@ -646,88 +646,67 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function showTooltip(event, tooltip, closestSelector, attributeName){
+    if (_isMobile()) return;
+    const td = event.target.closest(closestSelector);
+    const note = td?.getAttribute(attributeName);
+    if (!note) return;
+    tooltip.textContent = note;
+    const rect = getZoomedRect(td);
+    tooltip.style.left = rect.left + rect.width / 2 + 'px';
+    tooltip.style.transform = 'translateX(-50%)';
+    if (rect.top > 40) {
+        tooltip.style.top = (rect.top - 4) + 'px';
+        tooltip.style.bottom = 'auto';
+        tooltip.style.transform += ' translateY(-100%)';
+    } else {
+        tooltip.style.top = (rect.bottom + 4) + 'px';
+        tooltip.style.bottom = 'auto';
+    }
+    tooltip.style.opacity = '1';
+    tooltip.style.display = 'block';
+}
+
+function hideTooltip(tooltip) {
+    if (_tooltipSelecting) return;
+    tooltip.style.opacity = '0';
+    tooltip.style.display = 'none';
+}
+
 /* Note tooltip — event delegation, works for dynamically added cells */
 var _tooltipSelecting = false;
 (function () {
     const tooltip = document.getElementById('note-tooltip');
     if (!tooltip) return;
 
-    document.addEventListener('mouseover', function (e) {
-        if (_isMobile()) return;
-        const td = e.target.closest('td.has-note');
-        if (!td) return;
-        const note = td.getAttribute('data-note');
-        if (!note) return;
-        tooltip.textContent = note;
-        const rect = getZoomedRect(td);
-        tooltip.style.left = rect.left + rect.width / 2 + 'px';
-        tooltip.style.transform = 'translateX(-50%)';
-        if (rect.top > 40) {
-            tooltip.style.top = (rect.top - 4) + 'px';
-            tooltip.style.bottom = 'auto';
-            tooltip.style.transform += ' translateY(-100%)';
-        } else {
-            tooltip.style.top = (rect.bottom + 4) + 'px';
-            tooltip.style.bottom = 'auto';
-        }
-        tooltip.style.opacity = '1';
-    });
-
+    // set up rating cell tooltip event listeners
+    document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.has-note', 'data-note'));
     tooltip.addEventListener('mousedown', function () { _tooltipSelecting = true; });
     document.addEventListener('mouseup', function () { _tooltipSelecting = false; });
-
-    function hideTooltip() {
-        if (_tooltipSelecting) return;
-        tooltip.style.opacity = '0';
-    }
 
     document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.has-note');
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
-            hideTooltip();
+            hideTooltip(tooltip);
         }
     });
 
     // Hide tooltip when mouse leaves the tooltip itself
     tooltip.addEventListener('mouseout', function (e) {
         if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note')) {
-            hideTooltip();
+            hideTooltip(tooltip);
         }
     });
-})();
 
-// Song note tooltip
-(function () {
-    const tooltip = document.getElementById('note-tooltip');
-    if (!tooltip) return;
+    // set up song name cell tooltip event listeners
+     document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.song-name-cell.has-song-note', 'data-song-note'));
 
-    document.addEventListener('mouseover', function (e) {
-        if (_isMobile()) return;
-        const td = e.target.closest('td.song-name-cell.has-song-note');
-        if (!td) return;
-        const note = td.getAttribute('data-song-note');
-        if (!note) return;
-        tooltip.textContent = note;
-        const rect = getZoomedRect(td);
-        tooltip.style.left = rect.left + rect.width / 2 + 'px';
-        tooltip.style.transform = 'translateX(-50%)';
-        if (rect.top > 40) {
-            tooltip.style.top = (rect.top - 4) + 'px';
-            tooltip.style.bottom = 'auto';
-            tooltip.style.transform += ' translateY(-100%)';
-        } else {
-            tooltip.style.top = (rect.bottom + 4) + 'px';
-            tooltip.style.bottom = 'auto';
-        }
-        tooltip.style.opacity = '1';
-    });
-
-    document.addEventListener('mouseout', function (e) {
+     document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.song-name-cell.has-song-note');
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
-            if (!_tooltipSelecting) tooltip.style.opacity = '0';
+            hideTooltip(tooltip);
         }
     });
 })();
