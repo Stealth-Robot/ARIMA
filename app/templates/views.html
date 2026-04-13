@@ -130,8 +130,10 @@ function dismissDuplicate(id1, id2, btn) {
     });
 }
 
-function mergeDuplicate(keptId, keptName, keptArtist, absorbedId, absorbedName, absorbedArtist, idLo, idHi) {
-    if (!confirm('Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + '" into "' + keptName + ' \u2014 ' + keptArtist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
+function mergeDuplicate(btn) {
+    var d = btn.dataset;
+    var keptId = parseInt(d.keptId), absorbedId = parseInt(d.absorbedId);
+    if (!confirm('Merge "' + d.absorbedName + ' \u2014 ' + d.absorbedArtist + '" into "' + d.keptName + ' \u2014 ' + d.keptArtist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
     var csrf = document.querySelector('meta[name="csrf-token"]');
     fetch('/views/merge-duplicate', {
         method: 'POST',
@@ -139,7 +141,6 @@ function mergeDuplicate(keptId, keptName, keptArtist, absorbedId, absorbedName, 
         body: 'kept_id=' + keptId + '&absorbed_id=' + absorbedId,
     }).then(function(r) {
         if (r.ok) {
-            // Remove this group and any other groups referencing the absorbed song
             document.querySelectorAll('[id^="dup-group-"]').forEach(function(el) {
                 var parts = el.id.replace('dup-group-', '').split('-');
                 if (parseInt(parts[0]) === absorbedId || parseInt(parts[1]) === absorbedId) el.remove();
