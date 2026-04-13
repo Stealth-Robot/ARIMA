@@ -1848,14 +1848,13 @@ function addNewAlbumSong(currentArtistId) {
             '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
         '</div>' +
-        '<div class="flex items-center gap-2" style="padding: 4px 8px;">' +
+        '<div class="flex items-center flex-wrap gap-2" style="padding: 4px 8px;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Artists:</span>' +
             '<div id="new-song-artists-' + n + '" class="flex flex-wrap gap-2" style="margin-right: 4px;"></div>' +
             '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:150px;" onchange="onNewSongArtistChange(this,' + n + ')">' +
                 newSongArtistOptions(n) +
             '</select>' +
-        '</div>' +
-        '<div style="padding: 2px 8px;">' +
+            '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
             '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(row);
