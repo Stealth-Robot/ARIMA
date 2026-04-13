@@ -48,3 +48,4 @@ def artist_redirect(artist_id):
 from app.routes.edit import artist  # noqa: F401, E402
 from app.routes.edit import album   # noqa: F401, E402
 from app.routes.edit import song    # noqa: F401, E402
+from app.routes.edit import auto_spotify  # noqa: F401, E402

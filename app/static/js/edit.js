@@ -2457,3 +2457,232 @@ function importAlbumFromSpotify(artistId) {
         .catch(function (e) { showToast(e.message || 'Spotify import failed'); })
         .finally(function () { btn.disabled = false; btn.textContent = 'Import'; });
 }
+
+
+/* ─── Auto-populate Spotify links ─── */
+
+function autoPopulateSpotify(artistId) {
+    var modal = document.getElementById('auto-spotify-modal');
+    if (!modal) return;
+    // Reset UI
+    document.getElementById('auto-spotify-input-phase').style.display = '';
+    document.getElementById('auto-spotify-progress-phase').style.display = 'none';
+    document.getElementById('auto-spotify-review-phase').style.display = 'none';
+    document.getElementById('auto-spotify-url').value = '';
+    var startBtn = document.getElementById('auto-spotify-start-btn');
+    if (startBtn) { startBtn.disabled = false; startBtn.textContent = 'Start'; }
+    modal.style.display = 'flex';
+    modal.dataset.artistId = artistId;
+}
+
+function autoSpotifyStart() {
+    var modal = document.getElementById('auto-spotify-modal');
+    var artistId = modal.dataset.artistId;
+    var spotifyUrl = document.getElementById('auto-spotify-url').value.trim();
+    var startBtn = document.getElementById('auto-spotify-start-btn');
+
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting...';
+
+    // Show progress phase
+    document.getElementById('auto-spotify-input-phase').style.display = 'none';
+    document.getElementById('auto-spotify-progress-phase').style.display = '';
+    document.getElementById('auto-spotify-progress-msg').textContent = 'Starting...';
+    document.getElementById('auto-spotify-progress-bar').style.width = '0%';
+    document.getElementById('auto-spotify-progress-bar').style.background = 'var(--link)';
+    document.getElementById('auto-spotify-progress-pct').textContent = '0%';
+
+    var form = new FormData();
+    if (spotifyUrl) form.append('spotify_url', spotifyUrl);
+    form.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+
+    fetch('/edit/artist/' + artistId + '/auto-spotify', {method: 'POST', body: form})
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) throw new Error(data.error);
+            _pollAutoSpotify(data.job_id);
+        })
+        .catch(function (e) {
+            document.getElementById('auto-spotify-progress-msg').textContent = e.message || 'Failed to start';
+            document.getElementById('auto-spotify-progress-bar').style.width = '100%';
+            document.getElementById('auto-spotify-progress-bar').style.background = 'var(--delete-button)';
+            document.getElementById('auto-spotify-progress-pct').textContent = '';
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start';
+        });
+}
+
+function _pollAutoSpotify(jobId) {
+    fetch('/edit/auto-spotify/progress?job_id=' + jobId)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.done) {
+                _showAutoSpotifyResults(data.data);
+            } else if (data.error) {
+                document.getElementById('auto-spotify-progress-msg').textContent = data.error;
+                document.getElementById('auto-spotify-progress-bar').style.width = '100%';
+                document.getElementById('auto-spotify-progress-bar').style.background = 'var(--delete-button)';
+                document.getElementById('auto-spotify-progress-pct').textContent = '';
+            } else {
+                document.getElementById('auto-spotify-progress-msg').textContent = data.progress || '';
+                document.getElementById('auto-spotify-progress-bar').style.width = (data.percent || 0) + '%';
+                document.getElementById('auto-spotify-progress-pct').textContent = (data.percent || 0) + '%';
+                setTimeout(function () { _pollAutoSpotify(jobId); }, 500);
+            }
+        })
+        .catch(function () {
+            document.getElementById('auto-spotify-progress-msg').textContent = 'Lost connection. Please try again.';
+            document.getElementById('auto-spotify-progress-bar').style.background = 'var(--delete-button)';
+        });
+}
+
+function _showAutoSpotifyResults(data) {
+    // Hide progress, show review phase
+    document.getElementById('auto-spotify-progress-phase').style.display = 'none';
+    document.getElementById('auto-spotify-review-phase').style.display = 'flex';
+
+    var matchedByLink = data.matched_by_link || [];
+    var needsReview = data.needs_review || [];
+    var notFound = data.not_found || [];
+
+    // Summary
+    var summary = document.getElementById('auto-spotify-summary');
+    var parts = [];
+    if (matchedByLink.length) parts.push(matchedByLink.length + ' matched by link');
+    if (needsReview.length) parts.push(needsReview.length + ' need review');
+    if (notFound.length) parts.push(notFound.length + ' not found');
+    summary.textContent = parts.join(', ');
+
+    // Helper to build a checkbox list
+    function _buildCheckList(container, items) {
+        container.innerHTML = '';
+        items.forEach(function (m) {
+            var row = document.createElement('div');
+            row.className = 'flex items-center gap-2 py-1';
+            row.innerHTML = '<label class="flex items-center gap-2 text-sm cursor-pointer">' +
+                '<input type="checkbox" checked data-song-id="' + m.song_id + '" data-spotify-url="' + _escAttr(m.spotify_url) + '" class="auto-spotify-check cursor-pointer">' +
+                '<span class="text-primary-text">' + _escHtml(m.song_name) + '</span>' +
+                (m.artists ? ' <span class="text-secondary-text">(' + _escHtml(m.artists) + ')</span>' : '') +
+                '</label>';
+            container.appendChild(row);
+        });
+    }
+
+    // Build matched-by-link list
+    _buildCheckList(document.getElementById('auto-spotify-link-list'), matchedByLink);
+
+
+    // Build review list (each song shows up to 5 radio options)
+    var reviewList = document.getElementById('auto-spotify-review-list');
+    reviewList.innerHTML = '';
+    needsReview.forEach(function (item) {
+        var block = document.createElement('div');
+        block.className = 'mb-3 pb-3';
+        block.style.borderBottom = '1px solid var(--border)';
+
+        var title = document.createElement('div');
+        title.className = 'text-sm font-semibold text-primary-text mb-1';
+        title.textContent = item.song_name;
+        block.appendChild(title);
+
+        var groupName = 'review-' + item.song_id;
+        item.candidates.forEach(function (c, idx) {
+            var label = document.createElement('label');
+            label.className = 'flex items-start gap-2 py-0.5 text-sm cursor-pointer';
+            label.innerHTML = '<input type="radio" name="' + groupName + '" ' +
+                'data-song-id="' + item.song_id + '" data-spotify-url="' + _escAttr(c.spotify_url) + '" ' +
+                'class="auto-spotify-review-radio mt-0.5 cursor-pointer"' + '>' +
+                '<span><span class="text-primary-text">' + _escHtml(c.name) + '</span>' +
+                '<span class="text-secondary-text"> — ' + _escHtml(c.artists) + '</span>' +
+                '<span class="text-secondary-text text-xs block">' + _escHtml(c.album) + '</span></span>';
+            block.appendChild(label);
+        });
+
+        // "None" option
+        var noneLabel = document.createElement('label');
+        noneLabel.className = 'flex items-center gap-2 py-0.5 text-sm cursor-pointer';
+        noneLabel.innerHTML = '<input type="radio" name="' + groupName + '" ' +
+            'data-song-id="' + item.song_id + '" data-spotify-url="" ' +
+            'class="auto-spotify-review-radio cursor-pointer" checked>' +
+            '<span class="text-secondary-text italic">None of these</span>';
+        block.appendChild(noneLabel);
+
+        reviewList.appendChild(block);
+    });
+
+    // Not found list
+    var notFoundList = document.getElementById('auto-spotify-notfound-list');
+    notFoundList.innerHTML = '';
+    if (notFound.length) {
+        var header = document.createElement('div');
+        header.className = 'text-xs text-secondary-text mb-1 mt-2';
+        header.textContent = 'Not found on Spotify (' + notFound.length + '):';
+        notFoundList.appendChild(header);
+        notFound.forEach(function (nf) {
+            var row = document.createElement('div');
+            row.className = 'text-xs text-secondary-text py-0.5';
+            row.textContent = nf.song_name;
+            notFoundList.appendChild(row);
+        });
+    }
+
+    // Show/hide sections
+    document.getElementById('auto-spotify-link-section').style.display = matchedByLink.length ? '' : 'none';
+    document.getElementById('auto-spotify-review-section').style.display = needsReview.length ? '' : 'none';
+}
+
+function autoSpotifyConfirm() {
+    var selections = [];
+
+    // Collect checked auto-matched
+    document.querySelectorAll('.auto-spotify-check:checked').forEach(function (cb) {
+        if (cb.dataset.spotifyUrl) {
+            selections.push({song_id: parseInt(cb.dataset.songId), spotify_url: cb.dataset.spotifyUrl});
+        }
+    });
+
+    // Collect selected review radio buttons
+    var reviewRadios = document.querySelectorAll('.auto-spotify-review-radio:checked');
+    reviewRadios.forEach(function (radio) {
+        if (radio.dataset.spotifyUrl) {
+            selections.push({song_id: parseInt(radio.dataset.songId), spotify_url: radio.dataset.spotifyUrl});
+        }
+    });
+
+    if (!selections.length) {
+        document.getElementById('auto-spotify-modal').style.display = 'none';
+        return;
+    }
+
+    var btn = document.getElementById('auto-spotify-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    fetch('/edit/auto-spotify/confirm', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/json'}),
+        body: JSON.stringify({selections: selections}),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        document.getElementById('auto-spotify-modal').style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Save';
+        window.location.reload();
+    })
+    .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Save';
+        alert('Failed to save. Please try again.');
+    });
+}
+
+function _escHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function _escAttr(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
