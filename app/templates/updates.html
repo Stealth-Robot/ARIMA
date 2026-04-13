@@ -61,12 +61,12 @@
     <table class="w-full text-xs updates-table border-spacing-0">
         <thead>
             <tr class="bg-header-row">
-                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 140px;">Date</th>
-                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 80px;">Type</th>
-                <th class="text-left px-3 py-2 border-b border-grid-line">Description</th>
-                <th class="text-left px-3 py-2 border-b border-grid-line" style="width: 80px;">Commit</th>
+                <th class="text-left border-b border-grid-line" style="width: 140px;">Date</th>
+                <th class="text-left border-b border-grid-line" style="width: 80px;">Type</th>
+                <th class="text-left border-b border-grid-line">Description</th>
+                <th class="text-left border-b border-grid-line" style="width: 80px;">Commit</th>
                 {% if current_user.is_admin %}
-                <th class="px-3 py-2 border-b border-grid-line" style="width: 100px;">Actions</th>
+                <th class="border-b border-grid-line" style="width: 100px;">Actions</th>
                 {% endif %}
             </tr>
         </thead>
@@ -74,16 +74,16 @@
             {% for u in updates %}
             <tr id="row-{{ u.id }}" data-desc="{{ u.description | e }}" data-commit="{{ u.commit_id }}" data-date="{{ u.date }}" data-type-id="{{ u.type_id or '' }}"
                 style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
-                <td class="update-date whitespace-nowrap border-b border-grid-line py-2 px-2.5" style="font-family: monospace;" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
-                <td class="border-b border-grid-line py-2 px-2.5">
+                <td class="update-date whitespace-nowrap border-b border-grid-line" style="font-family: monospace;" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
+                <td class="border-b border-grid-line">
                     {% if u.type %}
-                    <span class="inline-block rounded-full text-2xs font-medium" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
+                    <span class="inline-block rounded-full text-2xs font-medium text-white" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }});">
                         {{ u.type.type }}
                     </span>
                     {% endif %}
                 </td>
-                <td class="border-b border-grid-line py-2 px-2.5" id="desc-{{ u.id }}">{{ u.description }}</td>
-                <td class="border-b border-grid-line py-2 px-2.5" style="font-family: monospace;">{{ u.commit_id[:7] }}</td>
+                <td class="border-b border-grid-line" id="desc-{{ u.id }}">{{ u.description }}</td>
+                <td class="border-b border-grid-line" style="font-family: monospace;">{{ u.commit_id[:7] }}</td>
                 {% if current_user.is_admin %}
                 <td class="px-3 py-2 text-center whitespace-nowrap border-b border-grid-line">
                     <button type="button" class="text-xs hover:underline text-link"
