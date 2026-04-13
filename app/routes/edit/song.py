@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
 from app.models.duplicate_display_override import DuplicateDisplayOverride
+from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
 from app.services.submission import _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -658,11 +659,42 @@ def merge_song(kept_song_id):
                 'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
             ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': link.track_number})
 
-    # Step 3b: Carry over flags
+    # Step 3b: Carry over flags and links
     if absorbed.is_promoted:
         kept.is_promoted = True
     if absorbed.is_remix:
         kept.is_remix = True
+    if not kept.spotify_url and absorbed.spotify_url:
+        kept.spotify_url = absorbed.spotify_url
+    if not kept.youtube_url and absorbed.youtube_url:
+        kept.youtube_url = absorbed.youtube_url
+    if not kept.note and absorbed.note:
+        kept.note = absorbed.note
+
+    # Step 3c: Transfer NotDuplicate pairs from absorbed to kept song
+    lo, hi = min(absorbed_song_id, kept_song_id), max(absorbed_song_id, kept_song_id)
+    # Delete the pair between the two merged songs (no longer meaningful)
+    NotDuplicate.query.filter_by(song_id_1=lo, song_id_2=hi).delete()
+    # Transfer remaining pairs: replace absorbed_song_id with kept_song_id
+    for nd in NotDuplicate.query.filter(
+        db.or_(NotDuplicate.song_id_1 == absorbed_song_id,
+               NotDuplicate.song_id_2 == absorbed_song_id)
+    ).all():
+        other = nd.song_id_2 if nd.song_id_1 == absorbed_song_id else nd.song_id_1
+        new_lo, new_hi = min(other, kept_song_id), max(other, kept_song_id)
+        # Only transfer if the pair doesn't already exist
+        if not NotDuplicate.query.filter_by(song_id_1=new_lo, song_id_2=new_hi).first():
+            db.session.add(NotDuplicate(song_id_1=new_lo, song_id_2=new_hi))
+        db.session.delete(nd)
+
+    # Step 3d: Clean up stale DuplicateDisplayOverrides
+    final_album_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
+        {'sid': kept_song_id}).fetchall()}
+    DuplicateDisplayOverride.query.filter(
+        DuplicateDisplayOverride.song_id == kept_song_id,
+        ~DuplicateDisplayOverride.preferred_album_id.in_(final_album_ids)
+    ).delete(synchronize_session=False)
 
     # Step 4: Delete absorbed song and all remaining references
     Rating.query.filter_by(song_id=absorbed_song_id).delete()

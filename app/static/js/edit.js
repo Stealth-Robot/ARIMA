@@ -1520,7 +1520,7 @@ function _openMergePopover(songId, songName, span) {
 }
 
 function showMergeConfirm(keptId, keptName, absorbedId, absorbedName, absorbedArtist, absorbedAlbum) {
-    var msg = 'Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + ' (' + absorbedAlbum + ')" into "' + keptName + '"? The absorbed song will be deleted. Ratings and links will be combined.';
+    var msg = 'Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + ' (' + absorbedAlbum + ')" into "' + keptName + '"? The absorbed song will be deleted. Ratings and links will be combined. If both songs have a rating from the same user, the kept song\'s rating is preserved.';
     showDeleteConfirm('Merge songs?', msg, '/edit/song/' + keptId + '/merge', true, 'Merge');
     // Override the form submit to include absorbed_song_id
     var form = document.getElementById('confirm-delete-form');
