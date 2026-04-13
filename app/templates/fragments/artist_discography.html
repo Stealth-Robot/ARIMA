@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
                 style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
-                {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ track_num }}.</span>{% endif %}
+                {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
                 {% if edit_mode %}
                 <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
                 style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
-                {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ track_num }}.</span>{% endif %}
+                {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
                 {% if edit_mode %}
                 <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ child.artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}

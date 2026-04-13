@@ -650,12 +650,13 @@ def merge_song(kept_song_id):
     absorbed_album_links = AlbumSong.query.filter_by(song_id=absorbed_song_id).all()
     for link in absorbed_album_links:
         if link.album_id not in kept_album_ids:
-            next_track = db.session.execute(db.text(
-                'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
-            ), {'aid': link.album_id}).scalar()
+            # Delete absorbed link first, then insert kept song at the same position
+            db.session.execute(db.text(
+                'DELETE FROM album_song WHERE album_id = :aid AND song_id = :sid'
+            ), {'aid': link.album_id, 'sid': absorbed_song_id})
             db.session.execute(db.text(
                 'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
-            ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': next_track})
+            ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': link.track_number})
 
     # Step 3b: Carry over flags
     if absorbed.is_promoted:
