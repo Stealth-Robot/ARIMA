@@ -265,6 +265,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 {% if edit_mode %}
                 <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
+                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
                 <span class="song-links inline whitespace-nowrap">{% if song.spotify_url and not hide_all_spotify %}<a href="{{ song.spotify_url }}" target="_blank" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a> {% endif %}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}</span>
                 <span class="whitespace-nowrap block" style="font-size: {{ song_button_size }}px;"><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move to another album"
@@ -290,11 +292,11 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 </span>
                 {% else %}
                 {{ song.name }}
+                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
                 <span class="song-links inline whitespace-nowrap">{% if song.spotify_url and not hide_all_spotify %}<a href="{{ song.spotify_url }}" target="_blank" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a> {% endif %}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}</span>
                 {% endif %}
-                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
-                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
             </td>
 
             <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
@@ -423,6 +425,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 {% if edit_mode %}
                 <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
                 {% if song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ child.artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
+                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
                 <span class="song-links inline whitespace-nowrap">{% if song.spotify_url and not hide_all_spotify %}<a href="{{ song.spotify_url }}" target="_blank" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a> {% endif %}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}</span>
                 <span class="whitespace-nowrap block" style="font-size: {{ song_button_size }}px;"><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move to another album"
@@ -448,11 +452,11 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 </span>
                 {% else %}
                 {{ song.name }}
+                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album.release_date[:4] if album.release_date else '') + ' ' + album.name %}
                 <span class="song-links inline whitespace-nowrap">{% if song.spotify_url and not hide_all_spotify %}<a href="{{ song.spotify_url }}" target="_blank" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a> {% endif %}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}</span>
                 {% endif %}
-                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
-                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
             </td>
             {% if edit_mode %}
             <td class="text-center px-1 py-1 border border-grid-line">
