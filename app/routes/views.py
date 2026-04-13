@@ -376,6 +376,24 @@ def mark_not_duplicate():
     return '', 204
 
 
+@views_bp.route('/views/merge-duplicate', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def merge_duplicate():
+    """Merge two duplicate songs from the views page (kept_id absorbs absorbed_id)."""
+    kept_id = request.form.get('kept_id', type=int)
+    absorbed_id = request.form.get('absorbed_id', type=int)
+    if not kept_id or not absorbed_id or kept_id == absorbed_id:
+        abort(400)
+    kept = db.session.get(Song, kept_id)
+    absorbed = db.session.get(Song, absorbed_id)
+    if not kept or not absorbed:
+        return 'Song not found', 404
+    from app.routes.edit.song import perform_song_merge
+    perform_song_merge(kept, absorbed)
+    return '', 204
+
+
 @views_bp.route('/views/incomplete-tabs')
 @login_required
 @role_required(EDITOR_OR_ADMIN)

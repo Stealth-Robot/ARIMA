@@ -2248,9 +2248,13 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     document.getElementById('confirm-delete-msg').textContent = msg;
     var form = document.getElementById('confirm-delete-form');
     form.action = action;
-    // Clean up any leftover merge hidden input
-    var prev = form.querySelector('input[name="absorbed_song_id"]');
-    if (prev) prev.remove();
+    // Clean up any leftover merge hidden inputs and dynamic password block
+    ['absorbed_song_id', 'kept_id', 'absorbed_id'].forEach(function(n) {
+        var prev = form.querySelector('input[name="' + n + '"]');
+        if (prev) prev.remove();
+    });
+    var mergePwBlock = document.getElementById('merge-pw-block');
+    if (mergePwBlock) mergePwBlock.remove();
     var pwField = document.getElementById('confirm-delete-pw');
     if (pwField) pwField.value = '';
     document.getElementById('confirm-delete-btn').textContent = btnLabel || 'Delete';
@@ -2263,14 +2267,10 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
     form.addEventListener('submit', function(e) {
         if (!_deleteIsAjax) return; // let normal form submit handle artist delete (redirect)
         e.preventDefault();
-        var pwField = document.getElementById('confirm-delete-pw');
-        var pw = pwField ? pwField.value : '';
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-        var body = 'password=' + encodeURIComponent(pw);
-        var absorbedInput = form.querySelector('input[name="absorbed_song_id"]');
-        if (absorbedInput) body += '&absorbed_song_id=' + absorbedInput.value;
+        var body = new URLSearchParams(new FormData(form)).toString();
         fetch(form.action, {
             method: 'POST',
             headers: headers,

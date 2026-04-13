@@ -620,6 +620,19 @@ def merge_song(kept_song_id):
     if not _verify_password():
         return 'Incorrect password', 403
 
+    perform_song_merge(kept, absorbed)
+
+    # Find the first artist linked to the kept song to redirect to their page
+    artist_link = ArtistSong.query.filter_by(song_id=kept_song_id).first()
+    if artist_link:
+        return redirect(url_for('artists.artist_detail', artist_id=artist_link.artist_id))
+    return redirect(request.referrer or url_for('home.home'))
+
+
+def perform_song_merge(kept, absorbed):
+    """Merge absorbed song into kept song: ratings, links, flags, then delete absorbed."""
+    kept_song_id = kept.id
+    absorbed_song_id = absorbed.id
     absorbed_name = absorbed.name
 
     # Step 1: Merge ratings
@@ -627,11 +640,9 @@ def merge_song(kept_song_id):
     absorbed_ratings = Rating.query.filter_by(song_id=absorbed_song_id).all()
     for ar in absorbed_ratings:
         if ar.user_id not in kept_ratings:
-            # No conflict — move rating to kept song
             db.session.execute(db.text(
                 'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
             ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': ar.user_id})
-        # else: conflict — kept song's rating survives, absorbed rating will be deleted in step 4
 
     # Step 2: Merge artist links
     kept_artist_ids = {r[0] for r in db.session.execute(
@@ -651,7 +662,6 @@ def merge_song(kept_song_id):
     absorbed_album_links = AlbumSong.query.filter_by(song_id=absorbed_song_id).all()
     for link in absorbed_album_links:
         if link.album_id not in kept_album_ids:
-            # Delete absorbed link first, then insert kept song at the same position
             db.session.execute(db.text(
                 'DELETE FROM album_song WHERE album_id = :aid AND song_id = :sid'
             ), {'aid': link.album_id, 'sid': absorbed_song_id})
@@ -673,16 +683,13 @@ def merge_song(kept_song_id):
 
     # Step 3c: Transfer NotDuplicate pairs from absorbed to kept song
     lo, hi = min(absorbed_song_id, kept_song_id), max(absorbed_song_id, kept_song_id)
-    # Delete the pair between the two merged songs (no longer meaningful)
     NotDuplicate.query.filter_by(song_id_1=lo, song_id_2=hi).delete()
-    # Transfer remaining pairs: replace absorbed_song_id with kept_song_id
     for nd in NotDuplicate.query.filter(
         db.or_(NotDuplicate.song_id_1 == absorbed_song_id,
                NotDuplicate.song_id_2 == absorbed_song_id)
     ).all():
         other = nd.song_id_2 if nd.song_id_1 == absorbed_song_id else nd.song_id_1
         new_lo, new_hi = min(other, kept_song_id), max(other, kept_song_id)
-        # Only transfer if the pair doesn't already exist
         if not NotDuplicate.query.filter_by(song_id_1=new_lo, song_id_2=new_hi).first():
             db.session.add(NotDuplicate(song_id_1=new_lo, song_id_2=new_hi))
         db.session.delete(nd)
@@ -708,12 +715,6 @@ def merge_song(kept_song_id):
                f'Merged song "{absorbed_name}" (id={absorbed_song_id}) into "{kept.name}" (id={kept_song_id})',
                song=kept)
     db.session.commit()
-
-    # Find the first artist linked to the kept song to redirect to their page
-    artist_link = ArtistSong.query.filter_by(song_id=kept_song_id).first()
-    if artist_link:
-        return redirect(url_for('artists.artist_detail', artist_id=artist_link.artist_id))
-    return redirect(request.referrer or url_for('home.home'))
 
 
 @edit_bp.route('/song/<int:song_id>/duplicate-override', methods=['POST'])
