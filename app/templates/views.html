@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Views{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Data Integrity Views</h1>
+
+    {% set sections = [
+        ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs')),
+        ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs')),
+        ('Orphaned albums (no songs, no artist)', counts.orphan_albums, url_for('views.view_orphan_albums')),
+        ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums')),
+        ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
+        ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
+        ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
+        ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
+        ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
+        ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
+        ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
+    ] %}
+
+    {% for title, count, url in sections %}
+    <div class="mb-4 border rounded border-border">
+        <h2 class="font-semibold p-4 cursor-pointer m-0"
+            onclick="toggleView(this)"
+            data-url="{{ url }}"
+            data-index="{{ loop.index0 }}"
+            data-loaded="false">
+            <span class="view-arrow inline-block mr-1.5" style="transition: transform 0.2s;">&#9654;</span>
+            {{ title }}
+            <span class="view-count text-sm font-normal text-secondary-text">— {{ count }}</span>
+        </h2>
+        <div class="view-content pt-0 px-4 pb-3" style="display: none;"></div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function _getOpenViews() {
+    try { return JSON.parse(sessionStorage.getItem('openViews') || '[]'); } catch(e) { return []; }
+}
+function _saveOpenViews() {
+    var open = [];
+    document.querySelectorAll('h2[data-index]').forEach(function(h) {
+        if (h.nextElementSibling.style.display !== 'none') open.push(parseInt(h.dataset.index));
+    });
+    sessionStorage.setItem('openViews', JSON.stringify(open));
+}
+
+function openView(header) {
+    var content = header.nextElementSibling;
+    var arrow = header.querySelector('.view-arrow');
+    content.style.display = 'block';
+    arrow.style.transform = 'rotate(90deg)';
+    // Always re-fetch content to reflect current edit mode state
+    content.innerHTML = '<p class="text-sm text-secondary-text">Loading...</p>';
+    fetch(header.dataset.url).then(function(r) {
+        return r.text();
+    }).then(function(html) {
+        content.innerHTML = html;
+        header.dataset.loaded = 'true';
+        var countEl = content.querySelector('[data-view-count]');
+        if (countEl) {
+            var span = header.querySelector('.view-count');
+            if (span) span.textContent = '— ' + countEl.dataset.viewCount;
+        }
+    });
+}
+
+function toggleView(header) {
+    var content = header.nextElementSibling;
+    var arrow = header.querySelector('.view-arrow');
+    var isOpen = content.style.display !== 'none';
+    if (isOpen) {
+        content.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        openView(header);
+    }
+    _saveOpenViews();
+}
+
+// Restore open sections on page load (and on bfcache restore)
+function _restoreViews() {
+    var open = _getOpenViews();
+    if (open.length) {
+        open.forEach(function(idx) {
+            var h = document.querySelector('h2[data-index="' + idx + '"]');
+            if (h) openView(h);
+        });
+    }
+}
+_restoreViews();
+
+// Intercept edit mode toggle — submit via fetch, then reload to get fresh state
+(function() {
+    var form = document.getElementById('edit-mode-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var csrf = form.querySelector('[name=csrf_token]');
+        fetch(form.action, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrf ? csrf.value : ''),
+            redirect: 'manual',
+        }).then(function() {
+            window.location.reload();
+        });
+    });
+})();
+
+function deleteOrphanAlbum(albumId, span) {
+    showDeleteConfirm('Delete empty album?', 'This orphaned album will be permanently deleted.', '/edit/album/' + albumId + '/delete', true, 'Delete');
+}
+function deleteVariantSong(songId, span) {
+    showDeleteConfirm('Delete song variant?', 'This song and all its ratings will be permanently deleted.', '/edit/song/' + songId + '/delete', true, 'Delete');
+}
+function dismissVariant(songId, btn) {
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    fetch('/views/dismiss-variant', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+        body: 'song_id=' + songId,
+    }).then(function(r) {
+        if (r.ok) {
+            var row = document.getElementById('variant-' + songId);
+            if (row) row.remove();
+        }
+    });
+}
+</script>
+{% with password_required=true %}{% include "fragments/confirm_modal.html" %}{% endwith %}
+<script>
+function dismissDuplicate(id1, id2, btn) {
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    fetch('/views/not-duplicate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+        body: 'song_id_1=' + id1 + '&song_id_2=' + id2,
+    }).then(function(r) {
+        if (r.ok) {
+            var group = document.getElementById('dup-group-' + id1 + '-' + id2);
+            if (group) group.remove();
+        }
+    });
+}
+
+function mergeDuplicate(btn) {
+    var d = btn.dataset;
+    var keptId = parseInt(d.keptId), absorbedId = parseInt(d.absorbedId);
+    if (!confirm('Merge "' + d.absorbedName + ' \u2014 ' + d.absorbedArtist + '" into "' + d.keptName + ' \u2014 ' + d.keptArtist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    fetch('/views/merge-duplicate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
+        body: 'kept_id=' + keptId + '&absorbed_id=' + absorbedId,
+    }).then(function(r) {
+        if (r.ok) {
+            document.querySelectorAll('[id^="dup-group-"]').forEach(function(el) {
+                var parts = el.id.replace('dup-group-', '').split('-');
+                if (parseInt(parts[0]) === absorbedId || parseInt(parts[1]) === absorbedId) el.remove();
+            });
+        } else {
+            r.text().then(function(t) { alert(t || 'Merge failed'); });
+        }
+    });
+}
+</script>
+{% endblock %}

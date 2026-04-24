@@ -1,0 +1,20 @@
+<span data-view-count="{{ items | length }}" class="hidden"></span>
+{% if items %}
+{% for s in items %}
+<div id="variant-{{ s.id }}" class="mb-3 flex items-center gap-2">
+    <span class="text-sm text-primary-text">"{{ s.name }}" — <span class="text-secondary-text">{{ s.artists }}</span></span>
+    {% if edit_mode %}
+    <button onclick="dismissVariant({{ s.id }}, this)"
+            class="px-2 py-1 rounded text-xs bg-button-secondary text-primary-text border-0 cursor-pointer">
+        Dismiss
+    </button>
+    <button onclick="deleteVariantSong({{ s.id }}, this)"
+            class="px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer">
+        Delete
+    </button>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}

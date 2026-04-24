@@ -1,0 +1,19 @@
+{% if albums %}
+<ul class="text-sm space-y-1">
+    {% for a in albums %}
+    <li id="{{ id_prefix }}-album-{{ a.id }}" style="line-height: 26px; min-height: 26px;">
+        {% if a.artist_id %}<a href="{{ url_for('artists.artist_detail', artist_id=a.artist_id) }}" class="text-link no-underline">"{{ a.name }}{% if a.genres | selectattr('genre', 'equalto', 'OST') | list and not a.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}"</a>{% else %}"{{ a.name }}{% if a.genres | selectattr('genre', 'equalto', 'OST') | list and not a.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}"{% endif %}
+        {% if show_year %}<span class="text-secondary-text">({{ a.release_date[:4] }})</span>{% endif %}
+        {% if album_artists.get(a.id) %}
+        <span class="text-secondary-text">— {{ album_artists[a.id] | join(', ') }}</span>
+        {% endif %}
+        {% if edit_mode %}
+        (<span class="edit-inline cursor-pointer text-secondary-text" data-full-date="{{ a.release_date or '' }}"
+               onclick="showInlineDateEdit(event, '/edit/album/{{ a.id }}/release-date', this, this.dataset.fullDate)">{{ a.release_date[:4] if a.release_date else 'date' }}</span>)
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}

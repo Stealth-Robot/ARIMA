@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Updates{% endblock %}
+{% block og_title %}A.R.I.M.A. - Updates{% endblock %}
+{% block og_description %}Recent app updates and features{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Updates</h1>
+
+    {% if current_user.is_admin %}
+    <div class="mb-6 p-4 border rounded border-border">
+        <h2 class="text-sm font-bold mb-3">New Update</h2>
+        <form method="POST" action="{{ url_for('updates.add_update') }}" class="flex flex-col gap-2"
+              id="add-update-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex gap-2">
+                <input type="text" name="commit_id" placeholder="Commit ID" required value="{{ saved_form.get('commit_id', '') }}"
+                       class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border" style="font-family: monospace;">
+                <input type="text" name="date" data-datetime-format placeholder="YYYY-MM-DD HH:MM" required value="{{ saved_form.get('date', '') }}"
+                       class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border" style="width: 160px; font-family: monospace;">
+                <button type="button" id="refresh-date-btn" class="text-xs px-2 py-1 rounded border bg-secondary-bg text-secondary-text border-border cursor-pointer" title="Reset to now">&#x21bb;</button>
+            </div>
+            <div class="flex gap-2">
+                <select name="type_id" class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border">
+                    {% for t in all_types %}
+                    <option value="{{ t.id }}">{{ t.type }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="description" placeholder="brief description" required value="{{ saved_form.get('description', '') }}"
+                       class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border">
+                <button type="submit" id="add-update-btn" class="text-xs px-4 py-1 rounded bg-button-primary text-button-text"
+                        style="opacity: 0.4; cursor: not-allowed;" disabled>Add</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="flex gap-2 mb-4 flex-wrap items-center" id="updates-filters">
+        <div class="relative inline-block">
+            <button type="button" id="type-filter-toggle"
+                    onclick="toggleTypeDropdown()"
+                    class="px-3 py-2 border rounded text-xs border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
+                Type{% if include %} ({{ include|length }}){% endif %} &#9662;
+            </button>
+            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                {% for t in all_types %}
+                <label class="block py-0.5 px-0 text-sm- cursor-pointer">
+                    <input type="checkbox" class="type-filter-cb mr-1" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}>
+                    {{ t.type }} — {{ t.description }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="{{ url_for('updates.updates_timeline', **request.args) }}"
+           class="ml-auto text-xs text-link no-underline">
+            See as timeline &rarr;
+        </a>
+    </div>
+
+    <table class="w-full text-xs updates-table border-spacing-0">
+        <thead>
+            <tr class="bg-header-row">
+                <th class="text-left border-b border-grid-line" style="width: 140px;">Date</th>
+                <th class="text-left border-b border-grid-line" style="width: 80px;">Type</th>
+                <th class="text-left border-b border-grid-line">Description</th>
+                <th class="text-left border-b border-grid-line" style="width: 80px;">Commit</th>
+                {% if current_user.is_admin %}
+                <th class="border-b border-grid-line" style="width: 100px;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in updates %}
+            <tr id="row-{{ u.id }}" data-desc="{{ u.description | e }}" data-commit="{{ u.commit_id }}" data-date="{{ u.date }}" data-type-id="{{ u.type_id or '' }}"
+                style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+                <td class="update-date whitespace-nowrap border-b border-grid-line" style="font-family: monospace;" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
+                <td class="border-b border-grid-line">
+                    {% if u.type %}
+                    <span class="inline-block rounded-full text-2xs font-medium text-white" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }});">
+                        {{ u.type.type }}
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="border-b border-grid-line" id="desc-{{ u.id }}">{{ u.description }}</td>
+                <td class="border-b border-grid-line" style="font-family: monospace;">{{ u.commit_id[:7] }}</td>
+                {% if current_user.is_admin %}
+                <td class="px-3 py-2 text-center whitespace-nowrap border-b border-grid-line">
+                    <button type="button" class="text-xs hover:underline text-link"
+                            onclick="editRow({{ u.id }})">Edit</button>
+                    <form method="POST" action="{{ url_for('updates.delete_update', update_id=u.id) }}" class="inline"
+                          onsubmit="return confirm('Delete this update?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-xs hover:underline text-delete">Delete</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+            {% if not updates %}
+            <tr>
+                <td colspan="{% if current_user.is_admin %}5{% else %}4{% endif %}" class="px-3 py-4 text-center text-secondary-text">No updates yet.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if current_user.is_admin %}
+<script>
+(function() {
+    var form = document.getElementById('add-update-form');
+    var btn = document.getElementById('add-update-btn');
+    var commitInput = form.querySelector('[name=commit_id]');
+    var dateInput = form.querySelector('[name=date]');
+    var descInput = form.querySelector('[name=description]');
+    var latestEt = {{ latest_et | tojson }};
+    var commitOk = false;
+    var commitChecked = '';
+    var debounceTimer = null;
+
+    function resetBorder(el) { el.style.borderColor = 'var(--border)'; }
+    function errorBorder(el) { el.style.borderColor = 'var(--delete-button)'; }
+
+    function isDateValid() {
+        var v = dateInput.value.trim();
+        if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) return false;
+        var d = new Date(v.replace(' ', 'T') + ':00');
+        return !isNaN(d);
+    }
+
+    function isDateNewer() {
+        if (!latestEt || !isDateValid()) return true;
+        var input = dateInput.value.trim();
+        return input >= latestEt;
+    }
+
+    function updateBtn() {
+        var valid = commitInput.value.trim() &&
+                    descInput.value.trim() &&
+                    isDateValid() &&
+                    isDateNewer() &&
+                    commitOk;
+        btn.disabled = !valid;
+        btn.style.opacity = valid ? '1' : '0.4';
+        btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+    }
+
+    function checkCommit() {
+        var val = commitInput.value.trim();
+        if (!val) { commitOk = false; resetBorder(commitInput); updateBtn(); return; }
+        if (val === commitChecked) return;
+        commitChecked = val;
+        fetch('{{ url_for("updates.check_commit") }}?commit_id=' + encodeURIComponent(val))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                commitOk = !data.exists;
+                if (data.exists) { errorBorder(commitInput); } else { resetBorder(commitInput); }
+                updateBtn();
+            });
+    }
+
+    function validateDate() {
+        var v = dateInput.value.trim();
+        if (!v) { resetBorder(dateInput); updateBtn(); return; }
+        if (isDateValid() && isDateNewer()) { resetBorder(dateInput); }
+        else if (v.length >= 16) { errorBorder(dateInput); }
+        else { resetBorder(dateInput); }
+        updateBtn();
+    }
+
+    commitInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(checkCommit, 300);
+        updateBtn();
+    });
+    dateInput.addEventListener('input', validateDate);
+    descInput.addEventListener('input', function() { updateBtn(); });
+
+    // Prefill date with current ET time if empty
+    if (!dateInput.value.trim()) {
+        var now = new Date();
+        var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        var y = et.getFullYear();
+        var mo = String(et.getMonth() + 1).padStart(2, '0');
+        var d = String(et.getDate()).padStart(2, '0');
+        var h = String(et.getHours()).padStart(2, '0');
+        var mi = String(et.getMinutes()).padStart(2, '0');
+        dateInput.value = y + '-' + mo + '-' + d + ' ' + h + ':' + mi;
+    }
+
+    document.getElementById('refresh-date-btn').addEventListener('click', function() {
+        var now = new Date();
+        var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        var y = et.getFullYear();
+        var mo = String(et.getMonth() + 1).padStart(2, '0');
+        var d = String(et.getDate()).padStart(2, '0');
+        var h = String(et.getHours()).padStart(2, '0');
+        var mi = String(et.getMinutes()).padStart(2, '0');
+        dateInput.value = y + '-' + mo + '-' + d + ' ' + h + ':' + mi;
+        validateDate();
+    });
+
+    // Initial check
+    if (commitInput.value.trim()) checkCommit();
+    validateDate();
+    updateBtn();
+
+    form.addEventListener('submit', function(e) {
+        if (btn.disabled) { e.preventDefault(); return; }
+    });
+})();
+
+var _updateTypes = [{% for t in all_types %}{id:{{ t.id }},name:{{ t.type | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+
+function editRow(id) {
+    var row = document.getElementById('row-' + id);
+    if (!row) return;
+    var desc = row.dataset.desc;
+    var commit = row.dataset.commit;
+    var rawDate = row.dataset.date;
+    var typeId = row.dataset.typeId;
+    // Convert UTC date to local YYYY-MM-DD HH:MM for the input
+    var localDate = '';
+    if (rawDate) {
+        var d = new Date(rawDate.replace(' ', 'T') + 'Z');
+        if (!isNaN(d)) {
+            var pad = function(n) { return n < 10 ? '0' + n : n; };
+            localDate = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+    }
+    var td = document.getElementById('desc-' + id);
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var typeOpts = _updateTypes.map(function(t) {
+        return '<option value="' + t.id + '"' + (String(t.id) === typeId ? ' selected' : '') + '>' + t.name + '</option>';
+    }).join('');
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/updates/' + id + '/edit';
+    form.dataset.orig = td.innerHTML;
+    form.style.cssText = 'display:flex; flex-direction:column; gap:4px;';
+    form.innerHTML = '<input type="hidden" name="csrf_token" value="' + (csrf ? csrf.content : '') + '">'
+        + '<div style="display:flex; gap:4px;">'
+        + '<input type="text" name="commit_id" value="' + commit.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="width:100px; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="Commit ID">'
+        + '<input type="text" name="date" value="' + localDate + '" class="text-xs px-2 py-1 rounded border" style="width:140px; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="YYYY-MM-DD HH:MM">'
+        + '<select name="type_id" class="text-xs px-2 py-1 rounded border" style="background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);">' + typeOpts + '</select>'
+        + '</div>'
+        + '<div style="display:flex; gap:4px;">'
+        + '<input type="text" name="description" value="' + desc.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="flex:1; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);">'
+        + '<button type="submit" class="text-xs px-2 py-1 rounded" style="background:var(--button-primary); color:var(--button-text);">Save</button>'
+        + '<button type="button" class="text-xs px-2 py-1 rounded" style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border);" onclick="this.closest(\'form\').outerHTML=this.closest(\'form\').dataset.orig">Cancel</button>'
+        + '</div>';
+    td.innerHTML = '';
+    td.appendChild(form);
+    form.querySelector('input[name=description]').focus();
+}
+</script>
+{% endif %}
+<script>
+document.querySelectorAll('.update-date').forEach(function(td) {
+    var utc = td.dataset.utc;
+    if (!utc) return;
+    var d = new Date(utc.replace(' ', 'T') + 'Z');
+    if (isNaN(d)) return;
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + '  ' + pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
+});
+
+// "NEW" badges for updates added since last visit
+(function() {
+    var KEY = 'arima-updates-last-seen';
+    var lastSeen = parseInt(localStorage.getItem(KEY)) || 0;
+    var maxId = 0;
+    document.querySelectorAll('tr[id^="row-"]').forEach(function(row) {
+        var id = parseInt(row.id.replace('row-', ''));
+        if (id > maxId) maxId = id;
+        if (id > lastSeen) {
+            var dateTd = row.querySelector('.update-date');
+            if (dateTd) {
+                dateTd.style.position = 'relative';
+                var badge = document.createElement('span');
+                badge.textContent = 'NEW';
+                badge.style.cssText = 'position:absolute; left:-42px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; padding:1px 6px; border-radius:3px; background:var(--delete-button); color:var(--button-text); white-space:nowrap;';
+                dateTd.appendChild(badge);
+            }
+        }
+    });
+    if (maxId > lastSeen) localStorage.setItem(KEY, maxId);
+})();
+
+function toggleTypeDropdown() {
+    var dd = document.getElementById('type-filter-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('type-filter-dropdown');
+    if (!dd) return;
+    if (!e.target.closest('#type-filter-dropdown') && e.target.id !== 'type-filter-toggle') {
+        dd.style.display = 'none';
+    }
+});
+document.querySelectorAll('.type-filter-cb').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        var checked = [];
+        document.querySelectorAll('.type-filter-cb:checked').forEach(function(c) { checked.push(c.value); });
+        var params = new URLSearchParams();
+        checked.forEach(function(v) { params.append('include', v); });
+        window.location.href = '{{ url_for("updates.updates_page") }}' + (checked.length ? '?' + params.toString() : '');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — {% if artist %}{{ artist.name }}{% else %}Artists{% endif %}{% endblock %}
+{% block og_title %}A.R.I.M.A. - {% if artist %}{{ artist.name }}{% else %}Artists{% endif %}{% endblock %}
+{% block og_description %}{% if artist %}Discography and ratings for {{ artist.name }}{% else %}Artist discographies and ratings{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Discography area — padding-bottom to avoid hiding behind fixed nav -->
+<div id="discography" class="mb-4 pb-9">
+    {% if artist %}
+    {% include "fragments/artist_discography.html" %}
+    {% else %}
+    <p class="text-center mt-8 text-secondary-text">Select an artist below.</p>
+    {% endif %}
+</div>
+
+{% set navbar_htmx = true %}
+{% include "fragments/artist_navbar.html" %}
+{% endblock %}

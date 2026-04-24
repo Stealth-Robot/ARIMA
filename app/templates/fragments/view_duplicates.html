@@ -1,0 +1,47 @@
+<span data-view-count="{{ groups | length }}" class="hidden"></span>
+{% if groups %}
+{% for group in groups %}
+<div id="dup-group-{{ group.id_lo }}-{{ group.id_hi }}" class="mb-4">
+    <div class="flex items-center gap-2 mb-1">
+        <h3 class="text-sm font-semibold m-0">{{ group.name }}</h3>
+        <button onclick="dismissDuplicate({{ group.id_lo }}, {{ group.id_hi }}, this)"
+                class="px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer">
+            Not a duplicate
+        </button>
+        <button onclick="mergeDuplicate(this)"
+                data-kept-id="{{ group.songs[0].id }}" data-kept-name="{{ group.songs[0].name }}" data-kept-artist="{{ group.songs[0].artist_name }}"
+                data-absorbed-id="{{ group.songs[1].id }}" data-absorbed-name="{{ group.songs[1].name }}" data-absorbed-artist="{{ group.songs[1].artist_name }}"
+                data-id-lo="{{ group.id_lo }}" data-id-hi="{{ group.id_hi }}"
+                class="px-2 py-1 rounded text-xs bg-button-primary text-button-text border-0 cursor-pointer">
+            Duplicate - Perform Merge
+        </button>
+    </div>
+    <table class="w-full text-sm border-collapse border border-grid-line">
+        <thead>
+            <tr class="bg-header-row">
+                <th class="text-left px-3 py-1 border border-grid-line">Song</th>
+                <th class="text-left px-3 py-1 border border-grid-line">Album(s)</th>
+                <th class="text-left px-3 py-1 border border-grid-line">Artist(s)</th>
+                <th class="text-center px-3 py-1 border border-grid-line">Remix?</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in group.songs %}
+            <tr class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+                <td class="px-3 py-1 border border-grid-line">
+                    <a href="/artists/{{ s.artist_slug }}#song-{{ s.id }}" class="text-link">{{ s.name }}</a>
+                </td>
+                <td class="px-3 py-1 border border-grid-line">{{ s.albums | join(', ') or '—' }}</td>
+                <td class="px-3 py-1 border border-grid-line">
+                    <a href="/artists/{{ s.artist_slug }}" class="text-link">{{ s.artist_name }}</a>
+                </td>
+                <td class="px-3 py-1 text-center border border-grid-line">{{ 'Yes' if s.is_remix else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-sm text-secondary-text">No potential duplicates found.</p>
+{% endif %}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.R.I.M.A.</title>
+    <meta name="description" content="Music rating tracker for friends">
+    <meta property="og:title" content="A.R.I.M.A.">
+    <meta property="og:image" content="{{ url_for('static', filename='img/tab_image.jpg', _external=True) }}">
+    <meta property="og:description" content="Music rating tracker for friends">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
+    <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary:      #3C3F44;
+            --bg-secondary:    #4A4D53;
+            --text-primary:    #FAFAFA;
+            --text-secondary:  #D8D9DD;
+            --border:          #4B4D54;
+            --button-primary:  #5865F2;
+            --button-secondary:#4B4D54;
+        }
+        body { background-color: var(--bg-primary); color: var(--text-primary); }
+        .login-input {
+            width: 100%; padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px;
+            background-color: #5C5F66; color: var(--text-primary);
+        }
+        .login-input::placeholder { color: #A0A3AA; }
+        .login-input:focus { outline: none; border-color: var(--button-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--button-primary) 25%, transparent); }
+        .required-star { color: #EF4444; margin-left: 4px; }
+        .btn-primary {
+            width: 100%; padding: 8px; border-radius: 4px; border: none; cursor: pointer;
+            background-color: var(--button-primary); color: #fff;
+        }
+        .btn-primary:hover { filter: brightness(0.9); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer;
+            background-color: var(--bg-secondary); color: var(--text-primary);
+        }
+        .btn-secondary:hover { filter: brightness(0.95); }
+    </style>
+</head>
+<body class="min-h-screen flex items-start justify-center" style="font-family: Arial, Helvetica, sans-serif;">
+    <div class="mt-24 w-full max-w-md px-6">
+        <!-- Header image -->
+        <div class="flex justify-center mb-6">
+            <img src="{{ url_for('static', filename='img/tab_image.jpg') }}"
+                 class="w-32 h-32 rounded-full object-cover border border-black" alt="A.R.I.M.A.">
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-3xl font-bold text-center mb-2 text-primary-text">A.R.I.M.A.</h1>
+
+        <!-- Mission statement -->
+        <p class="text-center mb-2 text-secondary-text">App for Rating and Indexing Music Albums</p>
+
+        <!-- Horizontal line -->
+        <hr class="mb-4 border-border">
+
+        <!-- Description -->
+        <p class="text-center text-sm mb-8 text-secondary-text">
+            A lightweight app for friends to rate and compare music.
+        </p>
+
+        <!-- Error message -->
+        {% if error %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Success message -->
+        {% if success %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4 text-sm text-center">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <form id="login-form" method="POST" action="{{ url_for('auth.login') }}" class="{% if mode == 'create' %}hidden{% endif %}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div class="mb-4">
+                <label class="text-sm text-secondary-text">Username<span class="required-star">*</span></label>
+                <input type="text" name="username" placeholder="Username"
+                       class="login-input" required>
+            </div>
+            <div class="mb-6">
+                <label class="text-sm text-secondary-text">Password<span class="required-star">*</span></label>
+                <input type="password" name="password" placeholder="Password"
+                       class="login-input" required>
+            </div>
+            <button type="submit" class="btn-primary mb-3">Login</button>
+        </form>
+
+        <!-- Create Account Form -->
+        <form id="create-form" method="POST" action="{{ url_for('auth.create_account') }}" class="{% if mode != 'create' %}hidden{% endif %}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div class="mb-4">
+                <label class="text-sm text-secondary-text">Email<span class="required-star">*</span></label>
+                <input type="email" name="email" id="create-email" placeholder="Email"
+                       value="{{ create_email or '' }}"
+                       class="login-input" required>
+            </div>
+            <div class="mb-4">
+                <label class="text-sm text-secondary-text">Username<span class="required-star">*</span></label>
+                <input type="text" name="username" id="create-username" placeholder="Username"
+                       value="{{ create_username or '' }}"
+                       class="login-input" required>
+            </div>
+            <div class="mb-4">
+                <label class="text-sm text-secondary-text">Password<span class="required-star">*</span></label>
+                <input type="password" name="password" placeholder="Create Password"
+                       class="login-input" required>
+            </div>
+            <div class="mb-6">
+                <label class="text-sm text-secondary-text">Confirm Password<span class="required-star">*</span></label>
+                <input type="password" name="confirm_password" placeholder="Confirm Password"
+                       class="login-input" required>
+            </div>
+            <button type="submit" id="create-submit" class="btn-primary mb-3" disabled>
+                Create Account
+            </button>
+        </form>
+
+        <!-- Action buttons -->
+        <div class="flex gap-3">
+            <form method="POST" action="{{ url_for('auth.guest_login') }}" class="flex-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                <button type="submit" class="btn-secondary">Login as Guest</button>
+            </form>
+            <button id="toggle-create" type="button" class="btn-secondary flex-1">
+                {% if mode == 'create' %}Back to Login{% else %}Create Account{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const createForm = document.getElementById('create-form');
+        const toggleBtn = document.getElementById('toggle-create');
+        const createUsername = document.getElementById('create-username');
+        const createSubmit = document.getElementById('create-submit');
+
+        // Toggle between login and create account forms
+        toggleBtn.addEventListener('click', () => {
+            const showingCreate = !createForm.classList.contains('hidden');
+            if (showingCreate) {
+                createForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                toggleBtn.textContent = 'Create Account';
+            } else {
+                loginForm.classList.add('hidden');
+                createForm.classList.remove('hidden');
+                toggleBtn.textContent = 'Back to Login';
+            }
+        });
+
+        const createPassword = createForm.querySelector('input[name="password"]');
+        const createConfirm = createForm.querySelector('input[name="confirm_password"]');
+
+        function validateForm() {
+            const usernameValid = createUsername.value.trim() !== '';
+            const passwordValid = createPassword.value.length >= 5;
+            const passwordsMatch = createPassword.value === createConfirm.value;
+            createSubmit.disabled = !(usernameValid && passwordValid && passwordsMatch);
+        }
+
+        const createEmail = document.getElementById('create-email');
+
+        createEmail.addEventListener('blur', () => {
+            const email = createEmail.value.trim();
+            if (!email) return;
+            const body = new FormData();
+            body.append('email', email);
+            body.append('csrf_token', createForm.querySelector('[name=csrf_token]').value);
+            fetch('{{ url_for("auth.lookup_invite") }}', { method: 'POST', body: body })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.username) {
+                        createUsername.value = data.username;
+                        validateForm();
+                    }
+                });
+        });
+
+        createUsername.addEventListener('input', validateForm);
+        createPassword.addEventListener('input', validateForm);
+        createConfirm.addEventListener('input', validateForm);
+
+        validateForm();
+    </script>
+</body>
+</html>

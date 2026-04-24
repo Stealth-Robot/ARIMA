@@ -1,0 +1,480 @@
+/* Offset anchor-targeted rows so the fixed navbar (44px) + sticky table header (~30px) don't cover them */
+tr[id] {
+    scroll-margin-top: 70px;
+}
+
+/* Pulse glow highlight for search-jump targets */
+@keyframes pulse-glow {
+    0%   { box-shadow: inset 0 0 0 100px rgba(255, 200, 50, 0.35); }
+    100% { box-shadow: inset 0 0 0 100px transparent; }
+}
+tr.highlight-glow > td {
+    animation: pulse-glow 2s ease-out forwards;
+}
+tr.highlight-glow-fast > td {
+    animation: pulse-glow 1s ease-out forwards;
+}
+
+/* Dense spreadsheet styling */
+
+/* All data tables: tight, dense, no gaps */
+table.text-xs {
+    font-size: 13px;
+    line-height: 1.2;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* Thin grid lines — 1px renders as hairline on Retina; 0.5px breaks iOS Safari */
+table.text-xs,
+table.text-xs td,
+table.text-xs th {
+    border-width: 1px;
+}
+
+table.text-xs td,
+table.text-xs th {
+    padding: 2px 4px;
+    vertical-align: middle;
+}
+
+/* Streamlined discography borders: only song-name and rating cells keep visible borders */
+.discography-scroll-wrapper table.text-xs,
+.discography-scroll-wrapper table.text-xs tr {
+    border-color: transparent;
+}
+.discography-scroll-wrapper table.text-xs td:not(.song-name-cell):not([id^="rating-"]):not(.checkbox-cell) {
+    border-color: transparent;
+}
+.discography-scroll-wrapper table.text-xs tr[id^="album-"] td {
+    border-bottom-color: var(--grid-line) !important;
+}
+
+/* Current user's column: subtle glow on unrated cells, outline on header */
+td.my-cell:not([style*="background-color"]) {
+    background-color: rgba(255, 255, 255, 0.035);
+}
+th.my-cell {
+    outline: 1px solid rgba(255, 255, 255, 0.15);
+    outline-offset: -1px;
+}
+
+/* Child header gradient variant */
+tr.child-header-gradient td {
+    background: linear-gradient(to right, var(--discography-background) 33%, var(--bg-primary) 100%) !important;
+}
+
+/* Dim collapsed album/child headers */
+tr.album-collapsed td {
+    opacity: 0.5;
+}
+
+/* Monospace numbers in rating/stats cells for alignment */
+table.text-xs td.text-center {
+    font-variant-numeric: tabular-nums;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Song name column stays proportional */
+table.text-xs td:first-child {
+    font-family: inherit;
+    font-variant-numeric: normal;
+}
+
+/* Artist name column in stats */
+table.text-xs td:nth-child(2) {
+    font-family: inherit;
+    font-variant-numeric: normal;
+}
+
+/* Updates table — horizontal borders only, no global grid */
+table.updates-table,
+table.updates-table td,
+table.updates-table th {
+    border-width: 0;
+}
+
+table.updates-table th {
+    padding: 8px 12px;
+}
+
+table.updates-table td {
+    padding: 10px 12px;
+}
+
+
+/* Key column text stays proportional */
+table.text-xs td:last-child {
+    font-family: inherit;
+}
+
+/* Compact header */
+table.text-xs th {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Note indicator — Google Sheets style triangle in top-right corner */
+td.has-note {
+    position: relative;
+}
+td.has-note::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid currentColor;
+    border-left: 10px solid transparent;
+}
+
+/* Song note indicator — triangle in top-right corner, same as rating notes */
+td.song-name-cell.has-song-note {
+    position: relative;
+}
+td.song-name-cell.has-song-note::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid currentColor;
+    border-left: 10px solid transparent;
+}
+
+/* JS-driven note tooltip — positioned via script */
+#note-tooltip {
+    position: fixed;
+    background: var(--navbar-bg);
+    color: var(--navbar-text);
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    max-width: 250px;
+    width: max-content;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s;
+    user-select: text;
+    cursor: text;
+}
+#note-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    z-index: -1;
+}
+
+/* Subunit expand/collapse button on stats pages */
+.expand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    color: inherit;
+    transition: transform 0.2s;
+    padding: 0;
+    margin-right: 2px;
+    vertical-align: middle;
+}
+.expand-btn.expanded {
+    transform: rotate(90deg);
+}
+
+/* Navbars — hide scrollbar */
+nav, .artist-nav {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE/Edge */
+}
+nav::-webkit-scrollbar, .artist-nav::-webkit-scrollbar {
+    display: none;                  /* Chrome/Safari */
+}
+
+/* Hamburger artist dropdown — opens upward from bottom nav */
+.artist-menu {
+    position: fixed;
+    bottom: 34px;
+    left: 24px;
+    width: 240px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 30;
+}
+.artist-menu-item {
+    display: block;
+    padding: 4px 10px;
+    font-size: 12px;
+    line-height: 1.3;
+    text-decoration: none;
+    color: var(--artist-button-text);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.artist-menu-item:hover {
+    filter: brightness(1.2);
+}
+
+/* Changelog entity links */
+.changelog-link {
+    color: var(--link);
+}
+
+/* Search results dropdown */
+.search-result-item:hover {
+    background-color: var(--bg-primary, #16213e);
+}
+
+/* Horizontal scroll wrapper for all pages */
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prose styles for Markdown-rendered content */
+.prose h1, .prose h2, .prose h3 { font-weight: 600; margin: 0.75em 0 0.25em; }
+.prose h1 { font-size: 1.4em; }
+.prose h2 { font-size: 1.2em; }
+.prose h3 { font-size: 1.05em; }
+.prose ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0; }
+.prose ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0; }
+.prose li { margin: 0.2em 0; }
+.prose a { color: var(--link); text-decoration: underline; }
+.prose code { font-family: monospace; font-size: 0.9em; }
+.prose blockquote { border-left: 3px solid var(--border); padding-left: 0.75em; color: var(--text-secondary); margin: 0.5em 0; }
+.prose hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+.prose p { margin: 0.5em 0; }
+
+/* Form inputs inherit theme colors */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="url"],
+select,
+textarea {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.duplicate-tag {
+    display: inline;
+    font-size: 10px;
+    color: var(--duplicate-tag-text, #fff);
+    background: var(--duplicate-tag-bg, #5B4A8A);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+.duplicate-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary, #333);
+    color: var(--text-primary, #fff);
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    border: 1px solid var(--border, #555);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 10;
+    pointer-events: none;
+}
+.duplicate-tag:hover .duplicate-tooltip {
+    display: block;
+}
+
+/* ── Navigation utility classes ── */
+
+/* Desktop navbar link */
+.nav-link {
+    flex-shrink: 0;
+    color: var(--navbar-text);
+    text-decoration: none;
+}
+
+/* Desktop dropdown panel (hidden by default, shown on hover) */
+.nav-dropdown-panel {
+    display: none;
+    position: fixed;
+    background: var(--navbar-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 50;
+    min-width: 140px;
+}
+
+/* Desktop dropdown link item */
+.nav-dropdown-item {
+    display: block;
+    padding: 8px 14px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.nav-dropdown-item:hover {
+    background: var(--hover-bg);
+}
+
+/* Mobile hamburger menu item */
+.mobile-menu-item {
+    display: block;
+    padding: 10px 16px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-size: 15px;
+}
+.mobile-menu-item:hover {
+    background: var(--hover-bg);
+}
+
+/* ── Table utility classes ── */
+
+/* Sticky table header row (below fixed navbar) */
+.thead-sticky {
+    position: sticky;
+    top: 44px;
+    z-index: 10;
+}
+
+/* Table header cell with grid-line border + outline */
+.th-cell {
+    border: 1px solid var(--grid-line);
+    outline: 1px solid var(--grid-line);
+}
+
+/* Album collapse/expand arrow */
+.collapse-arrow {
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+/* ── Mobile responsive ── */
+.nav-spacer { display: none; }
+
+@media (max-width: 768px) {
+    .nav-spacer { display: none !important; }
+    html { zoom: 1 !important; }
+
+    /* Discography table: no overflow container — page handles horizontal scroll
+       so position:sticky on the thead still works against the viewport */
+    .discography-scroll-wrapper {
+        max-width: none !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+    .discography-scroll-wrapper table {
+        margin-left: 0 !important;
+    }
+
+    /* Song name column: narrower on mobile */
+    .discography-scroll-wrapper th:first-child {
+        width: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+    }
+
+    /* Discography table: sticky song name column */
+    .song-name-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: var(--bg-primary);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    tr:nth-child(even) .song-name-cell {
+        background-color: var(--row-alternate, var(--bg-primary));
+    }
+
+    /* User rating columns: uniform width on mobile */
+    .discography-scroll-wrapper th.th-cell:not(:first-child),
+    .discography-scroll-wrapper td[id^="rating-"] {
+        min-width: 45px;
+        width: 45px;
+    }
+
+    /* Top navbar: collapse to essentials */
+    .mobile-hide { display: none !important; }
+    .mobile-show { display: inline !important; }
+    #mobile-menu-wrapper { display: flex !important; margin-left: 0 !important; }
+    .search-label { display: none; }
+    #search-trigger { font-size: 16px !important; padding: 4px 10px !important; margin-left: 0 !important; }
+
+    /* Adjust content offset for taller mobile navbar */
+    #main-content { padding-bottom: 48px !important; }
+    /* Sticky header on mobile — pin below the taller mobile navbar */
+    .thead-sticky { top: 52px !important; }
+
+    nav { gap: 4px !important; font-size: 14px !important; height: 52px !important; padding: 0 8px !important; }
+
+    /* Artist bottom bar: taller on mobile for touch targets */
+    .artist-nav-container {
+        height: 44px !important;
+    }
+    .artist-menu {
+        bottom: 44px !important;
+    }
+    #artist-menu {
+        bottom: 44px !important;
+    }
+    .artist-nav a {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    #hamburger-btn {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Rating cells: bigger font on mobile */
+    table.text-xs td { font-size: 14px; }
+}

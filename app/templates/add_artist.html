@@ -1,0 +1,1064 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Add Artist{% endblock %}
+
+{% block content %}
+<div id="spotify-progress-modal" class="hidden fixed inset-0 items-center justify-center" style="z-index:9999; background:rgba(0,0,0,0.5);">
+    <div class="bg-secondary-bg border border-border rounded-lg text-center" style="padding:24px 32px; min-width:320px; max-width:400px;">
+        <div id="spotify-progress-icon" class="mb-2" style="font-size:20px;">&#10227;</div>
+        <div id="spotify-progress-title" class="font-semibold mb-3">Importing from Spotify...</div>
+        <div id="spotify-progress-msg" class="text-sm text-secondary-text mb-3">Connecting to Spotify...</div>
+        <div class="rounded overflow-hidden h-2 mb-1.5" style="background:var(--border);">
+            <div id="spotify-progress-bar" class="h-full" style="background:var(--link); width:0%; transition:width 0.3s ease;"></div>
+        </div>
+        <div id="spotify-progress-pct" class="text-xs text-secondary-text">0%</div>
+        <button id="spotify-progress-ok" type="button" onclick="document.getElementById('spotify-progress-modal').style.display='none'" class="rounded cursor-pointer mt-3 text-primary-text" style="display:none; padding:6px 24px; background:var(--button-secondary); border:none;">OK</button>
+    </div>
+</div>
+
+<div class="max-w-5xl mx-auto">
+    <div class="flex items-center gap-6 mb-6">
+        <h1 class="text-2xl font-bold">Add Artist</h1>
+        <button type="button" onclick="clearAddArtistDraft()" class="text-xs px-3 py-1 rounded text-button-text"
+                style="background:var(--delete-button);">
+            Clear All
+        </button>
+    </div>
+
+    {% if errors and errors.get('general') %}
+    <div class="mb-4 p-3 rounded text-sm text-button-text" style="background:var(--delete-button);">{{ errors['general'] }}</div>
+    {% endif %}
+
+    <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-4 p-3 rounded" style="border:1px dashed var(--border);">
+            <label class="block text-sm mb-1 text-secondary-text">Import from Spotify</label>
+            <div class="flex gap-2">
+                <input type="text" id="spotify-artist-url" placeholder="https://open.spotify.com/artist/..." class="flex-1 px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
+                <button type="button" id="spotify-artist-import-btn" onclick="importArtistFromSpotify()" class="px-4 py-1 rounded text-sm text-primary-text" style="background:var(--button-secondary);">Import</button>
+            </div>
+            <p class="text-xs mt-1 text-secondary-text">Imports artist name and full discography. You still need to set gender, country, and genres.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Left column: Artist Info -->
+            <div class="lg:w-5/12">
+                <fieldset class="mb-6 p-4 border rounded" style="border-color: var(--border);">
+                    <legend class="font-semibold px-2">Artist Info</legend>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="artist_name" id="artist_name"
+                               value="{{ form_data.get('artist_name', '') }}"
+                               class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                        {% if errors.get('artist_name') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['artist_name'] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1" style="color: var(--text-muted);">Slug preview</label>
+                        <input type="text" id="artist-slug-preview" readonly
+                               class="w-full px-3 py-2 border rounded text-sm"
+                               style="border-color: var(--border); opacity: 0.5; cursor: default;">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Gender <span class="text-red-500">*</span></label>
+                        <select name="gender_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            <option value="">— Select —</option>
+                            {% for g in genders %}
+                            <option value="{{ g.id }}" {% if form_data.get('gender_id')|string == g.id|string %}selected{% endif %}>{{ g.gender }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.get('gender_id') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['gender_id'] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Country <span class="text-red-500">*</span></label>
+                        <select name="country_id" class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                            <option value="">— Select —</option>
+                            {% for c in countries %}
+                            <option value="{{ c.id }}" {% if form_data.get('country_id')|string == c.id|string %}selected{% endif %}>{{ c.country }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.get('country_id') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['country_id'] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 flex gap-4">
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_disbanded" value="1" class="mr-1"
+                                   {% if form_data.get('is_disbanded') %}checked{% endif %}> Disbanded
+                        </label>
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_complete" value="1" class="mr-1"
+                                   {% if form_data.get('is_complete') %}checked{% endif %}> Complete
+                        </label>
+                        {% if current_user.is_admin %}
+                        <label class="text-sm cursor-pointer">
+                            <input type="checkbox" name="is_tracked" value="1" class="mr-1"
+                                   {% if form_data.get('is_tracked') %}checked{% endif %}> Tracked
+                        </label>
+                        {% endif %}
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Right column: Discography -->
+            <div class="lg:w-7/12">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-semibold">Discography</span>
+                    <div class="flex gap-2">
+                        <div class="relative">
+                            <button type="button" onclick="toggleAlbumSearch()"
+                                    class="px-3 py-1 rounded text-sm text-primary-text"
+                                    style="background-color: var(--button-secondary);">
+                                + Existing Album
+                            </button>
+                            <div id="album-search-box" class="absolute bg-secondary-bg border border-border rounded-md p-2 mt-1" style="display:none; right:0; top:100%; z-index:50; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                                <input type="text" id="album-search-input" placeholder="Search albums..." class="w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="albumSearchDebounce()">
+                                <div id="album-search-results" class="overflow-y-auto mt-1" style="max-height:250px;"></div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addAlbum()"
+                                class="px-3 py-1 rounded text-sm text-primary-text"
+                                style="background-color: var(--button-secondary);">
+                            + Add Album
+                        </button>
+                    </div>
+                </div>
+
+                {% if errors.get('albums') %}
+                <p class="text-xs text-red-400 mb-2">{{ errors['albums'] }}</p>
+                {% endif %}
+
+                <div class="mb-4 p-3 rounded border border-border bg-secondary-bg">
+                    <label class="block text-sm- mb-1.5 text-secondary-text">Bulk Genres</label>
+                    <div id="bulk-genre-checkboxes" class="flex gap-2 flex-wrap mb-2"></div>
+                    <div class="flex gap-1.5">
+                        <button type="button" onclick="bulkApplyGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-button-text"
+                                style="background:var(--edit-on-button); border:none;">
+                            Apply to All
+                        </button>
+                        <button type="button" onclick="bulkRemoveGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-primary-text border border-border"
+                                style="background:var(--button-secondary);">
+                            Remove from All
+                        </button>
+                        <button type="button" onclick="bulkClearGenres()" class="px-3 py-1 rounded text-xs cursor-pointer text-button-text"
+                                style="background:var(--delete-button); border:none;">
+                            Clear All Genres
+                        </button>
+                    </div>
+                </div>
+
+                <div id="albums-container"></div>
+            </div>
+        </div>
+
+        <!-- Hidden serialised album data -->
+        <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
+
+        <div class="flex gap-3 sticky bottom-0 py-3 mt-4 bg-primary-bg z-10" style="border-top: 1px solid var(--border);">
+            <button type="submit" id="submit-btn" disabled
+                    class="px-6 py-2 rounded font-semibold text-button-text"
+                    style="background-color: var(--edit-on-button);">
+                Add Artist
+            </button>
+            <a href="{{ url_for('artists.artists_list') }}"
+               class="px-6 py-2 rounded text-primary-text"
+               style="background-color: var(--button-secondary);">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+var allArtists = {{ artists_js | tojson }};
+let albumCount = 0;
+var _ytIconUrl = '{{ url_for("static", filename="img/youtube.png") }}';
+var _spIconUrl = '{{ url_for("static", filename="img/spotify.png") }}';
+
+function getNewArtistName() {
+    return (document.getElementById('artist_name').value || '').trim() || 'New Artist';
+}
+
+function addAlbum() {
+    albumCount++;
+    const container = document.getElementById('albums-container');
+    const div = document.createElement('div');
+    div.className = 'mb-6 p-4 border rounded';
+    div.style.borderColor = 'var(--border)';
+    div.id = 'album-' + albumCount;
+    div.innerHTML =
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+            '<span style="font-weight:600;">Album ' + albumCount + '</span>' +
+            '<button type="button" onclick="removeAlbum(' + albumCount + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+        '</div>' +
+        '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+            '<div style="flex:1;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+            '</div>' +
+            '<div style="width:160px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+            '</div>' +
+            '<div style="width:128px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                    albumTypeOptions() +
+                '</select>' +
+            '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+            '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(albumCount) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+            '<div id="songs-' + albumCount + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+            '<button type="button" onclick="addSong(' + albumCount + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+        '</div>';
+    container.appendChild(div);
+    if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+    addSong(albumCount);
+}
+
+function albumTypeOptions() {
+    const types = {{ album_types_js | tojson }};
+    return types.map(function(t) { return '<option value="' + t.id + '">' + t.type + '</option>'; }).join('');
+}
+
+function genreCheckboxes(albumNum) {
+    const genres = {{ genres_js | tojson }};
+    return genres.map(function(g) {
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox" style="margin-right:3px;"> ' + g.genre + '</label>';
+    }).join('');
+}
+
+// Populate bulk genre checkboxes
+(function() {
+    var genres = {{ genres_js | tojson }};
+    var container = document.getElementById('bulk-genre-checkboxes');
+    container.innerHTML = genres.map(function(g) {
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:3px;"> ' + g.genre + '</label>';
+    }).join('');
+})();
+
+function bulkApplyGenres() {
+    var selected = [];
+    document.querySelectorAll('[data-bulk-genre]:checked').forEach(function(cb) {
+        selected.push(cb.dataset.bulkGenre);
+    });
+    if (!selected.length) return;
+    document.querySelectorAll('#albums-container > [id^="album-"]').forEach(function(albumDiv) {
+        if (albumDiv.dataset.existingAlbumId) return;
+        selected.forEach(function(gid) {
+            var cb = albumDiv.querySelector('[data-genre="' + gid + '"]');
+            if (cb) cb.checked = true;
+        });
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function bulkRemoveGenres() {
+    var selected = [];
+    document.querySelectorAll('[data-bulk-genre]:checked').forEach(function(cb) {
+        selected.push(cb.dataset.bulkGenre);
+    });
+    if (!selected.length) return;
+    document.querySelectorAll('#albums-container > [id^="album-"]').forEach(function(albumDiv) {
+        if (albumDiv.dataset.existingAlbumId) return;
+        selected.forEach(function(gid) {
+            var cb = albumDiv.querySelector('[data-genre="' + gid + '"]');
+            if (cb) cb.checked = false;
+        });
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function bulkClearGenres() {
+    document.querySelectorAll('#albums-container > [id^="album-"] .genre-checkbox').forEach(function(cb) {
+        cb.checked = false;
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function removeAlbum(num) {
+    const el = document.getElementById('album-' + num);
+    if (el) el.remove();
+}
+
+let songCounters = {};
+
+function renumberSongs(albumNum) {
+    const container = document.getElementById('songs-' + albumNum);
+    container.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function (div, i) {
+        const span = div.querySelector('.song-num');
+        if (span) span.textContent = (i + 1) + '.';
+    });
+}
+
+function moveSong(btn, direction) {
+    const div = btn.closest('[id^="song-"]');
+    const albumNum = div.id.split('-')[1];
+    const sibling = direction === 'up' ? div.previousElementSibling : div.nextElementSibling;
+    if (!sibling || !sibling.id || !sibling.id.startsWith('song-')) return;
+    if (direction === 'up') {
+        div.parentElement.insertBefore(div, sibling);
+    } else {
+        div.parentElement.insertBefore(sibling, div);
+    }
+    renumberSongs(albumNum);
+}
+
+function artistSelectOptions(excludeIds) {
+    return '<option value="">-- Add artist --</option>' +
+        allArtists.filter(function(a) { return excludeIds.indexOf(a.id) === -1; })
+            .map(function(a) { return '<option value="' + a.id + '">' + a.name.replace(/</g, '&lt;') + '</option>'; }).join('');
+}
+
+function addSongArtist(albumNum, songNum, artistId, artistName, isMain, isNew) {
+    var container = document.getElementById('song-artists-' + albumNum + '-' + songNum);
+    var count = container.children.length;
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-2 song-artist-row';
+    row.dataset.artistId = artistId || '';
+    row.dataset.isNew = isNew ? '1' : '0';
+    row.innerHTML =
+        '<span class="text-xs' + (isNew ? ' new-artist-label' : '') + '">' + (artistName || '').replace(/</g, '&lt;') + '</span>' +
+        '<select class="song-artist-role text-xs px-1 border rounded" style="border-color: var(--border);">' +
+            '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
+            '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>' +
+        '</select>' +
+        (count > 0 ? '<button type="button" onclick="this.parentElement.remove(); validateForm();" class="text-red-500 text-xs">x</button>' : '');
+    container.appendChild(row);
+    updateArtistDropdown(albumNum, songNum);
+}
+
+function updateArtistDropdown(albumNum, songNum) {
+    var container = document.getElementById('song-artists-' + albumNum + '-' + songNum);
+    var select = container.parentElement.querySelector('.add-artist-select');
+    if (!select) return;
+    var usedIds = [];
+    container.querySelectorAll('.song-artist-row').forEach(function(row) {
+        if (row.dataset.artistId) usedIds.push(parseInt(row.dataset.artistId));
+    });
+    select.innerHTML = artistSelectOptions(usedIds);
+    select.value = '';
+}
+
+function onArtistDropdownChange(select, albumNum, songNum) {
+    var id = parseInt(select.value);
+    if (!id) return;
+    var artist = allArtists.find(function(a) { return a.id === id; });
+    if (!artist) return;
+    addSongArtist(albumNum, songNum, id, artist.name, true, false);
+    select.value = '';
+}
+
+function addSong(albumNum) {
+    if (!songCounters[albumNum]) songCounters[albumNum] = 0;
+    songCounters[albumNum]++;
+    const songNum = songCounters[albumNum];
+    const container = document.getElementById('songs-' + albumNum);
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
+    div.id = 'song-' + albumNum + '-' + songNum;
+    div.innerHTML =
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+            '<span class="song-num" style="font-size:14px; width:24px;">' + songNum + '.</span>' +
+            '<div style="flex:1; position:relative;">' +
+                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
+                '<div id="song-search-results-' + albumNum + '-' + songNum + '" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; max-height:200px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>' +
+            '</div>' +
+            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"> Promoted</label>' +
+            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"> Remix</label>' +
+            '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+            '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
+            '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
+            '<div id="song-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+            '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
+                artistSelectOptions([]) +
+            '</select>' +
+            '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+        '</div>';
+    container.appendChild(div);
+    addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
+}
+
+var songSearchTimers = {};
+function songSearchDebounce(input, albumNum, songNum) {
+    var key = albumNum + '-' + songNum;
+    clearTimeout(songSearchTimers[key]);
+    songSearchTimers[key] = setTimeout(function() { songSearch(input, albumNum, songNum); }, 600);
+}
+
+function songSearch(input, albumNum, songNum) {
+    var results = document.getElementById('song-search-results-' + albumNum + '-' + songNum);
+    var q = input.value.trim();
+    if (q.length < 2) { results.style.display = 'none'; return; }
+    // Don't search if this song slot is already linked to an existing song
+    var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
+    if (songDiv && songDiv.dataset.existingSongId) return;
+
+    fetch('/edit/search-songs?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(songs) {
+            if (!songs.length) { results.style.display = 'none'; return; }
+            results.innerHTML = '';
+            songs.forEach(function(s) {
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:6px 8px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--border);';
+                item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
+                item.onmouseleave = function() { this.style.background = 'none'; };
+                item.innerHTML = '<span style="color:var(--text-primary);">' + s.name.replace(/</g,'&lt;') + '</span>' +
+                    '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g,'&lt;') + ' (' + s.album.replace(/</g,'&lt;') + ')</span>';
+                item.onclick = function() { selectExistingSong(albumNum, songNum, s); };
+                results.appendChild(item);
+            });
+            results.style.display = 'block';
+        });
+}
+
+function selectExistingSong(albumNum, songNum, song) {
+    var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
+    var nameInput = songDiv.querySelector('[data-field="name"]');
+    nameInput.value = song.name;
+    nameInput.readOnly = true;
+    nameInput.style.opacity = '0.7';
+    songDiv.dataset.existingSongId = song.id;
+
+    // Show linked badge and clear button
+    var badge = document.createElement('span');
+    badge.className = 'existing-song-badge';
+    badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:3px; background:var(--button-primary); color:var(--button-text); margin-left:4px;';
+    badge.textContent = 'Linked: ' + song.artist + ' — ' + song.album;
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.style.cssText = 'font-size:10px; color:var(--link); margin-left:4px; background:none; border:none; cursor:pointer;';
+    clearBtn.textContent = 'Unlink';
+    clearBtn.onclick = function() {
+        delete songDiv.dataset.existingSongId;
+        nameInput.readOnly = false;
+        nameInput.style.opacity = '1';
+        nameInput.value = '';
+        badge.remove();
+        clearBtn.remove();
+        // Show artists row again
+        var artistsRow = songDiv.querySelector('.flex.items-center.gap-2.ml-6');
+        if (artistsRow) artistsRow.style.display = '';
+        validateForm();
+    };
+    nameInput.parentElement.appendChild(badge);
+    nameInput.parentElement.appendChild(clearBtn);
+
+    // Hide search results
+    var results = document.getElementById('song-search-results-' + albumNum + '-' + songNum);
+    results.style.display = 'none';
+
+    // Hide artists row for existing songs (they keep their original artists)
+    var artistsRow = songDiv.querySelector('.flex.items-center.gap-2.ml-6');
+    if (artistsRow) artistsRow.style.display = 'none';
+
+    validateForm();
+}
+
+// --- Album search ---
+function toggleAlbumSearch() {
+    var box = document.getElementById('album-search-box');
+    if (box.style.display === 'none') {
+        box.style.display = 'block';
+        document.getElementById('album-search-input').focus();
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+var albumSearchTimer;
+function albumSearchDebounce() {
+    clearTimeout(albumSearchTimer);
+    albumSearchTimer = setTimeout(albumSearch, 600);
+}
+
+function albumSearch() {
+    var input = document.getElementById('album-search-input');
+    var results = document.getElementById('album-search-results');
+    var q = input.value.trim();
+    if (q.length < 2) { results.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Type at least 2 characters...</div>'; return; }
+
+    fetch('/edit/search-albums?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(albums) {
+            if (!albums.length) { results.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">No albums found</div>'; return; }
+            results.innerHTML = '';
+            albums.forEach(function(al) {
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:6px 8px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--border);';
+                item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
+                item.onmouseleave = function() { this.style.background = 'none'; };
+                item.innerHTML = '<div style="color:var(--text-primary); font-weight:500;">' + al.name.replace(/</g,'&lt;') + '</div>' +
+                    '<div style="color:var(--text-secondary); font-size:11px;">' +
+                    (al.artist ? al.artist.replace(/</g,'&lt;') + ' · ' : '') +
+                    (al.release_date || 'No date') + ' · ' + al.song_count + ' songs</div>';
+                item.onclick = function() { addExistingAlbum(al); };
+                results.appendChild(item);
+            });
+        });
+}
+
+function addExistingAlbum(al) {
+    albumCount++;
+    var num = albumCount;
+    var container = document.getElementById('albums-container');
+    var div = document.createElement('div');
+    div.className = 'mb-6 p-4 border rounded';
+    div.style.borderColor = 'var(--border)';
+    div.id = 'album-' + num;
+    div.dataset.existingAlbumId = al.id;
+    div.innerHTML =
+        '<div class="flex justify-between items-center mb-3">' +
+            '<div class="flex items-center gap-2">' +
+                '<span class="font-semibold">' + al.name.replace(/</g,'&lt;') + '</span>' +
+                '<span class="text-xs px-2 py-0.5 rounded" style="background:var(--button-primary); color:var(--button-text);">Existing</span>' +
+            '</div>' +
+            '<button type="button" onclick="removeAlbum(' + num + ')" class="text-sm text-red-500 hover:underline">Remove</button>' +
+        '</div>' +
+        '<div class="text-xs" style="color: var(--text-secondary);">' +
+            (al.artist ? al.artist.replace(/</g,'&lt;') + ' · ' : '') +
+            (al.release_date || 'No date') + ' · ' + al.song_count + ' songs' +
+        '</div>';
+    container.appendChild(div);
+
+    // Close search
+    document.getElementById('album-search-box').style.display = 'none';
+    document.getElementById('album-search-input').value = '';
+    document.getElementById('album-search-results').innerHTML = '';
+    validateForm();
+}
+
+// Keep "new artist" labels in sync with the artist name input
+document.getElementById('artist_name').addEventListener('input', function() {
+    var name = this.value.trim() || 'New Artist';
+    document.querySelectorAll('.new-artist-label').forEach(function(el) { el.textContent = name; });
+    var slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    document.getElementById('artist-slug-preview').value = slug;
+});
+
+var _addArtistConfirmed = false;
+document.getElementById('add-artist-form').addEventListener('submit', function(e) {
+    if (!_addArtistConfirmed) {
+        e.preventDefault();
+        var name = document.getElementById('artist_name').value.trim() || 'new artist';
+        showConfirm('Add artist?', 'Add artist "' + name + '"?', function() {
+            _addArtistConfirmed = true;
+            document.getElementById('add-artist-form').requestSubmit();
+        }, 'Add');
+        return;
+    }
+    formDirty = false;
+    localStorage.removeItem(_draftKey);
+    var state = collectFormState();
+    document.getElementById('albums-data').value = state.albums_json;
+});
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('[id^="song-search-results-"]').forEach(function(el) {
+        if (!el.contains(e.target) && !e.target.matches('[data-field="name"]')) {
+            el.style.display = 'none';
+        }
+    });
+    var albumBox = document.getElementById('album-search-box');
+    if (albumBox && albumBox.style.display !== 'none' && !albumBox.contains(e.target) && !e.target.closest('[onclick*="toggleAlbumSearch"]')) {
+        albumBox.style.display = 'none';
+    }
+});
+
+// Initialise slug preview on page load
+(function() {
+    const nameVal = document.getElementById('artist_name').value;
+    if (nameVal) {
+        const slug = nameVal.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        document.getElementById('artist-slug-preview').value = slug;
+    }
+})();
+
+let formDirty = false;
+var _draftKey = 'arima-add-artist-draft';
+
+function collectFormState() {
+    var albums = [];
+    document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]').forEach(function(albumDiv) {
+        var albumNum = albumDiv.id.split('-')[1];
+        if (albumDiv.dataset.existingAlbumId) {
+            albums.push({ existing_album_id: parseInt(albumDiv.dataset.existingAlbumId), name: 'existing' });
+            return;
+        }
+        var album = {
+            name: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '',
+            release_date: (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="release_date"]') || {}).value || '',
+            album_type_id: parseInt((albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]') || {}).value || '0'),
+            genre_ids: [],
+            songs: [],
+        };
+        albumDiv.querySelectorAll('[data-album="' + albumNum + '"][data-genre]').forEach(function(cb) {
+            if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
+        });
+        albumDiv.querySelectorAll('[id^="song-' + albumNum + '-"]').forEach(function(songDiv) {
+            var songNum = songDiv.id.split('-')[2];
+            var name = (songDiv.querySelector('[data-song="' + songNum + '"][data-field="name"]') || {}).value || '';
+            var existingSongId = songDiv.dataset.existingSongId ? parseInt(songDiv.dataset.existingSongId) : null;
+            if (existingSongId) {
+                album.songs.push({ name: name, existing_song_id: existingSongId });
+            } else {
+                var artists = [];
+                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                    var aid = row.dataset.artistId ? parseInt(row.dataset.artistId) : null;
+                    var isNew = row.dataset.isNew === '1';
+                    var role = row.querySelector('.song-artist-role');
+                    artists.push({ artist_id: isNew ? null : aid, is_main: role ? role.value === 'main' : true });
+                });
+                var songEntry = {
+                    name: name,
+                    is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
+                    is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
+                    artists: artists,
+                };
+                if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
+                if (songDiv.dataset.youtubeUrl) songEntry.youtube_url = songDiv.dataset.youtubeUrl;
+                album.songs.push(songEntry);
+            }
+        });
+        albums.push(album);
+    });
+    return {
+        artist_name: document.getElementById('artist_name').value,
+        gender_id: document.querySelector('[name="gender_id"]').value,
+        country_id: document.querySelector('[name="country_id"]').value,
+        albums_json: JSON.stringify(albums),
+    };
+}
+
+function saveDraft() {
+    if (!formDirty) return;
+    try { localStorage.setItem(_draftKey, JSON.stringify(collectFormState())); } catch(e) {}
+}
+
+var _clearing = false;
+function clearAddArtistDraft() {
+    if (!confirm('Clear all data?')) return;
+    _clearing = true;
+    localStorage.removeItem(_draftKey);
+    window.location.reload();
+}
+
+var _saveDraftTimer = null;
+document.getElementById('add-artist-form').addEventListener('input', function() {
+    formDirty = true;
+    clearTimeout(_saveDraftTimer);
+    _saveDraftTimer = setTimeout(saveDraft, 1000);
+});
+document.getElementById('add-artist-form').addEventListener('change', function() {
+    formDirty = true;
+    saveDraft();
+});
+window.addEventListener('beforeunload', function(e) {
+    if (!_clearing) saveDraft();
+});
+
+function validateForm() {
+    var btn = document.getElementById('submit-btn');
+    var reasons = [];
+
+    // Artist name, gender, country
+    if (!document.getElementById('artist_name').value.trim()) reasons.push('Artist name is required');
+    if (!document.querySelector('[name="gender_id"]').value) reasons.push('Gender is required');
+    if (!document.querySelector('[name="country_id"]').value) reasons.push('Country is required');
+
+    // At least one album
+    var albums = document.getElementById('albums-container').querySelectorAll(':scope > [id^="album-"]');
+    if (!albums.length) reasons.push('At least one album is required');
+
+    albums.forEach(function(albumDiv) {
+        if (albumDiv.dataset.existingAlbumId) return;
+        var num = albumDiv.id.split('-')[1];
+        var label = 'Album ' + num;
+        // Album name required
+        var nameInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="name"]');
+        if (!nameInput || !nameInput.value.trim()) reasons.push(label + ': name is required');
+        // Release date required
+        var dateInput = albumDiv.querySelector('[data-album="' + num + '"][data-field="release_date"]');
+        if (!dateInput || !dateInput.value) reasons.push(label + ': release date is required');
+        // At least one genre checked
+        var genreChecked = albumDiv.querySelectorAll('[data-album="' + num + '"][data-genre]:checked');
+        if (!genreChecked.length) reasons.push(label + ': at least one genre is required');
+        // At least one song
+        var songs = albumDiv.querySelectorAll('[id^="song-' + num + '-"]');
+        if (!songs.length) reasons.push(label + ': at least one song is required');
+        // Each song needs a name and at least one main artist (unless it's an existing song)
+        songs.forEach(function(songDiv) {
+            var sNum = songDiv.id.split('-')[2];
+            var songName = songDiv.querySelector('[data-song="' + sNum + '"][data-field="name"]');
+            if (!songName || !songName.value.trim()) reasons.push(label + ' song ' + sNum + ': name is required');
+            if (!songDiv.dataset.existingSongId) {
+                var hasMain = false;
+                songDiv.querySelectorAll('.song-artist-row').forEach(function(row) {
+                    var role = row.querySelector('.song-artist-role');
+                    if (role && role.value === 'main') hasMain = true;
+                });
+                if (!hasMain) reasons.push(label + ' song ' + sNum + ': needs a main artist');
+            }
+        });
+    });
+
+    var valid = reasons.length === 0;
+    btn.disabled = !valid;
+    btn.style.opacity = valid ? '1' : '0.5';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+    btn.title = valid ? '' : reasons.join('\n');
+}
+
+function _autofillSingleSongName(albumDiv) {
+    if (!albumDiv) return;
+    var albumNum = albumDiv.id.split('-')[1];
+    var typeSelect = albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="album_type_id"]');
+    if (!typeSelect || typeSelect.value !== '2') return;
+    var albumName = (albumDiv.querySelector('[data-album="' + albumNum + '"][data-field="name"]') || {}).value || '';
+    if (!albumName.trim()) return;
+    // Add a song if none exist
+    var firstSong = albumDiv.querySelector('[data-field="name"][data-song]');
+    if (!firstSong) {
+        addSong(parseInt(albumNum));
+        firstSong = albumDiv.querySelector('[data-field="name"][data-song]');
+    }
+    if (firstSong && !firstSong.value.trim()) {
+        firstSong.value = albumName.trim();
+        firstSong.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+}
+// Event delegation: validate on any input/change/click inside the form
+document.getElementById('add-artist-form').addEventListener('input', validateForm);
+document.getElementById('add-artist-form').addEventListener('change', function(e) {
+    validateForm();
+    if (e.target.dataset.field === 'album_type_id' || (e.target.dataset.field === 'name' && e.target.dataset.album && !e.target.dataset.song)) {
+        _autofillSingleSongName(e.target.closest('[id^="album-"]'));
+    }
+});
+document.getElementById('add-artist-form').addEventListener('click', function() { setTimeout(validateForm, 0); });
+
+// Also validate after DOM mutations (add/remove album/song/artist)
+var _origAddAlbum = addAlbum, _origRemoveAlbum = removeAlbum, _origAddSong = addSong, _origAddSongArtist = addSongArtist;
+addAlbum = function() { _origAddAlbum(); validateForm(); formDirty = true; saveDraft(); };
+removeAlbum = function(n) { _origRemoveAlbum(n); validateForm(); formDirty = true; saveDraft(); };
+addSong = function(n) { _origAddSong(n); validateForm(); formDirty = true; saveDraft(); };
+addSongArtist = function(a, s, id, name, isMain, isNew) { _origAddSongArtist(a, s, id, name, isMain, isNew); validateForm(); formDirty = true; saveDraft(); };
+
+// Watch for DOM changes that might not fire input/change events
+new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
+    document.getElementById('add-artist-form'), { childList: true, subtree: true }
+);
+
+// Restore albums from server form data, localStorage draft, or start fresh
+(function() {
+    var raw = document.getElementById('albums-data').value;
+
+    // If no server data, try localStorage draft
+    if (!raw || raw === '[]') {
+        try {
+            var draft = JSON.parse(localStorage.getItem(_draftKey));
+            if (draft && draft.albums_json && draft.albums_json !== '[]') {
+                raw = draft.albums_json;
+                if (draft.artist_name && !document.getElementById('artist_name').value) {
+                    document.getElementById('artist_name').value = draft.artist_name;
+                    document.getElementById('artist_name').dispatchEvent(new Event('input'));
+                }
+                if (draft.gender_id && !document.querySelector('[name="gender_id"]').value) {
+                    document.querySelector('[name="gender_id"]').value = draft.gender_id;
+                }
+                if (draft.country_id && !document.querySelector('[name="country_id"]').value) {
+                    document.querySelector('[name="country_id"]').value = draft.country_id;
+                }
+            }
+        } catch(e) {}
+    }
+
+    if (!raw || raw === '[]') {
+        addAlbum();
+        return;
+    }
+    try {
+        const albums = JSON.parse(raw);
+        if (!albums || !albums.length) { addAlbum(); return; }
+        albums.forEach(function(albumData) {
+            albumCount++;
+            const num = albumCount;
+            const container = document.getElementById('albums-container');
+            const div = document.createElement('div');
+            div.className = 'mb-6 p-4 border rounded';
+            div.style.borderColor = 'var(--border)';
+            div.id = 'album-' + num;
+            div.innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                    '<span style="font-weight:600;">Album ' + num + '</span>' +
+                    '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+                '</div>' +
+                '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+                    '<div style="flex:1;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                    '</div>' +
+                    '<div style="width:160px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+                    '</div>' +
+                    '<div style="width:128px;">' +
+                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                            albumTypeOptions() +
+                        '</select>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="margin-bottom:12px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
+                '</div>' +
+                '<div style="margin-bottom:12px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+                    '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+                '</div>';
+            container.appendChild(div);
+            if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+
+            // Set album type
+            if (albumData.album_type_id) {
+                const sel = div.querySelector('[data-album="' + num + '"][data-field="album_type_id"]');
+                if (sel) sel.value = albumData.album_type_id;
+            }
+            // Restore genre checkboxes
+            if (albumData.genre_ids && albumData.genre_ids.length) {
+                albumData.genre_ids.forEach(function(gid) {
+                    const cb = div.querySelector('[data-album="' + num + '"][data-genre="' + gid + '"]');
+                    if (cb) cb.checked = true;
+                });
+            }
+            // Restore songs
+            if (!songCounters[num]) songCounters[num] = 0;
+            (albumData.songs || []).forEach(function(songData) {
+                songCounters[num]++;
+                const sNum = songCounters[num];
+                const sc = document.getElementById('songs-' + num);
+                const sdiv = document.createElement('div');
+                sdiv.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
+                sdiv.id = 'song-' + num + '-' + sNum;
+                sdiv.innerHTML =
+                    '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+                        '<span class="song-num" style="font-size:14px; width:24px;">' + sNum + '.</span>' +
+                        '<div style="flex:1; position:relative;">' +
+                            '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;">' +
+                        '</div>' +
+                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
+                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                        '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+                        '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
+                    '</div>' +
+                    '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
+                        '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
+                        '<div id="song-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+                        '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
+                            artistSelectOptions([]) +
+                        '</select>' +
+                        '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+                        '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+                    '</div>';
+                if (songData.youtube_url) sdiv.dataset.youtubeUrl = songData.youtube_url;
+                sc.appendChild(sdiv);
+
+                // Restore artist rows
+                var songArtists = songData.artists || [];
+                if (songArtists.length) {
+                    songArtists.forEach(function(sa) {
+                        if (sa.artist_id === null) {
+                            addSongArtist(num, sNum, null, getNewArtistName(), sa.is_main !== false, true);
+                        } else {
+                            var found = allArtists.find(function(a) { return a.id === sa.artist_id; });
+                            addSongArtist(num, sNum, sa.artist_id, found ? found.name : 'Artist #' + sa.artist_id, sa.is_main !== false, false);
+                        }
+                    });
+                } else {
+                    addSongArtist(num, sNum, null, getNewArtistName(), songData.artist_is_main !== false, true);
+                }
+            });
+        });
+    } catch(e) {
+        addAlbum();
+    }
+    validateForm();
+})();
+
+function showSpotifyProgress() {
+    var modal = document.getElementById('spotify-progress-modal');
+    document.getElementById('spotify-progress-icon').textContent = '\u27F3';
+    document.getElementById('spotify-progress-title').textContent = 'Importing from Spotify...';
+    document.getElementById('spotify-progress-msg').textContent = 'Connecting to Spotify...';
+    document.getElementById('spotify-progress-bar').style.width = '0%';
+    document.getElementById('spotify-progress-bar').style.background = 'var(--link)';
+    document.getElementById('spotify-progress-pct').textContent = '0%';
+    document.getElementById('spotify-progress-ok').style.display = 'none';
+    document.getElementById('spotify-progress-title').style.color = '';
+    modal.style.display = 'flex';
+}
+
+function updateSpotifyProgress(msg, pct) {
+    document.getElementById('spotify-progress-msg').textContent = msg;
+    document.getElementById('spotify-progress-bar').style.width = pct + '%';
+    document.getElementById('spotify-progress-pct').textContent = pct + '%';
+}
+
+function showSpotifyError(msg) {
+    document.getElementById('spotify-progress-icon').textContent = '\u2715';
+    document.getElementById('spotify-progress-title').textContent = 'Import failed';
+    document.getElementById('spotify-progress-title').style.color = 'var(--delete-button)';
+    document.getElementById('spotify-progress-msg').textContent = msg;
+    document.getElementById('spotify-progress-bar').style.width = '100%';
+    document.getElementById('spotify-progress-bar').style.background = 'var(--delete-button)';
+    document.getElementById('spotify-progress-pct').textContent = '';
+    document.getElementById('spotify-progress-ok').style.display = 'inline-block';
+}
+
+function populateArtistFromSpotify(data) {
+    var nameEl = document.getElementById('artist_name');
+    if (nameEl) {
+        nameEl.value = data.name;
+        nameEl.dispatchEvent(new Event('input'));
+    }
+    document.getElementById('albums-container').innerHTML = '';
+    albumCount = 0;
+    songCounters = {};
+    data.albums.forEach(function (albumData) {
+        albumCount++;
+        var num = albumCount;
+        var container = document.getElementById('albums-container');
+        var div = document.createElement('div');
+        div.className = 'mb-6 p-4 border rounded';
+        div.style.borderColor = 'var(--border)';
+        div.id = 'album-' + num;
+        div.innerHTML =
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                '<span style="font-weight:600;">Album ' + num + '</span>' +
+                '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+            '</div>' +
+            '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                    '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                '</div>' +
+                '<div style="width:160px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                    '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+                '</div>' +
+                '<div style="width:128px;">' +
+                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
+                    '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                        albumTypeOptions() +
+                    '</select>' +
+                '</div>' +
+            '</div>' +
+            '<div style="margin-bottom:12px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
+            '</div>' +
+            '<div style="margin-bottom:12px;">' +
+                '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
+                '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+            '</div>';
+        container.appendChild(div);
+        if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
+        var sel = div.querySelector('[data-album="' + num + '"][data-field="album_type_id"]');
+        if (sel) sel.value = String(albumData.album_type_id);
+        albumData.tracks.forEach(function (track) {
+            addSong(num);
+            var sNum = songCounters[num];
+            var songDiv = document.getElementById('song-' + num + '-' + sNum);
+            if (songDiv) {
+                var nameInput = songDiv.querySelector('[data-field="name"]');
+                if (nameInput) nameInput.value = track.name;
+                if (track.spotify_url) songDiv.dataset.spotifyUrl = track.spotify_url;
+            }
+        });
+    });
+    validateForm();
+    formDirty = true;
+    saveDraft();
+}
+
+function importArtistFromSpotify() {
+    var urlInput = document.getElementById('spotify-artist-url');
+    var btn = document.getElementById('spotify-artist-import-btn');
+    if (!urlInput || !urlInput.value.trim()) return;
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    showSpotifyProgress();
+
+    var form = new FormData();
+    form.append('url', urlInput.value.trim());
+    form.append('csrf_token', document.querySelector('[name=csrf_token]').value);
+
+    fetch('/edit/spotify-artist', {method: 'POST', body: form})
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) { throw new Error(data.error); }
+            pollSpotifyProgress(data.job_id, btn);
+        })
+        .catch(function (e) {
+            showSpotifyError(e.message || 'Failed to start import.');
+            btn.disabled = false;
+            btn.textContent = 'Import';
+        });
+}
+
+function pollSpotifyProgress(jobId, btn) {
+    fetch('/edit/spotify-artist/progress?job_id=' + jobId)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.done) {
+                document.getElementById('spotify-progress-modal').style.display = 'none';
+                populateArtistFromSpotify(data.data);
+                btn.disabled = false;
+                btn.textContent = 'Import';
+            } else if (data.error) {
+                showSpotifyError(data.error);
+                btn.disabled = false;
+                btn.textContent = 'Import';
+            } else {
+                updateSpotifyProgress(data.progress, data.percent || 0);
+                setTimeout(function () { pollSpotifyProgress(jobId, btn); }, 500);
+            }
+        })
+        .catch(function () {
+            showSpotifyError('Lost connection. Please try again.');
+            btn.disabled = false;
+            btn.textContent = 'Import';
+        });
+}
+</script>
+{% endblock %}

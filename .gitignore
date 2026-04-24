@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Dependencies
+node_modules/
+vendor/
+!app/static/vendor/
+__pycache__/
+*.pyc
+
+# Build
+dist/
+build/
+out/
+src/app.tailwind.css
+
+# Logs
+*.log
+
+# Project-specific
+BASH_RULES.md
+CLAUDE.md
+docs/
+
+# Flask / SQLite
+instance/
+*.db
+*.db-wal
+*.db-shm
+venv/
+spreadsheet/
+
+# Data files
+*.xlsx

@@ -1,0 +1,51 @@
+<!-- Bottom artist navbar — fixed at viewport bottom -->
+<div class="artist-nav-container fixed bottom-0 left-0 right-0 z-20 flex flex-nowrap items-stretch bg-secondary-bg border-t border-border" style="height: 34px;">
+    <!-- Hamburger — fixed, does not scroll -->
+    <div class="flex-shrink-0 flex items-center">
+        <button id="hamburger-btn" onclick="toggleArtistMenu()" type="button" aria-label="Artist menu"
+                class="bg-transparent border-0 cursor-pointer flex items-center justify-center text-primary-text p-0 m-0 relative"
+                style="width: 34px; height: 34px; font-size: 18px; top: -3px; left: 5px;">
+            &#9776;
+        </button>
+        <!-- Hamburger dropdown — opens upward -->
+        <div id="artist-menu" class="artist-menu fixed left-0 overflow-y-auto bg-secondary-bg z-30"
+             style="display: none; bottom: 34px; max-height: 45vh; border: 1px solid #000; border-bottom: none; width: max-content;">
+            <div class="mobile-hide" style="padding: 6px 12px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid #000;">Type to filter...</div>
+            {% for a in navbar_artists %}
+            <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+               {% if navbar_htmx %}
+               hx-get="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+               hx-target="#discography"
+               hx-swap="innerHTML"
+               hx-push-url="true"
+               {% endif %}
+               onclick="closeArtistMenu()"
+               class="artist-menu-item block py-1.5 px-3 whitespace-nowrap no-underline text-sm- text-artist-button-text"
+               data-artist-id="{{ a.id }}"
+               style="border-bottom: 1px solid #000;
+                      background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }});
+                      {% if artist and artist.id == a.id %}font-weight: bold;{% endif %}">
+                {{ a.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Scrollable artist pills -->
+    <nav class="artist-nav flex-1 flex flex-nowrap items-center overflow-x-scroll overflow-y-hidden gap-1 px-2 cursor-grab">
+        {% for a in navbar_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           {% if navbar_htmx %}
+           hx-get="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           hx-target="#discography"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           {% endif %}
+           data-artist-id="{{ a.id }}"
+           class="flex-shrink-0 whitespace-nowrap py-1 px-2.5 rounded text-sm- no-underline text-artist-button-text"
+           style="background-color: var({{ gender_css[a.gender_id] if gender_css else '--text-primary' }});
+                  {% if artist and artist.id == a.id %}font-weight: bold; border-bottom: 2px solid var(--artist-button-text);{% endif %}">
+            {{ a.name }}
+        </a>
+        {% endfor %}
+    </nav>
+</div>

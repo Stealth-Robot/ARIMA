@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Changelog{% endblock %}
+{% block og_title %}A.R.I.M.A. - Changelog{% endblock %}
+{% block og_description %}Recent rating and content changes{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Changelog</h1>
+
+    <div class="flex gap-2 mb-2 flex-wrap" id="changelog-filters">
+        <input type="text" placeholder="Search by artist, album, or description..."
+               value="{{ search or '' }}"
+               name="q" id="changelog-search"
+               hx-get="{{ url_for('changelog.changelog') }}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#changelog-list"
+               hx-swap="innerHTML"
+               hx-include="#changelog-filters"
+               class="flex-1 px-3 py-2 border rounded border-border" style="min-width: 200px;">
+        <!-- Users dropdown -->
+        <div class="relative inline-block">
+            <button type="button" id="users-toggle"
+                    onclick="toggleDropdown('users-dropdown')"
+                    class="px-3 py-2 border rounded border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
+                Users ▾
+            </button>
+            <div id="users-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                {% for u in users %}
+                <label class="block py-0.5 text-sm- cursor-pointer">
+                    <input type="checkbox" name="user_id" value="{{ u.id }}"
+                           {% if u.id|string in user_ids %}checked{% endif %}
+                           hx-get="{{ url_for('changelog.changelog') }}"
+                           hx-trigger="change"
+                           hx-target="#changelog-list"
+                           hx-swap="innerHTML"
+                           hx-include="#changelog-filters"
+                           class="mr-1">
+                    {{ u.username }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Include types dropdown -->
+        <div class="relative inline-block">
+            <button type="button" id="include-toggle"
+                    onclick="toggleDropdown('include-dropdown')"
+                    class="px-3 py-2 border rounded border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
+                Type{% if include %} ({{ include|length }}){% endif %} ▾
+            </button>
+            <div id="include-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                {% for t in all_types %}
+                <label class="block py-0.5 text-sm- cursor-pointer">
+                    <input type="checkbox" name="include" value="{{ t.type }}"
+                           {% if t.type in include %}checked{% endif %}
+                           hx-get="{{ url_for('changelog.changelog') }}"
+                           hx-trigger="change"
+                           hx-target="#changelog-list"
+                           hx-swap="innerHTML"
+                           hx-include="#changelog-filters"
+                           class="mr-1">
+                    {{ t.type }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Filter summary -->
+    <div id="filter-summary" class="text-xs mb-4 text-secondary-text p-3" style="display: flex; flex-direction: column; gap: 6px;">
+        <div class="pl-2">Showing types: {{ shown | join(', ') or 'None' }}
+        {% if hidden %}<span class="ml-4">Hiding types: {{ hidden | join(', ') }}</span>{% endif %}
+        </div>
+        {% if shown_users %}
+        <div class="pl-2">Showing users: {{ shown_users | join(', ') }}
+        {% if hidden_users %}<span class="ml-4">Hiding users: {{ hidden_users | join(', ') }}</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="changelog-list">
+        {% include "fragments/changelog_list.html" %}
+    </div>
+</div>
+<script>
+function toggleDropdown(id) {
+    document.querySelectorAll('.filter-dropdown').forEach(function(d) {
+        if (d.id !== id) d.style.display = 'none';
+    });
+    var d = document.getElementById(id);
+    d.style.display = d.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+    var inDropdown = e.target.closest('.filter-dropdown') || e.target.id === 'include-toggle' || e.target.id === 'users-toggle';
+    if (!inDropdown) {
+        document.querySelectorAll('.filter-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    }
+});
+document.body.addEventListener('htmx:afterRequest', function() {
+    var params = new URLSearchParams();
+    var q = document.getElementById('changelog-search').value.trim();
+    if (q) params.set('q', q);
+    document.querySelectorAll('#changelog-filters input[name="user_id"]:checked').forEach(function(cb) {
+        params.append('user_id', cb.value);
+    });
+    document.querySelectorAll('#changelog-filters input[name="include"]:checked').forEach(function(cb) {
+        params.append('include', cb.value);
+    });
+    var url = '{{ url_for("changelog.changelog") }}' + (params.toString() ? '?' + params.toString() : '');
+    history.replaceState(null, '', url);
+});
+</script>
+{% endblock %}

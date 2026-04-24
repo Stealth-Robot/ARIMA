@@ -1,0 +1,72 @@
+{% if not entries %}
+<p class="text-secondary-text">No changelog entries found.</p>
+{% else %}
+<table class="w-full text-sm border-collapse border border-grid-line">
+    <thead>
+        <tr class="bg-header-row">
+            <th class="text-left px-3 py-2 border border-grid-line">Name</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Type</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Desc</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Date</th>
+            {% if session.get('edit_mode') and current_user.is_admin %}
+            <th class="px-3 py-2 border border-grid-line" style="width: 1%;"></th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody id="changelog-tbody">
+        {% for e in entries %}
+        <tr class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="px-3 py-2 text-xs border border-grid-line">
+                <div class="flex items-center justify-center gap-1.5 whitespace-nowrap px-1">
+                    <img src="{{ e.user.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         alt="" referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+                    <span>{{ e.user.username if e.user else 'Unknown' }}</span>
+                </div>
+            </td>
+            <td class="px-3 py-2 text-xs border border-grid-line">
+                {{ e.change_type.type if e.change_type else '—' }}
+            </td>
+            <td class="px-3 py-2 border border-grid-line">{{ e._linked_desc }}</td>
+            <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date border border-grid-line font-mono" data-utc="{{ e.date or '' }}">
+                {{ e.date[:10] if e.date else '-' }}
+            </td>
+            {% if session.get('edit_mode') and current_user.is_admin %}
+            <td class="px-3 py-2 text-center border border-grid-line">
+                <button hx-delete="/changelog/{{ e.id }}"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        hx-confirm="Delete this changelog entry?"
+                        class="bg-transparent border-0 text-delete cursor-pointer text-inherit"
+                        title="Delete entry">&times;</button>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div id="changelog-load-more" class="text-center py-4 mt-4"
+    {% if has_more %}
+    <button hx-get="{{ url_for('changelog.changelog', before=last_id) }}"
+            hx-target="#changelog-tbody"
+            hx-swap="beforeend"
+            hx-include="#changelog-filters"
+            class="px-4 py-2 text-sm rounded border cursor-pointer border-border bg-secondary-bg text-primary-text">
+        Load More
+    </button>
+    {% endif %}
+</div>
+{% endif %}
+{% if shown is defined %}
+<div id="filter-summary" hx-swap-oob="true" class="text-xs mb-4 text-secondary-text p-3" style="display: flex; flex-direction: column; gap: 6px;">
+    <div class="pl-2">Showing types: {{ shown | join(', ') or 'None' }}
+    {% if hidden %}<span class="ml-4">Hiding types: {{ hidden | join(', ') }}</span>{% endif %}
+    </div>
+    {% if shown_users %}
+    <div class="pl-2">Showing users: {{ shown_users | join(', ') }}
+    {% if hidden_users %}<span class="ml-4">Hiding users: {{ hidden_users | join(', ') }}</span>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}

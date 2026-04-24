@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if owned_artists or has_any_maintained or backlog %}
+<div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
+    {% if owned_artists %}
+    <h2 class="text-lg font-bold text-primary-text mb-3 flex items-center gap-2 cursor-pointer"
+        data-collapse-key="home-owned" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> My Incomplete Artists</h2>
+    <div class="flex flex-col gap-2">
+        {% for a in owned_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
+           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+            <span class="font-bold text-sm">{{ a.name }}</span>
+            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
+            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
+                {% if a.is_disbanded %}<span>Disbanded</span>{% endif %}
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if has_any_maintained %}
+    <h2 class="text-lg font-bold text-primary-text mb-3 {% if owned_artists %}mt-6{% endif %} flex items-center gap-2 cursor-pointer"
+        data-collapse-key="home-maintained" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Maintaining
+        <label class="text-sm font-normal text-secondary-text ml-auto cursor-pointer" onclick="event.stopPropagation();">
+            <input type="checkbox" {% if hide_disbanded %}checked{% endif %} autocomplete="off"
+                   onchange="fetch('/toggle-hide-disbanded',{method:'POST',headers:_csrfHeaders()}).then(function(r){if(r.ok)location.reload();});"
+                   class="cursor-pointer"> Hide Disbanded
+        </label>
+    </h2>
+    <div class="flex flex-col gap-2">
+        {% for a in maintained_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
+           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+            <span class="font-bold text-sm">{{ a.name }}</span>
+            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
+            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
+                {% if a.is_complete %}<span>Complete</span>{% endif %}
+                {% if a.is_disbanded %}<span>Disbanded</span>{% endif %}
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="text-center mt-6">
+        <pre class="text-secondary-text text-xxs inline-block text-left" style="line-height: 1.2; user-select: none;">
+  ______       _______       ______      __       __       ______
+ /      \     |       \     |      \    |  \     /  \     /      \
+|  $$$$$$\    | $$$$$$$\     \$$$$$$    | $$\   /  $$    |  $$$$$$\
+| $$__| $$    | $$__| $$      | $$      | $$$\ /  $$$    | $$__| $$
+| $$    $$    | $$    $$      | $$      | $$$$\  $$$$    | $$    $$
+| $$$$$$$$    | $$$$$$$\      | $$      | $$\$$ $$ $$    | $$$$$$$$
+| $$  | $$ __ | $$  | $$ __  _| $$_  __ | $$ \$$$| $$ __ | $$  | $$ __
+| $$  | $$|  \| $$  | $$|  \|   $$ \|  \| $$  \$ | $$|  \| $$  | $$|  \
+ \$$   \$$ \$$ \$$   \$$ \$$ \$$$$$$ \$$ \$$      \$$ \$$ \$$   \$$ \$$
+</pre>
+    </div>
+    {% if backlog %}
+    {% set ns = namespace(total_songs=0) %}
+    {% for _, (cnt, _) in backlog %}{% set ns.total_songs = ns.total_songs + cnt %}{% endfor %}
+    <h2 class="text-lg font-bold text-primary-text mb-3 mt-6 flex items-center gap-2 cursor-pointer"
+        data-collapse-key="home-backlog" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Rating Backlog
+        <span class="font-normal text-xs text-secondary-text"><span id="backlog-total-artists">{{ backlog|length }}</span> artist{{ 's' if backlog|length != 1 else '' }} · <span id="backlog-total-songs">{{ ns.total_songs }}</span> song{{ 's' if ns.total_songs != 1 else '' }}</span></h2>
+    <div>
+    {% for artist, (song_count, album_groups) in backlog %}
+    <div{% if not loop.first %} style="margin-top: 16px;"{% endif %}>
+        <div class="flex items-center gap-2 mb-1 px-1 cursor-pointer"
+             style="border-left: 4px solid var({{ gender_css[artist.gender_id] }}); padding-left: 8px;"
+             data-collapse-key="home-backlog-{{ artist.id }}" onclick="homeToggle(this)">
+            <span class="backlog-arrow text-secondary-text" style="font-size: 10px;">▼</span>
+            <a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}"
+               class="font-bold text-sm text-primary-text no-underline"
+               onclick="event.stopPropagation();">{{ artist.name }}</a>
+            <span class="font-normal text-xs text-secondary-text"><span class="backlog-count-num">{{ song_count }}</span> unrated</span>
+        </div>
+        <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
+        <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none;"></th>
+                    {% for u in users %}
+                    <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            {# Rated songs stay visible until page refresh so the user can re-edit while listening #}
+            <tbody>
+            {% for album, songs in album_groups %}
+                {% if not loop.first %}
+                <tr><td colspan="{{ 1 + users|length }}" style="height: 16px; padding: 0; background: var(--bg-primary); border-top: 1px solid var(--grid-line); border-bottom: 1px solid var(--grid-line);"></td></tr>
+                {% endif %}
+                <tr>
+                    <td colspan="{{ 1 + users|length }}" class="text-xs text-secondary-text" style="padding: 4px 8px; background-color: var(--bg-secondary); border: 1px solid var(--grid-line);">
+                        {{ album.name }}{% if album.release_date %} · {{ album.release_date[:4] }}{% endif %}
+                    </td>
+                </tr>
+                {% for song in songs %}
+                <tr>
+                    <td class="song-name-cell text-secondary-text border border-grid-line" title="{{ song.name }}" data-song-id="{{ song.id }}" style="padding: 4px 6px 4px 16px; width: 200px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ song.name }}</td>
+                    {% for u in users %}
+                    {% set r = ratings.get(song.id, {}).get(u.id) %}
+                    {% set cell_style = rating_cell_style(r.rating if r else None) %}
+                    {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
+                    {% set cell_editable = current_user.can_rate and (u.id == current_user.id or rating_all) %}
+                    <td id="rating-{{ song.id }}-{{ u.id }}"
+                        class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-70{% endif %}"
+                        style="{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+                        {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
+                        {% if cell_editable %}onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"{% endif %}>
+                        {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="flex items-center justify-center" style="min-height: calc(100vh - 120px);">
+    {% if current_user.home_page_image %}
+    <img src="{{ current_user.home_page_image }}" alt="Home" class="max-w-full max-h-full m-8">
+    {% else %}
+    <div class="text-center">
+        <pre class="text-secondary-text text-xxs inline-block text-left" style="line-height: 1.2; user-select: none;">
+  ______       _______       ______      __       __       ______
+ /      \     |       \     |      \    |  \     /  \     /      \
+|  $$$$$$\    | $$$$$$$\     \$$$$$$    | $$\   /  $$    |  $$$$$$\
+| $$__| $$    | $$__| $$      | $$      | $$$\ /  $$$    | $$__| $$
+| $$    $$    | $$    $$      | $$      | $$$$\  $$$$    | $$    $$
+| $$$$$$$$    | $$$$$$$\      | $$      | $$\$$ $$ $$    | $$$$$$$$
+| $$  | $$ __ | $$  | $$ __  _| $$_  __ | $$ \$$$| $$ __ | $$  | $$ __
+| $$  | $$|  \| $$  | $$|  \|   $$ \|  \| $$  \$ | $$|  \| $$  | $$|  \
+ \$$   \$$ \$$ \$$   \$$ \$$ \$$$$$$ \$$ \$$      \$$ \$$ \$$   \$$ \$$
+</pre>
+        <p class="text-secondary-text text-sm mt-4"><a href="{{ url_for('artists.artists_list') }}" class="underline" style="color: var(--link);">Subscribe to artists</a> to start rating</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+<script>
+function homeToggle(el) {
+    var t = el.nextElementSibling;
+    var collapsed = t.style.display !== 'none';
+    t.style.display = collapsed ? 'none' : '';
+    var arrow = el.querySelector('.section-arrow') || el.querySelector('.backlog-arrow');
+    if (arrow) arrow.textContent = collapsed ? '▶' : '▼';
+    var key = el.getAttribute('data-collapse-key');
+    if (key) {
+        try {
+            var state = JSON.parse(localStorage.getItem('homeCollapse') || '{}');
+            if (collapsed) { state[key] = 1; } else { delete state[key]; }
+            localStorage.setItem('homeCollapse', JSON.stringify(state));
+        } catch(e) {}
+    }
+}
+(function() {
+    try {
+        var raw = localStorage.getItem('homeCollapse');
+        var state = JSON.parse(raw || '{}');
+        if (raw === null && document.querySelector('[data-collapse-key="home-maintained"]')) {
+            state['home-maintained'] = 1;
+            localStorage.setItem('homeCollapse', JSON.stringify(state));
+        }
+        var els = document.querySelectorAll('[data-collapse-key]');
+        for (var i = 0; i < els.length; i++) {
+            var key = els[i].getAttribute('data-collapse-key');
+            if (state[key]) {
+                var t = els[i].nextElementSibling;
+                if (t) t.style.display = 'none';
+                var arrow = els[i].querySelector('.section-arrow') || els[i].querySelector('.backlog-arrow');
+                if (arrow) arrow.textContent = '▶';
+            }
+        }
+    } catch(e) {}
+})();
+window._updateBacklogCounts = function(cell, prevRating, newRating) {
+    var wasRated = prevRating !== null;
+    var isRated = newRating !== null;
+    if (wasRated === isRated) return;
+    var delta = isRated ? -1 : 1;
+    var wrapper = cell.closest('.mb-4');
+    if (!wrapper) return;
+    var numSpan = wrapper.querySelector('.backlog-count-num');
+    if (numSpan) {
+        var before = parseInt(numSpan.textContent);
+        var after = before + delta;
+        numSpan.textContent = after;
+        if ((before > 0 && after <= 0) || (before <= 0 && after > 0)) {
+            var artistSpan = document.getElementById('backlog-total-artists');
+            if (artistSpan) artistSpan.textContent = parseInt(artistSpan.textContent) + (after <= 0 ? -1 : 1);
+        }
+    }
+    var totalSpan = document.getElementById('backlog-total-songs');
+    if (totalSpan) totalSpan.textContent = parseInt(totalSpan.textContent) + delta;
+};
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key !== '[' && e.key !== ']') return;
+    var headers = document.querySelectorAll('[data-collapse-key^="home-backlog-"]');
+    if (!headers.length) return;
+    var i;
+    if (e.key === ']') {
+        for (i = 0; i < headers.length; i++) {
+            if (headers[i].getBoundingClientRect().top > 80) {
+                window.scrollTo({top: headers[i].getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth'});
+                return;
+            }
+        }
+    } else {
+        for (i = headers.length - 1; i >= 0; i--) {
+            if (headers[i].getBoundingClientRect().top < 50) {
+                window.scrollTo({top: headers[i].getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth'});
+                return;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

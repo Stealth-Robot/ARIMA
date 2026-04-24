@@ -1,0 +1,49 @@
+{% if not artists and not albums and not songs %}
+<div class="py-2.5 px-3.5 text-secondary-text text-sm-">
+    No results for "{{ query }}"
+</div>
+{% else %}
+
+{% if artists %}
+<div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-artists" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
+    <span class="search-section-arrow inline-block mr-1" data-section="search-artists" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Artists
+</div>
+<div class="search-section-body" data-section="search-artists">
+{% for a in artists %}
+<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+   class="search-result-item block py-1.5 px-3.5 text-sm- no-underline text-primary-text cursor-pointer">
+    {{ a.name }}
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if albums %}
+<div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-albums" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
+    <span class="search-section-arrow inline-block mr-1" data-section="search-albums" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Albums
+</div>
+<div class="search-section-body" data-section="search-albums">
+{% for album, artist in albums %}
+<a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}#album-{{ album.id }}"
+   class="search-result-item block py-1.5 px-3.5 text-sm- no-underline text-primary-text cursor-pointer">
+    {{ album.name }} <span class="text-secondary-text">({{ artist.name }})</span>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if songs %}
+<div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-songs" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
+    <span class="search-section-arrow inline-block mr-1" data-section="search-songs" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Songs
+</div>
+<div class="search-section-body" data-section="search-songs">
+{% for song, album, artist, artists_str in songs %}
+<a href="{{ url_for('artists.artist_detail', artist_id=artist.id) }}#song-{{ song.id }}"
+   class="search-result-item block py-1.5 px-3.5 text-sm- no-underline text-primary-text cursor-pointer">
+    {{ song.name }} <span class="text-secondary-text">({{ album.name }} — {{ artists_str }})</span>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% endif %}

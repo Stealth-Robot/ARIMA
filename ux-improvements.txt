@@ -1,0 +1,51 @@
+Artist Page UX Improvements
+============================
+
+1. Album Spacing & Visual Grouping
+   Bump the spacer between albums from h-1.5 (6px) to h-3 or h-4 (12-16px).
+   Users scrolling fast can't tell where one album ends and another starts.
+
+2. Edit Mode Button Overload
+   Replace the ~10 inline action icons per song row with a single "..." kebab
+   menu that opens a context popover. Keep 1-2 common actions inline (e.g.
+   delete), tuck the rest away.
+
+3. Song Name Column Width on Mobile
+   At 160px, long names get truncated. Widen to 200-220px on mobile, or use a
+   two-line wrapping layout so the song name — the most important info — stays
+   readable.
+
+4. Rating Cell Touch Targets / Own-Column Highlight
+   Add a subtle background tint to the current user's column header and their
+   unrated cells. Makes it easy to find your "lane" among 10+ user columns,
+   especially on mobile. Rated cells already pop with color.
+
+5. Bottom Artist Bar Discovery
+   The hamburger menu opens upward (unconventional) and the type-to-search
+   behavior is invisible. Add a "Type to filter..." placeholder hint at the
+   top of the menu.
+
+6. Note Indicator Visibility
+   The tiny corner triangle on cells with notes is easy to miss at 4-5px.
+   Make the indicator more prominent — a subtle dot, a slightly different
+   cell background tint, or a larger triangle.
+
+7. Unrated Songs Visual Treatment
+   Empty rating cells in the current user's column are just blank. A very
+   faint background tint or subtle dash on your own unrated cells creates a
+   visual "to-do list" effect without cluttering the grid.
+
+8. Album Header Information Density (Edit Mode)
+   In edit mode the header crams name, year, genres, and album type onto one
+   line that wraps awkwardly on narrow screens. Stack the metadata on a second
+   line in edit mode only.
+
+9. Child Artist / Subunit Separation
+   The gap before a child artist header (h-3, 12px) is the same as between
+   albums. Subunits are a bigger conceptual break — use h-6 (24px) or a
+   subtle horizontal rule.
+
+10. Collapse State Feedback
+    When an album is collapsed the only cue is a small arrow rotation. On a
+    page with 15+ albums, dim the album header text or reduce opacity when
+    collapsed so the page structure reads at a glance.

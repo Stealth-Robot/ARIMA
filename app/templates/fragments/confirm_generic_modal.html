@@ -1,0 +1,19 @@
+<div id="generic-confirm-modal" class="fixed inset-0 items-center justify-center"
+     style="display:none; z-index:10000; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this){document.getElementById('generic-confirm-modal').style.display='none';_genericConfirmCallback=null;}">
+    <div class="bg-secondary-bg border border-border rounded-lg p-6" style="width:340px; max-width:90vw;">
+        <h3 id="generic-confirm-title" class="text-lg font-bold mb-2 text-primary-text"></h3>
+        <p id="generic-confirm-msg" class="text-sm mb-4 text-secondary-text" style="white-space:pre-line;"></p>
+        <div class="flex gap-3 justify-end">
+            <button type="button" id="generic-confirm-cancel"
+                    class="px-4 py-2 rounded text-sm text-primary-text"
+                    style="background-color:var(--button-secondary);">
+                Cancel
+            </button>
+            <button type="button" id="generic-confirm-btn"
+                    class="px-4 py-2 rounded text-sm text-button-text bg-edit-on">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>

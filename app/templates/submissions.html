@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Submissions{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Data Approvals</h1>
+
+    <div class="flex gap-2 mb-4 flex-wrap" id="submissions-filters">
+        <!-- Status tabs -->
+        <div class="flex gap-1">
+            <a href="#" onclick="event.preventDefault(); switchStatus('open')"
+               class="px-3 py-2 rounded text-sm no-underline cursor-pointer" style="{% if status == 'open' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                Open
+            </a>
+            <a href="#" onclick="event.preventDefault(); switchStatus('history')"
+               class="px-3 py-2 rounded text-sm no-underline cursor-pointer" style="{% if status == 'history' %}background:var(--edit-on-button); color:var(--button-text);{% else %}background:var(--bg-secondary); border:1px solid var(--border);{% endif %}">
+                History
+            </a>
+        </div>
+
+        <input type="text" id="submissions-search" placeholder="Search..." value="{{ search or '' }}"
+               oninput="debouncedSearch()"
+               class="px-3 py-2 border rounded text-sm border-border w-40">
+
+        <select name="type" id="submissions-type-filter"
+                onchange="applySubmissionFilters()"
+                class="px-3 py-2 border rounded text-sm border-border">
+            <option value="">All Types</option>
+            <option value="artist" {% if type_filter == 'artist' %}selected{% endif %}>Artist</option>
+            <option value="album" {% if type_filter == 'album' %}selected{% endif %}>Album</option>
+            <option value="song" {% if type_filter == 'song' %}selected{% endif %}>Song</option>
+        </select>
+
+        <select name="submitted_by" id="submissions-submitted-by-filter"
+                onchange="applySubmissionFilters()"
+                class="px-3 py-2 border rounded text-sm border-border">
+            <option value="">Submitted By</option>
+            {% for u in filter_users %}
+            <option value="{{ u.id }}" {% if submitted_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+
+        {% if status == 'history' %}
+        <select name="resolved_by" id="submissions-resolved-by-filter"
+                onchange="applySubmissionFilters()"
+                class="px-3 py-2 border rounded text-sm border-border">
+            <option value="">Resolved By</option>
+            {% for u in filter_users %}
+            <option value="{{ u.id }}" {% if resolved_by == u.id|string %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+        <label class="text-sm- text-secondary-text cursor-pointer select-none flex items-center gap-1">
+            <input type="checkbox" id="hide-my-subs" onchange="toggleHideMySubmissions(this.checked)" class="cursor-pointer">
+            Hide my submissions
+        </label>
+    </div>
+
+    <!-- Bulk action bar -->
+    <div id="bulk-actions" class="hidden mb-3 py-2 px-3 rounded-md bg-secondary-bg border border-border">
+        <span id="bulk-count" class="text-sm mr-3"></span>
+        <button id="bulk-approve-btn" onclick="bulkApprove()" class="px-3 py-1 rounded text-sm bg-edit-on text-button-text border-0 cursor-pointer mr-1.5">Approve Selected</button>
+        <button id="bulk-reject-btn" onclick="bulkRejectPrompt()" class="px-3 py-1 rounded text-sm bg-delete text-button-text border-0 cursor-pointer">Reject Selected</button>
+    </div>
+
+    <div id="submissions-list">
+        {% include "fragments/submissions_list.html" %}
+    </div>
+</div>
+
+<!-- Approve modal -->
+<div id="approve-modal" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this)closeApproveModal()">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:90%; max-width:520px; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3">Approve Submission</h3>
+        <form id="approve-form" onsubmit="submitApprove(event)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div id="approve-modal-related" class="mb-3"></div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeApproveModal()"
+                        class="px-4 py-2 rounded text-sm bg-primary-bg border border-border">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-edit-on text-button-text">Approve</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rejection modal -->
+<div id="reject-modal" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5);"
+     onclick="if(event.target===this)closeRejectModal()">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                padding:24px; width:90%; max-width:520px; max-height:80vh; overflow-y:auto;">
+        <h3 class="text-lg font-bold mb-3" id="reject-modal-title">Reject Submission</h3>
+        <div id="reject-modal-cascade"></div>
+        <form id="reject-form" onsubmit="submitReject(event)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="block text-sm mb-1">Reason (required)</label>
+                <textarea name="reason" required rows="2" class="w-full px-3 py-2 border rounded text-sm border-border"></textarea>
+            </div>
+            <div id="reject-password-field" class="mb-3 hidden">
+                <label class="block text-sm mb-1">Password (required)</label>
+                <input type="password" name="password" class="w-full px-3 py-2 border rounded text-sm border-border">
+            </div>
+            <div id="reject-error" class="text-sm mb-2 text-delete hidden"></div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeRejectModal()"
+                        class="px-4 py-2 rounded text-sm bg-primary-bg border border-border">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-delete text-button-text">Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var _currentStatus = '{{ status }}';
+
+function buildSubmissionUrl(overrides) {
+    var params = {
+        status: overrides.status !== undefined ? overrides.status : _currentStatus,
+        q: document.getElementById('submissions-search') ? document.getElementById('submissions-search').value.trim() : '',
+        type: document.getElementById('submissions-type-filter') ? document.getElementById('submissions-type-filter').value : '',
+        submitted_by: document.getElementById('submissions-submitted-by-filter') ? document.getElementById('submissions-submitted-by-filter').value : '',
+        resolved_by: document.getElementById('submissions-resolved-by-filter') ? document.getElementById('submissions-resolved-by-filter').value : '',
+    };
+    var parts = [];
+    for (var k in params) {
+        if (params[k]) parts.push(k + '=' + encodeURIComponent(params[k]));
+    }
+    return '/submissions' + (parts.length ? '?' + parts.join('&') : '');
+}
+
+function applySubmissionFilters() {
+    window.location.href = buildSubmissionUrl({});
+}
+
+var _searchTimer = null;
+function debouncedSearch() {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function() {
+        var url = buildSubmissionUrl({});
+        // Update URL without navigation
+        window.history.replaceState(null, '', url);
+        // Fetch and swap list fragment
+        fetch(url, { headers: { 'HX-Request': 'true' } })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            document.getElementById('submissions-list').innerHTML = html;
+        });
+    }, 300);
+}
+
+function switchStatus(s) {
+    var overrides = { status: s };
+    if (s === 'open') overrides.resolved_by = '';
+    window.location.href = buildSubmissionUrl(overrides);
+}
+
+var _rejectSubId = null;
+var _rejectSubType = null;
+var _approveSubId = null;
+
+function toggleGroup(artistId) {
+    var children = document.querySelectorAll('.artist-group-' + artistId + '-child');
+    var icon = document.getElementById('expand-icon-' + artistId);
+    var visible = children.length > 0 && !children[0].classList.contains('hidden');
+    for (var i = 0; i < children.length; i++) {
+        var el = children[i];
+        if (visible) {
+            // Collapse: hide all children and album sub-children
+            el.classList.add('hidden');
+        } else {
+            // Expand: only show direct children (albums + loose songs), not album sub-children
+            // Album sub-children have the album-group-*-child class
+            if (!el.className.match(/album-group-\d+-child/)) {
+                el.classList.remove('hidden');
+            }
+        }
+    }
+    if (icon) icon.innerHTML = visible ? '&#9654;' : '&#9660;';
+    // Reset all album expand icons within this group
+    if (visible) {
+        children.forEach(function(el) {
+            var albumIcon = el.querySelector('[id^="expand-album-icon-"]');
+            if (albumIcon) albumIcon.innerHTML = '&#9654;';
+        });
+    }
+}
+
+function toggleAlbum(artistId, albumId) {
+    var children = document.querySelectorAll('.album-group-' + albumId + '-child');
+    var icon = document.getElementById('expand-album-icon-' + albumId);
+    var visible = children.length > 0 && !children[0].classList.contains('hidden');
+    for (var i = 0; i < children.length; i++) {
+        if (visible) children[i].classList.add('hidden');
+        else children[i].classList.remove('hidden');
+    }
+    if (icon) icon.innerHTML = visible ? '&#9654;' : '&#9660;';
+}
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function openRejectModal(subId, subType) {
+    _rejectSubId = subId;
+    _rejectSubType = subType;
+    var modal = document.getElementById('reject-modal');
+    var cascadeDiv = document.getElementById('reject-modal-cascade');
+    var pwField = document.getElementById('reject-password-field');
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    cascadeDiv.innerHTML = '';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+
+    if (subType === 'rating' || subType === 'note') {
+        pwField.style.display = 'none';
+    } else {
+        pwField.style.display = 'block';
+        pwField.querySelector('input').value = '';
+        var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+        fetch('/submissions/' + subId + '/cascade-preview', {
+            headers: {'X-CSRFToken': csrfToken}
+        }).then(function(r) { return r.text(); }).then(function(html) {
+            cascadeDiv.innerHTML = html;
+        });
+    }
+    modal.style.display = 'block';
+}
+
+function closeRejectModal() {
+    document.getElementById('reject-modal').style.display = 'none';
+    _rejectSubId = null;
+}
+
+function submitReject(e) {
+    e.preventDefault();
+    var form = document.getElementById('reject-form');
+    var formData = new FormData(form);
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+
+    fetch('/submissions/' + _rejectSubId + '/reject', {
+        method: 'POST',
+        body: formData,
+    }).then(function(r) {
+        if (r.ok) {
+            closeRejectModal();
+            refreshSubmissionsList();
+        } else {
+            r.text().then(function(t) {
+                errDiv.textContent = t;
+                errDiv.style.display = 'block';
+            });
+        }
+    });
+}
+
+function approveSubmission(subId, subType) {
+    if (subType === 'artist' || subType === 'album') {
+        openApproveModal(subId);
+    } else {
+        submitApproveDirectly(subId);
+    }
+}
+
+function openApproveModal(subId) {
+    _approveSubId = subId;
+    var modal = document.getElementById('approve-modal');
+    var relatedDiv = document.getElementById('approve-modal-related');
+    relatedDiv.innerHTML = 'Loading...';
+
+    fetch('/submissions/' + subId + '/approve-preview').then(function(r) {
+        return r.json();
+    }).then(function(data) {
+        if (!data.related || data.related.length === 0) {
+            submitApproveDirectly(subId);
+            return;
+        }
+        // Group songs under their albums
+        var albums = {};
+        var albumOrder = [];
+        var loose = [];
+        for (var i = 0; i < data.related.length; i++) {
+            var r = data.related[i];
+            if (r.type === 'album') {
+                albums[r.entity_id] = { item: r, songs: [] };
+                albumOrder.push(r.entity_id);
+            }
+        }
+        for (var i = 0; i < data.related.length; i++) {
+            var r = data.related[i];
+            if (r.type === 'song') {
+                if (r.album_id && albums[r.album_id]) {
+                    albums[r.album_id].songs.push(r);
+                } else {
+                    loose.push(r);
+                }
+            }
+        }
+
+        var html = '<p class="text-sm mb-2">Also approve these related submissions:</p>';
+        function checkboxRow(item, indent) {
+            return '<label style="display:block; padding:3px 0 3px ' + indent + 'px; font-size:13px; cursor:pointer;">'
+                + '<input type="checkbox" name="also_approve" value="' + item.id + '" checked style="margin-right:6px;">'
+                + '<span class="px-2 py-1 rounded text-xs" style="background:var(--bg-primary); border:1px solid var(--border); margin-right:4px;">' + escapeHtml(item.type.charAt(0).toUpperCase() + item.type.slice(1)) + '</span>'
+                + escapeHtml(item.name)
+                + '</label>';
+        }
+        for (var j = 0; j < albumOrder.length; j++) {
+            var alb = albums[albumOrder[j]];
+            html += checkboxRow(alb.item, 0);
+            for (var k = 0; k < alb.songs.length; k++) {
+                html += checkboxRow(alb.songs[k], 20);
+            }
+        }
+        for (var j = 0; j < loose.length; j++) {
+            html += checkboxRow(loose[j], 0);
+        }
+        relatedDiv.innerHTML = html;
+        modal.style.display = 'block';
+    });
+}
+
+function closeApproveModal() {
+    document.getElementById('approve-modal').style.display = 'none';
+    _approveSubId = null;
+}
+
+function submitApprove(e) {
+    e.preventDefault();
+    var form = document.getElementById('approve-form');
+    var formData = new FormData(form);
+
+    fetch('/submissions/' + _approveSubId + '/approve', {
+        method: 'POST',
+        body: formData,
+    }).then(function(r) {
+        if (r.ok) {
+            closeApproveModal();
+            refreshSubmissionsList();
+        }
+    });
+}
+
+function submitApproveDirectly(subId) {
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    fetch('/submissions/' + subId + '/approve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'csrf_token=' + encodeURIComponent(csrfToken),
+    }).then(function(r) {
+        if (r.ok) {
+            refreshSubmissionsList();
+        }
+    });
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('approve-modal').style.display === 'block') closeApproveModal();
+        if (document.getElementById('reject-modal').style.display === 'block') closeRejectModal();
+    }
+    if (e.key === 'Enter' && document.getElementById('approve-modal').style.display === 'block') {
+        e.preventDefault();
+        submitApprove(e);
+    }
+});
+
+// --- SSE: real-time submission updates ---
+function getExpandedState() {
+    var state = { groups: [], albums: [], scroll: window.scrollY };
+    document.querySelectorAll('.artist-group-row').forEach(function(row) {
+        var onclick = row.getAttribute('onclick') || '';
+        var m = onclick.match(/toggleGroup\((-?\d+)\)/);
+        if (m) {
+            var gid = m[1];
+            var firstChild = document.querySelector('.artist-group-' + gid + '-child');
+            if (firstChild && !firstChild.classList.contains('hidden')) {
+                state.groups.push(gid);
+            }
+        }
+    });
+    document.querySelectorAll('[id^="expand-album-icon-"]').forEach(function(icon) {
+        var aid = icon.id.replace('expand-album-icon-', '');
+        var firstChild = document.querySelector('.album-group-' + aid + '-child');
+        if (firstChild && !firstChild.classList.contains('hidden')) {
+            state.albums.push(aid);
+        }
+    });
+    return state;
+}
+
+function restoreExpandedState(state) {
+    state.groups.forEach(function(gid) { toggleGroup(parseInt(gid)); });
+    state.albums.forEach(function(aid) { toggleAlbum(null, parseInt(aid)); });
+    window.scrollTo(0, state.scroll);
+}
+
+var _lastRefresh = 0;
+function refreshSubmissionsList() {
+    var now = Date.now();
+    if (now - _lastRefresh < 2000) return;
+    _lastRefresh = now;
+    var state = getExpandedState();
+    var url = window.location.pathname + window.location.search;
+    fetch(url, { headers: { 'HX-Request': 'true' } })
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+        document.getElementById('submissions-list').innerHTML = html;
+        restoreExpandedState(state);
+    });
+}
+
+// --- Persist expand state across edit mode toggle / page reload ---
+function saveExpandedState() {
+    var state = getExpandedState();
+    sessionStorage.setItem('submissions_expand_state', JSON.stringify(state));
+}
+
+(function restoreOnLoad() {
+    var raw = sessionStorage.getItem('submissions_expand_state');
+    if (!raw) return;
+    sessionStorage.removeItem('submissions_expand_state');
+    try {
+        var state = JSON.parse(raw);
+        restoreExpandedState(state);
+    } catch(e) {}
+})();
+
+// Hook into edit mode toggle
+var _editForm = document.getElementById('edit-mode-form');
+if (_editForm) {
+    _editForm.addEventListener('submit', function() { saveExpandedState(); });
+}
+
+(function () {
+    var _pollSeq = 0;
+    function pollEvents() {
+        fetch('/events/poll?since=' + _pollSeq)
+            .then(function (r) { if (!r.ok) return null; return r.json(); })
+            .then(function (data) {
+                if (!data) return;
+                _pollSeq = data.seq;
+                data.events.forEach(function (e) {
+                    if (e.event === 'submission-update') refreshSubmissionsList();
+                });
+            })
+            .catch(function () {});
+    }
+    setInterval(pollEvents, 10000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) pollEvents(); });
+    pollEvents();
+})();
+
+// --- Bulk actions ---
+function toggleAllSubmissions(checked) {
+    document.querySelectorAll('.submission-checkbox').forEach(function(cb) {
+        cb.checked = checked;
+    });
+    updateBulkActions();
+}
+
+function getSelectedIds(filter) {
+    var ids = [];
+    document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
+        if (!filter || cb.dataset[filter] === 'true') ids.push(parseInt(cb.value));
+    });
+    return ids;
+}
+
+function updateBulkActions() {
+    var checked = document.querySelectorAll('.submission-checkbox:checked');
+    var bar = document.getElementById('bulk-actions');
+    if (checked.length === 0) {
+        bar.classList.add('hidden');
+        return;
+    }
+    bar.classList.remove('hidden');
+    var approveCount = getSelectedIds('canApprove').length;
+    var rejectCount = getSelectedIds('canReject').length;
+    document.getElementById('bulk-count').textContent = checked.length + ' selected';
+    document.getElementById('bulk-approve-btn').style.display = approveCount > 0 ? '' : 'none';
+    document.getElementById('bulk-reject-btn').style.display = rejectCount > 0 ? '' : 'none';
+}
+
+function bulkApprove() {
+    var ids = getSelectedIds('canApprove');
+    if (!ids.length) return;
+    var csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    var done = 0;
+    ids.forEach(function(id) {
+        fetch('/submissions/' + id + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(csrfToken),
+        }).then(function() {
+            done++;
+            if (done === ids.length) refreshSubmissionsList();
+        });
+    });
+}
+
+function bulkRejectPrompt() {
+    var ids = getSelectedIds('canReject');
+    if (!ids.length) return;
+    // Reuse the reject modal but for bulk
+    _rejectSubId = null;
+    var modal = document.getElementById('reject-modal');
+    var cascadeDiv = document.getElementById('reject-modal-cascade');
+    var pwField = document.getElementById('reject-password-field');
+    var errDiv = document.getElementById('reject-error');
+    errDiv.style.display = 'none';
+    cascadeDiv.innerHTML = '<p class="text-sm mb-2">' + ids.length + ' submissions will be rejected.</p>';
+    document.querySelector('#reject-form textarea[name=reason]').value = '';
+    // Check if any non-rating/note types are selected
+    var needsPassword = false;
+    document.querySelectorAll('.submission-checkbox:checked').forEach(function(cb) {
+        var t = cb.dataset.type;
+        if (t && t !== 'rating' && t !== 'note') needsPassword = true;
+    });
+    pwField.style.display = needsPassword ? 'block' : 'none';
+    if (needsPassword) pwField.querySelector('input').value = '';
+    modal.style.display = 'block';
+
+    // Override the form submit for bulk
+    var form = document.getElementById('reject-form');
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        var reason = form.querySelector('textarea[name=reason]').value.trim();
+        if (!reason) { errDiv.textContent = 'Reason required'; errDiv.style.display = 'block'; return; }
+        var password = needsPassword ? form.querySelector('input[name=password]').value : '';
+        var csrfToken = form.querySelector('input[name=csrf_token]').value;
+        var done = 0;
+        ids.forEach(function(id) {
+            var body = 'csrf_token=' + encodeURIComponent(csrfToken) + '&reason=' + encodeURIComponent(reason);
+            if (password) body += '&password=' + encodeURIComponent(password);
+            fetch('/submissions/' + id + '/reject', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body,
+            }).then(function(r) {
+                done++;
+                if (done === ids.length) {
+                    closeRejectModal();
+                    refreshSubmissionsList();
+                }
+            });
+        });
+        // Restore normal form behavior
+        form.onsubmit = function(ev) { ev.preventDefault(); submitReject(ev); };
+    };
+}
+
+var _currentUserId = '{{ current_user.id }}';
+function toggleHideMySubmissions(hide) {
+    document.querySelectorAll('tr[data-submitter-id]').forEach(function(row) {
+        if (row.dataset.submitterId === _currentUserId) {
+            row.style.display = hide ? 'none' : '';
+        }
+    });
+}
+</script>
+{% endblock %}

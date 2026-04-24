@@ -1,0 +1,76 @@
+{% if submission.type == 'artist' %}
+<div class="mb-3 p-3 rounded text-sm bg-primary-bg border border-border overflow-y-auto" style="max-height:200px;">
+    <p class="font-bold mb-2">Rejecting "{{ preview.artist.name }}" will:</p>
+
+    {% if preview.albums_to_delete %}
+    <p class="mt-2 text-delete font-bold">Delete {{ preview.albums_to_delete | length }} album{{ 's' if preview.albums_to_delete | length != 1 }}:</p>
+    {% for album in preview.albums_to_delete %}
+    <div class="py-0.5 pl-3">
+        <strong>{{ album.name }}</strong> ({{ album.song_count }} songs)
+        &mdash; added by {{ album.submitted_by }}
+        {% if album.submitted_by_id != submission.submitted_by_id %}
+        <span class="text-delete" title="Added by a different user">&#9888;</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if preview.albums_to_reassign %}
+    <p class="mt-2 font-bold">Reassign {{ preview.albums_to_reassign | length }} album{{ 's' if preview.albums_to_reassign | length != 1 }} to another artist:</p>
+    {% for album in preview.albums_to_reassign %}
+    <div class="py-0.5 pl-3">
+        <strong>{{ album.name }}</strong> ({{ album.song_count }} songs, has songs from other artists)
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if preview.songs_to_delete %}
+    <p class="mt-2 text-delete font-bold">Delete {{ preview.total_songs_deleted }} song{{ 's' if preview.total_songs_deleted != 1 }}:</p>
+    {% for song in preview.songs_to_delete %}
+    <div class="py-0.5 pl-3">
+        <strong>{{ song.name }}</strong> ({{ song.rating_count }} ratings)
+        &mdash; added by {{ song.submitted_by }}
+        {% if song.submitted_by_id != submission.submitted_by_id %}
+        <span class="text-delete" title="Added by a different user">&#9888;</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if preview.songs_to_keep %}
+    <p class="mt-2 font-bold">Keep {{ preview.songs_to_keep | length }} shared song{{ 's' if preview.songs_to_keep | length != 1 }} (have other artists):</p>
+    {% for song in preview.songs_to_keep %}
+    <div class="py-0.5 pl-3">
+        <strong>{{ song.name }}</strong> &mdash; unlinked from this artist only
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <p class="mt-2 font-bold">Total deleted: {{ preview.albums_to_delete | length }} albums, {{ preview.total_songs_deleted }} songs, {{ preview.total_ratings }} ratings</p>
+</div>
+
+{% elif submission.type == 'album' %}
+<div class="mb-3 p-3 rounded text-sm bg-primary-bg border border-border overflow-y-auto" style="max-height:200px;">
+    <p class="font-bold mb-2">Rejecting "{{ preview.album.name }}" will delete:</p>
+    {% for song in preview.songs %}
+    <div class="py-0.5">
+        Song: <strong>{{ song.name }}</strong>
+        {% if song.will_delete %}({{ song.rating_count }} ratings, will be deleted){% else %}(shared, will be unlinked){% endif %}
+        &mdash; added by {{ song.submitted_by }}
+        {% if song.submitted_by_id != submission.submitted_by_id %}
+        <span class="text-delete" title="Added by a different user">&#9888;</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <p class="mt-2 font-bold">Total: {{ preview.songs_deleted }} songs deleted, {{ preview.total_ratings }} ratings</p>
+</div>
+
+{% elif submission.type == 'song' %}
+<div class="mb-3 p-3 rounded text-sm bg-primary-bg border border-border">
+    <p class="font-bold mb-2">Rejecting "{{ preview.song.name }}" will delete:</p>
+    <p>{{ preview.total_ratings }} ratings</p>
+    {% if preview.albums %}
+    <p>Unlinked from: {{ preview.albums | map(attribute='name') | join(', ') }}</p>
+    {% endif %}
+</div>
+{% endif %}

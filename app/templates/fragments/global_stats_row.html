@@ -1,0 +1,22 @@
+{% for row in rows %}
+<tr {% if is_subunit %}data-subunit-for="{{ parent_artist_id }}"{% endif %}
+    class="border border-grid-line">
+    {% set global_style = score_to_style(row.scores.global_avg) %}
+    <td class="px-2 py-1 text-center border border-grid-line"
+        style="{% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
+        {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% endif %}
+    </td>
+    <td class="px-2 py-1 pl-8 border border-grid-line text-primary-text"
+        style="background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) {{ 40 if (is_subunit and row.artist.gender_id == 2) else (60 if is_subunit else 20) }}%, var(--bg-primary));">
+        {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
+    </td>
+    {% for u in users %}
+    {% set user_score = row.scores.per_user[u.id] %}
+    {% set user_style = score_to_style(user_score) %}
+    <td class="px-1 py-1 text-center border border-grid-line"
+        style="{% if user_style %}background-color: {{ user_style.bg }}; color: {{ user_style.text }};{% endif %}">
+        {% if user_score is not none %}{{ "%.3f"|format(user_score) }}{% endif %}
+    </td>
+    {% endfor %}
+</tr>
+{% endfor %}

@@ -1,0 +1,428 @@
+{%- macro filter_multiselect(field, label, items, label_attr, current_ids, trigger_class='bg-navbar-bg text-navbar-text border-border text-sm- py-0.5 px-1.5 rounded border border-border', panel_side='right') -%}
+<div class="filter-multiselect flex-shrink-0 relative" data-field="{{ field }}" data-label="{{ label }}">
+    <button type="button" onclick="toggleFilterPanel(this)"
+            class="filter-trigger cursor-pointer {{ trigger_class }}">
+        <span class="filter-label">{{ label }}</span> <span style="font-size:10px;">&#9662;</span>
+    </button>
+    <div class="filter-panel hidden absolute {% if panel_side == 'right' %}right-0{% else %}left-0{% endif %} bg-secondary-bg border border-border rounded z-50"
+         style="top:100%; margin-top:2px; min-width:180px; max-height:320px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.3); padding:4px 0;">
+        <div class="flex items-center justify-between px-3 pb-1 border-b border-border" style="margin-bottom:4px;">
+            <span class="text-xs text-secondary-text">{{ label }}</span>
+            <button type="button" onclick="clearFilterPanel(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
+        </div>
+        {% for item in items %}
+        <label class="flex items-center gap-2 py-1 px-3 cursor-pointer text-sm- text-primary-text" style="white-space:nowrap;">
+            <input type="checkbox" value="{{ item.id }}" {% if item.id in current_ids %}checked{% endif %}>
+            <span>{{ item|attr(label_attr) }}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>
+{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="en" style="zoom: 1.2;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}A.R.I.M.A.{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Music rating tracker for friends{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}A.R.I.M.A.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/tab_image.jpg', _external=True) }}">
+    <meta property="og:description" content="{% block og_description %}Music rating tracker for friends{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
+    <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
+    <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
+    <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% if theme %}
+    <style>
+        :root {
+            {% for name, value in theme.items() %}
+            --{{ name | replace('_', '-') }}: {{ value }};
+            {% endfor %}
+        }
+    </style>
+    {% endif %}
+    <style>
+        nav > a:hover, nav > div > span:hover {
+            opacity: 0.7;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        input[type="url"],
+        select,
+        textarea {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+    </style>
+</head>
+<body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
+    <!-- Navbar — all inline styles to guarantee single line -->
+    <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 10px; padding: 0 12px; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
+        <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint == 'home.home' %}border-b-3 border-navbar-active{% endif %}">Home</a>
+        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+             onmouseenter="_showNavDd(this)"
+             onmouseleave="_hideNavDd(this)"
+             onclick="_toggleNavDd(this)">
+            <a href="{{ url_for('stats.global_stats') }}" class="nav-link {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Stats</a>
+            <div class="stats-dd nav-dropdown-panel">
+                <a href="{{ url_for('stats.artist_stats') }}" class="nav-dropdown-item">Artist Stats</a>
+                <a href="{{ url_for('stats.global_stats') }}" class="nav-dropdown-item">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" class="nav-dropdown-item">Update Stats</a>
+            </div>
+        </div>
+        <a href="{{ url_for('artists.artists_list') }}" class="nav-link {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-b-3 border-navbar-active{% endif %}">Artists</a>
+        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+             onmouseenter="_showNavDd(this)"
+             onmouseleave="_hideNavDd(this)"
+             onclick="_toggleNavDd(this)">
+            <a href="{{ url_for('changelog.changelog') }}" class="nav-link {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Changelog</a>
+            <div class="changelog-dd nav-dropdown-panel">
+                <a href="{{ url_for('changelog.changelog') }}" class="nav-dropdown-item">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" class="nav-dropdown-item">Updates</a>
+            </div>
+        </div>
+        {% if current_user.is_authenticated and current_user.can_rate %}
+        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+             onmouseenter="_showNavDd(this)"
+             onmouseleave="_hideNavDd(this)"
+             onclick="_toggleNavDd(this)">
+            <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-link {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-b-3 border-navbar-active{% endif %}">Submissions</a>
+            <div class="submissions-dd nav-dropdown-panel">
+                <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-dropdown-item">For Me</a>
+                {% if current_user.is_editor_or_admin %}
+                <a href="{{ url_for('submissions.submissions_page') }}" class="nav-dropdown-item">Data Approvals</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        <a class="mobile-hide nav-link {% if request.endpoint == 'rules.rules' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('rules.rules') }}">Rules</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a class="mobile-hide nav-link {% if request.endpoint == 'users.user_list' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('users.user_list') }}">Users</a>
+        <a class="mobile-hide nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('admin.admin_page') }}">Admin</a>
+        {% endif %}
+
+        {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+        <span class="nav-spacer flex-1"></span>
+        <form id="rating-mode-form" method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" class="inline m-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="rating-mode-btn" type="submit"
+                    class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('rating_mode', 'self') == 'all' %}bg-edit-on{% else %}bg-edit-off{% endif %}">
+                Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
+            </button>
+        </form>
+        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="inline m-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="edit-mode-btn" type="submit"
+                    class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('edit_mode') %}bg-edit-on{% else %}bg-edit-off{% endif %}">
+                &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
+            </button>
+        </form>
+        <span class="nav-spacer flex-1"></span>
+        {% if session.get('edit_mode') %}
+        <a id="add-artist-link" class="mobile-hide flex-shrink-0 text-sm- py-0.5 px-2 rounded bg-edit-on text-button-text no-underline" href="{{ url_for('edit.add_artist_form') }}">
+            + Artist
+        </a>
+        <a id="views-link" class="mobile-hide nav-link {% if request.endpoint == 'views.views_page' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('views.views_page') }}">Views</a>
+        {% endif %}
+        {% endif %}
+
+        <!-- Search trigger (compact in navbar) -->
+        <!-- Mobile menu button (hidden on desktop) -->
+        <div id="mobile-menu-wrapper" class="hidden flex-shrink-0 relative ml-auto">
+            <button onclick="var m=document.getElementById('mobile-menu-panel');m.style.display=m.style.display==='block'?'none':'block'" type="button"
+                    class="bg-transparent border border-border text-navbar-text text-lg py-0.5 px-2 rounded cursor-pointer">&#9776;</button>
+            <div id="mobile-menu-panel" class="hidden absolute right-0 mt-1 bg-navbar-bg border border-border rounded-md z-50 py-2" style="top:100%; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px;">
+                <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
+                <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
+                <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('changelog.changelog') }}" class="mobile-menu-item">Changelog</a>
+                <a href="{{ url_for('updates.updates_page') }}" class="mobile-menu-item">Updates</a>
+                <a href="{{ url_for('rules.rules') }}" class="mobile-menu-item">Rules</a>
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('users.user_list') }}" class="mobile-menu-item">Users</a>
+                <a href="{{ url_for('admin.admin_page') }}" class="mobile-menu-item">Admin</a>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.can_rate %}
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('submissions.submissions_for_me') }}" class="mobile-menu-item">Submissions</a>
+                {% if current_user.is_editor_or_admin %}
+                <a href="{{ url_for('submissions.submissions_page') }}" class="mobile-menu-item">Data Approvals</a>
+                {% endif %}
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+                <div class="border-t border-border my-1"></div>
+                <form method="POST" action="{{ url_for('profile.toggle_rating_mode') }}" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
+                        Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
+                        Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+                <div class="border-t border-border my-1"></div>
+                <div class="py-2 px-4">
+                    {{ filter_multiselect('country_ids', 'Country', countries, 'country', current_country_ids,
+                        trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
+                        panel_side='left') }}
+                </div>
+                <div class="px-4" style="padding-top:4px; padding-bottom:8px;">
+                    {{ filter_multiselect('genre_ids', 'Genre', genres, 'genre', current_genre_ids,
+                        trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
+                        panel_side='left') }}
+                </div>
+                {% if current_user.is_authenticated %}
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('profile.profile') }}" class="mobile-menu-item">Profile</a>
+                <a href="{{ url_for('auth.logout') }}" class="mobile-menu-item">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <button id="search-trigger" onclick="openSearchOverlay()"
+                class="flex-shrink-0 ml-auto bg-transparent border border-border text-navbar-text text-sm- py-0.5 px-2 rounded cursor-pointer">&#128269; <span class="search-label">Search</span></button>
+
+        <!-- Right: Filters + Profile -->
+        <div class="flex-shrink-0 flex items-center gap-2 whitespace-nowrap">
+            <!-- Country filter -->
+            <div class="mobile-hide">
+                {{ filter_multiselect('country_ids', 'Country', countries, 'country', current_country_ids) }}
+            </div>
+
+            <!-- Genre filter -->
+            <div class="mobile-hide">
+                {{ filter_multiselect('genre_ids', 'Genre', genres, 'genre', current_genre_ids) }}
+            </div>
+
+            <!-- Profile + Logout -->
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80 text-navbar-text flex items-center gap-1 no-underline">
+                <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
+                     referrerpolicy="no-referrer"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                     style="width: 22px; height: 22px;" class="rounded-full object-cover flex-shrink-0">
+                <span class="mobile-hide">{{ current_user.username }}</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="mobile-hide hover:opacity-80 text-navbar-text">
+                Logout
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Search overlay (outside nav, positioned by JS near trigger button) -->
+    <div id="search-overlay"
+         class="hidden fixed top-11 z-40" style="width: 320px;">
+        <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
+               autocomplete="off"
+               class="bg-secondary-bg text-primary-text border border-border text-sm rounded w-full"
+               style="padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <div id="search-results"
+             class="hidden overflow-y-auto bg-secondary-bg border border-border border-t-0"
+             style="max-height: 400px; border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        </div>
+    </div>
+
+    <!-- Note tooltip (JS-positioned) -->
+    <div id="note-tooltip"></div>
+
+    <!-- Flash messages (error category only) -->
+    {% with messages = get_flashed_messages(with_categories=true, category_filter=['error']) %}
+    {% if messages %}
+    <div class="fixed z-50" style="top:50px; left:50%; transform:translateX(-50%); width:auto; max-width:500px;">
+        {% for category, message in messages %}
+        <div class="py-2.5 px-6 mb-1.5 rounded-md text-sm- bg-delete text-button-text cursor-pointer"
+             style="box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+             onclick="this.remove()">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main content -->
+    <main id="main-content" class="px-4 pt-0 pb-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
+    <div id="update-notification" onclick="dismissUpdate()" class="hidden fixed z-50 bg-edit-on text-button-text rounded-lg text-sm- cursor-pointer" style="bottom:20px; right:20px; padding:12px 28px 12px 18px; box-shadow:0 4px 12px rgba(0,0,0,0.3); max-width:320px; line-height:1.5;">
+        <div class="font-bold mb-1">A new update to ARIMA was deployed!</div>
+        <div>Check the <a href="{{ url_for('updates.updates_page') }}" class="text-button-text underline font-bold">Updates</a> tab for details</div>
+        <button onclick="dismissUpdate()" class="absolute bg-transparent border-0 text-button-text cursor-pointer text-sm" style="top:4px; right:4px; padding:4px 6px;">&times;</button>
+    </div>
+    <script>
+    var _latestUpdateId = {{ latest_update_id or 0 }};
+    function dismissUpdate() {
+        document.getElementById('update-notification').style.display = 'none';
+        localStorage.setItem('arima-dismissed-update', _latestUpdateId);
+    }
+    function checkForUpdates() {
+        fetch('/updates/latest-id').then(function(r) { return r.json(); }).then(function(data) {
+            if (data.id > _latestUpdateId) _latestUpdateId = data.id;
+            var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
+            if (_latestUpdateId > dismissed) {
+                document.getElementById('update-notification').style.display = 'block';
+            }
+        }).catch(function() {});
+    }
+    (function() {
+        if (location.pathname.indexOf('/updates') === 0) {
+            dismissUpdate();
+            return;
+        }
+        var dismissed = parseInt(localStorage.getItem('arima-dismissed-update')) || 0;
+        if (_latestUpdateId > dismissed) {
+            document.getElementById('update-notification').style.display = 'block';
+        }
+        setInterval(checkForUpdates, 120000);
+    })();
+    </script>
+    {% endif %}
+    <script>
+    document.querySelector('nav').addEventListener('wheel', function(e) {
+        this.scrollLeft += e.deltaY || e.deltaX;
+        e.preventDefault();
+    }, { passive: false });
+    function _positionNavDd(trigger) {
+        var dd = trigger.querySelector('.nav-dropdown-panel');
+        if (!dd) return dd;
+        var r = trigger.getBoundingClientRect();
+        dd.style.top = r.bottom + 'px';
+        dd.style.left = r.left + 'px';
+        return dd;
+    }
+    function _showNavDd(trigger) {
+        var dd = _positionNavDd(trigger);
+        if (dd) dd.style.display = 'block';
+    }
+    function _hideNavDd(trigger) {
+        var dd = trigger.querySelector('.nav-dropdown-panel');
+        if (dd) dd.style.display = 'none';
+    }
+    function _toggleNavDd(trigger) {
+        var dd = trigger.querySelector('.nav-dropdown-panel');
+        if (!dd) return;
+        if (dd.style.display === 'block') { dd.style.display = 'none'; }
+        else { _positionNavDd(trigger); dd.style.display = 'block'; }
+    }
+    </script>
+    <script>
+    if (localStorage.getItem('is_hamburger') === 'true') {
+        var _hb = document.getElementById('hamburger-btn');
+        if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:22px; height:22px; border-radius:2px;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
+    }
+    </script>
+    <script>
+    // Close navbar dropdowns and mobile menu when tapping elsewhere
+    document.addEventListener('click', function(e) {
+        document.querySelectorAll('.stats-dd, .changelog-dd, .submissions-dd').forEach(function(dd) {
+            if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
+        });
+        var mp = document.getElementById('mobile-menu-panel');
+        var mw = document.getElementById('mobile-menu-wrapper');
+        if (mp && mw && !mw.contains(e.target)) mp.style.display = 'none';
+    });
+    </script>
+    {% include "fragments/confirm_generic_modal.html" %}
+    <script src="{{ url_for('static', filename='js/core.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
+    {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+    <script>
+    (function() {
+        var rForm = document.getElementById('rating-mode-form');
+        if (rForm) {
+            rForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = document.getElementById('rating-mode-btn');
+                var csrfToken = rForm.querySelector('[name=csrf_token]').value;
+                fetch(rForm.action, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + encodeURIComponent(csrfToken), redirect: 'manual'}).then(function() {
+                    var isSelf = btn.textContent.indexOf('Self') !== -1;
+                    var styles = getComputedStyle(document.documentElement);
+                    btn.style.background = isSelf ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
+                    btn.textContent = 'Rating: ' + (isSelf ? 'All' : 'Self');
+                    var disco = document.getElementById('discography');
+                    if (disco) {
+                        fetch(window.location.href, {headers: {'HX-Request': 'true'}}).then(function(r) { return r.text(); }).then(function(html) { disco.innerHTML = html; });
+                    }
+                });
+            });
+        }
+    })();
+    (function() {
+        var form = document.getElementById('edit-mode-form');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = document.getElementById('edit-mode-btn');
+            var csrfToken = form.querySelector('[name=csrf_token]').value;
+            fetch(form.action, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + encodeURIComponent(csrfToken), redirect: 'manual'}).then(function() {
+                var isOn = btn.textContent.indexOf('ON') !== -1;
+                var styles = getComputedStyle(document.documentElement);
+                btn.style.background = isOn ? styles.getPropertyValue('--edit-off-button') : styles.getPropertyValue('--edit-on-button');
+                btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
+                var addLink = document.getElementById('add-artist-link');
+                var viewsLink = document.getElementById('views-link');
+                if (isOn) {
+                    // Turning OFF
+                    if (addLink) addLink.style.display = 'none';
+                    if (viewsLink) viewsLink.style.display = 'none';
+                } else {
+                    // Turning ON
+                    if (addLink) {
+                        addLink.style.display = '';
+                    } else {
+                        addLink = document.createElement('a');
+                        addLink.id = 'add-artist-link';
+                        addLink.href = '{{ url_for("edit.add_artist_form") }}';
+                        addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button); color:var(--button-text); text-decoration:none;';
+                        addLink.textContent = '+ Artist';
+                        form.parentNode.insertBefore(addLink, form.nextSibling);
+                    }
+                    if (viewsLink) {
+                        viewsLink.style.display = '';
+                    } else {
+                        viewsLink = document.createElement('a');
+                        viewsLink.id = 'views-link';
+                        viewsLink.href = '{{ url_for("views.views_page") }}';
+                        viewsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
+                        viewsLink.textContent = 'Views';
+                        var afterAdd = document.getElementById('add-artist-link');
+                        if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
+                    }
+                }
+                // Refresh artist discography if on artist page
+                var disco = document.getElementById('discography');
+                if (disco) {
+                    fetch(window.location.href, { headers: { 'HX-Request': 'true' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        disco.innerHTML = html;
+                        if (typeof _restoreCollapseState === 'function') _restoreCollapseState();
+                    });
+                }
+            });
+        });
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>
