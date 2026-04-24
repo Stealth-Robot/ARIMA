@@ -555,10 +555,6 @@ function _initDragScroll(el, opts) {
     if (topNav) _initDragScroll(topNav, { allowLinks: true });
 })();
 
-// Page-level drag to scroll (won't activate if a navbar drag is already active)
-_initDragScroll(document.documentElement, { pageMode: true });
-
-
 // Silent search in artist hamburger menu
 (function() {
     var _searchBuf = '';
