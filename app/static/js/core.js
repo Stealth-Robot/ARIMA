@@ -66,6 +66,17 @@ function toggleFilterPanel(btn) {
     } else {
         panel.dataset.initial = _filterGetChecked(panel).join(',');
         panel.classList.remove('hidden');
+        var rect = btn.getBoundingClientRect();
+        panel.style.position = 'fixed';
+        panel.style.top = rect.bottom + 2 + 'px';
+        panel.style.left = '';
+        panel.style.right = '';
+        var panelWidth = panel.offsetWidth;
+        if (rect.right - panelWidth < 0) {
+            panel.style.left = rect.left + 'px';
+        } else {
+            panel.style.right = (window.innerWidth - rect.right) + 'px';
+        }
     }
 }
 

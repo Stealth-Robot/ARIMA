@@ -4,8 +4,8 @@
             class="filter-trigger cursor-pointer {{ trigger_class }}">
         <span class="filter-label">{{ label }}</span> <span style="font-size:10px;">&#9662;</span>
     </button>
-    <div class="filter-panel hidden absolute {% if panel_side == 'right' %}right-0{% else %}left-0{% endif %} bg-secondary-bg border border-border rounded z-50"
-         style="top:100%; margin-top:2px; min-width:180px; max-height:320px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.3); padding:4px 0;">
+    <div class="filter-panel hidden bg-secondary-bg border border-border rounded z-50"
+         style="position:fixed; min-width:180px; max-height:320px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.3); padding:4px 0;">
         <div class="flex items-center justify-between px-3 pb-1 border-b border-border" style="margin-bottom:4px;">
             <span class="text-xs text-secondary-text">{{ label }}</span>
             <button type="button" onclick="clearFilterPanel(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
