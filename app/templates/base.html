@@ -304,9 +304,11 @@
     function _positionNavDd(trigger) {
         var dd = trigger.querySelector('.nav-dropdown-panel');
         if (!dd) return dd;
-        var r = trigger.getBoundingClientRect();
-        dd.style.top = r.bottom + 'px';
-        dd.style.left = r.left + 'px';
+        var z = parseFloat(document.documentElement.style.zoom) || 1;
+        var a = trigger.querySelector('a');
+        var r = a.getBoundingClientRect();
+        dd.style.top = (r.bottom / z) + 'px';
+        dd.style.left = (r.left / z) + 'px';
         return dd;
     }
     function _showNavDd(trigger) {
