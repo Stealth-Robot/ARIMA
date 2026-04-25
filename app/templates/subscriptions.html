@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Subscriptions{% endblock %}
+{% block og_title %}A.R.I.M.A. - Subscriptions{% endblock %}
+{% block og_description %}Manage your artist subscriptions{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6" style="max-width: 700px; margin: 0 auto;">
+
+    <div class="flex items-center gap-2 mb-2">
+        <div class="flex gap-1">
+            <button onclick="_filterCards('all', this)" class="sub-filter-btn cursor-pointer rounded text-xs px-3 py-1 border-0"
+                    style="background: var(--edit-on-button); color: var(--button-text);">All <span class="font-normal" id="count-all">{{ rows|length }}</span></button>
+            <button onclick="_filterCards('sub', this)" class="sub-filter-btn cursor-pointer rounded text-xs px-3 py-1 border-0"
+                    style="background: var(--edit-off-button); color: var(--button-text);">Subscribed <span class="font-normal" id="count-sub">{{ rows|selectattr('is_subscribed')|list|length }}</span></button>
+            <button onclick="_filterCards('unsub', this)" class="sub-filter-btn cursor-pointer rounded text-xs px-3 py-1 border-0"
+                    style="background: var(--edit-off-button); color: var(--button-text);">Unsubscribed <span class="font-normal" id="count-unsub">{{ rows|rejectattr('is_subscribed')|list|length }}</span></button>
+        </div>
+        <input type="text" id="sub-search" placeholder="Filter..." autocomplete="off"
+               class="rounded text-xs border border-border"
+               style="padding: 4px 10px; background: var(--bg-secondary); color: var(--text-primary); width: 100px; margin-left: auto;"
+               oninput="_searchCards()">
+    </div>
+    <div class="flex items-center gap-2 mb-4">
+        <select id="sub-order" onchange="_applySort()"
+                class="rounded text-xs border border-border cursor-pointer"
+                style="padding: 4px 6px; background: var(--bg-secondary); color: var(--text-primary);">
+            <option value="first">Subscribed first</option>
+            <option value="last">Subscribed last</option>
+            <option value="default">Subscribed default</option>
+        </select>
+        <select id="sub-sort" onchange="_applySort()"
+                class="rounded text-xs border border-border cursor-pointer"
+                style="padding: 4px 6px; background: var(--bg-secondary); color: var(--text-primary);">
+            <option value="name">Name</option>
+            <option value="my-pct">My %</option>
+            <option value="remaining">Remaining</option>
+            <option value="global-pct">Global %</option>
+        </select>
+        <button id="sort-dir-btn" onclick="_toggleSortDir()" class="cursor-pointer rounded text-xs border-0 px-2 py-1"
+                style="background: var(--edit-off-button); color: var(--button-text); min-width: 24px;"
+                title="Toggle sort direction">&darr;</button>
+    </div>
+
+    <div id="sub-cards" class="flex flex-col gap-2">
+        {% for row in rows %}
+        {% set a = row.artist %}
+        <div class="sub-card rounded overflow-hidden"
+             data-subscribed="{{ 'true' if row.is_subscribed else 'false' }}"
+             data-name="{{ a.name|lower }}"
+             data-my-pct="{{ row.my_pct if row.my_pct is not none else -1 }}"
+             data-remaining="{{ row.my_remaining }}"
+             data-global-pct="{{ row.global_pct if row.global_pct is not none else -1 }}"
+             style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+            <div class="flex items-center gap-3 px-3 py-2">
+                <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+                   class="font-bold text-sm text-primary-text no-underline"
+                   style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ a.name }}
+                </a>
+
+                {% if current_user.is_admin %}
+                <button onclick="_toggleTracked({{ a.id }}, this)" title="Toggle tracked"
+                        class="cursor-pointer border-0 rounded text-xs px-2 py-1"
+                        style="background: var({{ '--edit-on-button' if a.is_tracked else '--edit-off-button' }}); color: var(--button-text); opacity: 0.6;"
+                        data-tracked="{{ 'true' if a.is_tracked else 'false' }}">Tracked</button>
+                {% endif %}
+
+                <button onclick="_toggleSub({{ a.id }}, this)"
+                        class="sub-toggle-btn cursor-pointer border-0 rounded text-xs px-3 py-1"
+                        style="background: var({{ '--edit-on-button' if row.is_subscribed else '--edit-off-button' }}); color: var(--button-text); white-space: nowrap;"
+                        data-subscribed="{{ 'true' if row.is_subscribed else 'false' }}">{{ '✓ Subscribed' if row.is_subscribed else 'Subscribe' }}</button>
+            </div>
+
+            <div class="flex items-center gap-3 px-3 text-xs text-secondary-text" style="padding-bottom: 8px;">
+                {% if row.my_pct is not none and row.song_count > 0 %}
+                <div style="flex: 1; max-width: 160px; display: flex; align-items: center; gap: 6px;">
+                    <div style="flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;">
+                        <div style="height: 100%; width: {{ row.my_pct }}%; border-radius: 3px; background: {{ pct_to_colour(row.my_pct) }}; transition: width 0.3s;"></div>
+                    </div>
+                    <span style="min-width: 28px; text-align: right;">{{ row.my_pct }}%</span>
+                </div>
+                {% endif %}
+                <span style="margin-left: auto; white-space: nowrap;">
+                    {% if row.my_remaining == 0 and row.song_count > 0 %}
+                    <span style="color: var(--edit-on-button);">&check; Complete</span> &middot; {{ row.song_count }} songs
+                    {% elif row.my_remaining > 0 %}
+                    <span style="color: var(--text-primary);">{{ row.my_remaining }}</span> left &middot; {{ row.song_count }} songs
+                    {% else %}
+                    {{ row.song_count }} songs
+                    {% endif %}
+                    {% if row.global_pct is not none %} &middot; <span title="Global average">{{ row.global_pct }}% global</span>{% endif %}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not rows %}
+    <div class="text-center text-secondary-text py-6">No artists to display.</div>
+    {% endif %}
+</div>
+
+<script>
+var _currentFilter = 'all';
+
+function _filterCards(filter, btn) {
+    _currentFilter = filter;
+    var styles = getComputedStyle(document.documentElement);
+    document.querySelectorAll('.sub-filter-btn').forEach(function(b) {
+        b.style.background = styles.getPropertyValue('--edit-off-button');
+    });
+    btn.style.background = styles.getPropertyValue('--edit-on-button');
+    _applyFilters();
+}
+
+function _searchCards() {
+    _applyFilters();
+}
+
+function _applyFilters() {
+    var query = (document.getElementById('sub-search').value || '').toLowerCase();
+    document.querySelectorAll('.sub-card').forEach(function(card) {
+        var nameMatch = !query || card.dataset.name.indexOf(query) !== -1;
+        var filterMatch = _currentFilter === 'all' ||
+            (_currentFilter === 'sub' && card.dataset.subscribed === 'true') ||
+            (_currentFilter === 'unsub' && card.dataset.subscribed === 'false');
+        card.style.display = (nameMatch && filterMatch) ? '' : 'none';
+    });
+}
+
+function _updateCounts() {
+    var all = 0, sub = 0, unsub = 0;
+    document.querySelectorAll('.sub-card').forEach(function(card) {
+        all++;
+        if (card.dataset.subscribed === 'true') sub++;
+        else unsub++;
+    });
+    document.getElementById('count-all').textContent = all;
+    document.getElementById('count-sub').textContent = sub;
+    document.getElementById('count-unsub').textContent = unsub;
+}
+
+var _sortAsc = false;
+
+function _toggleSortDir() {
+    _sortAsc = !_sortAsc;
+    document.getElementById('sort-dir-btn').innerHTML = _sortAsc ? '&uarr;' : '&darr;';
+    _applySort();
+}
+
+function _applySort() {
+    var field = document.getElementById('sub-sort').value;
+    var subOrder = document.getElementById('sub-order').value;
+    var dir = _sortAsc ? 1 : -1;
+    var container = document.getElementById('sub-cards');
+    var cards = Array.from(container.querySelectorAll('.sub-card'));
+    cards.sort(function(a, b) {
+        if (subOrder !== 'default') {
+            var sa = a.dataset.subscribed === 'true' ? 0 : 1;
+            var sb = b.dataset.subscribed === 'true' ? 0 : 1;
+            if (sa !== sb) return subOrder === 'first' ? sa - sb : sb - sa;
+        }
+        switch (field) {
+            case 'name':
+                return a.dataset.name.localeCompare(b.dataset.name) * dir;
+            case 'my-pct':
+                return (parseFloat(a.dataset.myPct) - parseFloat(b.dataset.myPct)) * dir;
+            case 'remaining':
+                return (parseInt(a.dataset.remaining) - parseInt(b.dataset.remaining)) * dir;
+            case 'global-pct':
+                return (parseFloat(a.dataset.globalPct) - parseFloat(b.dataset.globalPct)) * dir;
+            default:
+                return 0;
+        }
+    });
+    cards.forEach(function(card) { container.appendChild(card); });
+}
+
+function _toggleSub(id, btn) {
+    var t = document.querySelector('meta[name="csrf-token"]').content;
+    fetch('/artist/' + id + '/subscribe', {
+        method: 'POST', headers: {'X-CSRFToken': t}
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        var styles = getComputedStyle(document.documentElement);
+        var isSub = d.subscribed;
+        btn.dataset.subscribed = isSub ? 'true' : 'false';
+        btn.style.background = isSub ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
+        btn.textContent = isSub ? '✓ Subscribed' : 'Subscribe';
+        var card = btn.closest('.sub-card');
+        if (card) card.dataset.subscribed = isSub ? 'true' : 'false';
+        _updateCounts();
+        _applyFilters();
+    });
+}
+
+function _toggleTracked(id, btn) {
+    var t = document.querySelector('meta[name="csrf-token"]').content;
+    fetch('/subscriptions/toggle-tracked/' + id, {
+        method: 'POST', headers: {'X-CSRFToken': t}
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        var styles = getComputedStyle(document.documentElement);
+        btn.dataset.tracked = d.is_tracked ? 'true' : 'false';
+        btn.style.background = d.is_tracked ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
+    });
+}
+</script>
+{% endblock %}

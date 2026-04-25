@@ -68,7 +68,16 @@
 <body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar — all inline styles to guarantee single line -->
     <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 10px; padding: 0 12px; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
-        <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint == 'home.home' %}border-b-3 border-navbar-active{% endif %}">Home</a>
+        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+             onmouseenter="_showNavDd(this)"
+             onmouseleave="_hideNavDd(this)"
+             onclick="_toggleNavDd(this)">
+            <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page') %}border-b-3 border-navbar-active{% endif %}">Home</a>
+            <div class="home-dd nav-dropdown-panel">
+                <a href="{{ url_for('home.home') }}" class="nav-dropdown-item">Home</a>
+                <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="nav-dropdown-item">Subscriptions</a>
+            </div>
+        </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
@@ -142,6 +151,9 @@
             <button onclick="var m=document.getElementById('mobile-menu-panel');m.style.display=m.style.display==='block'?'none':'block'" type="button"
                     class="bg-transparent border border-border text-navbar-text text-lg py-0.5 px-2 rounded cursor-pointer">&#9776;</button>
             <div id="mobile-menu-panel" class="hidden absolute right-0 mt-1 bg-navbar-bg border border-border rounded-md z-50 py-2" style="top:100%; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px;">
+                <a href="{{ url_for('home.home') }}" class="mobile-menu-item">Home</a>
+                <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="mobile-menu-item">Subscriptions</a>
+                <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
                 <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
@@ -212,16 +224,22 @@
 
             <!-- Profile + Logout -->
             {% if current_user.is_authenticated %}
-            <a href="{{ url_for('profile.profile') }}" class="hover:opacity-80 text-navbar-text flex items-center gap-1 no-underline">
-                <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
-                     referrerpolicy="no-referrer"
-                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                     style="width: 22px; height: 22px;" class="rounded-full object-cover flex-shrink-0">
-                <span class="mobile-hide">{{ current_user.username }}</span>
-            </a>
-            <a href="{{ url_for('auth.logout') }}" class="mobile-hide hover:opacity-80 text-navbar-text">
-                Logout
-            </a>
+            <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+                 onmouseenter="_showNavDd(this)"
+                 onmouseleave="_hideNavDd(this)"
+                 onclick="_toggleNavDd(this)">
+                <a href="{{ url_for('profile.profile') }}" class="nav-link flex items-center gap-1 {% if request.endpoint == 'profile.profile' %}border-b-3 border-navbar-active{% endif %}">
+                    <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
+                         referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         style="width: 22px; height: 22px;" class="rounded-full object-cover flex-shrink-0">
+                    <span>{{ current_user.username }}</span>
+                </a>
+                <div class="profile-dd nav-dropdown-panel">
+                    <a href="{{ url_for('profile.profile') }}" class="nav-dropdown-item">Profile</a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-dropdown-item">Logout</a>
+                </div>
+            </div>
             {% endif %}
         </div>
     </nav>
@@ -335,7 +353,7 @@
     <script>
     // Close navbar dropdowns and mobile menu when tapping elsewhere
     document.addEventListener('click', function(e) {
-        document.querySelectorAll('.stats-dd, .changelog-dd, .submissions-dd').forEach(function(dd) {
+        document.querySelectorAll('.home-dd, .stats-dd, .changelog-dd, .submissions-dd, .profile-dd').forEach(function(dd) {
             if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
         });
         var mp = document.getElementById('mobile-menu-panel');

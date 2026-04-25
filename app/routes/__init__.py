@@ -17,6 +17,7 @@ def register_routes(flask_app):
     from app.routes.admin import admin_bp
     from app.routes.updates import updates_bp
     from app.routes.submissions import submissions_bp
+    from app.routes.subscriptions import subscriptions_bp
 
     flask_app.register_blueprint(health_bp)
     flask_app.register_blueprint(auth_bp)
@@ -36,3 +37,4 @@ def register_routes(flask_app):
     flask_app.register_blueprint(admin_bp)
     flask_app.register_blueprint(updates_bp)
     flask_app.register_blueprint(submissions_bp)
+    flask_app.register_blueprint(subscriptions_bp)
