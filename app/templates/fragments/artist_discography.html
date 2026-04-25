@@ -136,6 +136,12 @@ var _songArtists = {
 {% for child in children %}{% for entry in child.discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}{% endfor %}
 };
+var _songMiscArtists = {
+{% for entry in discography %}{% for sid, marts in entry.song_misc_artists.items() %}{% if marts %}{{ sid }}: [{% for m in marts %}{ misc_artist_id: {{ m.misc_artist_id }}, name: {{ m.name | tojson }}, is_main: {{ 'true' if m.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% endif %}{% endfor %}{% endfor %}
+{% for child in children %}{% for entry in child.discography %}{% for sid, marts in entry.song_misc_artists.items() %}{% if marts %}{{ sid }}: [{% for m in marts %}{ misc_artist_id: {{ m.misc_artist_id }}, name: {{ m.name | tojson }}, is_main: {{ 'true' if m.is_main else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% endif %}{% endfor %}{% endfor %}{% endfor %}
+};
 </script>
 {% endif %}
 

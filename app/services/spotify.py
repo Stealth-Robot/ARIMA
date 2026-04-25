@@ -197,6 +197,19 @@ def fetch_album(url):
     }
 
 
+def fetch_track(url):
+    """Fetch track metadata from a Spotify track URL.
+
+    Returns dict: {name, spotify_url}
+    """
+    track_id = _parse_id(url, 'track')
+    data = _api_get(f'/tracks/{track_id}')
+    return {
+        'name': data['name'],
+        'spotify_url': data.get('external_urls', {}).get('spotify', url),
+    }
+
+
 class _Cancelled(Exception):
     """Raised when an import is cancelled."""
     pass

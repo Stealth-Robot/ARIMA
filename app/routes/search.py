@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, MiscArtist, SongMiscArtist
 
 search_bp = Blueprint('search', __name__)
 
@@ -185,6 +185,66 @@ def search():
         artists_str = ', '.join(song_artists.get(sid, [main_artist.name]))
         songs.append((song, album, main_artist, artists_str))
 
+    # --- Misc songs (via song_misc_artist) ---
+    misc_songs = []
+    try:
+        misc_song_q = db.session.query(Song).join(
+            SongMiscArtist, Song.id == SongMiscArtist.song_id
+        ).join(
+            MiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
+        )
+        if len(terms) > 1:
+            misc_fields = [Song.name, MiscArtist.name]
+            for term, count in term_counts.items():
+                if count == 1:
+                    t = f'%{term}%'
+                    misc_song_q = misc_song_q.filter(
+                        db.or_(*(f.ilike(t) for f in misc_fields))
+                    )
+                else:
+                    misc_song_q = misc_song_q.filter(
+                        _occurrences(misc_fields, term) >= count
+                    )
+        else:
+            misc_song_q = misc_song_q.filter(
+                db.or_(Song.name.ilike(like), MiscArtist.name.ilike(like))
+            )
+        misc_song_rows = misc_song_q.distinct().all()
+
+        # Exclude songs already found via normal search
+        misc_song_rows = [s for s in misc_song_rows if s.id not in seen]
+
+        # Get misc artist names per song
+        if misc_song_rows:
+            misc_sids = [s.id for s in misc_song_rows]
+            ma_rows = db.session.query(
+                SongMiscArtist.song_id, MiscArtist.name, SongMiscArtist.artist_is_main
+            ).join(MiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id).filter(
+                SongMiscArtist.song_id.in_(misc_sids)
+            ).order_by(SongMiscArtist.artist_is_main.desc(), MiscArtist.name).all()
+            misc_artists_by_song = {}
+            for sid, name, _ in ma_rows:
+                misc_artists_by_song.setdefault(sid, []).append(name)
+
+            # Get album info
+            misc_album_rows = db.session.query(
+                AlbumSong.song_id, Album
+            ).join(Album, AlbumSong.album_id == Album.id).filter(
+                AlbumSong.song_id.in_(misc_sids)
+            ).all()
+            misc_album_map = {}
+            for sid, alb in misc_album_rows:
+                if sid not in misc_album_map:
+                    misc_album_map[sid] = alb
+
+            for s in misc_song_rows:
+                artists_str = ', '.join(misc_artists_by_song.get(s.id, ['Unknown']))
+                alb = misc_album_map.get(s.id)
+                album_name = alb.name if alb else ''
+                misc_songs.append((s, album_name, artists_str))
+    except Exception:
+        pass
+
     return render_template('fragments/search_results.html',
                            artists=artists, albums=albums, songs=songs,
-                           query=q)
+                           misc_songs=misc_songs, query=q)

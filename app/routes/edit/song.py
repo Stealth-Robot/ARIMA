@@ -5,7 +5,7 @@ from flask import request, abort, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, song_genres
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
@@ -735,3 +735,30 @@ def duplicate_override(song_id):
         db.session.add(override)
     db.session.commit()
     return '', 204
+
+
+@edit_bp.route('/song/<int:song_id>/genres', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_genres_edit(song_id):
+    """Set song-level genres. Expects genre_ids as comma-separated list."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    from app.models.lookups import Genre
+    raw = request.form.get('genre_ids', '').strip()
+    genre_ids = sorted([int(x) for x in raw.split(',') if x.strip()]) if raw else []
+    current_ids = sorted([r[1] for r in db.session.execute(
+        song_genres.select().where(song_genres.c.song_id == song_id)
+    ).fetchall()])
+    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    if genre_ids == current_ids:
+        return json.dumps(names), 200, {'Content-Type': 'application/json'}
+    db.session.execute(song_genres.delete().where(song_genres.c.song_id == song_id))
+    for gid in genre_ids:
+        db.session.execute(song_genres.insert().values(song_id=song_id, genre_id=gid))
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Set genres of "{song.name}" song to {", ".join(names) or "none"}', song=song)
+    db.session.commit()
+    return json.dumps(names), 200, {'Content-Type': 'application/json'}

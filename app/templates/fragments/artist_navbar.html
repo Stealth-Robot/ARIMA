@@ -11,6 +11,14 @@
         <div id="artist-menu" class="artist-menu fixed left-0 overflow-y-auto bg-secondary-bg z-30"
              style="display: none; bottom: 34px; max-height: 45vh; border: 1px solid #000; border-bottom: none; width: max-content;">
             <div class="mobile-hide" style="padding: 6px 12px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid #000;">Type to filter...</div>
+            <a href="{{ url_for('misc.misc_page') }}"
+               onclick="closeArtistMenu()"
+               class="artist-menu-item block py-1.5 px-3 whitespace-nowrap no-underline text-sm- text-artist-button-text"
+               style="border-bottom: 1px solid #000;
+                      background-color: var(--gender-mixed);
+                      {% if request.endpoint == 'misc.misc_page' %}font-weight: bold;{% endif %}">
+                Misc. Artists
+            </a>
             {% for a in navbar_artists %}
             <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
                {% if navbar_htmx %}
@@ -32,6 +40,12 @@
     </div>
     <!-- Scrollable artist pills -->
     <nav class="artist-nav flex-1 flex flex-nowrap items-center overflow-x-scroll overflow-y-hidden gap-1 px-2 cursor-grab">
+        <a href="{{ url_for('misc.misc_page') }}"
+           class="flex-shrink-0 whitespace-nowrap py-1 px-2.5 rounded text-sm- no-underline text-artist-button-text"
+           style="background-color: var(--gender-mixed);
+                  {% if request.endpoint == 'misc.misc_page' %}font-weight: bold; border-bottom: 2px solid var(--artist-button-text);{% endif %}">
+            Misc. Artists
+        </a>
         {% for a in navbar_artists %}
         <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
            {% if navbar_htmx %}

@@ -89,7 +89,16 @@
                 <a href="{{ url_for('updates.updates_timeline') }}" class="nav-dropdown-item">Update Stats</a>
             </div>
         </div>
-        <a href="{{ url_for('artists.artists_list') }}" class="nav-link {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug') %}border-b-3 border-navbar-active{% endif %}">Artists</a>
+        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
+             onmouseenter="_showNavDd(this)"
+             onmouseleave="_hideNavDd(this)"
+             onclick="_toggleNavDd(this)">
+            <a href="{{ url_for('artists.artists_list') }}" class="nav-link {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug', 'misc.misc_page') %}border-b-3 border-navbar-active{% endif %}">Artists</a>
+            <div class="artists-dd nav-dropdown-panel">
+                <a href="{{ url_for('artists.artists_list') }}" class="nav-dropdown-item">Artists</a>
+                <a href="{{ url_for('misc.misc_page') }}" class="nav-dropdown-item">Misc</a>
+            </div>
+        </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
@@ -157,6 +166,7 @@
                 <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
                 <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
+                <a href="{{ url_for('misc.misc_page') }}" class="mobile-menu-item">Misc Artists</a>
                 <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('changelog.changelog') }}" class="mobile-menu-item">Changelog</a>
                 <a href="{{ url_for('updates.updates_page') }}" class="mobile-menu-item">Updates</a>
@@ -353,7 +363,7 @@
     <script>
     // Close navbar dropdowns and mobile menu when tapping elsewhere
     document.addEventListener('click', function(e) {
-        document.querySelectorAll('.home-dd, .stats-dd, .changelog-dd, .submissions-dd, .profile-dd').forEach(function(dd) {
+        document.querySelectorAll('.home-dd, .stats-dd, .artists-dd, .changelog-dd, .submissions-dd, .profile-dd').forEach(function(dd) {
             if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
         });
         var mp = document.getElementById('mobile-menu-panel');

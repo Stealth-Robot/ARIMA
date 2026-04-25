@@ -10,7 +10,6 @@ from app.extensions import db
 from app.models.lookups import Genre, Country
 from app.decorators import role_required, ADMIN
 from app.cache import clear_filter_cache
-from app.services.artist import sync_misc_artist_stubs
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -37,9 +36,6 @@ def add_genre():
 
     max_id = db.session.query(db.func.max(Genre.id)).scalar() or -1
     db.session.add(Genre(id=max_id + 1, genre=name))
-    db.session.flush()
-
-    sync_misc_artist_stubs()
     db.session.commit()
     clear_filter_cache()
     return redirect(url_for('admin.admin_page'))
@@ -58,9 +54,6 @@ def add_country():
 
     max_id = db.session.query(db.func.max(Country.id)).scalar() or -1
     db.session.add(Country(id=max_id + 1, country=name))
-    db.session.flush()
-
-    sync_misc_artist_stubs()
     db.session.commit()
     clear_filter_cache()
     return redirect(url_for('admin.admin_page'))

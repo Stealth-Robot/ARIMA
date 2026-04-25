@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist
+from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist
 from app.models.not_duplicate import NotDuplicate
 from app.models.not_variant import NotVariant
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -53,10 +53,12 @@ def views_page():
     misc_ids = _misc_artist_ids()
     counts = {
         'orphan_songs': db.session.query(Song).filter(
-            ~Song.id.in_(db.session.query(AlbumSong.song_id))
+            ~Song.id.in_(db.session.query(AlbumSong.song_id)),
+            ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ).count(),
         'no_artist_songs': db.session.query(Song).filter(
-            ~Song.id.in_(db.session.query(ArtistSong.song_id))
+            ~Song.id.in_(db.session.query(ArtistSong.song_id)),
+            ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ).count(),
         'orphan_albums': db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
@@ -93,7 +95,8 @@ def views_page():
 @role_required(EDITOR_OR_ADMIN)
 def view_orphan_songs():
     items = db.session.query(Song).filter(
-        ~Song.id.in_(db.session.query(AlbumSong.song_id))
+        ~Song.id.in_(db.session.query(AlbumSong.song_id)),
+        ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={s.id} — "{s.name}"'} for s in items
@@ -105,7 +108,8 @@ def view_orphan_songs():
 @role_required(EDITOR_OR_ADMIN)
 def view_no_artist_songs():
     items = db.session.query(Song).filter(
-        ~Song.id.in_(db.session.query(ArtistSong.song_id))
+        ~Song.id.in_(db.session.query(ArtistSong.song_id)),
+        ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={s.id} — "{s.name}"'} for s in items

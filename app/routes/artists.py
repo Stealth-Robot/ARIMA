@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, ArtistSubscription, album_genres
+from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, ArtistSubscription, album_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
@@ -19,11 +19,16 @@ GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: 
 @artists_bp.route('/artists', strict_slashes=False)
 @login_required
 def artists_list():
-    """Redirect to Misc. Artists by default."""
-    misc = Artist.query.filter_by(slug='misc. artists').first()
-    if misc:
-        return redirect(url_for('artists.artist_detail', artist_id=misc.id))
-    return redirect(url_for('artists.artist_detail', artist_id=1))
+    """Redirect to the last visited artist, or the first in the navbar."""
+    last_id = session.get('last_artist_id')
+    if last_id:
+        artist = db.session.get(Artist, last_id)
+        if artist and artist.name != 'Misc. Artists':
+            return redirect(url_for('artists.artist_detail', artist_id=last_id))
+    navbar = get_filtered_navbar()
+    if navbar:
+        return redirect(url_for('artists.artist_detail', artist_id=navbar[0].id))
+    return redirect(url_for('misc.misc_page'))
 
 
 def _slug_url(artist):
@@ -98,6 +103,7 @@ def _render_artist(artist, htmx=False, push_url=None):
     """Build and render the artist detail page."""
     from flask import make_response
 
+    session['last_artist_id'] = artist.id
     artist_id = artist.id
     # Fetch children early so parent _build_discography can reuse them
     subunits, soloists = get_children(artist.id)
@@ -228,11 +234,9 @@ def _render_artist(artist, htmx=False, push_url=None):
 
     navbar = _get_filtered_navbar()
     # Ensure current artist always appears in navbar regardless of filters
-    if artist.id not in {a.id for a in navbar}:
+    if artist.id not in {a.id for a in navbar} and artist.name != 'Misc. Artists':
         navbar.append(artist)
-        misc = [a for a in navbar if a.name == 'Misc. Artists']
-        rest = sorted([a for a in navbar if a.name != 'Misc. Artists'], key=lambda a: a.name.lower())
-        navbar = misc + rest
+        navbar = sorted(navbar, key=lambda a: a.name.lower())
     return render_template('artists.html',
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
@@ -529,8 +533,33 @@ def _build_discography(artist, children=None, hide_osts=False):
     for sid, aid, is_main, aname, gid in all_song_artists_rows:
         all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
 
-    # Derive collab labels from the song_artists data (no extra queries)
+    # Bulk-load misc artist associations for collab labels + manage popover
+    all_song_misc_rows = db.session.query(
+        SongMiscArtist.song_id, SongMiscArtist.misc_artist_id,
+        SongMiscArtist.artist_is_main, MiscArtist.name
+    ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+        SongMiscArtist.song_id.in_(song_ids)
+    ).all()
+    all_song_misc_artists = {}
+    for sid, maid, is_main, mname in all_song_misc_rows:
+        all_song_misc_artists.setdefault(sid, []).append({
+            'misc_artist_id': maid, 'name': mname, 'is_main': is_main,
+        })
+
+    # Derive collab labels from both real and misc artist data
     all_collab_labels = _collab_labels_from_song_artists(all_song_artists, artist)
+    for sid, misc_list in all_song_misc_artists.items():
+        parts = []
+        main_names = [m['name'] for m in misc_list if m['is_main']]
+        feat_names = [m['name'] for m in misc_list if not m['is_main']]
+        if main_names:
+            parts.append('(with ' + ', '.join(main_names) + ')')
+        if feat_names:
+            parts.append('(feat. ' + ', '.join(feat_names) + ')')
+        if parts:
+            existing = all_collab_labels.get(sid, '')
+            label = ' '.join(parts)
+            all_collab_labels[sid] = (existing + ' ' + label).strip() if existing else label
 
     # Build album → songs structure (no per-album queries)
     discography = []
@@ -552,6 +581,7 @@ def _build_discography(artist, children=None, hide_osts=False):
             collab_labels = {sid: all_collab_labels[sid] for sid in song_obj_ids if sid in all_collab_labels}
 
             song_artists = {sid: all_song_artists.get(sid, []) for sid in song_obj_ids}
+            song_misc_artists = {sid: all_song_misc_artists.get(sid, []) for sid in song_obj_ids}
 
             discography.append({
                 'album': album,
@@ -559,6 +589,7 @@ def _build_discography(artist, children=None, hide_osts=False):
                 'ratings': ratings_map,
                 'collab_labels': collab_labels,
                 'song_artists': song_artists,
+                'song_misc_artists': song_misc_artists,
                 'duplicate_songs': {s.id for s, _ in album_songs if (s.id, album.id) in duplicate_song_album},
             })
 

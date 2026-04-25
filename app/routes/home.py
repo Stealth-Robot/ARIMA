@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.music import (Artist, ArtistArtist, ArtistSubscription, ArtistSong,
                                AlbumSong, Album, Song, Rating, album_genres)
 from app.models.user import UserSettings
+from app.models.rules import Rules
 
 SUBUNIT = 0
 
@@ -207,9 +208,11 @@ def home():
         if backlog:
             from app.services.stats import get_display_users
             users = get_display_users()
+    rules = db.session.get(Rules, 1)
     return render_template('home.html', owned_artists=owned,
                            maintained_artists=maintained, backlog=backlog,
                            ratings=ratings_map, users=users,
                            gender_css=GENDER_CSS,
                            hide_disbanded=hide_disbanded,
-                           has_any_maintained=has_any_maintained)
+                           has_any_maintained=has_any_maintained,
+                           misc_owner=rules.misc_owner if rules else None)

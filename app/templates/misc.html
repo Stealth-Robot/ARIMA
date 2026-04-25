@@ -1,0 +1,1343 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Misc Artists{% endblock %}
+{% block og_title %}A.R.I.M.A. - Misc Artists{% endblock %}
+{% block og_description %}Misc artists discography and ratings{% endblock %}
+
+{% block content %}
+<div class="mb-4 pb-9">
+    <!-- Page header -->
+    <div class="mb-3 pl-3" style="border-left: 4px solid var(--gender-mixed);">
+        <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
+            MISC ARTISTS
+        </h2>
+        <div class="flex items-center gap-3 mt-1">
+            <span id="misc-unrated" class="text-xs text-secondary-text">Loading...</span>
+        </div>
+        {% set _show_owner = edit_mode or (rules and rules.misc_owner) %}
+        {% set _show_maintainer = edit_mode or (rules and rules.misc_maintainer) %}
+        {% if _show_owner or _show_maintainer %}
+        <div class="text-xs text-secondary-text mt-0.5 flex flex-wrap items-center gap-4">
+            {% if _show_owner %}
+            <span id="misc-owner-span"
+                  data-owner-id="{{ rules.misc_owner_id if rules and rules.misc_owner_id is not none else '' }}"
+                  title="Owner"
+                  {% if edit_mode %}
+                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                  onclick="_miscShowUserEdit(event, this, 'owner')"
+                  {% else %}
+                  class="inline-flex items-center gap-1 px-1"
+                  {% endif %}>
+                <span aria-label="Owner">&#128081;</span>
+                <span class="user-pill-content inline-flex items-center gap-1">
+                    {% if rules and rules.misc_owner %}
+                    <img src="{{ rules.misc_owner.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                    {{ rules.misc_owner.username }}
+                    {% else %}—{% endif %}
+                </span>
+            </span>
+            {% endif %}
+            {% if _show_maintainer %}
+            <span id="misc-maintainer-span"
+                  data-maintainer-id="{{ rules.misc_maintainer_id if rules and rules.misc_maintainer_id is not none else '' }}"
+                  title="Maintainer"
+                  {% if edit_mode %}
+                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                  onclick="_miscShowUserEdit(event, this, 'maintainer')"
+                  {% else %}
+                  class="inline-flex items-center gap-1 px-1"
+                  {% endif %}>
+                <span aria-label="Maintainer">&#128295;</span>
+                <span class="user-pill-content inline-flex items-center gap-1">
+                    {% if rules and rules.misc_maintainer %}
+                    <img src="{{ rules.misc_maintainer.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                    {{ rules.misc_maintainer.username }}
+                    {% else %}—{% endif %}
+                </span>
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% if edit_mode %}
+        <div class="flex gap-2 mt-2">
+            <button onclick="_showManageMiscArtists()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
+                    style="background: var(--edit-off-button); color: var(--button-text);">Manage Misc Artists</button>
+            <button onclick="_showAddMiscSong()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
+                    style="background: var(--edit-on-button); color: var(--button-text);">+ Add Song</button>
+            <button onclick="_showSpotifyImport()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
+                    style="background: var(--edit-on-button); color: var(--button-text);">Import from Spotify</button>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not countries %}
+    <div class="text-center text-secondary-text py-6">
+        {% if edit_mode %}No misc songs yet. Add one above.{% else %}No misc songs yet.{% endif %}
+    </div>
+    {% else %}
+
+    <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
+    <div class="flex gap-3 items-start">
+    <table id="misc-table" class="text-xs border-collapse border border-grid-line" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+        <thead>
+            <tr class="thead-sticky">
+                <th class="text-left px-2 py-1 th-cell bg-discography-bg text-discography-text" style="width: 360px;">
+                    <span class="flex justify-between items-center">
+                        DISCOGRAPHY
+                        <span class="text-2xs font-normal flex items-center gap-2">
+                            <select id="misc-sort-field" onchange="_miscApplySort()"
+                                    class="rounded border border-border cursor-pointer"
+                                    style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+                                <option value="name">Name</option>
+                                <option value="release">Date</option>
+                                <option value="artist">Artist</option>
+                            </select>
+                            <button id="misc-sort-dir" onclick="_miscToggleSortDir()" class="cursor-pointer rounded border-0 px-1"
+                                    style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
+                                    title="Toggle sort direction">&darr;</button>
+                            <span onclick="_miscExpandAll()" class="text-secondary-text cursor-pointer"><span class="mobile-hide">&#9660; Expand</span><span class="mobile-show hidden">&#9660;</span></span>
+                            <span onclick="_miscCollapseAll()" class="text-secondary-text cursor-pointer"><span class="mobile-hide">&#9654; Collapse</span><span class="mobile-show hidden">&#9654;</span></span>
+                        </span>
+                    </span>
+                </th>
+                {% if edit_mode %}
+                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Remix</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Promo</th>
+                {% endif %}
+                {% for u in users %}
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% set ns = namespace(song_idx=0) %}
+        {% set is_editable = current_user.can_rate %}
+        {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
+
+        {% for country in countries %}
+        <!-- Country spacer -->
+        {% if not loop.first %}
+        <tr><td colspan="100" class="h-5 border-0"></td></tr>
+        {% endif %}
+
+        <!-- Country header -->
+        <tr id="misc-country-{{ country.country_id }}" class="child-header-gradient border border-grid-line cursor-pointer"
+            style="border-left: 6px solid var(--text-secondary);"
+            onclick="_miscToggleCountry({{ country.country_id }})">
+            <td colspan="100" class="font-bold text-sm- text-discography-text relative p-0 pl-2">
+                <span id="misc-country-arrow-{{ country.country_id }}" class="collapse-arrow text-xxs">&#9660;</span>
+                <span class="p-1">{{ country.country_name | upper }}</span>
+            </td>
+        </tr>
+
+        {% for genre in country.genres %}
+        <!-- Genre spacer -->
+        {% if not loop.first %}
+        <tr class="misc-country-row-{{ country.country_id }}"><td colspan="100" class="h-3 border-0"></td></tr>
+        {% endif %}
+
+        <!-- Genre header (virtual album) -->
+        <tr id="misc-genre-{{ country.country_id }}-{{ genre.genre_id }}"
+            class="misc-country-row-{{ country.country_id }} border border-grid-line cursor-pointer"
+            onclick="_miscToggleGenre({{ country.country_id }}, {{ genre.genre_id }})">
+            <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg">
+                <span id="misc-genre-arrow-{{ country.country_id }}-{{ genre.genre_id }}" class="collapse-arrow text-xxs">&#9660;</span>
+                {{ genre.genre_name }}
+            </td>
+            {% if edit_mode %}
+            <td class="border border-grid-line">&nbsp;</td>
+            <td class="border border-grid-line">&nbsp;</td>
+            {% endif %}
+            {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
+        </tr>
+
+        {% for row in genre.songs %}
+        {% set song = row.song %}
+        <tr id="song-{{ song.id }}"
+            class="misc-country-row-{{ country.country_id }} misc-genre-row-{{ country.country_id }}-{{ genre.genre_id }} border border-grid-line"
+            data-song-name="{{ song.name | lower }}"
+            data-release="{{ row.album.release_date or '' if row.album else '' }}"
+            data-artist-name="{{ row.main_artists | join(', ') | lower }}"
+            style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
+                data-song-id="{{ song.id }}" title="{{ song.name | e }}"
+                {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
+                style="padding: 4px 8px 4px 18px;
+                {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
+                {% if edit_mode %}
+                <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
+                {% else %}
+                {{ song.name }}
+                {% endif %}
+                {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | join(', ') }})</span>{% endif %}
+                {% if song.is_remix %}<span class="promoted-tag rounded ml-1" style="font-size: 9px; padding: 1px 5px; background: var(--text-secondary); color: var(--button-text);">remix</span>{% endif %}
+                {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                {% set search_terms = song.name + ' ' + (row.main_artists | join(' ')) %}
+                <span class="song-links inline whitespace-nowrap">{% if song.spotify_url and not hide_all_spotify %}<a href="{{ song.spotify_url }}" target="_blank" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a> {% endif %}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %} <span class="cursor-pointer align-middle text-secondary-text" onclick="copyAnchorLink(event, 'song-{{ song.id }}')" title="Copy link to song"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span></span>
+                {% if edit_mode %}
+                <span class="whitespace-nowrap block" style="font-size: {{ song_button_size }}px;">
+                <span class="cursor-pointer ml-0.5" style="font-size: 12px; color: var(--text-secondary);" title="Manage artists"
+                      onclick='event.stopPropagation(); _showMiscArtistSelector({{ song.id }})'>&#9998;</span>
+                <span class="cursor-pointer ml-0.5" style="font-size: 12px; color: var(--link);" title="Move to artist"
+                      onclick='event.stopPropagation(); _showMoveSongToArtist(event, {{ song.id }}, {{ song.name | tojson }})'>&#8618;</span>
+                <span class="edit-inline cursor-pointer text-delete ml-0.5" style="font-size: inherit;" title="Delete song"
+                      onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
+                </span>
+                {% endif %}
+                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">
+                {% if edit_mode %}
+                <span class="cursor-pointer" onclick="_showMiscArtistSelector({{ song.id }})" title="Edit artists">{{ row.main_artists | join(', ') }}</span>
+                {% else %}
+                {{ row.main_artists | join(', ') }}
+                {% endif %}
+                {% if row.album %}
+                &middot;
+                {% if edit_mode %}
+                <span class="cursor-pointer" onclick="_showAlbumEditor({{ song.id }}, {{ row.album.id }})" title="Edit album">{{ row.album.name }}</span>
+                {% else %}
+                {{ row.album.name }}
+                {% endif %}
+                {% if row.album.release_date %}
+                (<span{% if not show_full_album_date %} class="album-date-hover" data-full-date="{{ row.album.release_date }}"{% endif %}>{{ row.album.release_date if show_full_album_date else row.album.release_date[:4] }}</span>)
+                {% endif %}
+                {% endif %}
+                {% if row.genres %}
+                {% if edit_mode %}
+                &middot; <span class="cursor-pointer genre-edit"
+                     data-song-id="{{ song.id }}"
+                     data-genre-ids="{{ row.genre_ids | list | tojson }}"
+                     onclick="_showSongGenreEdit(event, {{ song.id }}, this)">{{ row.genres | join(', ') }}</span>
+                {% else %}
+                &middot; {{ row.genres | join(', ') }}
+                {% endif %}
+                {% endif %}
+                </div>
+            </td>
+            {% if edit_mode %}
+            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line" style="vertical-align: middle;">
+                <input type="checkbox" {% if song.is_remix %}checked{% endif %} autocomplete="off"
+                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-remix')">
+            </td>
+            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line" style="vertical-align: middle;">
+                <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
+                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-promoted')">
+            </td>
+            {% endif %}
+            {% for u in users %}
+            {% set r = row.ratings.get(u.id) %}
+            {% set cell_style = rating_cell_style(r.rating if r else None) %}
+            {% set cell_editable = is_editable and (u.id == current_user.id or rating_all) %}
+            <td id="rating-{{ song.id }}-{{ u.id }}"
+                class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}
+                       {% if u.id == current_user.id %} my-cell{% endif %}
+                       {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
+                style="{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %} vertical-align: middle;"
+                {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
+                {% if cell_editable %}
+                onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"
+                {% endif %}>
+                {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% set ns.song_idx = ns.song_idx + 1 %}
+        {% endfor %}
+
+        {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+/* Unrated count */
+(function() {
+    fetch('/misc/unrated-count').then(function(r) { return r.json(); }).then(function(d) {
+        document.getElementById('misc-unrated').textContent = 'Unrated: ' + d.unrated + ' / ' + d.total;
+    });
+})();
+
+/* Collapse/expand */
+function _miscToggleCountry(cid) {
+    var arrow = document.getElementById('misc-country-arrow-' + cid);
+    var hiding = arrow.innerHTML === '▼';
+    arrow.innerHTML = hiding ? '▶' : '▼';
+    if (hiding) {
+        document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = 'none'; });
+    } else {
+        document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) {
+            if (r.id && r.id.startsWith('misc-genre-')) {
+                r.style.display = '';
+            } else if (r.classList.toString().match(/misc-genre-row-/)) {
+                var cls = r.className.match(/misc-genre-row-(\d+-\d+)/);
+                if (cls) {
+                    var genreArrow = document.getElementById('misc-genre-arrow-' + cls[1]);
+                    r.style.display = (genreArrow && genreArrow.innerHTML === '▶') ? 'none' : '';
+                }
+            } else {
+                r.style.display = '';
+            }
+        });
+    }
+}
+
+function _miscToggleGenre(cid, gid) {
+    var arrow = document.getElementById('misc-genre-arrow-' + cid + '-' + gid);
+    var rows = document.querySelectorAll('.misc-genre-row-' + cid + '-' + gid);
+    var hiding = arrow.innerHTML === '▼';
+    rows.forEach(function(r) { r.style.display = hiding ? 'none' : ''; });
+    arrow.innerHTML = hiding ? '▶' : '▼';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="misc-genre-arrow-"]').forEach(function(a) {
+        a.innerHTML = '▶';
+    });
+    document.querySelectorAll('[class*="misc-genre-row-"]').forEach(function(r) {
+        r.style.display = 'none';
+    });
+});
+
+function _miscExpandAll() {
+    document.querySelectorAll('[id^="misc-country-arrow-"], [id^="misc-genre-arrow-"]').forEach(function(a) {
+        a.innerHTML = '▼';
+    });
+    document.querySelectorAll('[class*="misc-country-row-"], [class*="misc-genre-row-"]').forEach(function(r) {
+        r.style.display = '';
+    });
+}
+
+function _miscCollapseAll() {
+    document.querySelectorAll('[id^="misc-country-arrow-"], [id^="misc-genre-arrow-"]').forEach(function(a) {
+        a.innerHTML = '▶';
+    });
+    document.querySelectorAll('[class*="misc-country-row-"]').forEach(function(r) {
+        if (!r.id || !r.id.startsWith('misc-country-')) r.style.display = 'none';
+    });
+}
+
+/* Sort */
+var _miscSortAsc = true;
+
+function _miscToggleSortDir() {
+    _miscSortAsc = !_miscSortAsc;
+    document.getElementById('misc-sort-dir').innerHTML = _miscSortAsc ? '&darr;' : '&uarr;';
+    _miscApplySort();
+}
+
+function _miscApplySort() {
+    var field = document.getElementById('misc-sort-field').value;
+    var dir = _miscSortAsc ? 1 : -1;
+
+    /* Sort within each genre section */
+    document.querySelectorAll('[id^="misc-genre-"][id*="-"]').forEach(function(genreHeader) {
+        var match = genreHeader.id.match(/misc-genre-(\d+)-(\d+)/);
+        if (!match) return;
+        var cid = match[1], gid = match[2];
+        var cls = 'misc-genre-row-' + cid + '-' + gid;
+        var songRows = document.querySelectorAll('.' + cls);
+
+        var rows = Array.from(songRows);
+
+        rows.sort(function(a, b) {
+            switch (field) {
+                case 'name':
+                    return (a.dataset.songName || '').localeCompare(b.dataset.songName || '') * dir;
+                case 'release':
+                    var dA = a.dataset.release || '', dB = b.dataset.release || '';
+                    if (dA === dB) return (a.dataset.songName || '').localeCompare(b.dataset.songName || '');
+                    return dA.localeCompare(dB) * dir;
+                case 'artist':
+                    return (a.dataset.artistName || '').localeCompare(b.dataset.artistName || '') * dir;
+                default:
+                    return 0;
+            }
+        });
+
+        var ref = genreHeader;
+        rows.forEach(function(row) {
+            ref.parentNode.insertBefore(row, ref.nextSibling);
+            ref = row;
+        });
+    });
+}
+
+/* Song genre edit (calls same pattern as album genre edit) */
+function _showSongGenreEdit(event, songId, el) {
+    event.stopPropagation();
+    if (typeof showGenreEdit !== 'function') return;
+    var genreIds = JSON.parse(el.dataset.genreIds || '[]');
+    /* Reuse showGenreEdit but with song endpoint */
+    var allGenres = [];
+    document.querySelectorAll('.misc-genre-data').forEach(function(d) {
+        allGenres.push({id: parseInt(d.dataset.id), genre: d.dataset.name});
+    });
+    if (!allGenres.length && typeof _allGenres !== 'undefined') allGenres = _allGenres;
+    _showSongGenreEditModal(event, songId, el, allGenres, genreIds);
+}
+
+function _showSongGenreEditModal(event, songId, el, allGenres, currentIds) {
+    var existing = document.getElementById('song-genre-edit-popup');
+    if (existing) existing.remove();
+
+    var popup = document.createElement('div');
+    popup.id = 'song-genre-edit-popup';
+    popup.style.cssText = 'position:fixed;z-index:100;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-height:300px;overflow-y:auto;min-width:160px;';
+
+    var z = parseFloat(document.documentElement.style.zoom) || 1;
+    var r = el.getBoundingClientRect();
+    popup.style.top = (r.bottom / z + 2) + 'px';
+    popup.style.left = (r.left / z) + 'px';
+
+    allGenres.forEach(function(g) {
+        var label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;font-size:12px;color:var(--text-primary);';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = g.id;
+        if (currentIds.indexOf(g.id) !== -1) cb.checked = true;
+        cb.addEventListener('change', function() {
+            var checked = popup.querySelectorAll('input:checked');
+            var ids = [];
+            checked.forEach(function(c) { ids.push(c.value); });
+            var t = document.querySelector('meta[name="csrf-token"]').content;
+            var body = 'genre_ids=' + ids.join(',');
+            fetch('/edit/song/' + songId + '/genres', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': t},
+                body: body
+            }).then(function(resp) { return resp.json(); }).then(function(names) {
+                el.textContent = names.join(', ') || 'genres';
+                el.dataset.genreIds = JSON.stringify(ids.map(Number));
+            });
+        });
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(g.genre));
+        popup.appendChild(label);
+    });
+
+    document.body.appendChild(popup);
+    document.addEventListener('click', function dismiss(e) {
+        if (!popup.contains(e.target) && e.target !== el) {
+            popup.remove();
+            document.removeEventListener('click', dismiss);
+        }
+    });
+}
+
+/* ---------- shared modal helpers ---------- */
+function _miscBackdrop(onClose) {
+    var bd = document.createElement('div');
+    bd.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+    bd.onclick = function(e) { if (e.target === bd) { bd.remove(); if (onClose) onClose(); } };
+    bd.addEventListener('keydown', function(e) { if (e.key === 'Escape') { bd.remove(); if (onClose) onClose(); } });
+    document.body.appendChild(bd);
+    return bd;
+}
+function _miscModal(width) {
+    var m = document.createElement('div');
+    m.style.cssText = 'background:var(--bg-secondary,#fff);border:1px solid var(--border,#ccc);border-radius:8px;padding:16px;width:100%;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;max-width:' + (width || 420) + 'px;';
+    return m;
+}
+function _miscInput(placeholder, val) {
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.placeholder = placeholder || ''; inp.value = val || '';
+    inp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;';
+    return inp;
+}
+function _miscBtn(label, bg, onClick) {
+    var b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'padding:6px 14px;font-size:12px;border:none;border-radius:4px;cursor:pointer;color:#fff;background:' + (bg || 'var(--link,#2563EB)') + ';';
+    b.onclick = onClick;
+    return b;
+}
+function _miscLabel(text) {
+    var l = document.createElement('div');
+    l.textContent = text;
+    l.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;margin-top:10px;';
+    return l;
+}
+function _miscSelect(options, selected) {
+    var sel = document.createElement('select');
+    sel.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+    options.forEach(function(o) {
+        var opt = document.createElement('option');
+        opt.value = o.id; opt.textContent = o.name;
+        if (selected !== undefined && o.id == selected) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    return sel;
+}
+function _csrfJson() {
+    var h = {'Content-Type':'application/json'};
+    var m = document.querySelector('meta[name="csrf-token"]');
+    if (m) h['X-CSRFToken'] = m.content;
+    return h;
+}
+
+/* ---------- autocomplete helper ---------- */
+function _miscAutocomplete(input, url, onSelect, minLen) {
+    var list = document.createElement('div');
+    list.style.cssText = 'position:absolute;left:0;right:0;top:100%;background:var(--bg-secondary,#fff);border:1px solid var(--border,#ccc);border-radius:0 0 4px 4px;max-height:160px;overflow-y:auto;z-index:10;display:none;';
+    input.parentNode.style.position = 'relative';
+    input.parentNode.appendChild(list);
+    var timer = null;
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        var q = input.value.trim();
+        if (q.length < (minLen || 1)) { list.style.display = 'none'; return; }
+        timer = setTimeout(function() {
+            fetch(url + '?q=' + encodeURIComponent(q)).then(function(r){return r.json();}).then(function(items) {
+                list.innerHTML = '';
+                if (!items.length) { list.style.display = 'none'; return; }
+                items.forEach(function(item) {
+                    var d = document.createElement('div');
+                    d.textContent = item.name;
+                    d.style.cssText = 'padding:5px 8px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+                    d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
+                    d.onmouseleave = function() { d.style.background = ''; };
+                    d.onclick = function() { onSelect(item); input.value = ''; list.style.display = 'none'; };
+                    list.appendChild(d);
+                });
+                list.style.display = 'block';
+            });
+        }, 200);
+    });
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+    });
+    return list;
+}
+
+</script>
+
+{% if edit_mode %}
+<!-- Genre/country/album-type data for JS -->
+{% for g in all_genres %}
+<span class="misc-genre-data hidden" data-id="{{ g.id }}" data-name="{{ g.genre }}"></span>
+{% endfor %}
+<script>
+var _allGenres = [{% for g in all_genres %}{id: {{ g.id }}, genre: {{ g.genre | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var _allCountries = [{% for c in all_countries %}{id: {{ c.id }}, name: {{ c.country | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbumTypes = [{% for t in all_album_types %}{id: {{ t.id }}, name: {{ t.type | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var _miscAssignableUsers = [{% for u in assignable_users %}{id:{{ u.id }},username:{{ u.username | tojson }},profileImage:{{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+
+var _miscUserPopover = null;
+function _miscCloseUserPopover() { if (_miscUserPopover) { _miscUserPopover.remove(); _miscUserPopover = null; } }
+function _miscShowUserEdit(event, span, kind) {
+    event.stopPropagation();
+    _miscCloseUserPopover();
+    var popover = document.createElement('div');
+    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:2px solid var(--link,#2563EB);border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:220px;max-height:320px;overflow-y:auto;';
+    var attr = kind === 'owner' ? 'ownerId' : 'maintainerId';
+    var currentId = span.dataset[attr] ? parseInt(span.dataset[attr]) : null;
+    function pick(uid, uname, img) {
+        var csrfToken = document.querySelector('meta[name="csrf-token"]');
+        var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        fetch('/misc/set-role', {method:'POST', headers:headers, body:'kind=' + kind + '&user_id=' + (uid == null ? '' : uid)}).then(function(r) {
+            if (!r.ok) throw new Error('save failed');
+            span.dataset[attr] = uid == null ? '' : uid;
+            var pill = span.querySelector('.user-pill-content');
+            if (uid == null) { pill.innerHTML = '—'; }
+            else { pill.innerHTML = '<img src="' + img + '" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'' + '{{ url_for("static", filename="img/default_image.png") }}' + '\'" class="rounded-full object-cover" style="width:18px;height:18px;">' + uname; }
+            _miscCloseUserPopover();
+        });
+    }
+    function row(uid, uname, img, selected) {
+        var d = document.createElement('div');
+        d.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:3px;cursor:pointer;' + (selected ? 'background:var(--link);color:#fff;' : '');
+        d.onmouseenter = function() { if (!selected) d.style.background = 'var(--hover-bg)'; };
+        d.onmouseleave = function() { if (!selected) d.style.background = ''; };
+        if (img) { var i = document.createElement('img'); i.src = img; i.referrerPolicy = 'no-referrer'; i.className = 'rounded-full object-cover'; i.style.cssText = 'width:20px;height:20px;'; d.appendChild(i); }
+        var t = document.createElement('span'); t.textContent = uname; t.style.fontSize = '12px'; d.appendChild(t);
+        return d;
+    }
+    var none = row(null, 'Unassigned', null, currentId === null);
+    none.onclick = function() { pick(null, null, null); };
+    popover.appendChild(none);
+    _miscAssignableUsers.forEach(function(u) {
+        var r = row(u.id, u.username, u.profileImage, u.id === currentId);
+        r.onclick = function() { pick(u.id, u.username, u.profileImage); };
+        popover.appendChild(r);
+    });
+    var rect = span.getBoundingClientRect();
+    var z = parseFloat(document.documentElement.style.zoom) || 1;
+    popover.style.left = (rect.left / z) + 'px';
+    popover.style.top = (rect.bottom / z + 2) + 'px';
+    document.body.appendChild(popover);
+    _miscUserPopover = popover;
+    var close = function(e) { if (!popover.contains(e.target) && !span.contains(e.target)) { _miscCloseUserPopover(); document.removeEventListener('click', close); } };
+    setTimeout(function() { document.addEventListener('click', close); }, 0);
+}
+
+/* ========== 1. MANAGE MISC ARTISTS ========== */
+function _showManageMiscArtists() {
+    fetch('/misc/manage-artists').then(function(r){return r.json();}).then(function(data) {
+        var bd = _miscBackdrop();
+        var modal = _miscModal(520);
+        var title = document.createElement('div');
+        title.textContent = 'Manage Misc Artists';
+        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:12px;';
+        modal.appendChild(title);
+
+        var search = _miscInput('Search artists...');
+        search.style.marginBottom = '8px';
+        modal.appendChild(search);
+
+        var listDiv = document.createElement('div');
+        listDiv.style.cssText = 'max-height:50vh;overflow-y:auto;';
+        modal.appendChild(listDiv);
+
+        var artists = data.artists;
+        var mergeSelection = [];
+
+        function renderList(filter) {
+            listDiv.innerHTML = '';
+            var lower = (filter || '').toLowerCase();
+            var dupes = {};
+            artists.forEach(function(a) {
+                var k = a.name.toLowerCase().trim();
+                dupes[k] = (dupes[k] || 0) + 1;
+            });
+            artists.forEach(function(a) {
+                if (lower && a.name.toLowerCase().indexOf(lower) === -1) return;
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--border,#eee);font-size:12px;';
+                var isDupe = dupes[a.name.toLowerCase().trim()] > 1;
+                if (isDupe) row.style.background = 'rgba(234,179,8,0.15)';
+
+                var nameInp = _miscInput('', a.name);
+                nameInp.style.cssText += 'flex:1;min-width:0;font-size:12px;padding:3px 6px;';
+                nameInp.onblur = function() {
+                    var nv = nameInp.value.trim();
+                    if (nv && nv !== a.name) {
+                        fetch('/misc/edit-artist/' + a.id, {method:'POST', headers:_csrfJson(), body:JSON.stringify({name:nv})})
+                            .then(function(r){return r.json();}).then(function(d) { a.name = d.name; renderList(search.value); });
+                    }
+                };
+
+                var countrySel = _miscSelect(_allCountries, a.country_id);
+                countrySel.style.cssText += 'width:auto;min-width:90px;font-size:11px;padding:2px 4px;';
+                countrySel.onchange = function() {
+                    fetch('/misc/edit-artist/' + a.id, {method:'POST', headers:_csrfJson(), body:JSON.stringify({country_id:parseInt(countrySel.value)})})
+                        .then(function(r){return r.json();}).then(function(d) { a.country_id = d.country_id; });
+                };
+
+                var count = document.createElement('span');
+                count.textContent = a.song_count + ' songs';
+                count.style.cssText = 'color:var(--text-secondary);white-space:nowrap;min-width:55px;text-align:right;';
+
+                var mergeCb = document.createElement('input');
+                mergeCb.type = 'checkbox';
+                mergeCb.title = 'Select for merge';
+                mergeCb.checked = mergeSelection.indexOf(a.id) !== -1;
+                mergeCb.onchange = function() {
+                    if (mergeCb.checked) { mergeSelection.push(a.id); } else { mergeSelection = mergeSelection.filter(function(x){return x !== a.id;}); }
+                    mergeBtn.disabled = mergeSelection.length !== 2;
+                };
+
+                var delBtn = document.createElement('button');
+                delBtn.innerHTML = '&times;';
+                delBtn.title = a.song_count > 0 ? 'Cannot delete: has songs' : 'Delete';
+                delBtn.disabled = a.song_count > 0;
+                delBtn.style.cssText = 'border:none;background:none;color:' + (a.song_count > 0 ? 'var(--text-secondary)' : 'var(--delete,red)') + ';cursor:pointer;font-size:16px;padding:0 2px;';
+                delBtn.onclick = function() {
+                    if (!confirm('Delete "' + a.name + '"?')) return;
+                    fetch('/misc/delete-artist/' + a.id, {method:'POST', headers:_csrfJson()})
+                        .then(function(r){return r.json();}).then(function(d) {
+                            if (d.ok) { artists = artists.filter(function(x){return x.id !== a.id;}); renderList(search.value); }
+                            else { alert(d.error || 'Failed'); }
+                        });
+                };
+
+                row.appendChild(mergeCb);
+                row.appendChild(nameInp);
+                row.appendChild(countrySel);
+                row.appendChild(count);
+                row.appendChild(delBtn);
+                listDiv.appendChild(row);
+            });
+        }
+
+        search.addEventListener('input', function() { renderList(search.value); });
+
+        var btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;';
+        var mergeBtn = _miscBtn('Merge Selected', '#7C3AED', function() {
+            if (mergeSelection.length !== 2) return;
+            var keepId = mergeSelection[0], absorbId = mergeSelection[1];
+            var keepName = artists.find(function(a){return a.id === keepId;});
+            var absorbName = artists.find(function(a){return a.id === absorbId;});
+            if (!confirm('Merge "' + (absorbName?absorbName.name:'') + '" into "' + (keepName?keepName.name:'') + '"?')) return;
+            fetch('/misc/merge-artists', {method:'POST', headers:_csrfJson(), body:JSON.stringify({keep_id:keepId, absorb_id:absorbId})})
+                .then(function(r){return r.json();}).then(function(d) {
+                    if (d.ok) { mergeSelection = []; fetch('/misc/manage-artists').then(function(r){return r.json();}).then(function(nd) { artists = nd.artists; renderList(search.value); }); }
+                });
+        });
+        mergeBtn.disabled = true;
+        var closeBtn = _miscBtn('Close', '#6B7280', function() { bd.remove(); location.reload(); });
+        btnRow.appendChild(mergeBtn);
+        btnRow.appendChild(closeBtn);
+        modal.appendChild(btnRow);
+        bd.appendChild(modal);
+        renderList('');
+    });
+}
+
+/* ========== 2. ADD MISC SONG ========== */
+function _showAddMiscSong() {
+    var bd = _miscBackdrop();
+    var modal = _miscModal(460);
+    var title = document.createElement('div');
+    title.textContent = 'Add Misc Song';
+    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+    modal.appendChild(title);
+
+    /* Song name */
+    modal.appendChild(_miscLabel('Song Name *'));
+    var nameInp = _miscInput('Song name');
+    modal.appendChild(nameInp);
+
+    /* Spotify URL (optional) */
+    modal.appendChild(_miscLabel('Spotify URL (optional)'));
+    var spotRow = document.createElement('div');
+    spotRow.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    var spotInp = _miscInput('https://open.spotify.com/track/...');
+    spotInp.style.flex = '1';
+    spotRow.appendChild(spotInp);
+    var spotBtn = _miscBtn('Fetch', 'var(--link,#2563EB)', function() {
+        var u = spotInp.value.trim();
+        if (!u) return;
+        spotBtn.disabled = true;
+        spotStatus.textContent = 'Fetching...';
+        fetch('/misc/spotify-track?url=' + encodeURIComponent(u))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                spotBtn.disabled = false;
+                if (d.error) { spotStatus.textContent = d.error; return; }
+                if (d.name && !nameInp.value.trim()) nameInp.value = d.name;
+                if (d.spotify_url) spotInp.value = d.spotify_url;
+                spotStatus.textContent = 'Linked: ' + d.name;
+            }).catch(function() { spotBtn.disabled = false; spotStatus.textContent = 'Fetch failed'; });
+    });
+    spotBtn.style.fontSize = '11px'; spotBtn.style.padding = '4px 10px';
+    spotRow.appendChild(spotBtn);
+    modal.appendChild(spotRow);
+    var spotStatus = document.createElement('div');
+    spotStatus.style.cssText = 'font-size:11px;color:var(--text-secondary);min-height:14px;margin-bottom:2px;';
+    modal.appendChild(spotStatus);
+
+    /* Misc artists */
+    modal.appendChild(_miscLabel('Misc Artists *'));
+    var maList = document.createElement('div');
+    maList.style.cssText = 'margin-bottom:4px;';
+    modal.appendChild(maList);
+    var miscArtists = [];
+    function renderMAs() {
+        maList.innerHTML = '';
+        miscArtists.forEach(function(a, i) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+            var tog = document.createElement('button');
+            tog.textContent = a.is_main ? 'main' : 'feat';
+            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
+            var del = document.createElement('button');
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
+            row.appendChild(tog); row.appendChild(del);
+            maList.appendChild(row);
+        });
+    }
+    var maWrap = document.createElement('div');
+    maWrap.style.position = 'relative';
+    var maInp = _miscInput('Search or create misc artist...');
+    maWrap.appendChild(maInp);
+    modal.appendChild(maWrap);
+    _miscAutocomplete(maInp, '/misc/search-artists', function(item) {
+        miscArtists.push({id: item.id, name: item.name, country_id: item.country_id, is_main: true});
+        renderMAs();
+    });
+    /* Create new misc artist inline */
+    var maCreateRow = document.createElement('div');
+    maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+    var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
+        var n = maInp.value.trim();
+        if (!n) return;
+        var cid = parseInt(maCountrySel.value);
+        fetch('/misc/add-misc-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({name:n, country_id:cid})})
+            .then(function(r){return r.json();}).then(function(d) {
+                miscArtists.push({id:d.id, name:d.name, country_id:d.country_id, is_main:true});
+                maInp.value = ''; renderMAs();
+            });
+    });
+    maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+    var maCountrySel = _miscSelect(_allCountries);
+    maCountrySel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+    maCreateRow.appendChild(maCreateBtn);
+    maCreateRow.appendChild(maCountrySel);
+    modal.appendChild(maCreateRow);
+
+    /* Real artists */
+    modal.appendChild(_miscLabel('Real Artists (optional)'));
+    var raList = document.createElement('div');
+    modal.appendChild(raList);
+    var realArtists = [];
+    function renderRAs() {
+        raList.innerHTML = '';
+        realArtists.forEach(function(a, i) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+            var tog = document.createElement('button');
+            tog.textContent = a.is_main ? 'main' : 'feat';
+            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
+            var del = document.createElement('button');
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.onclick = function() { realArtists.splice(i, 1); renderRAs(); };
+            row.appendChild(tog); row.appendChild(del);
+            raList.appendChild(row);
+        });
+    }
+    var raWrap = document.createElement('div');
+    raWrap.style.position = 'relative';
+    var raInp = _miscInput('Search real artists...');
+    raWrap.appendChild(raInp);
+    modal.appendChild(raWrap);
+    _miscAutocomplete(raInp, '/misc/search-real-artists', function(item) {
+        realArtists.push({artist_id: item.artist_id, name: item.name, is_main: false});
+        renderRAs();
+    }, 2);
+
+    /* Genres */
+    modal.appendChild(_miscLabel('Genres'));
+    var genreDiv = document.createElement('div');
+    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    var selectedGenres = [];
+    _allGenres.forEach(function(g) {
+        var label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
+        cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
+        label.appendChild(cb); label.appendChild(document.createTextNode(g.genre));
+        genreDiv.appendChild(label);
+    });
+    modal.appendChild(genreDiv);
+
+    /* Buttons */
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+    var saveBtn = _miscBtn('Add Song', 'var(--link,#2563EB)', function() {
+        var sName = nameInp.value.trim();
+        if (!sName) { alert('Song name is required'); return; }
+        if (!miscArtists.length) { alert('At least one misc artist is required'); return; }
+        var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
+        if (!hasMain) { alert('At least one artist must be main'); return; }
+
+        var spotUrl = spotInp.value.trim();
+        var payload = {
+            name: sName,
+            spotify_url: spotUrl || null,
+            misc_artists: miscArtists.map(function(a) {
+                if (a.id) return {id: a.id, is_main: a.is_main};
+                return {new: true, name: a.name, country_id: a.country_id, is_main: a.is_main};
+            }),
+            real_artists: realArtists.map(function(a) { return {artist_id: a.artist_id, is_main: a.is_main}; }),
+            genre_ids: selectedGenres,
+        };
+        saveBtn.disabled = true;
+        fetch('/misc/add-song', {method:'POST', headers:_csrfJson(), body:JSON.stringify(payload)})
+            .then(function(r){return r.json();}).then(function(d) {
+                if (d.error) { alert(d.error); saveBtn.disabled = false; return; }
+                bd.remove(); location.reload();
+            }).catch(function() { saveBtn.disabled = false; });
+    });
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
+    modal.appendChild(btnRow);
+    bd.appendChild(modal);
+    nameInp.focus();
+}
+
+/* ========== 3. SPOTIFY IMPORT ========== */
+function _showSpotifyImport() {
+    var bd = _miscBackdrop();
+    var modal = _miscModal(520);
+    var title = document.createElement('div');
+    title.textContent = 'Import from Spotify';
+    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+    modal.appendChild(title);
+
+    /* Step 1: URL input */
+    modal.appendChild(_miscLabel('Spotify Album URL'));
+    var urlInp = _miscInput('https://open.spotify.com/album/...');
+    modal.appendChild(urlInp);
+
+    var fetchBtn = _miscBtn('Fetch Tracks', 'var(--link,#2563EB)', function() {
+        var u = urlInp.value.trim();
+        if (!u) { alert('Paste a Spotify album URL'); return; }
+        fetchBtn.disabled = true;
+        statusDiv.textContent = 'Fetching...';
+        fetch('/edit/spotify-album?url=' + encodeURIComponent(u))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                fetchBtn.disabled = false;
+                if (d.error) { statusDiv.textContent = d.error; return; }
+                statusDiv.textContent = d.name + ' — ' + d.tracks.length + ' tracks';
+                renderTracks(d.tracks);
+            }).catch(function() { fetchBtn.disabled = false; statusDiv.textContent = 'Fetch failed'; });
+    });
+    fetchBtn.style.marginTop = '6px';
+    modal.appendChild(fetchBtn);
+
+    var statusDiv = document.createElement('div');
+    statusDiv.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-top:4px;min-height:16px;';
+    modal.appendChild(statusDiv);
+
+    /* Track list */
+    var trackDiv = document.createElement('div');
+    trackDiv.style.cssText = 'max-height:200px;overflow-y:auto;margin-top:8px;';
+    modal.appendChild(trackDiv);
+    var fetchedTracks = [];
+
+    function renderTracks(tracks) {
+        fetchedTracks = tracks;
+        trackDiv.innerHTML = '';
+        var allCb = document.createElement('input');
+        allCb.type = 'checkbox'; allCb.checked = true;
+        allCb.onchange = function() {
+            trackDiv.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = allCb.checked; });
+        };
+        var allLabel = document.createElement('label');
+        allLabel.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border);';
+        allLabel.appendChild(allCb);
+        allLabel.appendChild(document.createTextNode('Select All'));
+        trackDiv.appendChild(allLabel);
+        tracks.forEach(function(t, i) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.checked = true; cb.dataset.idx = i;
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(t.track_number + '. ' + t.name));
+            trackDiv.appendChild(label);
+        });
+    }
+
+    /* Misc artists */
+    modal.appendChild(_miscLabel('Misc Artists *'));
+    var maList = document.createElement('div');
+    modal.appendChild(maList);
+    var miscArtists = [];
+    function renderMAs() {
+        maList.innerHTML = '';
+        miscArtists.forEach(function(a, i) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+            var tog = document.createElement('button');
+            tog.textContent = a.is_main ? 'main' : 'feat';
+            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
+            var del = document.createElement('button');
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
+            row.appendChild(tog); row.appendChild(del);
+            maList.appendChild(row);
+        });
+    }
+    var maWrap = document.createElement('div');
+    maWrap.style.position = 'relative';
+    var maInp = _miscInput('Search or create misc artist...');
+    maWrap.appendChild(maInp);
+    modal.appendChild(maWrap);
+    _miscAutocomplete(maInp, '/misc/search-artists', function(item) {
+        miscArtists.push({id: item.id, name: item.name, country_id: item.country_id, is_main: true});
+        renderMAs();
+    });
+    var maCreateRow = document.createElement('div');
+    maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+    var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
+        var n = maInp.value.trim(); if (!n) return;
+        var cid = parseInt(maCountrySel.value);
+        fetch('/misc/add-misc-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({name:n, country_id:cid})})
+            .then(function(r){return r.json();}).then(function(d) {
+                miscArtists.push({id:d.id, name:d.name, country_id:d.country_id, is_main:true});
+                maInp.value = ''; renderMAs();
+            });
+    });
+    maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+    var maCountrySel = _miscSelect(_allCountries);
+    maCountrySel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+    maCreateRow.appendChild(maCreateBtn); maCreateRow.appendChild(maCountrySel);
+    modal.appendChild(maCreateRow);
+
+    /* Genres */
+    modal.appendChild(_miscLabel('Genres'));
+    var genreDiv = document.createElement('div');
+    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    var selectedGenres = [];
+    _allGenres.forEach(function(g) {
+        var label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
+        cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
+        label.appendChild(cb); label.appendChild(document.createTextNode(g.genre));
+        genreDiv.appendChild(label);
+    });
+    modal.appendChild(genreDiv);
+
+    /* Buttons */
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+    var importBtn = _miscBtn('Import', 'var(--link,#2563EB)', function() {
+        if (!fetchedTracks.length) { alert('Fetch tracks first'); return; }
+        if (!miscArtists.length) { alert('At least one misc artist is required'); return; }
+        if (!miscArtists.some(function(a){return a.is_main;})) { alert('At least one artist must be main'); return; }
+        var selected = [];
+        trackDiv.querySelectorAll('input[type="checkbox"][data-idx]').forEach(function(cb) {
+            if (cb.checked) selected.push(fetchedTracks[parseInt(cb.dataset.idx)]);
+        });
+        if (!selected.length) { alert('Select at least one track'); return; }
+        importBtn.disabled = true;
+        fetch('/misc/spotify-import', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
+            tracks: selected.map(function(t) { return {name: t.name, spotify_url: t.spotify_url}; }),
+            misc_artists: miscArtists.map(function(a) { return {id: a.id, name: a.name, country_id: a.country_id, is_main: a.is_main}; }),
+            genre_ids: selectedGenres,
+        })}).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.error) { alert(d.error); importBtn.disabled = false; return; }
+            bd.remove(); location.reload();
+        }).catch(function() { importBtn.disabled = false; });
+    });
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(importBtn);
+    modal.appendChild(btnRow);
+    bd.appendChild(modal);
+    urlInp.focus();
+}
+
+/* ========== 4. ARTIST SELECTOR (per song) ========== */
+function _showMiscArtistSelector(songId) {
+    fetch('/misc/song/' + songId + '/artists').then(function(r){return r.json();}).then(function(data) {
+        var bd = _miscBackdrop();
+        var modal = _miscModal(440);
+        var title = document.createElement('div');
+        title.textContent = 'Edit Artists';
+        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:10px;';
+        modal.appendChild(title);
+
+        var miscArtists = data.misc_artists.map(function(a){return {id:a.id,name:a.name,country_id:a.country_id,is_main:a.is_main};});
+        var realArtists = data.real_artists.map(function(a){return {artist_id:a.artist_id,name:a.name,is_main:a.is_main};});
+
+        modal.appendChild(_miscLabel('Misc Artists'));
+        var maList = document.createElement('div');
+        modal.appendChild(maList);
+        function renderMAs() {
+            maList.innerHTML = '';
+            miscArtists.forEach(function(a, i) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+                row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+                var tog = document.createElement('button');
+                tog.textContent = a.is_main ? 'main' : 'feat';
+                tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+                tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
+                var del = document.createElement('button');
+                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+                del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
+                row.appendChild(tog); row.appendChild(del);
+                maList.appendChild(row);
+            });
+        }
+        renderMAs();
+
+        var maWrap = document.createElement('div');
+        maWrap.style.position = 'relative';
+        var maInp = _miscInput('Add misc artist...');
+        maWrap.appendChild(maInp);
+        modal.appendChild(maWrap);
+        _miscAutocomplete(maInp, '/misc/search-artists', function(item) {
+            miscArtists.push({id:item.id,name:item.name,country_id:item.country_id,is_main:true});
+            renderMAs();
+        });
+        var maCreateRow = document.createElement('div');
+        maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+        var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
+            var n = maInp.value.trim(); if (!n) return;
+            fetch('/misc/add-misc-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({name:n,country_id:parseInt(maCSel.value)})})
+                .then(function(r){return r.json();}).then(function(d) {
+                    miscArtists.push({id:d.id,name:d.name,country_id:d.country_id,is_main:true});
+                    maInp.value=''; renderMAs();
+                });
+        });
+        maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+        var maCSel = _miscSelect(_allCountries);
+        maCSel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+        maCreateRow.appendChild(maCreateBtn); maCreateRow.appendChild(maCSel);
+        modal.appendChild(maCreateRow);
+
+        modal.appendChild(_miscLabel('Real Artists'));
+        var raList = document.createElement('div');
+        modal.appendChild(raList);
+        function renderRAs() {
+            raList.innerHTML = '';
+            realArtists.forEach(function(a, i) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+                row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+                var tog = document.createElement('button');
+                tog.textContent = a.is_main ? 'main' : 'feat';
+                tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+                tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
+                var del = document.createElement('button');
+                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+                del.onclick = function() { realArtists.splice(i, 1); renderRAs(); };
+                row.appendChild(tog); row.appendChild(del);
+                raList.appendChild(row);
+            });
+        }
+        renderRAs();
+        var raWrap = document.createElement('div');
+        raWrap.style.position = 'relative';
+        var raInp = _miscInput('Add real artist...');
+        raWrap.appendChild(raInp);
+        modal.appendChild(raWrap);
+        _miscAutocomplete(raInp, '/misc/search-real-artists', function(item) {
+            realArtists.push({artist_id:item.artist_id,name:item.name,is_main:false});
+            renderRAs();
+        }, 2);
+
+        var btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+        var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+        var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
+            var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
+            if (!hasMain) { alert('At least one artist must be main'); return; }
+            saveBtn.disabled = true;
+            fetch('/misc/song/' + songId + '/misc-artists', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
+                misc_artists: miscArtists.map(function(a){return {id:a.id,is_main:a.is_main};}),
+                real_artists: realArtists.map(function(a){return {artist_id:a.artist_id,is_main:a.is_main};}),
+            })}).then(function(r){return r.json();}).then(function(d) {
+                if (d.ok) { bd.remove(); location.reload(); } else { saveBtn.disabled = false; }
+            }).catch(function(){ saveBtn.disabled = false; });
+        });
+        btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
+        modal.appendChild(btnRow);
+        bd.appendChild(modal);
+    });
+}
+
+/* ========== 5. MOVE SONG TO ARTIST ========== */
+function _showMoveSongToArtist(event, songId, songName) {
+    event.stopPropagation();
+    var bd = _miscBackdrop();
+    var modal = _miscModal(460);
+    var title = document.createElement('div');
+    title.textContent = 'Move to Artist';
+    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px;';
+    modal.appendChild(title);
+
+    var sub = document.createElement('div');
+    sub.textContent = songName;
+    sub.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:12px;';
+    modal.appendChild(sub);
+
+    /* Artists */
+    modal.appendChild(_miscLabel('Artists *'));
+    var raList = document.createElement('div');
+    modal.appendChild(raList);
+    var realArtists = [];
+    function renderRAs() {
+        raList.innerHTML = '';
+        realArtists.forEach(function(a, i) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+            row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
+            var tog = document.createElement('button');
+            tog.textContent = a.is_main ? 'main' : 'feat';
+            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
+            var del = document.createElement('button');
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.onclick = function() { realArtists.splice(i, 1); renderRAs(); loadAlbums(); };
+            row.appendChild(tog); row.appendChild(del);
+            raList.appendChild(row);
+        });
+    }
+    var raWrap = document.createElement('div');
+    raWrap.style.position = 'relative';
+    var raInp = _miscInput('Search artist...');
+    raWrap.appendChild(raInp);
+    modal.appendChild(raWrap);
+    _miscAutocomplete(raInp, '/misc/search-real-artists', function(item) {
+        realArtists.push({artist_id: item.artist_id, name: item.name, is_main: true});
+        renderRAs();
+        loadAlbums();
+    }, 2);
+
+    /* Album */
+    modal.appendChild(_miscLabel('Album'));
+    var albumSel = document.createElement('select');
+    albumSel.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);';
+    var optNone = document.createElement('option');
+    optNone.value = ''; optNone.textContent = '— None —';
+    albumSel.appendChild(optNone);
+    var optNew = document.createElement('option');
+    optNew.value = '__new'; optNew.textContent = '+ Create new album';
+    albumSel.appendChild(optNew);
+    modal.appendChild(albumSel);
+
+    var newAlbumDiv = document.createElement('div');
+    newAlbumDiv.style.cssText = 'display:none;margin-top:6px;';
+    var newAlbumName = _miscInput('Album name');
+    newAlbumDiv.appendChild(newAlbumName);
+    var newAlbumDate = document.createElement('input');
+    newAlbumDate.type = 'date';
+    newAlbumDate.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:4px;';
+    newAlbumDiv.appendChild(newAlbumDate);
+    var newAlbumType = _miscSelect(_allAlbumTypes, 2);
+    newAlbumType.style.marginTop = '4px';
+    newAlbumDiv.appendChild(newAlbumType);
+    modal.appendChild(newAlbumDiv);
+
+    albumSel.onchange = function() {
+        newAlbumDiv.style.display = albumSel.value === '__new' ? 'block' : 'none';
+    };
+
+    function loadAlbums() {
+        while (albumSel.options.length > 2) albumSel.remove(2);
+        var mainArtist = realArtists.find(function(a) { return a.is_main; });
+        if (!mainArtist) return;
+        fetch('/misc/search-artist-albums?artist_id=' + mainArtist.artist_id)
+            .then(function(r) { return r.json(); })
+            .then(function(albums) {
+                albums.forEach(function(a) {
+                    var opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name + (a.release_date ? ' (' + a.release_date.slice(0,4) + ')' : '');
+                    albumSel.appendChild(opt);
+                });
+            });
+    }
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+    var moveBtn = _miscBtn('Move', 'var(--link,#2563EB)', function() {
+        if (!realArtists.length) { alert('Add at least one artist'); return; }
+        if (!realArtists.some(function(a){return a.is_main;})) { alert('At least one artist must be main'); return; }
+        var names = realArtists.map(function(a){return a.name;}).join(', ');
+        if (!confirm('Move "' + songName + '" to ' + names + '? This removes it from Misc.')) return;
+        var albumPayload = {};
+        if (albumSel.value === '__new') {
+            var an = newAlbumName.value.trim();
+            if (!an) { alert('Enter album name'); return; }
+            albumPayload = {name: an, release_date: newAlbumDate.value || null, album_type_id: parseInt(newAlbumType.value)};
+        } else if (albumSel.value) {
+            albumPayload = {existing_id: parseInt(albumSel.value)};
+        }
+        moveBtn.disabled = true;
+        fetch('/misc/song/' + songId + '/move-to-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
+            artists: realArtists.map(function(a){return {artist_id:a.artist_id, is_main:a.is_main};}),
+            album: albumPayload,
+        })}).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.error) { alert(d.error); moveBtn.disabled = false; return; }
+            bd.remove(); location.reload();
+        }).catch(function() { moveBtn.disabled = false; });
+    });
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(moveBtn);
+    modal.appendChild(btnRow);
+    bd.appendChild(modal);
+    raInp.focus();
+}
+
+/* ========== 6. ALBUM EDITOR (per song) ========== */
+function _showAlbumEditor(songId, albumId) {
+    fetch('/misc/album/' + albumId).then(function(r){return r.json();}).then(function(album) {
+        var bd = _miscBackdrop();
+        var modal = _miscModal(380);
+        var title = document.createElement('div');
+        title.textContent = 'Edit Album';
+        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+        modal.appendChild(title);
+
+        modal.appendChild(_miscLabel('Album Name'));
+        var nameInp = _miscInput('', album.name);
+        modal.appendChild(nameInp);
+
+        modal.appendChild(_miscLabel('Release Date'));
+        var dateInp = document.createElement('input'); dateInp.type = 'date';
+        dateInp.value = album.release_date || '';
+        dateInp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+        modal.appendChild(dateInp);
+
+        modal.appendChild(_miscLabel('Album Type'));
+        var typeSel = _miscSelect(_allAlbumTypes, album.album_type_id);
+        modal.appendChild(typeSel);
+
+        modal.appendChild(_miscLabel('Album Genres'));
+        var genreDiv = document.createElement('div');
+        genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+        var selectedGenres = album.genre_ids.slice();
+        _allGenres.forEach(function(g) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+            var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
+            cb.checked = selectedGenres.indexOf(g.id) !== -1;
+            cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
+            label.appendChild(cb); label.appendChild(document.createTextNode(g.genre));
+            genreDiv.appendChild(label);
+        });
+        modal.appendChild(genreDiv);
+
+        var btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+        var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+        var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
+            saveBtn.disabled = true;
+            var csrf = _csrfJson();
+            var formHeaders = {'Content-Type':'application/x-www-form-urlencoded'};
+            var m = document.querySelector('meta[name="csrf-token"]');
+            if (m) formHeaders['X-CSRFToken'] = m.content;
+
+            var promises = [];
+            if (nameInp.value.trim() !== album.name) {
+                promises.push(fetch('/edit/album/' + albumId + '/name', {method:'POST', headers:formHeaders, body:'name=' + encodeURIComponent(nameInp.value.trim())}));
+            }
+            if (dateInp.value !== (album.release_date || '')) {
+                promises.push(fetch('/edit/album/' + albumId + '/release-date', {method:'POST', headers:formHeaders, body:'release_date=' + encodeURIComponent(dateInp.value)}));
+            }
+            if (parseInt(typeSel.value) !== album.album_type_id) {
+                promises.push(fetch('/edit/album/' + albumId + '/type', {method:'POST', headers:formHeaders, body:'album_type_id=' + typeSel.value}));
+            }
+            var genresSorted = selectedGenres.slice().sort().join(',');
+            var origSorted = album.genre_ids.slice().sort().join(',');
+            if (genresSorted !== origSorted) {
+                promises.push(fetch('/edit/album/' + albumId + '/genres', {method:'POST', headers:formHeaders, body:'genre_ids=' + encodeURIComponent(selectedGenres.join(','))}));
+            }
+            Promise.all(promises).then(function() {
+                bd.remove(); location.reload();
+            }).catch(function() { saveBtn.disabled = false; });
+        });
+        btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
+        modal.appendChild(btnRow);
+        bd.appendChild(modal);
+    });
+}
+</script>
+{% endif %}
+{% include "fragments/artist_navbar.html" %}
+{% endblock %}

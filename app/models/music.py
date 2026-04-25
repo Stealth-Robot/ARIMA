@@ -10,6 +10,14 @@ album_genres = db.Table(
               primary_key=True, index=True),
 )
 
+song_genres = db.Table(
+    'song_genres',
+    db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE'),
+              primary_key=True),
+    db.Column('genre_id', db.Integer, db.ForeignKey('genre.id', ondelete='CASCADE'),
+              primary_key=True, index=True),
+)
+
 
 # --- Association models (defined first so .__table__ is available for M2M secondary) ---
 
@@ -70,6 +78,19 @@ class ArtistSubscription(db.Model):
     )
 
 
+class SongMiscArtist(db.Model):
+    __tablename__ = 'song_misc_artist'
+    song_id = db.Column(db.Integer, db.ForeignKey('song.id', ondelete='CASCADE'),
+                        primary_key=True)
+    misc_artist_id = db.Column(db.Integer, db.ForeignKey('misc_artist.id', ondelete='CASCADE'),
+                               primary_key=True)
+    artist_is_main = db.Column(db.Boolean, nullable=False)
+
+    __table_args__ = (
+        db.Index('ix_song_misc_artist_misc_artist_id', 'misc_artist_id'),
+    )
+
+
 # --- Entity models ---
 
 class Artist(db.Model):
@@ -118,6 +139,9 @@ class Song(db.Model):
     albums = db.relationship('Album', secondary=AlbumSong.__table__, back_populates='songs',
                              viewonly=True)
     ratings = db.relationship('Rating', back_populates='song', cascade='all, delete-orphan')
+    genres = db.relationship('Genre', secondary=song_genres, backref='songs')
+    misc_artists = db.relationship('MiscArtist', secondary=SongMiscArtist.__table__,
+                                   back_populates='songs', viewonly=True)
 
 
 class Album(db.Model):
@@ -152,3 +176,14 @@ class Rating(db.Model):
         db.CheckConstraint('rating >= 0 AND rating <= 5', name='rating_range'),
         db.Index('ix_rating_user_id', 'user_id'),
     )
+
+
+class MiscArtist(db.Model):
+    __tablename__ = 'misc_artist'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text, nullable=False)
+    country_id = db.Column(db.Integer, db.ForeignKey('country.id'), nullable=False)
+
+    country = db.relationship('Country')
+    songs = db.relationship('Song', secondary=SongMiscArtist.__table__,
+                            back_populates='misc_artists', viewonly=True)

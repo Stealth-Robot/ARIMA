@@ -1762,9 +1762,13 @@ function _updateCollabLabel(songId, artists) {
     if (!row) return;
     var td = row.querySelector('td');
     if (!td) return;
-    // Remove existing collab label span (italic span inside the td)
-    var existing = td.querySelector('span[style*="font-style: italic"]');
-    if (existing) existing.remove();
+    // Remove existing collab label span (server-rendered class or client-rendered inline style)
+    var existing = td.querySelector('span.text-secondary-text.italic') || td.querySelector('span[style*="font-style: italic"]');
+    if (existing) {
+        // Clean up adjacent whitespace text nodes to avoid accumulation on repeated updates
+        while (existing.nextSibling && existing.nextSibling.nodeType === 3) existing.nextSibling.remove();
+        existing.remove();
+    }
     var currentId = (typeof _currentArtistId !== 'undefined') ? _currentArtistId : null;
     var isAnimePage = (typeof _isAnimePage !== 'undefined') ? _isAnimePage : false;
     var ANIME_GENDER_ID = 3;
@@ -1783,6 +1787,11 @@ function _updateCollabLabel(songId, artists) {
             featNames.push(a.name);
         }
     });
+    var miscArtists = (typeof _songMiscArtists !== 'undefined' && _songMiscArtists[songId]) ? _songMiscArtists[songId] : [];
+    miscArtists.forEach(function(m) {
+        if (m.is_main) mainNames.push(m.name);
+        else featNames.push(m.name);
+    });
     var parts = [];
     if (mainNames.length) parts.push('(with ' + mainNames.join(', ') + ')');
     if (byNames.length) parts.push('(by ' + byNames.join(', ') + ')');
@@ -1791,9 +1800,14 @@ function _updateCollabLabel(songId, artists) {
     if (parts.length) {
         var label = document.createElement('span');
         label.style.cssText = 'color: var(--text-secondary); font-style: italic;';
-        label.textContent = parts.join(' ');
-        td.appendChild(document.createTextNode(' '));
-        td.appendChild(label);
+        label.textContent = ' ' + parts.join(' ');
+        var songLinks = td.querySelector('.song-links');
+        if (songLinks) {
+            td.insertBefore(label, songLinks);
+            td.insertBefore(document.createTextNode(' '), songLinks);
+        } else {
+            td.appendChild(label);
+        }
     }
 }
 
@@ -1870,7 +1884,6 @@ function showSongArtists(event, songId, span) {
                         artists = artists.filter(function(x) { return x.artist_id !== a.artist_id; });
                         _songArtists[songId] = artists;
                         renderList();
-                        rebuildOptions();
                         _updateCollabLabel(songId, artists);
                     });
                 });
@@ -1884,56 +1897,152 @@ function showSongArtists(event, songId, span) {
     renderList();
     popover.appendChild(listContainer);
 
-    // Add artist dropdown
-    var addRow = document.createElement('div');
-    addRow.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+    // Misc artists section (from song_misc_artist table)
+    var miscArtists = (typeof _songMiscArtists !== 'undefined' && _songMiscArtists[songId]) ? _songMiscArtists[songId].slice() : [];
 
-    var select = document.createElement('select');
-    select.style.cssText = 'font-size:11px; width:100%; padding:2px 4px; border:1px solid var(--border); border-radius:3px;';
+    function _saveMiscArtists() {
+        fetch('/misc/song/' + songId + '/misc-artists', {
+            method: 'POST',
+            headers: _csrfHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify({ misc_artists: miscArtists.map(function(m) {
+                return { id: m.misc_artist_id, is_main: m.is_main };
+            })}),
+        }).then(function(r) { if (!r.ok) throw new Error('failed'); });
+        if (typeof _songMiscArtists !== 'undefined') _songMiscArtists[songId] = miscArtists.slice();
+        _updateCollabLabel(songId, artists);
+    }
 
-    function rebuildOptions() {
-        select.innerHTML = '';
-        var opt0 = document.createElement('option');
-        opt0.value = '';
-        opt0.textContent = '+ Add artist...';
-        select.appendChild(opt0);
-        var usedIds = artists.map(function(a) { return a.artist_id; });
-        allArtists.forEach(function(a) {
-            if (usedIds.indexOf(a.id) === -1) {
-                var opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                select.appendChild(opt);
-            }
+    var miscSection = document.createElement('div');
+    miscSection.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+    var miscTitle = document.createElement('div');
+    miscTitle.textContent = 'Misc artists:';
+    miscTitle.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
+    miscSection.appendChild(miscTitle);
+
+    var miscListContainer = document.createElement('div');
+
+    function renderMiscList() {
+        miscListContainer.innerHTML = '';
+        miscArtists.forEach(function(m) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0;';
+            var name = document.createElement('span');
+            name.textContent = m.name;
+            name.style.cssText = 'font-size:12px; flex:1;';
+            row.appendChild(name);
+            var roleBtn = document.createElement('button');
+            roleBtn.textContent = m.is_main ? 'Main' : 'Feat';
+            roleBtn.style.cssText = 'font-size:10px; padding:1px 6px; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:' + (m.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (m.is_main ? '#fff' : 'var(--text-secondary)') + ';';
+            roleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                m.is_main = !m.is_main;
+                _saveMiscArtists();
+                renderMiscList();
+            });
+            row.appendChild(roleBtn);
+            var removeBtn = document.createElement('button');
+            removeBtn.textContent = '×';
+            removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                miscArtists = miscArtists.filter(function(x) { return x.misc_artist_id !== m.misc_artist_id; });
+                _saveMiscArtists();
+                renderMiscList();
+            });
+            row.appendChild(removeBtn);
+            miscListContainer.appendChild(row);
         });
     }
-    rebuildOptions();
 
-    select.addEventListener('change', function() {
-        var artistId = parseInt(select.value);
-        if (!artistId) return;
-        var artist = allArtists.find(function(a) { return a.id === artistId; });
-        if (!artist) return;
-        select.value = '';
-        // Defer so click-outside handlers run first; if they closed the popover, skip the add.
-        setTimeout(function() {
-            if (!activeSongArtistPopover) return;
+    renderMiscList();
+    miscSection.appendChild(miscListContainer);
+
+    // Shared filterable dropdown builder
+    // opts: { placeholder, getItems(query, callback), getUsedIds(), onSelect(item) }
+    function _buildSearchDropdown(opts) {
+        var container = document.createElement('div');
+        container.style.cssText = 'margin-top:4px; position:relative;';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = opts.placeholder;
+        input.style.cssText = 'font-size:11px; width:100%; padding:2px 4px; border:1px solid var(--border); border-radius:3px; box-sizing:border-box;';
+        var results = document.createElement('div');
+        results.style.cssText = 'max-height:150px; overflow-y:auto;';
+        var timer;
+        function refresh() {
+            clearTimeout(timer);
+            var q = input.value.trim();
+            timer = setTimeout(function() {
+                opts.getItems(q, function(items) {
+                    results.innerHTML = '';
+                    var usedIds = opts.getUsedIds();
+                    items.forEach(function(item) {
+                        if (usedIds.indexOf(item.id) !== -1) return;
+                        var row = document.createElement('div');
+                        row.textContent = item.name;
+                        row.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+                        row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
+                        row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
+                        row.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            opts.onSelect(item);
+                            input.value = '';
+                            refresh();
+                        });
+                        results.appendChild(row);
+                    });
+                });
+            }, opts.debounce || 0);
+        }
+        input.addEventListener('input', refresh);
+        input.addEventListener('focus', refresh);
+        container.appendChild(input);
+        container.appendChild(results);
+        return container;
+    }
+
+    miscSection.appendChild(_buildSearchDropdown({
+        placeholder: '+ Add misc artist...',
+        debounce: 150,
+        getItems: function(q, cb) {
+            fetch('/misc/search-artists?q=' + encodeURIComponent(q), {
+                headers: _csrfHeaders({}),
+            }).then(function(r) { return r.json(); }).then(cb);
+        },
+        getUsedIds: function() { return miscArtists.map(function(m) { return m.misc_artist_id; }); },
+        onSelect: function(item) {
+            miscArtists.push({ misc_artist_id: item.id, name: item.name, is_main: false });
+            _saveMiscArtists();
+            renderMiscList();
+        },
+    }));
+    popover.appendChild(miscSection);
+
+    // Real artist dropdown
+    var addRow = document.createElement('div');
+    addRow.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+    addRow.appendChild(_buildSearchDropdown({
+        placeholder: '+ Add artist...',
+        getItems: function(q, cb) {
+            var lc = q.toLowerCase();
+            cb(allArtists.filter(function(a) { return !lc || a.name.toLowerCase().indexOf(lc) !== -1; })
+               .map(function(a) { return { id: a.id, name: a.name }; }));
+        },
+        getUsedIds: function() { return artists.map(function(a) { return a.artist_id; }); },
+        onSelect: function(item) {
             fetch('/edit/song/' + songId + '/artists', {
                 method: 'POST',
                 headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-                body: 'artist_id=' + artistId + '&is_main=false',
+                body: 'artist_id=' + item.id + '&is_main=false',
             }).then(function(r) {
                 if (!r.ok) throw new Error('failed');
-                artists.push({ artist_id: artistId, name: artist.name, is_main: false });
+                artists.push({ artist_id: item.id, name: item.name, is_main: false });
                 _songArtists[songId] = artists;
                 renderList();
-                rebuildOptions();
                 _updateCollabLabel(songId, artists);
             });
-        }, 0);
-    });
-
-    addRow.appendChild(select);
+        },
+    }));
     popover.appendChild(addRow);
 
     var rect = getZoomedRect(span);

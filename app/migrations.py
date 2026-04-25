@@ -173,11 +173,408 @@ def run_startup_migrations():
                 db.session.add(UpdateType(id=id_, type=type_, description=desc))
                 logger.info('Added missing update type: %s', type_)
 
-        # 7. Ensure Misc. Artists has country subunits and genre albums
-        from app.services.artist import sync_misc_artist_stubs
-        sync_misc_artist_stubs()
+        # 6b. Add misc owner/maintainer columns on rules
+        existing_rules_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('rules')"))}
+        for col_name in ('misc_owner_id', 'misc_maintainer_id'):
+            if col_name not in existing_rules_cols:
+                db.session.execute(db.text(f'ALTER TABLE rules ADD COLUMN {col_name} INTEGER'))
+                logger.info('Added rules column: %s', col_name)
+
+        # 7. Misc overhaul: create new tables, backfill song genres from albums
+        _migrate_misc_overhaul()
+
+        # 8. Parse (feat/with/ft/w/) from real artist song titles into misc_artist
+        _migrate_collab_credits()
 
         db.session.commit()
     except Exception:
         db.session.rollback()
         logger.exception('Startup migration failed (DB may not exist yet)')
+
+
+def _parse_misc_artists(text):
+    """Parse 'Artist1, Artist2 & Artist3 feat. Feat1' into (main[], featured[]).
+
+    Handles commas, ampersands, and feat/ft markers.
+    Known band names containing separators are preserved intact.
+    """
+    import re
+
+    KNOWN_BANDS = {
+        'kisida kyodan & the akeboshi rockets',
+        'fear, and loathing in las vegas',
+    }
+
+    if text.strip().lower() in KNOWN_BANDS:
+        return [text.strip()], []
+
+    feat_re = re.compile(r'\s+(?:feat\.?|ft\.?)\s+', re.IGNORECASE)
+    with_re = re.compile(r'^(?:with|w/)\s+', re.IGNORECASE)
+    parts = feat_re.split(text, maxsplit=1)
+    main_part = parts[0].strip()
+    feat_part = parts[1].strip() if len(parts) > 1 else ''
+
+    wm = with_re.match(main_part)
+    if wm:
+        feat_part = main_part[wm.end():].strip() + (', ' + feat_part if feat_part else '')
+        main_part = ''
+
+    def _clean(name):
+        n = re.sub(r'^(?:and|&)\s+', '', name.strip(), flags=re.IGNORECASE)
+        return n.strip()
+
+    def _split(s):
+        if not s.strip():
+            return []
+        if ', ' in s:
+            pieces = s.split(', ')
+            result = []
+            for i, p in enumerate(pieces):
+                if i == len(pieces) - 1 and ' & ' in p:
+                    result.extend(_clean(sub) for sub in p.split(' & ') if _clean(sub))
+                else:
+                    if _clean(p):
+                        result.append(_clean(p))
+            return result
+        if ' & ' in s:
+            return [_clean(p) for p in s.split(' & ') if _clean(p)]
+        return [_clean(s)] if _clean(s) else []
+
+    return _split(main_part), _split(feat_part)
+
+
+def _migrate_misc_overhaul():
+    """Idempotent migration for the misc overhaul.
+
+    1. Backfills song_genres from album_genres for misc subunit songs
+    2. Parses artist names from song name parentheses, creates misc_artist records
+    3. Cleans song names (strips artist parens)
+    4. Removes old genre-album scaffolding
+    5. Cleans up subunit artist records
+    """
+    import re
+    from app.models.music import Artist, ArtistArtist, ArtistSong, AlbumSong, Album, Song
+
+    existing_sg = db.session.execute(db.text(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='song_genres'"
+    )).fetchone()
+    if not existing_sg:
+        return
+
+    misc = Artist.query.filter_by(name='Misc. Artists').first()
+    if not misc:
+        return
+
+    subunit_ids = [r.artist_2 for r in ArtistArtist.query.filter_by(
+        artist_1=misc.id, relationship=0
+    ).all()]
+    if not subunit_ids:
+        return
+
+    # Step 1: Backfill song_genres from album_genres
+    already_backfilled = db.session.execute(db.text(
+        'SELECT COUNT(*) FROM song_genres'
+    )).scalar()
+
+    if already_backfilled == 0:
+        backfill_count = db.session.execute(db.text(
+            'INSERT OR IGNORE INTO song_genres (song_id, genre_id) '
+            'SELECT DISTINCT als.song_id, ag.genre_id '
+            'FROM album_song als '
+            'JOIN album_genres ag ON ag.album_id = als.album_id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id '
+            'WHERE ars.artist_id IN :subunit_ids'
+        ).bindparams(db.bindparam('subunit_ids', expanding=True)), {
+            'subunit_ids': subunit_ids,
+        }).rowcount
+        logger.info('Backfilled %d song_genres rows from misc subunit albums', backfill_count)
+
+    # Step 2: Parse artist names and create misc_artist records
+    existing_sma = db.session.execute(db.text(
+        'SELECT COUNT(*) FROM song_misc_artist'
+    )).scalar()
+
+    if existing_sma == 0:
+        subunit_map = {}
+        for sid in subunit_ids:
+            sub = db.session.get(Artist, sid)
+            if sub:
+                subunit_map[sid] = sub
+
+        paren_re = re.compile(r'^(.+?)\s*\(([^)]*)\)\s*$')
+        ma_cache = {}
+        songs_parsed = 0
+        artists_created = 0
+
+        def _get_or_create_ma(name, country_id):
+            nonlocal artists_created
+            key = (name.lower(), country_id)
+            if key in ma_cache:
+                return ma_cache[key]
+            row = db.session.execute(db.text(
+                'SELECT id FROM misc_artist WHERE LOWER(name) = LOWER(:name) AND country_id = :cid'
+            ), {'name': name, 'cid': country_id}).fetchone()
+            if row:
+                ma_cache[key] = row[0]
+                return row[0]
+            db.session.execute(db.text(
+                'INSERT INTO misc_artist (name, country_id) VALUES (:name, :cid)'
+            ), {'name': name, 'cid': country_id})
+            ma_id = db.session.execute(db.text(
+                'SELECT id FROM misc_artist WHERE LOWER(name) = LOWER(:name) AND country_id = :cid'
+            ), {'name': name, 'cid': country_id}).scalar()
+            ma_cache[key] = ma_id
+            artists_created += 1
+            return ma_id
+
+        for sub_id, sub_artist in subunit_map.items():
+            song_ids = [r.song_id for r in ArtistSong.query.filter_by(artist_id=sub_id).all()]
+            if not song_ids:
+                continue
+            country_id = sub_artist.country_id
+
+            for song_id in song_ids:
+                song = db.session.get(Song, song_id)
+                if not song:
+                    continue
+
+                m = paren_re.match(song.name)
+                if m:
+                    clean_name = m.group(1).strip()
+                    artist_text = m.group(2).strip()
+                    main_names, feat_names = _parse_misc_artists(artist_text)
+
+                    song.name = clean_name
+
+                    for name in main_names:
+                        ma_id = _get_or_create_ma(name, country_id)
+                        db.session.execute(db.text(
+                            'INSERT OR IGNORE INTO song_misc_artist (song_id, misc_artist_id, artist_is_main) '
+                            'VALUES (:sid, :maid, 1)'
+                        ), {'sid': song_id, 'maid': ma_id})
+                    for name in feat_names:
+                        ma_id = _get_or_create_ma(name, country_id)
+                        db.session.execute(db.text(
+                            'INSERT OR IGNORE INTO song_misc_artist (song_id, misc_artist_id, artist_is_main) '
+                            'VALUES (:sid, :maid, 0)'
+                        ), {'sid': song_id, 'maid': ma_id})
+                else:
+                    ma_id = _get_or_create_ma(sub_artist.name, country_id)
+                    db.session.execute(db.text(
+                        'INSERT OR IGNORE INTO song_misc_artist (song_id, misc_artist_id, artist_is_main) '
+                        'VALUES (:sid, :maid, 1)'
+                    ), {'sid': song_id, 'maid': ma_id})
+
+                songs_parsed += 1
+
+        logger.info('Parsed %d misc songs, created %d misc_artist records', songs_parsed, artists_created)
+        db.session.flush()
+
+    # Step 3: Remove old genre-album scaffolding under subunits
+    remaining_albums = db.session.execute(db.text(
+        'SELECT COUNT(*) FROM album WHERE artist_id IN :sids'
+    ).bindparams(db.bindparam('sids', expanding=True)), {'sids': subunit_ids}).scalar()
+
+    if remaining_albums > 0:
+        db.session.execute(db.text(
+            'DELETE FROM album_song WHERE album_id IN '
+            '(SELECT id FROM album WHERE artist_id IN :sids)'
+        ).bindparams(db.bindparam('sids', expanding=True)), {'sids': subunit_ids})
+        db.session.execute(db.text(
+            'DELETE FROM album_genres WHERE album_id IN '
+            '(SELECT id FROM album WHERE artist_id IN :sids)'
+        ).bindparams(db.bindparam('sids', expanding=True)), {'sids': subunit_ids})
+        deleted_albums = db.session.execute(db.text(
+            'DELETE FROM album WHERE artist_id IN :sids'
+        ).bindparams(db.bindparam('sids', expanding=True)), {'sids': subunit_ids}).rowcount
+        logger.info('Removed %d misc genre-album scaffolding records', deleted_albums)
+
+    # Step 4: Clean up subunit artist records
+    remaining_rels = ArtistArtist.query.filter_by(artist_1=misc.id, relationship=0).count()
+    if remaining_rels > 0:
+        for sub_id in subunit_ids:
+            db.session.execute(db.text(
+                'DELETE FROM artist_song WHERE artist_id = :sid'
+            ), {'sid': sub_id})
+        ArtistArtist.query.filter_by(artist_1=misc.id, relationship=0).delete()
+        db.session.execute(db.text(
+            'DELETE FROM artist WHERE id IN :sids'
+        ).bindparams(db.bindparam('sids', expanding=True)), {'sids': subunit_ids})
+        logger.info('Removed %d misc country subunit artists', len(subunit_ids))
+
+    db.session.flush()
+
+
+def _strip_collab_markers(name):
+    """Remove feat/ft/with/w/ collab markers from a song name."""
+    import re
+    FEAT_PAREN = r'(?:featuring|feat[.:]*|ft[.,]?|with|w/)'
+    name = re.sub(r'\s*[\(\[]\s*' + FEAT_PAREN + r'\s*[^)\]]+[\)\]]', '', name, flags=re.IGNORECASE)
+    FEAT_TRAIL = r'(?:featuring|feat[.:]+|feat(?=\s)|ft\.)'
+    name = re.sub(r'\s+' + FEAT_TRAIL + r'\s+.+$', '', name, flags=re.IGNORECASE)
+    return name.strip()
+
+
+def _extract_collab_names(song_name):
+    """Extract featured artist names from song title collab markers.
+
+    Handles three patterns:
+      1. (feat X) / (ft. X) / (with X) / (w/ X) at paren start
+      2. (Something feat. X) — marker inside parens but not at start
+      3. Title feat. X — trailing marker outside parens
+    Returns a list of artist name strings (may be empty).
+    """
+    import re
+    FEAT_PAREN = r'(?:featuring|feat[.:]*|ft\.?|with|w/)'
+    FEAT_TRAIL = r'(?:featuring|feat[.:]+|feat(?=\s)|ft\.)'
+
+    paren_start_re = re.compile(
+        r'[\(\[]\s*' + FEAT_PAREN + r'\s*([^)\]]+)[\)\]]', re.IGNORECASE)
+    inner_paren_re = re.compile(
+        r'[\(\[][^)\]]*?[&\s]' + FEAT_PAREN + r'\s*([^)\]]+)[\)\]]', re.IGNORECASE)
+    trailing_re = re.compile(
+        r'(?:^|[\s\-])\s*' + FEAT_TRAIL + r'\s*(.+?)(?:\s*\((?!.*' + FEAT_PAREN + r')|\s*$)',
+        re.IGNORECASE)
+
+    names = []
+    matched_spans = set()
+    for rx in (paren_start_re, inner_paren_re, trailing_re):
+        for m in rx.finditer(song_name):
+            if m.span() in matched_spans:
+                continue
+            artist_text = m.group(1).strip().rstrip(')')
+            if not artist_text:
+                continue
+            matched_spans.add(m.span())
+            main, feat = _parse_misc_artists(artist_text)
+            names.extend(feat if feat else main)
+    seen = set()
+    deduped = []
+    for n in names:
+        n = n.strip()
+        if n and n.lower() not in seen:
+            seen.add(n.lower())
+            deduped.append(n)
+    return deduped
+
+
+def _migrate_collab_credits():
+    """Parse collab credits from real artist song titles into misc_artist.
+
+    Creates MiscArtist + SongMiscArtist rows (featured) without modifying song names.
+    Skips songs that already have song_misc_artist entries. Idempotent.
+    """
+
+    bad = db.session.execute(db.text(
+        "SELECT id, name, country_id FROM misc_artist "
+        "WHERE name LIKE 'and %' OR name LIKE 'with %'"
+    )).fetchall()
+    for ma_id, ma_name, ma_cid in bad:
+        import re as _re
+        clean = _re.sub(r'^(?:and|with)\s+', '', ma_name, flags=_re.IGNORECASE)
+        existing = db.session.execute(db.text(
+            'SELECT id FROM misc_artist WHERE LOWER(name) = LOWER(:n) AND country_id = :c'
+        ), {'n': clean, 'c': ma_cid}).fetchone()
+        if existing:
+            db.session.execute(db.text(
+                'UPDATE song_misc_artist SET misc_artist_id = :new WHERE misc_artist_id = :old'
+            ), {'new': existing[0], 'old': ma_id})
+            db.session.execute(db.text('DELETE FROM misc_artist WHERE id = :id'), {'id': ma_id})
+        else:
+            db.session.execute(db.text(
+                'UPDATE misc_artist SET name = :n WHERE id = :id'
+            ), {'n': clean, 'id': ma_id})
+
+    rows = db.session.execute(db.text(
+        "SELECT s.id, s.name, a.country_id "
+        "FROM song s "
+        "JOIN artist_song ars ON ars.song_id = s.id "
+        "JOIN artist a ON a.id = ars.artist_id "
+        "LEFT JOIN song_misc_artist sma ON sma.song_id = s.id "
+        "WHERE sma.song_id IS NULL "
+        "AND (s.name LIKE '%(with %' OR s.name LIKE '%(feat%' "
+        "     OR s.name LIKE '%(ft.%' OR s.name LIKE '%(ft %' "
+        "     OR s.name LIKE '%(w/ %' OR s.name LIKE '%(w/%' "
+        "     OR s.name LIKE '%(featuring %' OR s.name LIKE '%(Feat:%' "
+        "     OR s.name LIKE '% feat.%' OR s.name LIKE '% feat %' "
+        "     OR s.name LIKE '% ft.%' OR s.name LIKE '% ft %' "
+        "     OR s.name LIKE '%Feat. %' OR s.name LIKE '%&Feat.%') "
+        "GROUP BY s.id"
+    )).fetchall()
+
+    if not rows:
+        return
+
+    ma_cache = {}
+    artists_created = 0
+    links_created = 0
+
+    def _get_or_create_ma(name, country_id):
+        nonlocal artists_created
+        key = (name.strip().lower(), country_id)
+        if key in ma_cache:
+            return ma_cache[key]
+        row = db.session.execute(db.text(
+            'SELECT id FROM misc_artist WHERE LOWER(name) = LOWER(:name) AND country_id = :cid'
+        ), {'name': name.strip(), 'cid': country_id}).fetchone()
+        if row:
+            ma_cache[key] = row[0]
+            return row[0]
+        db.session.execute(db.text(
+            'INSERT INTO misc_artist (name, country_id) VALUES (:name, :cid)'
+        ), {'name': name.strip(), 'cid': country_id})
+        ma_id = db.session.execute(db.text(
+            'SELECT id FROM misc_artist WHERE LOWER(name) = LOWER(:name) AND country_id = :cid'
+        ), {'name': name.strip(), 'cid': country_id}).scalar()
+        ma_cache[key] = ma_id
+        artists_created += 1
+        return ma_id
+
+    songs_linked = 0
+    for song_id, song_name, country_id in rows:
+        names = _extract_collab_names(song_name)
+        if not names:
+            continue
+        songs_linked += 1
+        for name in names:
+            ma_id = _get_or_create_ma(name, country_id)
+            db.session.execute(db.text(
+                'INSERT OR IGNORE INTO song_misc_artist (song_id, misc_artist_id, artist_is_main) '
+                'VALUES (:sid, :maid, 0)'
+            ), {'sid': song_id, 'maid': ma_id})
+            links_created += 1
+        clean = _strip_collab_markers(song_name)
+        if clean != song_name:
+            db.session.execute(db.text(
+                'UPDATE song SET name = :name WHERE id = :id'
+            ), {'name': clean, 'id': song_id})
+
+    logger.info('Collab credits: parsed %d songs, created %d misc artists, %d links',
+                songs_linked, artists_created, links_created)
+
+    # Strip collab markers from songs that already have misc_artist links (re-run cleanup)
+    dirty = db.session.execute(db.text(
+        "SELECT DISTINCT s.id, s.name "
+        "FROM song s "
+        "JOIN song_misc_artist sma ON sma.song_id = s.id "
+        "WHERE s.name LIKE '%(feat%' OR s.name LIKE '%(ft.%' "
+        "   OR s.name LIKE '%(ft %' OR s.name LIKE '%(ft,%' "
+        "   OR s.name LIKE '%(with %' OR s.name LIKE '%(w/ %' "
+        "   OR s.name LIKE '%(w/%' OR s.name LIKE '%(featuring %' "
+        "   OR s.name LIKE '%(Feat:%' "
+        "   OR s.name LIKE '% feat.%' OR s.name LIKE '% feat %' "
+        "   OR s.name LIKE '% ft.%' OR s.name LIKE '% ft %' "
+        "   OR s.name LIKE '%Feat. %' OR s.name LIKE '%&Feat.%'"
+    )).fetchall()
+    cleaned = 0
+    for song_id, song_name in dirty:
+        clean = _strip_collab_markers(song_name)
+        if clean != song_name:
+            db.session.execute(db.text(
+                'UPDATE song SET name = :name WHERE id = :id'
+            ), {'name': clean, 'id': song_id})
+            cleaned += 1
+    if cleaned:
+        logger.info('Stripped collab markers from %d song names', cleaned)
+
+    db.session.flush()

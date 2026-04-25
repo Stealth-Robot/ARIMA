@@ -46,7 +46,8 @@ table.text-xs th {
 .discography-scroll-wrapper table.text-xs td:not(.song-name-cell):not([id^="rating-"]):not(.checkbox-cell) {
     border-color: transparent;
 }
-.discography-scroll-wrapper table.text-xs tr[id^="album-"] td {
+.discography-scroll-wrapper table.text-xs tr[id^="album-"] td,
+.discography-scroll-wrapper table.text-xs tr[id^="misc-genre-"] td {
     border-bottom-color: var(--grid-line) !important;
 }
 

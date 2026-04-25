@@ -302,9 +302,7 @@ def seed(db):
 
             db.session.flush()
 
-            # Renames + creation handled by sync_misc_artist_stubs
-            from app.services.artist import sync_misc_artist_stubs
-            sync_misc_artist_stubs()
+            pass  # Misc artist stubs no longer needed — misc overhaul uses misc_artist table
 
     # Fix AUTOINCREMENT sequences so new IDs start above reserved range.
     # sqlite_sequence is auto-created by SQLite on first AUTOINCREMENT insert.
