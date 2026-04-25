@@ -14,7 +14,7 @@
         ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
         ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
-        ('Potentially disbanded artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
+        ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
         ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
         ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),

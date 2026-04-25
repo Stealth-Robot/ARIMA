@@ -6,7 +6,7 @@
         {% else %}
         {{ artist.name }}
         {% endif %}
-        {% if artist.is_disbanded and not (session.get('edit_mode', False) and current_user.is_editor_or_admin) %}<span class="text-sm font-normal text-secondary-text">(disbanded)</span>{% endif %}
+        {% if artist.is_disbanded and not (session.get('edit_mode', False) and current_user.is_editor_or_admin) %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
         {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
         <span class="text-sm font-normal edit-inline cursor-pointer text-secondary-text"
               data-gender-id="{{ artist.gender_id }}"
@@ -17,7 +17,7 @@
         <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
             <input type="checkbox" {% if artist.is_disbanded %}checked{% endif %} autocomplete="off"
                    onchange="var cb=this;fetch('/edit/artist/{{ artist.id }}/is-disbanded', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
-                   class="cursor-pointer"> Disbanded
+                   class="cursor-pointer"> Inactive
         </label>
         <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
             <input type="checkbox" {% if artist.is_complete %}checked{% endif %} autocomplete="off"
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_disbanded %}checked{% endif %} autocomplete="off"
                            onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-disbanded', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
-                           class="cursor-pointer"> Disbanded
+                           class="cursor-pointer"> Inactive
                 </label>
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_complete %}checked{% endif %} autocomplete="off"

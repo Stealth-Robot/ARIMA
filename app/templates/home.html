@@ -15,7 +15,7 @@
             <span class="font-bold text-sm">{{ a.name }}</span>
             <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
             <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
-                {% if a.is_disbanded %}<span>Disbanded</span>{% endif %}
+                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
             </span>
         </a>
         {% endfor %}
@@ -28,7 +28,7 @@
         <label class="text-sm font-normal text-secondary-text ml-auto cursor-pointer" onclick="event.stopPropagation();">
             <input type="checkbox" {% if hide_disbanded %}checked{% endif %} autocomplete="off"
                    onchange="fetch('/toggle-hide-disbanded',{method:'POST',headers:_csrfHeaders()}).then(function(r){if(r.ok)location.reload();});"
-                   class="cursor-pointer"> Hide Disbanded
+                   class="cursor-pointer"> Hide Inactive
         </label>
     </h2>
     <div class="flex flex-col gap-2">
@@ -40,7 +40,7 @@
             <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
             <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
                 {% if a.is_complete %}<span>Complete</span>{% endif %}
-                {% if a.is_disbanded %}<span>Disbanded</span>{% endif %}
+                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
             </span>
         </a>
         {% endfor %}
