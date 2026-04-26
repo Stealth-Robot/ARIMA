@@ -148,9 +148,9 @@
         <!-- Search trigger (compact in navbar) -->
         <!-- Mobile menu button (hidden on desktop) -->
         <div id="mobile-menu-wrapper" class="hidden flex-shrink-0 relative ml-auto">
-            <button onclick="var m=document.getElementById('mobile-menu-panel');m.style.display=m.style.display==='block'?'none':'block'" type="button"
+            <button onclick="var m=document.getElementById('mobile-menu-panel'),b=this.getBoundingClientRect();if(m.style.display==='block'){m.style.display='none'}else{m.style.top=b.bottom+2+'px';m.style.right=(window.innerWidth-b.right)+'px';m.style.display='block'}" type="button"
                     class="bg-transparent border border-border text-navbar-text text-lg py-0.5 px-2 rounded cursor-pointer">&#9776;</button>
-            <div id="mobile-menu-panel" class="hidden absolute right-0 mt-1 bg-navbar-bg border border-border rounded-md z-50 py-2" style="top:100%; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px;">
+            <div id="mobile-menu-panel" class="fixed bg-navbar-bg border border-border rounded-md z-50 py-2" style="display:none; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px; max-height:calc(100vh - 50px); overflow-y:auto;">
                 <a href="{{ url_for('home.home') }}" class="mobile-menu-item">Home</a>
                 <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="mobile-menu-item">Subscriptions</a>
                 <div class="border-t border-border my-1"></div>
