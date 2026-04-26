@@ -396,8 +396,8 @@ function addSong(albumNum) {
             '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
                 artistSelectOptions([]) +
             '</select>' +
-            '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(div);
     addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
@@ -886,8 +886,8 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                         '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
                             artistSelectOptions([]) +
                         '</select>' +
-                        '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-                        '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+                        '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+                        '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
                     '</div>';
                 if (songData.youtube_url) sdiv.dataset.youtubeUrl = songData.youtube_url;
                 sc.appendChild(sdiv);

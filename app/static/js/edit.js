@@ -219,7 +219,7 @@ function promptLocalUrl(btnEl, dataKey, label) {
     var currentValue = songDiv ? (songDiv.dataset[dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();})] || '') : '';
 
     var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
+    popover.style.cssText = 'position:fixed; z-index:110; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
 
     var title = document.createElement('div');
     title.textContent = label;
@@ -2071,8 +2071,8 @@ function addNewAlbumSong(currentArtistId) {
             '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:150px;" onchange="onNewSongArtistChange(this,' + n + ')">' +
                 newSongArtistOptions(n) +
             '</select>' +
-            '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(row);
     // Auto-add target artist (from dropdown or page artist) as main
