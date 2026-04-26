@@ -108,7 +108,7 @@ function closeUrlPopover() {
     if (_activeUrlPopover) { _activeUrlPopover.remove(); _activeUrlPopover = null; }
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (_activeUrlPopover && !_activeUrlPopover.contains(e.target)) {
         closeUrlPopover();
     }
@@ -517,7 +517,7 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
     activeGenrePopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeGenrePopover && !activeGenrePopover.contains(e.target)) {
         closeGenrePopover();
     }
@@ -587,7 +587,7 @@ function showCountryEdit(event, artistId, span, allCountries, currentId) {
     activeCountryPopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeCountryPopover && !activeCountryPopover.contains(e.target)) {
         closeCountryPopover();
     }
@@ -1567,7 +1567,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
     activeAlbumSongSearchPopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
         closeAlbumMovePopover();
     closeAlbumArtistMovePopover();
@@ -2617,7 +2617,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 // Close song note overlay on outside click
-document.addEventListener('click', function (e) {
+document.addEventListener('mousedown', function (e) {
     if (activeSongNote && !activeSongNote.overlay.contains(e.target) && !activeSongNote.td.contains(e.target)) {
         closeSongNoteInput();
     }
