@@ -941,18 +941,82 @@ function closeAlbumMovePopover() {
     }
 }
 
-function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
+function _renderAlbumResults(albums, listContainer, onSelect) {
+    listContainer.innerHTML = '';
+    var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
+    var grouped = {};
+    var groupOrder = [];
+    var entryMap = {};
+    albums.forEach(function(a) {
+        var group = parentMap[a.artist] || a.artist;
+        var isChild = a.artist !== group;
+        var key = group + '::' + a.id;
+        if (entryMap[key] && !isChild) return;
+        var label = isChild ? a.name + ' (' + a.artist + ')' : a.name;
+        var entry = { id: a.id, label: label, subgroup: isChild ? a.artist : '' };
+        if (entryMap[key]) {
+            var arr = grouped[group];
+            for (var i = 0; i < arr.length; i++) { if (arr[i].id === a.id) { arr[i] = entry; break; } }
+        } else {
+            if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
+            grouped[group].push(entry);
+        }
+        entryMap[key] = true;
+    });
+    var currentArtistName = (typeof _pageArtistName !== 'undefined') ? _pageArtistName : null;
+    groupOrder.sort(function(a, b) {
+        var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
+        var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
+        var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
+        var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
+        if (aRank !== bRank) return aRank - bRank;
+        return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
+    });
+    groupOrder.forEach(function(group) {
+        var header = document.createElement('div');
+        header.textContent = group;
+        header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+        listContainer.appendChild(header);
+        grouped[group].sort(function(a, b) {
+            if (!a.subgroup && b.subgroup) return -1;
+            if (a.subgroup && !b.subgroup) return 1;
+            if (a.subgroup !== b.subgroup) return a.subgroup.toLowerCase() < b.subgroup.toLowerCase() ? -1 : 1;
+            return a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0;
+        });
+        grouped[group].forEach(function(item) {
+            var btn = document.createElement('div');
+            btn.textContent = item.label;
+            btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
+            btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
+            btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
+            btn.addEventListener('click', function() { onSelect(item); });
+            listContainer.appendChild(btn);
+        });
+    });
+    if (!groupOrder.length) {
+        var empty = document.createElement('div');
+        empty.textContent = 'No matches';
+        empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+        listContainer.appendChild(empty);
+    }
+}
+
+function _fetchAlbums(q, excludeId, callback) {
+    var url = '/edit/search-albums?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
+    fetch(url, { headers: _csrfHeaders({}) }).then(function(r) { return r.json(); }).then(callback).catch(function() { callback([]); });
+}
+
+function _fetchSongs(q, excludeId, callback) {
+    var url = '/edit/search-songs?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
+    fetch(url, { headers: _csrfHeaders({}) }).then(function(r) { return r.json(); }).then(callback).catch(function() { callback([]); });
+}
+
+function showAlbumMove(event, songId, span, currentAlbumId) {
     event.stopPropagation();
     closeAlbumMovePopover();
     closeAlbumArtistMovePopover();
     closeAlbumAddPopover();
     closeAlbumSongSearchPopover();
-
-    var others = allAlbums.filter(function(a) { return a.id !== currentAlbumId; });
-    if (!others.length) {
-        showToast('No other albums to move to');
-        return;
-    }
 
     var parts = _createSearchPopover({
         title: 'Move to album:',
@@ -960,101 +1024,36 @@ function showAlbumMove(event, songId, span, allAlbums, currentAlbumId) {
         anchor: span,
     });
     var listContainer = parts.listContainer;
+    var timer;
 
-    function renderList(filter) {
-        listContainer.innerHTML = '';
-        var lc = (filter || '').toLowerCase();
-        var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
-        // Group albums: merge children into their parent group, dedup preferring child entry
-        var grouped = {};
-        var groupOrder = [];
-        var entryMap = {};
-        others.forEach(function(a) {
-            var group = parentMap[a.artist] || a.artist;
-            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1 && group.toLowerCase().indexOf(lc) === -1) return;
-            var isChild = a.artist !== group;
-            var key = group + '::' + a.id;
-            if (entryMap[key] && !isChild) return;
-            var label = isChild ? a.name + ' (' + a.artist + ')' : a.name;
-            var entry = { id: a.id, label: label, subgroup: isChild ? a.artist : '' };
-            if (entryMap[key]) {
-                var arr = grouped[group];
-                for (var i = 0; i < arr.length; i++) { if (arr[i].id === a.id) { arr[i] = entry; break; } }
-            } else {
-                if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
-                grouped[group].push(entry);
-            }
-            entryMap[key] = true;
-        });
-        // Sort: current artist first, Misc. Artists second, rest alphabetical
-        var currentArtistName = null;
-        others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = a.artist; });
-        // Also treat parent of current artist as current
-        if (!currentArtistName && parentMap[others[0] && others[0].artist]) {
-            others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
-        }
-        // Fallback: use the page's artist name (for parent artists with no direct albums)
-        if (!currentArtistName && typeof _pageArtistName !== 'undefined') currentArtistName = _pageArtistName;
-        groupOrder.sort(function(a, b) {
-            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
-            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
-            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
-            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
-            if (aRank !== bRank) return aRank - bRank;
-            return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
-        });
-        groupOrder.forEach(function(group) {
-            var header = document.createElement('div');
-            header.textContent = group;
-            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            listContainer.appendChild(header);
-            // Sort: parent albums first, then children grouped by subunit
-            grouped[group].sort(function(a, b) {
-                if (!a.subgroup && b.subgroup) return -1;
-                if (a.subgroup && !b.subgroup) return 1;
-                if (a.subgroup !== b.subgroup) return a.subgroup.toLowerCase() < b.subgroup.toLowerCase() ? -1 : 1;
-                return a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0;
-            });
-            grouped[group].forEach(function(item) {
-                var btn = document.createElement('div');
-                btn.textContent = item.label;
-                btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-                btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-                btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-                btn.addEventListener('click', function() {
-                    var csrfToken = document.querySelector('meta[name="csrf-token"]');
-                    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-                    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    function doSearch() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            _fetchAlbums(parts.searchInput.value, currentAlbumId, function(albums) {
+                _renderAlbumResults(albums, listContainer, function(item) {
                     fetch('/edit/song/' + songId + '/move-album', {
                         method: 'POST',
-                        headers: headers,
+                        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
                         body: 'album_id=' + item.id,
                     }).then(function(r) {
                         if (!r.ok) throw new Error('move failed');
                         return r.json();
                     }).then(function() {
                         closeAlbumMovePopover();
-    closeAlbumArtistMovePopover();
+                        closeAlbumArtistMovePopover();
                         window.location.reload();
                     }).catch(function() {
                         showToast('Failed to move song — try again');
                         closeAlbumMovePopover();
-    closeAlbumArtistMovePopover();
+                        closeAlbumArtistMovePopover();
                     });
                 });
-                listContainer.appendChild(btn);
             });
-        });
-        if (!groupOrder.length) {
-            var empty = document.createElement('div');
-            empty.textContent = 'No matches';
-            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
-            listContainer.appendChild(empty);
-        }
+        }, 150);
     }
 
-    renderList('');
-    parts.searchInput.addEventListener('input', function() { renderList(parts.searchInput.value); });
+    doSearch();
+    parts.searchInput.addEventListener('input', doSearch);
     activeAlbumMovePopover = parts.popover;
 }
 
@@ -1176,18 +1175,12 @@ function closeAlbumAddPopover() {
     }
 }
 
-function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
+function showAlbumAdd(event, songId, span, currentAlbumId) {
     event.stopPropagation();
     closeAlbumAddPopover();
     closeAlbumMovePopover();
     closeAlbumArtistMovePopover();
     closeAlbumSongSearchPopover();
-
-    var others = allAlbums.filter(function(a) { return a.id !== currentAlbumId; });
-    if (!others.length) {
-        showToast('No other albums available');
-        return;
-    }
 
     var parts = _createSearchPopover({
         title: 'Add to album:',
@@ -1195,68 +1188,16 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
         anchor: span,
     });
     var listContainer = parts.listContainer;
+    var timer;
 
-    function renderList(filter) {
-        listContainer.innerHTML = '';
-        var lc = (filter || '').toLowerCase();
-        var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
-        var grouped = {};
-        var groupOrder = [];
-        var entryMap = {};
-        others.forEach(function(a) {
-            var group = parentMap[a.artist] || a.artist;
-            if (lc && a.name.toLowerCase().indexOf(lc) === -1 && a.artist.toLowerCase().indexOf(lc) === -1 && group.toLowerCase().indexOf(lc) === -1) return;
-            var isChild = a.artist !== group;
-            var key = group + '::' + a.id;
-            if (entryMap[key] && !isChild) return;
-            var label = isChild ? a.name + ' (' + a.artist + ')' : a.name;
-            var entry = { id: a.id, label: label, subgroup: isChild ? a.artist : '' };
-            if (entryMap[key]) {
-                var arr = grouped[group];
-                for (var i = 0; i < arr.length; i++) { if (arr[i].id === a.id) { arr[i] = entry; break; } }
-            } else {
-                if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
-                grouped[group].push(entry);
-            }
-            entryMap[key] = true;
-        });
-        var currentArtistName = null;
-        others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = a.artist; });
-        if (!currentArtistName && parentMap[others[0] && others[0].artist]) {
-            others.forEach(function(a) { if (a.artistId === _currentArtistId) currentArtistName = parentMap[a.artist] || a.artist; });
-        }
-        groupOrder.sort(function(a, b) {
-            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
-            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
-            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
-            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
-            if (aRank !== bRank) return aRank - bRank;
-            return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
-        });
-        groupOrder.forEach(function(group) {
-            var header = document.createElement('div');
-            header.textContent = group;
-            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            listContainer.appendChild(header);
-            grouped[group].sort(function(a, b) {
-                if (!a.subgroup && b.subgroup) return -1;
-                if (a.subgroup && !b.subgroup) return 1;
-                if (a.subgroup !== b.subgroup) return a.subgroup.toLowerCase() < b.subgroup.toLowerCase() ? -1 : 1;
-                return a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0;
-            });
-            grouped[group].forEach(function(item) {
-                var btn = document.createElement('div');
-                btn.textContent = item.label;
-                btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-                btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-                btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-                btn.addEventListener('click', function() {
-                    var csrfToken = document.querySelector('meta[name="csrf-token"]');
-                    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-                    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    function doSearch() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            _fetchAlbums(parts.searchInput.value, currentAlbumId, function(albums) {
+                _renderAlbumResults(albums, listContainer, function(item) {
                     fetch('/edit/song/' + songId + '/add-to-album', {
                         method: 'POST',
-                        headers: headers,
+                        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
                         body: 'album_id=' + item.id,
                     }).then(function(r) {
                         if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
@@ -1269,19 +1210,12 @@ function showAlbumAdd(event, songId, span, allAlbums, currentAlbumId) {
                         closeAlbumAddPopover();
                     });
                 });
-                listContainer.appendChild(btn);
             });
-        });
-        if (!groupOrder.length) {
-            var empty = document.createElement('div');
-            empty.textContent = 'No matches';
-            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
-            listContainer.appendChild(empty);
-        }
+        }, 150);
     }
 
-    renderList('');
-    parts.searchInput.addEventListener('input', function() { renderList(parts.searchInput.value); });
+    doSearch();
+    parts.searchInput.addEventListener('input', doSearch);
     activeAlbumAddPopover = parts.popover;
 }
 
@@ -1609,12 +1543,6 @@ document.addEventListener('click', function(e) {
 function _openMergePopover(songId, songName, span) {
     closeMergePopover();
 
-    var others = (typeof _allSongs !== 'undefined' ? _allSongs : []).filter(function(s) { return s.id !== songId; });
-    if (!others.length) {
-        showToast('No other songs to merge with');
-        return;
-    }
-
     var parts = _createSearchPopover({
         title: 'Merge into "' + songName + '":',
         placeholder: 'Search songs...',
@@ -1624,16 +1552,17 @@ function _openMergePopover(songId, songName, span) {
     });
     var listContainer = parts.listContainer;
 
-    // Pinned exact-matches container — sits above the scrollable list
     var exactContainer = document.createElement('div');
     exactContainer.style.cssText = 'flex-shrink:0;';
     listContainer.parentNode.insertBefore(exactContainer, listContainer);
 
     var songNameLower = songName.toLowerCase();
+    var timer;
 
-    function _makeItem(item, group) {
-        var isChild = group && item.artist !== group;
-        var label = isChild ? item.name + ' (' + item.artist + ' / ' + item.album + ')' : item.name + ' (' + item.artist + ' / ' + item.album + ')';
+    function _makeMergeBtn(item, group) {
+        var label = !group ? item.name + ' (' + item.artist + ' / ' + item.album + ')'
+            : item.artist !== group ? item.name + ' (' + item.artist + ' / ' + item.album + ')'
+            : item.name + ' (' + item.album + ')';
         var btn = document.createElement('div');
         btn.textContent = label;
         btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
@@ -1646,87 +1575,76 @@ function _openMergePopover(songId, songName, span) {
         return btn;
     }
 
-    function renderList(filter) {
-        exactContainer.innerHTML = '';
-        listContainer.innerHTML = '';
-        var lc = (filter || '').toLowerCase();
-        var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
-        var exactMatches = [];
-        var grouped = {};
-        var groupOrder = [];
-        others.forEach(function(s) {
-            var group = parentMap[s.artist] || s.artist;
-            if (lc && s.name.toLowerCase().indexOf(lc) === -1 && s.artist.toLowerCase().indexOf(lc) === -1 && group.toLowerCase().indexOf(lc) === -1 && s.album.toLowerCase().indexOf(lc) === -1) return;
-            if (s.name.toLowerCase() === songNameLower) {
-                exactMatches.push(s);
-            } else {
-                if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
-                grouped[group].push(s);
-            }
-        });
-        // Resolve current artist name once for both exact and grouped sorts
-        var currentArtistName = null;
-        if (typeof _pageArtistName !== 'undefined') currentArtistName = _pageArtistName;
-        // Render pinned exact matches
-        if (exactMatches.length) {
-            var header = document.createElement('div');
-            header.textContent = 'Exact Matches';
-            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            exactContainer.appendChild(header);
-            exactMatches.sort(function(a, b) {
-                var aRank = a.artist === currentArtistName ? 0 : 1;
-                var bRank = b.artist === currentArtistName ? 0 : 1;
-                if (aRank !== bRank) return aRank - bRank;
-                return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
-            });
-            exactMatches.forEach(function(item) {
-                exactContainer.appendChild(_makeItem(item, null));
-            });
-            var sep = document.createElement('div');
-            sep.style.cssText = 'border-bottom:1px solid var(--border,#ccc); margin:4px 0;';
-            exactContainer.appendChild(sep);
-        }
-        groupOrder.sort(function(a, b) {
-            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
-            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
-            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
-            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
-            if (aRank !== bRank) return aRank - bRank;
-            return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
-        });
-        groupOrder.forEach(function(group) {
-            var header = document.createElement('div');
-            header.textContent = group;
-            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            listContainer.appendChild(header);
-            grouped[group].sort(function(a, b) {
-                return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
-            });
-            grouped[group].forEach(function(item) {
-                var isChild = item.artist !== group;
-                var label = isChild ? item.name + ' (' + item.artist + ' / ' + item.album + ')' : item.name + ' (' + item.album + ')';
-                var btn = document.createElement('div');
-                btn.textContent = label;
-                btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-                btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-                btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-                btn.addEventListener('click', function() {
-                    closeMergePopover();
-                    showMergeConfirm(songId, songName, item.id, item.name, item.artist, item.album);
+    function doSearch() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            _fetchSongs(parts.searchInput.value, songId, function(songs) {
+                exactContainer.innerHTML = '';
+                listContainer.innerHTML = '';
+                var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
+                var currentArtistName = (typeof _pageArtistName !== 'undefined') ? _pageArtistName : null;
+                var exactMatches = [];
+                var grouped = {};
+                var groupOrder = [];
+                songs.forEach(function(s) {
+                    if (s.name.toLowerCase() === songNameLower) {
+                        exactMatches.push(s);
+                    } else {
+                        var group = parentMap[s.artist] || s.artist;
+                        if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
+                        grouped[group].push(s);
+                    }
                 });
-                listContainer.appendChild(btn);
+                if (exactMatches.length) {
+                    var header = document.createElement('div');
+                    header.textContent = 'Exact Matches';
+                    header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                    exactContainer.appendChild(header);
+                    exactMatches.sort(function(a, b) {
+                        var aRank = a.artist === currentArtistName ? 0 : 1;
+                        var bRank = b.artist === currentArtistName ? 0 : 1;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
+                    });
+                    exactMatches.forEach(function(item) {
+                        exactContainer.appendChild(_makeMergeBtn(item, null));
+                    });
+                    var sep = document.createElement('div');
+                    sep.style.cssText = 'border-bottom:1px solid var(--border,#ccc); margin:4px 0;';
+                    exactContainer.appendChild(sep);
+                }
+                groupOrder.sort(function(a, b) {
+                    var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
+                    var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
+                    var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
+                    var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
+                    if (aRank !== bRank) return aRank - bRank;
+                    return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
+                });
+                groupOrder.forEach(function(group) {
+                    var header = document.createElement('div');
+                    header.textContent = group;
+                    header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                    listContainer.appendChild(header);
+                    grouped[group].sort(function(a, b) {
+                        return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
+                    });
+                    grouped[group].forEach(function(item) {
+                        listContainer.appendChild(_makeMergeBtn(item, group));
+                    });
+                });
+                if (!exactMatches.length && !groupOrder.length) {
+                    var empty = document.createElement('div');
+                    empty.textContent = 'No matches';
+                    empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+                    listContainer.appendChild(empty);
+                }
             });
-        });
-        if (!exactMatches.length && !groupOrder.length) {
-            var empty = document.createElement('div');
-            empty.textContent = 'No matches';
-            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
-            listContainer.appendChild(empty);
-        }
+        }, 150);
     }
 
-    renderList('');
-    parts.searchInput.addEventListener('input', function() { renderList(parts.searchInput.value); });
+    doSearch();
+    parts.searchInput.addEventListener('input', doSearch);
     activeMergePopover = parts.popover;
 }
 

@@ -42,69 +42,109 @@ def _get_user_filters():
     }
 
 
-def _build_misc_data():
-    """Build the country → genre → songs hierarchy for the misc page."""
+def _build_misc_shell():
+    """Build lightweight page shell: country list with song counts, no song data."""
     from app.services.stats import get_display_users
 
     filters = _get_user_filters()
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
 
-    # All songs that have at least one SongMiscArtist link
-    misc_song_ids = {r[0] for r in db.session.query(SongMiscArtist.song_id).distinct().all()}
-    if not misc_song_ids:
-        return {'countries': [], 'users': get_display_users(), 'edit_mode': edit_mode}
+    query = db.session.query(
+        MiscArtist.country_id,
+        func.count(func.distinct(SongMiscArtist.song_id)),
+    ).join(SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id)
+    if filters['country_ids']:
+        query = query.filter(MiscArtist.country_id.in_(filters['country_ids']))
+    country_counts = query.group_by(MiscArtist.country_id).all()
 
-    # Load songs with their genres
-    songs = Song.query.filter(Song.id.in_(misc_song_ids)).all()
+    all_countries_map = {c.id: c for c in Country.query.all()}
+    country_sections = []
+    for cid, count in sorted(country_counts, key=lambda x: all_countries_map.get(x[0], Country()).country if x[0] in all_countries_map else ''):
+        country = all_countries_map.get(cid)
+        if country:
+            country_sections.append({
+                'country_id': cid,
+                'country_name': country.country,
+                'song_count': count,
+            })
+
+    return {
+        'countries': country_sections,
+        'users': get_display_users(),
+        'edit_mode': edit_mode,
+        'all_genres': Genre.query.order_by(Genre.id).all() if edit_mode else [],
+        'all_album_types': AlbumType.query.order_by(AlbumType.id).all() if edit_mode else [],
+        'all_countries': Country.query.order_by(Country.id).all() if edit_mode else [],
+        'navbar_artists': get_filtered_navbar(),
+        'gender_css': GENDER_CSS,
+        'assignable_users': User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all() if edit_mode else [],
+        'rules': db.session.get(Rules, 1),
+    }
+
+
+def _build_country_data(country_id):
+    """Build genre → songs data for a single country."""
+    from app.services.stats import get_display_users
+
+    filters = _get_user_filters()
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+
+    sma_rows = db.session.query(
+        SongMiscArtist.song_id, SongMiscArtist.misc_artist_id, SongMiscArtist.artist_is_main,
+        MiscArtist.name, MiscArtist.country_id,
+    ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+        MiscArtist.country_id == country_id,
+    ).all()
+
+    song_ids = {r[0] for r in sma_rows}
+    if not song_ids:
+        return {'genres': [], 'users': get_display_users(), 'edit_mode': edit_mode, 'country_id': country_id}
+
+    song_misc_artists = defaultdict(list)
+    for sid, maid, is_main, ma_name, cid in sma_rows:
+        song_misc_artists[sid].append({
+            'id': maid, 'name': ma_name, 'country_id': cid, 'is_main': is_main,
+        })
+
+    all_sma_rows = db.session.query(
+        SongMiscArtist.song_id, SongMiscArtist.misc_artist_id, SongMiscArtist.artist_is_main,
+        MiscArtist.name, MiscArtist.country_id,
+    ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+        SongMiscArtist.song_id.in_(song_ids),
+    ).all()
+    for sid, maid, is_main, ma_name, cid in all_sma_rows:
+        existing = song_misc_artists.get(sid, [])
+        if not any(m['id'] == maid for m in existing):
+            song_misc_artists[sid].append({
+                'id': maid, 'name': ma_name, 'country_id': cid, 'is_main': is_main,
+            })
+
+    songs = Song.query.filter(Song.id.in_(song_ids)).all()
     song_map = {s.id: s for s in songs}
 
-    # Load song genres
     sg_rows = db.session.execute(
-        song_genres.select().where(song_genres.c.song_id.in_(misc_song_ids))
+        song_genres.select().where(song_genres.c.song_id.in_(song_ids))
     ).fetchall()
     song_genre_map = defaultdict(set)
     for sid, gid in sg_rows:
         song_genre_map[sid].add(gid)
 
-    # Load all genres and countries for lookup
-    all_genres = {g.id: g for g in Genre.query.all()}
-    all_countries = {c.id: c for c in Country.query.all()}
-
-    # Load song → misc_artist links
-    sma_rows = db.session.query(
-        SongMiscArtist.song_id, SongMiscArtist.misc_artist_id, SongMiscArtist.artist_is_main,
-        MiscArtist.name, MiscArtist.country_id,
-    ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
-        SongMiscArtist.song_id.in_(misc_song_ids)
-    ).all()
-
-    song_misc_artists = defaultdict(list)
-    song_countries = defaultdict(set)
-    for sid, maid, is_main, ma_name, cid in sma_rows:
-        song_misc_artists[sid].append({
-            'id': maid, 'name': ma_name, 'country_id': cid, 'is_main': is_main,
-        })
-        song_countries[sid].add(cid)
-
-    # Load song → real artist links
     sa_rows = db.session.query(
         ArtistSong.song_id, ArtistSong.artist_id, ArtistSong.artist_is_main,
         Artist.name, Artist.gender_id,
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
-        ArtistSong.song_id.in_(misc_song_ids)
+        ArtistSong.song_id.in_(song_ids)
     ).all()
-
     song_real_artists = defaultdict(list)
     for sid, aid, is_main, a_name, gid in sa_rows:
         song_real_artists[sid].append({
             'artist_id': aid, 'name': a_name, 'is_main': is_main, 'gender_id': gid,
         })
 
-    # Load song → album info (for display: album name, release date)
     as_rows = db.session.query(
         AlbumSong.song_id, Album.id, Album.name, Album.release_date, Album.album_type_id,
     ).join(Album, Album.id == AlbumSong.album_id).filter(
-        AlbumSong.song_id.in_(misc_song_ids)
+        AlbumSong.song_id.in_(song_ids)
     ).all()
     song_album_map = {}
     for sid, alid, al_name, al_date, al_type in as_rows:
@@ -113,21 +153,16 @@ def _build_misc_data():
                 'id': alid, 'name': al_name, 'release_date': al_date, 'album_type_id': al_type,
             }
 
-    # Load ratings
-    ratings_rows = Rating.query.filter(Rating.song_id.in_(misc_song_ids)).all()
+    ratings_rows = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
     ratings_map = defaultdict(dict)
     for r in ratings_rows:
         ratings_map[r.song_id][r.user_id] = r
 
-    users = get_display_users()
-
-    # OST genre ID for filtering
+    all_genres = {g.id: g for g in Genre.query.all()}
     ost_genre = Genre.query.filter_by(genre='OST').first()
     ost_genre_id = ost_genre.id if ost_genre else None
 
-    # Build collab labels for each song
     def _collab_labels(sid):
-        parts = []
         misc_as = song_misc_artists.get(sid, [])
         real_as = song_real_artists.get(sid, [])
         main_names = [a['name'] for a in misc_as if a['is_main']]
@@ -139,8 +174,7 @@ def _build_misc_data():
                 feat_names.append(a['name'])
         return main_names, feat_names
 
-    # Filter songs
-    filtered_songs = {}
+    genre_data = defaultdict(list)
     for sid, song in song_map.items():
         if not edit_mode:
             if not filters['include_remixes'] and song.is_remix:
@@ -155,22 +189,8 @@ def _build_misc_data():
         if filters['genre_ids']:
             if not genre_ids.intersection(set(filters['genre_ids'])):
                 continue
-        filtered_songs[sid] = song
 
-    # Build country → genre → songs structure
-    country_data = defaultdict(lambda: defaultdict(list))
-
-    for sid, song in filtered_songs.items():
-        countries = song_countries.get(sid, set())
-        if filters['country_ids']:
-            countries = countries.intersection(set(filters['country_ids']))
-        if not countries:
-            continue
-
-        genres = song_genre_map.get(sid, set())
-        if not genres:
-            genres = {0}  # "Uncategorized" bucket
-
+        genres = genre_ids if genre_ids else {0}
         album_info = song_album_map.get(sid)
         main_names, feat_names = _collab_labels(sid)
 
@@ -185,53 +205,41 @@ def _build_misc_data():
             'misc_artists': song_misc_artists.get(sid, []),
             'real_artists': song_real_artists.get(sid, []),
         }
+        for gid in genres:
+            genre_data[gid].append(song_row)
 
-        for cid in countries:
-            for gid in genres:
-                country_data[cid][gid].append(song_row)
-
-    # Sort and structure output
-    country_sections = []
-    for cid in sorted(country_data.keys(), key=lambda c: all_countries.get(c, Country()).country if c in all_countries else ''):
-        country = all_countries.get(cid)
-        if not country:
-            continue
-        genre_sections = []
-        for gid in sorted(country_data[cid].keys(), key=lambda g: all_genres.get(g, Genre()).genre if g in all_genres else 'Uncategorized'):
-            genre = all_genres.get(gid)
-            genre_name = genre.genre if genre else 'Uncategorized'
-            songs_list = country_data[cid][gid]
-            songs_list.sort(key=lambda r: (r['song'].name or '').lower())
-            genre_sections.append({
-                'genre_id': gid,
-                'genre_name': genre_name,
-                'songs': songs_list,
-            })
-        country_sections.append({
-            'country_id': cid,
-            'country_name': country.country,
-            'genres': genre_sections,
+    genre_sections = []
+    for gid in sorted(genre_data.keys(), key=lambda g: all_genres.get(g, Genre()).genre if g in all_genres else 'Uncategorized'):
+        genre = all_genres.get(gid)
+        genre_name = genre.genre if genre else 'Uncategorized'
+        songs_list = genre_data[gid]
+        songs_list.sort(key=lambda r: (r['song'].name or '').lower())
+        genre_sections.append({
+            'genre_id': gid,
+            'genre_name': genre_name,
+            'songs': songs_list,
         })
 
     return {
-        'countries': country_sections,
-        'users': users,
+        'genres': genre_sections,
+        'users': get_display_users(),
         'edit_mode': edit_mode,
-        'all_genres': Genre.query.order_by(Genre.id).all() if edit_mode else [],
-        'all_album_types': AlbumType.query.order_by(AlbumType.id).all() if edit_mode else [],
-        'all_countries': Country.query.order_by(Country.id).all() if edit_mode else [],
-        'navbar_artists': get_filtered_navbar(),
-        'gender_css': GENDER_CSS,
-        'assignable_users': User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all() if edit_mode else [],
-        'rules': db.session.get(Rules, 1),
+        'country_id': country_id,
     }
 
 
 @misc_bp.route('/misc')
 @login_required
 def misc_page():
-    data = _build_misc_data()
+    data = _build_misc_shell()
     return render_template('misc.html', **data)
+
+
+@misc_bp.route('/misc/country/<int:country_id>')
+@login_required
+def misc_country(country_id):
+    data = _build_country_data(country_id)
+    return render_template('fragments/misc_country.html', **data)
 
 
 @misc_bp.route('/misc/unrated-count')

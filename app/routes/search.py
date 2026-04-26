@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 
 from flask import Blueprint, request, render_template, session
@@ -6,6 +7,8 @@ from sqlalchemy import func
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, MiscArtist, SongMiscArtist
+
+logger = logging.getLogger(__name__)
 
 search_bp = Blueprint('search', __name__)
 
@@ -243,7 +246,7 @@ def search():
                 album_name = alb.name if alb else ''
                 misc_songs.append((s, album_name, artists_str))
     except Exception:
-        pass
+        logger.exception('Misc song search failed')
 
     return render_template('fragments/search_results.html',
                            artists=artists, albums=albums, songs=songs,

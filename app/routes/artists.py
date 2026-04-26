@@ -156,10 +156,8 @@ def _render_artist(artist, htmx=False, push_url=None):
             'is_soloist': child.id in soloist_ids,
         })
 
-    # All artists list + all albums for edit mode (song artist picker, cross-artist move)
+    # Edit mode data (lightweight — heavy album/song lists are now lazy-loaded via search endpoints)
     all_artists = []
-    all_albums_by_artist = []
-    all_songs_by_artist = []
     artist_parent_map = {}
     genres = []
     album_types = []
@@ -171,42 +169,12 @@ def _render_artist(artist, htmx=False, push_url=None):
         album_types = AlbumType.query.order_by(AlbumType.id).all()
         countries = Country.query.order_by(Country.id).all()
         genders = GroupGender.query.order_by(GroupGender.id).all()
-        # Build child→parent name map for grouping subunits under parents
         parent_rows = db.session.execute(db.text(
             'SELECT c.name, p.name FROM artist_artist aa '
             'JOIN artist c ON c.id = aa.artist_2 '
             'JOIN artist p ON p.id = aa.artist_1'
         )).fetchall()
         artist_parent_map = {r[0]: r[1] for r in parent_rows}
-        all_albums_by_artist = db.session.execute(db.text(
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN album_song als ON als.album_id = a.id '
-            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'UNION '
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist_name, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN artist ar ON ar.id = a.artist_id '
-            'WHERE a.artist_id IS NOT NULL '
-            'ORDER BY 3, 2'
-        )).fetchall()
-        # All songs for merge popover (deduplicated by song id)
-        _song_rows = db.session.execute(db.text(
-            'SELECT s.id, s.name, ar.name, ar.id, al.name '
-            'FROM song s '
-            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'JOIN album_song als ON als.song_id = s.id '
-            'JOIN album al ON al.id = als.album_id '
-            'ORDER BY ar.name, s.name'
-        )).fetchall()
-        _seen_song_ids = set()
-        all_songs_by_artist = []
-        for r in _song_rows:
-            if r[0] not in _seen_song_ids:
-                _seen_song_ids.add(r[0])
-                all_songs_by_artist.append(r)
 
     # Users eligible to be Owner / Maintainer — raters+ (same pool as stats)
     assignable_users = User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
@@ -220,8 +188,6 @@ def _render_artist(artist, htmx=False, push_url=None):
             artist=artist, discography=discography, users=users,
             gender_css=GENDER_CSS, children=children_sections,
             soloist_parents=soloist_parents, all_artists=all_artists,
-            all_albums_by_artist=all_albums_by_artist,
-            all_songs_by_artist=all_songs_by_artist,
             artist_parent_map=artist_parent_map,
             assignable_users=assignable_users,
             is_subscribed=is_subscribed,
@@ -242,8 +208,6 @@ def _render_artist(artist, htmx=False, push_url=None):
                            discography=discography, users=users,
                            gender_css=GENDER_CSS, children=children_sections,
                            soloist_parents=soloist_parents, all_artists=all_artists,
-                           all_albums_by_artist=all_albums_by_artist,
-                           all_songs_by_artist=all_songs_by_artist,
                            artist_parent_map=artist_parent_map,
                            assignable_users=assignable_users,
                            is_subscribed=is_subscribed,

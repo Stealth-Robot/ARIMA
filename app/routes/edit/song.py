@@ -762,3 +762,89 @@ def song_genres_edit(song_id):
     log_change(current_user, f'Set genres of "{song.name}" song to {", ".join(names) or "none"}', song=song)
     db.session.commit()
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/search-albums')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def search_albums():
+    """Search albums with artist info for move/add-to-album pickers."""
+    _require_edit_mode()
+    q = request.args.get('q', '').strip()
+    exclude_id = request.args.get('exclude', type=int)
+    if q:
+        like = f'%{q}%'
+        rows = db.session.execute(db.text(
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
+            'FROM album a '
+            'JOIN album_song als ON als.album_id = a.id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'WHERE (a.name LIKE :like OR ar.name LIKE :like) '
+            'UNION '
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
+            'FROM album a '
+            'JOIN artist ar ON ar.id = a.artist_id '
+            'WHERE a.artist_id IS NOT NULL AND (a.name LIKE :like OR ar.name LIKE :like) '
+            'ORDER BY 3, 2 '
+            'LIMIT 50'
+        ), {'like': like}).fetchall()
+    else:
+        rows = db.session.execute(db.text(
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
+            'FROM album a '
+            'JOIN album_song als ON als.album_id = a.id '
+            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'UNION '
+            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
+            'FROM album a '
+            'JOIN artist ar ON ar.id = a.artist_id '
+            'WHERE a.artist_id IS NOT NULL '
+            'ORDER BY 3, 2 '
+            'LIMIT 50'
+        )).fetchall()
+    results = [{'id': r[0], 'name': r[1], 'artist': r[2], 'artistId': r[3]}
+               for r in rows if r[0] != exclude_id]
+    return json.dumps(results), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/search-songs')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def search_songs():
+    """Search songs with artist and album info for merge/link pickers."""
+    _require_edit_mode()
+    q = request.args.get('q', '').strip()
+    exclude_id = request.args.get('exclude', type=int)
+    if q:
+        like = f'%{q}%'
+        rows = db.session.execute(db.text(
+            'SELECT s.id, s.name, ar.name, ar.id, al.name '
+            'FROM song s '
+            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'JOIN album_song als ON als.song_id = s.id '
+            'JOIN album al ON al.id = als.album_id '
+            'WHERE (s.name LIKE :like OR ar.name LIKE :like) '
+            'ORDER BY ar.name, s.name '
+            'LIMIT 100'
+        ), {'like': like}).fetchall()
+    else:
+        rows = db.session.execute(db.text(
+            'SELECT s.id, s.name, ar.name, ar.id, al.name '
+            'FROM song s '
+            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
+            'JOIN artist ar ON ar.id = ars.artist_id '
+            'JOIN album_song als ON als.song_id = s.id '
+            'JOIN album al ON al.id = als.album_id '
+            'ORDER BY ar.name, s.name '
+            'LIMIT 100'
+        )).fetchall()
+    seen_ids = set()
+    results = []
+    for r in rows:
+        if r[0] != exclude_id and r[0] not in seen_ids:
+            seen_ids.add(r[0])
+            results.append({'id': r[0], 'name': r[1], 'artist': r[2], 'artistId': r[3], 'album': r[4]})
+    return json.dumps(results), 200, {'Content-Type': 'application/json'}
