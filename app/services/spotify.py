@@ -1,68 +1,37 @@
-"""Spotify Web API integration using Client Credentials flow."""
+"""Spotify Web API integration using Client Credentials flow.
+
+All HTTP calls are serialized through a single-worker queue (api_queue)
+which handles 429/Retry-After and network retries internally.
+"""
 
 import os
 import re
 import time
+import base64
 import logging
 import threading
 
-import requests
+from app.services.api_queue import spotify_queue, ApiQueueError
 
 logger = logging.getLogger(__name__)
 
 _BASE = 'https://api.spotify.com/v1'
 _TOKEN_URL = 'https://accounts.spotify.com/api/token'
 
-# Module-level token cache
 _access_token = None
 _token_expires_at = 0
+_token_lock = threading.Lock()
 
-# Rate throttle — serialises all Spotify calls across threads
-_rate_lock = threading.Lock()
-_last_request_at = 0.0
-_INITIAL_INTERVAL = 0.5
-_MAX_INTERVAL = 10.0
-_min_interval = _INITIAL_INTERVAL
-
-# Thread-local status callback for progress reporting from low-level functions
 _local = threading.local()
 
 
 def _status(msg):
-    """Report a low-level status message to the current thread's progress callback."""
     cb = getattr(_local, 'on_status', None)
     if cb:
         cb(msg)
 
 
-def _throttle():
-    """Ensure minimum interval between Spotify API calls."""
-    global _last_request_at
-    with _rate_lock:
-        now = time.time()
-        wait = _min_interval - (now - _last_request_at)
-        if wait > 0:
-            _status(f'Throttling ({wait:.1f}s)...')
-            time.sleep(wait)
-        _last_request_at = time.time()
-
-
-def _backoff():
-    """Double the throttle interval after a 429 (capped at _MAX_INTERVAL)."""
-    global _min_interval
-    with _rate_lock:
-        _min_interval = min(_min_interval * 2, _MAX_INTERVAL)
-
-
-def _ease():
-    """Decay throttle interval toward baseline after a successful request."""
-    global _min_interval
-    with _rate_lock:
-        _min_interval = max(_min_interval * 0.75, _INITIAL_INTERVAL)
-
-
 def _get_credentials():
-    """Return (client_id, client_secret) or raise if not configured."""
     cid = os.environ.get('SPOTIFY_CLIENT_ID')
     secret = os.environ.get('SPOTIFY_CLIENT_SECRET')
     if not cid or not secret:
@@ -70,78 +39,72 @@ def _get_credentials():
     return cid, secret
 
 
-def _get_token(_retries=5):
-    """Get a valid access token, refreshing if expired."""
+def _get_token():
     global _access_token, _token_expires_at
     if _access_token and time.time() < _token_expires_at - 60:
         return _access_token
-    _status('Refreshing auth token...')
-    cid, secret = _get_credentials()
-    _throttle()
-    resp = requests.post(_TOKEN_URL, data={'grant_type': 'client_credentials'},
-                         auth=(cid, secret), timeout=10)
-    if resp.status_code == 429:
-        _backoff()
-        retry_after = resp.headers.get('Retry-After')
-        wait = None
-        if retry_after is not None:
-            try:
-                wait = int(retry_after)
-            except (ValueError, TypeError):
-                pass
-        if wait is None:
-            wait = int(_min_interval * 2)
-        if wait > 120:
-            mins = (wait + 59) // 60
-            raise SpotifyError(f'Spotify rate limit too long ({mins} min). Please wait and try again later.')
-        if _retries > 0:
-            _status(f'Token rate-limited, waiting {wait}s...')
-            time.sleep(wait)
-            return _get_token(_retries=_retries - 1)
-        raise SpotifyError('Spotify is rate-limiting requests. Please wait a minute and try again.')
-    if resp.status_code != 200:
-        raise SpotifyError(f'Token request failed: {resp.status_code}')
-    _status('Auth token OK')
-    data = resp.json()
-    _access_token = data['access_token']
-    _token_expires_at = time.time() + data.get('expires_in', 3600)
-    return _access_token
+    with _token_lock:
+        if _access_token and time.time() < _token_expires_at - 60:
+            return _access_token
+        _status('Refreshing auth token...')
+        cid, secret = _get_credentials()
+        auth_header = base64.b64encode(f'{cid}:{secret}'.encode()).decode()
+        on_status = getattr(_local, 'on_status', None)
+        try:
+            resp = spotify_queue.request(
+                'POST', _TOKEN_URL,
+                headers={'Authorization': f'Basic {auth_header}'},
+                data={'grant_type': 'client_credentials'},
+                timeout=10,
+                on_status=on_status,
+            )
+        except ApiQueueError as e:
+            raise SpotifyError(str(e))
+        if resp.status_code != 200:
+            raise SpotifyError(f'Token request failed: {resp.status_code}')
+        _status('Auth token OK')
+        data = resp.json()
+        _access_token = data['access_token']
+        _token_expires_at = time.time() + data.get('expires_in', 3600)
+        return _access_token
 
 
-def _api_get(path_or_url, _retries=5):
-    """GET from Spotify API with auth header. Accepts a path or full URL."""
+def _invalidate_token():
+    global _access_token, _token_expires_at
+    with _token_lock:
+        _access_token = None
+        _token_expires_at = 0
+
+
+def _api_get(path_or_url):
     token = _get_token()
     url = path_or_url if path_or_url.startswith('http') else f'{_BASE}{path_or_url}'
     label = url.replace(_BASE, '')
     if len(label) > 60:
         label = label[:57] + '...'
-    _throttle()
     _status(f'Requesting {label}')
-    resp = requests.get(url,
-                        headers={'Authorization': f'Bearer {token}'},
-                        timeout=15)
+    on_status = getattr(_local, 'on_status', None)
+    try:
+        resp = spotify_queue.request(
+            'GET', url,
+            headers={'Authorization': f'Bearer {token}'},
+            on_status=on_status,
+        )
+    except ApiQueueError as e:
+        raise SpotifyError(str(e))
+    if resp.status_code == 401:
+        _invalidate_token()
+        token = _get_token()
+        try:
+            resp = spotify_queue.request(
+                'GET', url,
+                headers={'Authorization': f'Bearer {token}'},
+                on_status=on_status,
+            )
+        except ApiQueueError as e:
+            raise SpotifyError(str(e))
     if resp.status_code == 404:
         raise SpotifyError('Not found on Spotify')
-    if resp.status_code == 429:
-        _backoff()
-        retry_after = resp.headers.get('Retry-After')
-        wait = None
-        if retry_after is not None:
-            try:
-                wait = int(retry_after)
-            except (ValueError, TypeError):
-                pass
-        if wait is None:
-            wait = int(_min_interval * 2)
-        if wait > 120:
-            mins = (wait + 59) // 60
-            raise SpotifyError(f'Spotify rate limit too long ({mins} min). Please wait and try again later.')
-        _status(f'Rate-limited on {label}, waiting {wait}s (retries left: {_retries - 1})...')
-        logger.warning('_api_get: 429, Retry-After=%d, retries left=%d', wait, _retries - 1)
-        if _retries > 0:
-            time.sleep(wait)
-            return _api_get(path_or_url, _retries=_retries - 1)
-        raise SpotifyError('Spotify is rate-limiting requests. Please wait a minute and try again.')
     if resp.status_code != 200:
         body = ''
         try:
@@ -149,17 +112,16 @@ def _api_get(path_or_url, _retries=5):
         except Exception:
             pass
         detail = f' — {body}' if body else ''
-        raise SpotifyError(f'Spotify API error: {resp.status_code}{detail} ({label})')
-    _ease()
-    _status(f'Got {label} (HTTP {resp.status_code})')
+        raise SpotifyError(
+            f'Spotify API error: {resp.status_code}{detail} ({label})')
+    _status(f'Got {label}')
     return resp.json()
 
 
 def _parse_id(url, kind):
-    """Extract a Spotify ID from a URL. kind is 'album' or 'artist'."""
-    # https://open.spotify.com/album/ABC123?si=xyz
-    # https://open.spotify.com/artist/ABC123?si=xyz
-    m = re.search(rf'open\.spotify\.com/(?:intl-[a-z]+/)?{kind}/([A-Za-z0-9]+)(?:[/?]|$)', url)
+    m = re.search(
+        rf'open\.spotify\.com/(?:intl-[a-z]+/)?{kind}/([A-Za-z0-9]+)(?:[/?]|$)',
+        url)
     if not m:
         raise SpotifyError(f'Invalid Spotify {kind} URL')
     return m.group(1)
@@ -169,17 +131,12 @@ _TYPE_MAP = {'album': 0, 'single': 2, 'compilation': 0}
 
 
 def _album_type_id(spotify_type, total_tracks):
-    """Map Spotify album_type to our type IDs: 0=Album, 1=EP, 2=Single."""
     if spotify_type == 'single':
-        return 2 if total_tracks <= 2 else 1  # 1-2 tracks = Single, 3+ = EP
+        return 2 if total_tracks <= 2 else 1
     return _TYPE_MAP.get(spotify_type, 0)
 
 
 def fetch_album(url):
-    """Fetch album metadata from a Spotify album URL.
-
-    Returns dict: {name, release_date, album_type_id, tracks: [{name, track_number}]}
-    """
     album_id = _parse_id(url, 'album')
     data = _api_get(f'/albums/{album_id}')
     tracks = []
@@ -192,23 +149,17 @@ def fetch_album(url):
     return {
         'name': data['name'],
         'release_date': _normalize_date(data.get('release_date', '')),
-        'album_type_id': _album_type_id(data.get('album_type', ''), data.get('total_tracks', 0)),
+        'album_type_id': _album_type_id(
+            data.get('album_type', ''), data.get('total_tracks', 0)),
         'tracks': tracks,
     }
 
 
 class _Cancelled(Exception):
-    """Raised when an import is cancelled."""
     pass
 
 
 def fetch_artist(url, on_progress=None, cancel=None):
-    """Fetch artist name + full discography from a Spotify artist URL.
-
-    on_progress: optional callback(message, percent) for streaming progress.
-    cancel: optional threading.Event — set it to abort the import.
-    Returns dict: {name, albums: [{name, release_date, album_type_id, tracks: [{name, track_number}]}]}
-    """
     _current_pct = [0]
 
     def _check():
@@ -220,7 +171,6 @@ def fetch_artist(url, on_progress=None, cancel=None):
         if on_progress:
             on_progress(msg, pct)
 
-    # Wire up thread-local so _api_get/_throttle report to the modal
     if on_progress:
         _local.on_status = lambda msg: on_progress(msg, _current_pct[0])
 
@@ -232,15 +182,18 @@ def fetch_artist(url, on_progress=None, cancel=None):
         artist_name = artist_data['name']
         _progress(f'Found: {artist_name}', 10)
 
-        # Fetch all albums (paginated)
         albums_raw = []
         offset = 0
         while True:
             _check()
-            page = _api_get(f'/artists/{artist_id}/albums?include_groups=album,single&limit=10&offset={offset}')
+            page = _api_get(
+                f'/artists/{artist_id}/albums'
+                f'?include_groups=album,single&limit=10&offset={offset}')
             items = page.get('items', [])
             albums_raw.extend(items)
-            _progress(f'Scanning discography... ({len(albums_raw)} albums found)', 20)
+            _progress(
+                f'Scanning discography... ({len(albums_raw)} albums found)',
+                20)
             if not items or not page.get('next'):
                 break
             offset += len(items)
@@ -248,11 +201,9 @@ def fetch_artist(url, on_progress=None, cancel=None):
         total = len(albums_raw)
         _progress(f'Found {total} albums', 30)
 
-        # Filter out entries without valid IDs
         albums_raw = [a for a in albums_raw if a and a.get('id')]
         total = len(albums_raw)
 
-        # Fetch full track listings one album at a time
         albums = []
         for idx, raw in enumerate(albums_raw):
             _check()
@@ -263,13 +214,17 @@ def fetch_artist(url, on_progress=None, cancel=None):
             except SpotifyError as e:
                 logger.warning('Failed to fetch album %s: %s', raw['id'], e)
                 continue
-            tracks = [{'name': t['name'], 'track_number': t['track_number'],
-                       'spotify_url': t.get('external_urls', {}).get('spotify', '')}
-                      for t in full.get('tracks', {}).get('items', [])]
+            tracks = [
+                {'name': t['name'], 'track_number': t['track_number'],
+                 'spotify_url': t.get('external_urls', {}).get('spotify', '')}
+                for t in full.get('tracks', {}).get('items', [])]
             albums.append({
                 'name': full['name'],
-                'release_date': _normalize_date(full.get('release_date', '')),
-                'album_type_id': _album_type_id(full.get('album_type', ''), full.get('total_tracks', 0)),
+                'release_date': _normalize_date(
+                    full.get('release_date', '')),
+                'album_type_id': _album_type_id(
+                    full.get('album_type', ''),
+                    full.get('total_tracks', 0)),
                 'tracks': tracks,
             })
 
@@ -283,7 +238,6 @@ def fetch_artist(url, on_progress=None, cancel=None):
 
 
 def _normalize_date(date_str):
-    """Normalize Spotify dates (YYYY, YYYY-MM, YYYY-MM-DD) to YYYY-MM-DD."""
     if not date_str:
         return ''
     if re.fullmatch(r'\d{4}', date_str):
@@ -294,13 +248,9 @@ def _normalize_date(date_str):
 
 
 def search_track(track_name, artist_name):
-    """Search Spotify for a track by name and artist.
-
-    Only returns tracks where the artist appears in the track's artist list.
-    Returns list of up to 5 candidates: [{name, album, artists, spotify_url}]
-    """
+    from urllib.parse import quote
     q = f'track:{track_name} artist:{artist_name}'
-    data = _api_get(f'/search?q={requests.utils.quote(q)}&type=track&limit=10')
+    data = _api_get(f'/search?q={quote(q)}&type=track&limit=10')
     items = data.get('tracks', {}).get('items', [])
     norm_artist = _normalize_name(artist_name)
     results = []
@@ -330,13 +280,10 @@ def search_track(track_name, artist_name):
 
 
 def _normalize_name(name):
-    """Normalize a track name for fuzzy comparison."""
     import unicodedata
     s = name.lower().strip()
     s = unicodedata.normalize('NFKD', s)
-    # Strip parenthetical suffixes like (feat. X), (Remix), (Inst.)
     s = re.sub(r'\s*\(.*?\)', '', s)
-    # Strip common punctuation
     s = re.sub(r'[^\w\s]', '', s)
     s = re.sub(r'\s+', ' ', s).strip()
     return s
@@ -344,20 +291,6 @@ def _normalize_name(name):
 
 def auto_populate_links(artist_name, songs, spotify_url=None,
                         on_progress=None, cancel=None):
-    """Match songs to Spotify tracks using discography-first, then search fallback.
-
-    artist_name: str
-    songs: list of dicts with keys 'id' and 'name'
-    spotify_url: optional Spotify artist URL for discography fetch
-    on_progress: optional callback(message, percent)
-    cancel: optional threading.Event to abort
-
-    Returns dict: {
-        auto_matched: [{song_id, song_name, spotify_url}],
-        needs_review: [{song_id, song_name, candidates: [{name, album, artists, spotify_url}]}],
-        not_found: [{song_id, song_name}],
-    }
-    """
     _current_pct = [0]
 
     def _check():
@@ -377,25 +310,27 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
         needs_review = []
         not_found = []
 
-        # Build lookup of unmatched songs
         unmatched = {s['id']: s for s in songs}
 
-        # Phase 1: Discography fetch (if Spotify artist URL provided)
-        spotify_tracks = {}  # normalized_name -> spotify_url
+        spotify_tracks = {}
         if spotify_url:
             _check()
             _progress('Fetching discography from Spotify...', 5)
             try:
                 artist_id = _parse_id(spotify_url, 'artist')
-                # Fetch all albums (paginated)
                 albums_raw = []
                 offset = 0
                 while True:
                     _check()
-                    page = _api_get(f'/artists/{artist_id}/albums?include_groups=album,single&limit=10&offset={offset}')
+                    page = _api_get(
+                        f'/artists/{artist_id}/albums'
+                        f'?include_groups=album,single&limit=10'
+                        f'&offset={offset}')
                     items = page.get('items', [])
                     albums_raw.extend(items)
-                    _progress(f'Scanning discography... ({len(albums_raw)} albums)', 10)
+                    _progress(
+                        f'Scanning discography... ({len(albums_raw)} albums)',
+                        10)
                     if not items or not page.get('next'):
                         break
                     offset += len(items)
@@ -405,21 +340,28 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
 
                 for idx, raw in enumerate(albums_raw):
                     _check()
-                    pct = 10 + int(40 * ((idx + 1) / max(total_albums, 1)))
-                    _progress(f'Loading album tracks ({idx + 1} of {total_albums})', pct)
+                    pct = 10 + int(
+                        40 * ((idx + 1) / max(total_albums, 1)))
+                    _progress(
+                        f'Loading album tracks ({idx + 1} of {total_albums})',
+                        pct)
                     try:
                         full = _api_get(f'/albums/{raw["id"]}')
                     except SpotifyError:
                         continue
                     for t in full.get('tracks', {}).get('items', []):
-                        url = t.get('external_urls', {}).get('spotify', '')
-                        if url:
+                        t_url = t.get('external_urls', {}).get('spotify', '')
+                        if t_url:
                             norm = _normalize_name(t['name'])
                             if norm not in spotify_tracks:
-                                track_artists = ', '.join(a['name'] for a in t.get('artists', []))
-                                spotify_tracks[norm] = {'spotify_url': url, 'artists': track_artists}
+                                track_artists = ', '.join(
+                                    a['name']
+                                    for a in t.get('artists', []))
+                                spotify_tracks[norm] = {
+                                    'spotify_url': t_url,
+                                    'artists': track_artists,
+                                }
 
-                # Match songs against discography
                 _progress('Matching songs to discography...', 55)
                 matched_ids = []
                 for song_id, song in list(unmatched.items()):
@@ -436,25 +378,31 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                 for sid in matched_ids:
                     del unmatched[sid]
 
-                _progress(f'Discography matched {len(matched_by_link)} of {len(songs)} songs', 58)
+                _progress(
+                    f'Discography matched {len(matched_by_link)} '
+                    f'of {len(songs)} songs', 58)
 
             except SpotifyError as e:
-                _progress(f'Discography fetch failed ({e}), falling back to search...', 58)
+                _progress(
+                    f'Discography fetch failed ({e}), '
+                    f'falling back to search...', 58)
 
-        # Phase 2: Search fallback for remaining unmatched songs
         remaining = list(unmatched.values())
         total_remaining = len(remaining)
         for idx, song in enumerate(remaining):
             _check()
             pct = 60 + int(35 * ((idx + 1) / max(total_remaining, 1)))
-            _progress(f'Searching ({idx + 1} of {total_remaining}): {song["name"]}', pct)
+            _progress(
+                f'Searching ({idx + 1} of {total_remaining}): '
+                f'{song["name"]}', pct)
             try:
                 candidates = search_track(song['name'], artist_name)
             except SpotifyError:
                 candidates = []
 
             if not candidates:
-                not_found.append({'song_id': song['id'], 'song_name': song['name']})
+                not_found.append(
+                    {'song_id': song['id'], 'song_name': song['name']})
                 continue
 
             needs_review.append({
@@ -474,5 +422,4 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
 
 
 class SpotifyError(Exception):
-    """Raised for any Spotify API or configuration error."""
     pass
