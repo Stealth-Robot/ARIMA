@@ -391,43 +391,41 @@ def album_create_song(album_id):
     return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
 
 
-@edit_bp.route('/album/<int:album_id>/reorder-song', methods=['POST'])
+@edit_bp.route('/album/<int:album_id>/move-song', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
-def reorder_song(album_id):
-    """Move a song up or down within an album."""
+def move_song(album_id):
+    """Move a song to a specific position within an album (for drag-and-drop)."""
     _require_edit_mode()
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
     song_id = int(request.form.get('song_id', 0))
-    direction = request.form.get('direction', '')
-    if not song_id or direction not in ('up', 'down'):
+    new_position = int(request.form.get('new_position', 0))
+    if not song_id or new_position < 1:
         abort(400)
 
-    # Get all songs in this album ordered by track_number
     links = AlbumSong.query.filter_by(album_id=album_id).order_by(AlbumSong.track_number).all()
-    idx = next((i for i, l in enumerate(links) if l.song_id == song_id), None)
-    if idx is None:
+    old_idx = next((i for i, l in enumerate(links) if l.song_id == song_id), None)
+    if old_idx is None:
         abort(404)
 
-    swap_idx = idx - 1 if direction == 'up' else idx + 1
-    if swap_idx < 0 or swap_idx >= len(links):
+    new_idx = min(new_position - 1, len(links) - 1)
+    if new_idx == old_idx:
         return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
 
-    # Swap track numbers via raw SQL to avoid unique constraint conflict
-    tn_a, tn_b = links[idx].track_number, links[swap_idx].track_number
-    sid_a, sid_b = links[idx].song_id, links[swap_idx].song_id
-    db.session.expire_all()
-    db.session.execute(db.text(
-        'UPDATE album_song SET track_number = -1 WHERE album_id = :aid AND song_id = :sid'
-    ), {'aid': album_id, 'sid': sid_a})
-    db.session.execute(db.text(
-        'UPDATE album_song SET track_number = :tn WHERE album_id = :aid AND song_id = :sid'
-    ), {'aid': album_id, 'sid': sid_b, 'tn': tn_a})
-    db.session.execute(db.text(
-        'UPDATE album_song SET track_number = :tn WHERE album_id = :aid AND song_id = :sid'
-    ), {'aid': album_id, 'sid': sid_a, 'tn': tn_b})
+    moved = links.pop(old_idx)
+    links.insert(new_idx, moved)
+
+    # Set all to negative first to avoid unique constraint conflicts
+    for i, link in enumerate(links):
+        db.session.execute(db.text(
+            'UPDATE album_song SET track_number = :tn WHERE album_id = :aid AND song_id = :sid'
+        ), {'aid': album_id, 'sid': link.song_id, 'tn': -(i + 1)})
+    for i, link in enumerate(links):
+        db.session.execute(db.text(
+            'UPDATE album_song SET track_number = :tn WHERE album_id = :aid AND song_id = :sid'
+        ), {'aid': album_id, 'sid': link.song_id, 'tn': i + 1})
     db.session.commit()
 
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}

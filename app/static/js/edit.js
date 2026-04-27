@@ -2416,13 +2416,15 @@ function doRemoveFromAlbum(songId, albumId, deleteAlbum) {
     });
 }
 
-/* Reorder song within album */
+/* Drag-and-drop song reorder within album */
 
-function reorderSong(songId, albumId, direction) {
-    fetch('/edit/album/' + albumId + '/reorder-song', {
+var _dragSongRow = null;
+
+function moveSong(songId, albumId, newPosition) {
+    fetch('/edit/album/' + albumId + '/move-song', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-        body: 'song_id=' + songId + '&direction=' + direction,
+        body: 'song_id=' + songId + '&new_position=' + newPosition,
     }).then(function(r) {
         if (!r.ok) throw new Error('failed');
         window.location.reload();
@@ -2430,6 +2432,90 @@ function reorderSong(songId, albumId, direction) {
         showToast('Reorder failed — try again');
     });
 }
+
+function _clearDragIndicators() {
+    var els = document.querySelectorAll('.song-drag-above, .song-drag-below');
+    for (var i = 0; i < els.length; i++) {
+        els[i].classList.remove('song-drag-above', 'song-drag-below');
+    }
+}
+
+function _dragDirection(albumId, sourceRow, targetRow) {
+    var rows = document.querySelectorAll('tr.album-row-' + albumId + '[data-song-id]');
+    var srcIdx = -1, tgtIdx = -1;
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i] === sourceRow) srcIdx = i;
+        if (rows[i] === targetRow) tgtIdx = i;
+    }
+    return srcIdx < tgtIdx ? 'down' : 'up';
+}
+
+document.addEventListener('mousedown', function(e) {
+    var handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    var row = handle.closest('tr[data-song-id]');
+    if (row) row.setAttribute('draggable', 'true');
+});
+
+document.addEventListener('mouseup', function() {
+    if (_dragSongRow) return;
+    var row = document.querySelector('tr[draggable="true"]');
+    if (row) row.removeAttribute('draggable');
+});
+
+document.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('tr[data-song-id]');
+    if (!row || !row.getAttribute('draggable')) return;
+    _dragSongRow = row;
+    row.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.songId);
+});
+
+document.addEventListener('dragover', function(e) {
+    if (!_dragSongRow) return;
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (!targetRow || targetRow === _dragSongRow) return;
+    if (targetRow.dataset.albumId !== _dragSongRow.dataset.albumId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    _clearDragIndicators();
+    var dir = _dragDirection(targetRow.dataset.albumId, _dragSongRow, targetRow);
+    targetRow.classList.add(dir === 'up' ? 'song-drag-above' : 'song-drag-below');
+});
+
+document.addEventListener('dragleave', function(e) {
+    if (!_dragSongRow) return;
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (targetRow) targetRow.classList.remove('song-drag-above', 'song-drag-below');
+});
+
+document.addEventListener('drop', function(e) {
+    if (!_dragSongRow) return;
+    e.preventDefault();
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (!targetRow || targetRow === _dragSongRow) return;
+    if (targetRow.dataset.albumId !== _dragSongRow.dataset.albumId) return;
+
+    var albumId = _dragSongRow.dataset.albumId;
+    var songId = _dragSongRow.dataset.songId;
+    var albumRows = document.querySelectorAll('tr.album-row-' + albumId + '[data-song-id]');
+    var newPosition = 1;
+    for (var i = 0; i < albumRows.length; i++) {
+        if (albumRows[i] === targetRow) { newPosition = i + 1; break; }
+    }
+    _clearDragIndicators();
+    moveSong(songId, albumId, newPosition);
+});
+
+document.addEventListener('dragend', function(e) {
+    if (_dragSongRow) {
+        _dragSongRow.style.opacity = '';
+        _dragSongRow.removeAttribute('draggable');
+        _dragSongRow = null;
+    }
+    _clearDragIndicators();
+});
 
 /* Shared delete confirmation modal */
 

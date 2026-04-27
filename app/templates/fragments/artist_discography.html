@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
 
         {% for song, track_num in songs %}
 
-        <tr id="song-{{ song.id }}" class="album-row-{{ album.id }} border border-grid-line" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        <tr id="song-{{ song.id }}" class="album-row-{{ album.id }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album.id }}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
         {% set ns.song_idx = ns.song_idx + 1 %}
                         <!-- Song name (no track number) -->
             <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
@@ -352,10 +352,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>{% endif %}
                 {% if 'merge' in _ebtns %}<span class="edit-inline merge-btn cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Merge with another song"
                       data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>{% endif %}
-                {% if 'reorder' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move up"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
-                <span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Move down"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>{% endif %}
+                {% if 'reorder' in _ebtns %}<span class="edit-inline drag-handle text-secondary-text ml-1" style="font-size: inherit; cursor: grab;" title="Drag to reorder">⠿</span>{% endif %}
                 {% if 'spotify_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
                       onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endif %}
                 {% if 'youtube_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-0.5" style="font-size: inherit;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
@@ -506,7 +503,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
         </tr>
 
         {% for song, track_num in songs %}
-        <tr id="song-{{ song.id }}" class="child-row-{{ child.artist.id }} album-row-{{ album.id }} border border-grid-line" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        <tr id="song-{{ song.id }}" class="child-row-{{ child.artist.id }} album-row-{{ album.id }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album.id }}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
         {% set ns.song_idx = ns.song_idx + 1 %}
                         <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
                 data-song-id="{{ song.id }}" title="{{ song.name | e }}"
@@ -533,10 +530,7 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
                       onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>{% endif %}
                 {% if 'merge' in _ebtns %}<span class="edit-inline merge-btn cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Merge with another song"
                       data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>{% endif %}
-                {% if 'reorder' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move up"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'up')">▲</span>
-                <span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Move down"
-                      onclick="reorderSong({{ song.id }}, {{ album.id }}, 'down')">▼</span>{% endif %}
+                {% if 'reorder' in _ebtns %}<span class="edit-inline drag-handle text-secondary-text ml-1" style="font-size: inherit; cursor: grab;" title="Drag to reorder">⠿</span>{% endif %}
                 {% if 'spotify_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
                       onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endif %}
                 {% if 'youtube_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-0.5" style="font-size: inherit;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
