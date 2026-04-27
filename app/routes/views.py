@@ -382,6 +382,21 @@ def view_potential_duplicates():
                 'albums': [album_name] if album_name else [],
             })
 
+    # Load featured (non-main) artists for these songs
+    all_song_ids = [s['id'] for g in groups.values() for s in g['songs']]
+    feat_rows = db.session.query(
+        ArtistSong.song_id, Artist.name
+    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+        ArtistSong.song_id.in_(all_song_ids),
+        ArtistSong.artist_is_main == False,
+    ).all()
+    feat_map = {}
+    for sid, aname in feat_rows:
+        feat_map.setdefault(sid, []).append(aname)
+    for g in groups.values():
+        for s in g['songs']:
+            s['featured_artists'] = feat_map.get(s['id'], [])
+
     # Load dismissed pairs
     dismissed = {(r.song_id_1, r.song_id_2) for r in NotDuplicate.query.all()}
 
