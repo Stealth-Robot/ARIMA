@@ -640,6 +640,10 @@ def perform_song_merge(kept, absorbed):
             db.session.execute(db.text(
                 'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
             ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': ar.user_id})
+        else:
+            kr = kept_ratings[ar.user_id]
+            if ar.note:
+                kr.note = f"{kr.note}\n{ar.note}" if kr.note else ar.note
 
     # Step 2: Merge artist links
     kept_artist_ids = {r[0] for r in db.session.execute(
@@ -675,8 +679,8 @@ def perform_song_merge(kept, absorbed):
         kept.spotify_url = absorbed.spotify_url
     if not kept.youtube_url and absorbed.youtube_url:
         kept.youtube_url = absorbed.youtube_url
-    if not kept.note and absorbed.note:
-        kept.note = absorbed.note
+    if absorbed.note:
+        kept.note = f"{kept.note}\n{absorbed.note}" if kept.note else absorbed.note
 
     # Step 3c: Transfer NotDuplicate pairs from absorbed to kept song
     lo, hi = min(absorbed_song_id, kept_song_id), max(absorbed_song_id, kept_song_id)
