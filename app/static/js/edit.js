@@ -108,7 +108,7 @@ function closeUrlPopover() {
     if (_activeUrlPopover) { _activeUrlPopover.remove(); _activeUrlPopover = null; }
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (_activeUrlPopover && !_activeUrlPopover.contains(e.target)) {
         closeUrlPopover();
     }
@@ -219,7 +219,7 @@ function promptLocalUrl(btnEl, dataKey, label) {
     var currentValue = songDiv ? (songDiv.dataset[dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();})] || '') : '';
 
     var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
+    popover.style.cssText = 'position:fixed; z-index:110; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
 
     var title = document.createElement('div');
     title.textContent = label;
@@ -517,7 +517,7 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
     activeGenrePopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeGenrePopover && !activeGenrePopover.contains(e.target)) {
         closeGenrePopover();
     }
@@ -587,7 +587,7 @@ function showCountryEdit(event, artistId, span, allCountries, currentId) {
     activeCountryPopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeCountryPopover && !activeCountryPopover.contains(e.target)) {
         closeCountryPopover();
     }
@@ -1501,7 +1501,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
     activeAlbumSongSearchPopover = popover;
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
         closeAlbumMovePopover();
     closeAlbumArtistMovePopover();
@@ -2098,8 +2098,8 @@ function addNewAlbumSong(currentArtistId) {
             '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:150px;" onchange="onNewSongArtistChange(this,' + n + ')">' +
                 newSongArtistOptions(n) +
             '</select>' +
-            '<span style="cursor:pointer; margin-left:4px;" onclick="promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer;" onclick="promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
         '</div>';
     container.appendChild(row);
     // Auto-add target artist (from dropdown or page artist) as main
@@ -2443,13 +2443,15 @@ function doRemoveFromAlbum(songId, albumId, deleteAlbum) {
     });
 }
 
-/* Reorder song within album */
+/* Drag-and-drop song reorder within album */
 
-function reorderSong(songId, albumId, direction) {
-    fetch('/edit/album/' + albumId + '/reorder-song', {
+var _dragSongRow = null;
+
+function moveSong(songId, albumId, newPosition) {
+    fetch('/edit/album/' + albumId + '/move-song', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-        body: 'song_id=' + songId + '&direction=' + direction,
+        body: 'song_id=' + songId + '&new_position=' + newPosition,
     }).then(function(r) {
         if (!r.ok) throw new Error('failed');
         window.location.reload();
@@ -2457,6 +2459,90 @@ function reorderSong(songId, albumId, direction) {
         showToast('Reorder failed — try again');
     });
 }
+
+function _clearDragIndicators() {
+    var els = document.querySelectorAll('.song-drag-above, .song-drag-below');
+    for (var i = 0; i < els.length; i++) {
+        els[i].classList.remove('song-drag-above', 'song-drag-below');
+    }
+}
+
+function _dragDirection(albumId, sourceRow, targetRow) {
+    var rows = document.querySelectorAll('tr.album-row-' + albumId + '[data-song-id]');
+    var srcIdx = -1, tgtIdx = -1;
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i] === sourceRow) srcIdx = i;
+        if (rows[i] === targetRow) tgtIdx = i;
+    }
+    return srcIdx < tgtIdx ? 'down' : 'up';
+}
+
+document.addEventListener('mousedown', function(e) {
+    var handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    var row = handle.closest('tr[data-song-id]');
+    if (row) row.setAttribute('draggable', 'true');
+});
+
+document.addEventListener('mouseup', function() {
+    if (_dragSongRow) return;
+    var row = document.querySelector('tr[draggable="true"]');
+    if (row) row.removeAttribute('draggable');
+});
+
+document.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('tr[data-song-id]');
+    if (!row || !row.getAttribute('draggable')) return;
+    _dragSongRow = row;
+    row.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.songId);
+});
+
+document.addEventListener('dragover', function(e) {
+    if (!_dragSongRow) return;
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (!targetRow || targetRow === _dragSongRow) return;
+    if (targetRow.dataset.albumId !== _dragSongRow.dataset.albumId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    _clearDragIndicators();
+    var dir = _dragDirection(targetRow.dataset.albumId, _dragSongRow, targetRow);
+    targetRow.classList.add(dir === 'up' ? 'song-drag-above' : 'song-drag-below');
+});
+
+document.addEventListener('dragleave', function(e) {
+    if (!_dragSongRow) return;
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (targetRow) targetRow.classList.remove('song-drag-above', 'song-drag-below');
+});
+
+document.addEventListener('drop', function(e) {
+    if (!_dragSongRow) return;
+    e.preventDefault();
+    var targetRow = e.target.closest('tr[data-song-id]');
+    if (!targetRow || targetRow === _dragSongRow) return;
+    if (targetRow.dataset.albumId !== _dragSongRow.dataset.albumId) return;
+
+    var albumId = _dragSongRow.dataset.albumId;
+    var songId = _dragSongRow.dataset.songId;
+    var albumRows = document.querySelectorAll('tr.album-row-' + albumId + '[data-song-id]');
+    var newPosition = 1;
+    for (var i = 0; i < albumRows.length; i++) {
+        if (albumRows[i] === targetRow) { newPosition = i + 1; break; }
+    }
+    _clearDragIndicators();
+    moveSong(songId, albumId, newPosition);
+});
+
+document.addEventListener('dragend', function(e) {
+    if (_dragSongRow) {
+        _dragSongRow.style.opacity = '';
+        _dragSongRow.removeAttribute('draggable');
+        _dragSongRow = null;
+    }
+    _clearDragIndicators();
+});
 
 /* Shared delete confirmation modal */
 
@@ -2644,7 +2730,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 // Close song note overlay on outside click
-document.addEventListener('click', function (e) {
+document.addEventListener('mousedown', function (e) {
     if (activeSongNote && !activeSongNote.overlay.contains(e.target) && !activeSongNote.td.contains(e.target)) {
         closeSongNoteInput();
     }

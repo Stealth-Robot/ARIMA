@@ -33,7 +33,7 @@
                 </td>
                 <td class="px-3 py-1 border border-grid-line">{{ s.albums | join(', ') or '—' }}</td>
                 <td class="px-3 py-1 border border-grid-line">
-                    <a href="/artists/{{ s.artist_slug }}" class="text-link">{{ s.artist_name }}</a>
+                    <a href="/artists/{{ s.artist_slug }}" class="text-link">{{ s.artist_name }}</a>{% if s.featured_artists %} <span class="text-secondary-text italic">feat. {{ s.featured_artists | join(', ') }}</span>{% endif %}
                 </td>
                 <td class="px-3 py-1 text-center border border-grid-line">{{ 'Yes' if s.is_remix else 'No' }}</td>
             </tr>

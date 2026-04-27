@@ -29,7 +29,7 @@
                 {% for u in users %}
                 <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" name="user_id" value="{{ u.id }}"
-                           {% if u.id|string in user_ids %}checked{% endif %}
+                           {% if not user_ids or u.id|string in user_ids %}checked{% endif %}
                            hx-get="{{ url_for('changelog.changelog') }}"
                            hx-trigger="change"
                            hx-target="#changelog-list"
@@ -53,7 +53,7 @@
                 {% for t in all_types %}
                 <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" name="include" value="{{ t.type }}"
-                           {% if t.type in include %}checked{% endif %}
+                           {% if not include or t.type in include %}checked{% endif %}
                            hx-get="{{ url_for('changelog.changelog') }}"
                            hx-trigger="change"
                            hx-target="#changelog-list"

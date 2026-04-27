@@ -1,3 +1,14 @@
+/* Drag-and-drop song reorder indicator */
+tr.song-drag-above > td {
+    box-shadow: inset 0 2px 0 0 #3b82f6;
+}
+tr.song-drag-below > td {
+    box-shadow: inset 0 -2px 0 0 #3b82f6;
+}
+tr[draggable="true"] {
+    cursor: grabbing;
+}
+
 /* Offset anchor-targeted rows so the fixed navbar (44px) + sticky table header (~30px) don't cover them */
 tr[id] {
     scroll-margin-top: 70px;

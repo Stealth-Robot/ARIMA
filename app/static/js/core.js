@@ -110,6 +110,18 @@ document.addEventListener('click', function(e) {
     document.querySelectorAll('.filter-multiselect').forEach(_closeFilterPanel);
 });
 
+/* Mousewheel scroll inside filter panels — nav's overflow-x:auto forces
+   overflow-y to compute as auto (CSS spec), making it a scroll container
+   that swallows wheel events from fixed-position child panels. */
+document.addEventListener('wheel', function(e) {
+    var panel = e.target.closest('.filter-panel');
+    if (!panel || panel.classList.contains('hidden')) return;
+    e.preventDefault();
+    var delta = e.deltaY;
+    if (e.deltaMode === 1) delta *= 28;
+    panel.scrollTop += delta;
+}, { passive: false });
+
 /* Checkbox toggle inside a filter panel updates the button label live */
 document.addEventListener('change', function(e) {
     if (e.target.type !== 'checkbox') return;
