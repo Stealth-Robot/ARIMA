@@ -1,0 +1,45 @@
+<div data-artist-id="{{ artist_id }}">
+    <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
+    <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
+        <thead>
+            <tr>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none;"></th>
+                {% for u in users %}
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line"
+                    title="{{ song.name | e }}" data-song-id="{{ song.id }}"
+                    {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
+                    style="padding: 4px 6px 4px 16px; width: 200px; max-width: 200px;{% if song.is_promoted %} border-left: 4px solid var(--promoted-song);{% endif %}">
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a href="{{ artist_url }}" class="text-secondary-text italic no-underline">{{ artist.name }}</a>{% if collab_label %} <span class="text-secondary-text italic">{{ collab_label }}</span>{% endif %}
+                    </div>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a href="{{ artist_url }}" class="no-underline" style="color: var(--link);">{{ song.name }}</a>{% if song.is_remix %} <span class="text-secondary-text italic">(remix)</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+                    </div>
+                    <div class="text-secondary-text" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}
+                    </div>
+                </td>
+                {% for u in users %}
+                {% set r = ratings.get(u.id) %}
+                {% set cell_style = rating_cell_style(r.rating if r else None) %}
+                {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
+                {% set cell_editable = current_user.can_rate and (u.id == current_user.id or rating_all) %}
+                <td id="rating-{{ song.id }}-{{ u.id }}"
+                    class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-70{% endif %}"
+                    style="vertical-align: middle;{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+                    {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
+                    {% if cell_editable %}onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"{% endif %}>
+                    {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    </div>
+</div>

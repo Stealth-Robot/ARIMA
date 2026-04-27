@@ -1,4 +1,5 @@
 import json
+import random
 
 from flask import Blueprint, render_template, session
 from flask_login import login_required, current_user
@@ -173,6 +174,47 @@ def toggle_hide_disbanded():
     settings.hide_disbanded_maintained = not UserSettings._as_bool(settings.hide_disbanded_maintained)
     db.session.commit()
     return json.dumps({'hide_disbanded': settings.hide_disbanded_maintained}), 200, {'Content-Type': 'application/json'}
+
+
+@home_bp.route('/shuffle')
+@login_required
+def shuffle():
+    if not current_user.can_rate:
+        return '', 204
+    backlog, _ = _get_rating_backlog()
+    if not backlog:
+        return '', 204
+    candidates = []
+    for artist, (_count, album_groups) in backlog:
+        for album, songs in album_groups:
+            for song in songs:
+                candidates.append((song, artist, album))
+    if not candidates:
+        return '', 204
+    song, artist, album = random.choice(candidates)
+
+    from urllib.parse import quote
+    from app.services.stats import get_display_users
+    artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    users = get_display_users()
+    ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
+
+    song_artists_rows = db.session.query(
+        ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
+    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+        ArtistSong.song_id == song.id
+    ).all()
+    from app.routes.artists import _collab_labels_from_song_artists
+    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g}
+                        for a, m, n, g in song_artists_rows]}
+    collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
+
+    return render_template('fragments/shuffle_card.html',
+                           song=song, artist=artist, album=album,
+                           artist_url=artist_url, artist_id=artist.id,
+                           users=users, ratings=ratings,
+                           collab_label=collab_label,
+                           gender_css=GENDER_CSS)
 
 
 @home_bp.route('/')

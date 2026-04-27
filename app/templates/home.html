@@ -46,6 +46,15 @@
         {% endfor %}
     </div>
     {% endif %}
+    {% if backlog %}
+    <div class="text-center mt-6">
+        <span id="shuffle-controls">
+            <button onclick="shuffleSong();" class="text-xs px-2 py-1 rounded cursor-pointer" style="background-color: var(--bg-secondary); color: var(--link); border: 1px solid var(--border, #ccc);">Shuffle</button>
+            <button id="shuffle-dismiss" onclick="dismissShuffle();" class="text-xs px-1 rounded cursor-pointer ml-1" style="background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border,#ccc);visibility:hidden;">✕</button>
+        </span>
+    </div>
+    <div id="shuffle-container"></div>
+    {% endif %}
     <div class="text-center mt-6">
         <pre class="text-secondary-text text-xxs inline-block text-left hidden md:inline-block" style="line-height: 1.2; user-select: none;">
   ______       _______       ______      __       __       ______
@@ -248,5 +257,30 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+function shuffleSong() {
+    fetch('/shuffle')
+        .then(function(r) {
+            if (r.status === 204) {
+                dismissShuffle();
+                showBriefToast('No unrated songs left!');
+                return null;
+            }
+            return r.text();
+        })
+        .then(function(html) {
+            if (!html) return;
+            var container = document.getElementById('shuffle-container');
+            container.innerHTML = html;
+            document.getElementById('shuffle-dismiss').style.visibility = 'visible';
+        })
+        .catch(function() {
+            showBriefToast('Shuffle failed — try again');
+        });
+}
+function dismissShuffle() {
+    var container = document.getElementById('shuffle-container');
+    if (container) container.innerHTML = '';
+    document.getElementById('shuffle-dismiss').style.visibility = 'hidden';
+}
 </script>
 {% endblock %}

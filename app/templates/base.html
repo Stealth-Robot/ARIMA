@@ -379,10 +379,17 @@
                     var styles = getComputedStyle(document.documentElement);
                     btn.style.background = isSelf ? styles.getPropertyValue('--edit-on-button') : styles.getPropertyValue('--edit-off-button');
                     btn.textContent = 'Rating: ' + (isSelf ? 'All' : 'Self');
-                    var disco = document.getElementById('discography');
-                    if (disco) {
-                        fetch(window.location.href, {headers: {'HX-Request': 'true'}}).then(function(r) { return r.text(); }).then(function(html) { disco.innerHTML = html; });
-                    }
+                    document.querySelectorAll('td[id^="rating-"]').forEach(function(cell) {
+                        var isOwn = cell.classList.contains('my-cell');
+                        var parts = cell.id.split('-');
+                        if (isSelf || isOwn) {
+                            cell.classList.add('cursor-pointer', 'hover:opacity-70');
+                            cell.setAttribute('onclick', 'showRatingInput(event, ' + parts[1] + ', ' + parts[2] + ')');
+                        } else {
+                            cell.classList.remove('cursor-pointer', 'hover:opacity-70');
+                            cell.removeAttribute('onclick');
+                        }
+                    });
                 });
             });
         }
