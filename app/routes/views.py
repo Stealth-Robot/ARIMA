@@ -12,6 +12,7 @@ from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist
 from app.models.not_duplicate import NotDuplicate
 from app.models.not_variant import NotVariant
+from app.models.not_collab import NotCollab
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 views_bp = Blueprint('views', __name__)
@@ -86,6 +87,7 @@ def views_page():
         ).count(),
         'variant_songs': len(_variant_songs()),
         'duplicate_songs': '…',
+        'collab_candidates': _collab_candidate_query().count(),
     }
     return render_template('views.html', counts=counts)
 
@@ -477,3 +479,69 @@ def view_incomplete_tabs():
         {'label': f'<a href="/artists/{a.slug}" style="color: var(--link);">{a.name}</a>', 'safe': True}
         for a in artists
     ])
+
+
+_COLLAB_LIKE = [
+    '%(with %', '%(feat%', '%(ft.%', '%(ft %',
+    '%(w/ %', '%(w/%', '%(featuring %', '%(Feat:%',
+    '% feat.%', '% feat %', '% ft.%', '% ft %',
+    '%Feat. %', '%&Feat.%', '% featuring %',
+]
+
+
+def _collab_candidate_query():
+    """Songs with feat/ft/with markers in title that don't already have misc artist links."""
+    return db.session.query(Song).filter(
+        ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
+        ~Song.id.in_(db.session.query(NotCollab.song_id)),
+        db.or_(*[Song.name.ilike(p) for p in _COLLAB_LIKE]),
+    )
+
+
+@views_bp.route('/views/collab-candidates')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_collab_candidates():
+    from app.migrations import _extract_collab_names
+    songs = _collab_candidate_query().order_by(Song.name).all()
+    song_ids = [s.id for s in songs]
+    if not song_ids:
+        return render_template('fragments/view_collab_candidates.html', items=[])
+
+    artist_rows = db.session.query(
+        ArtistSong.song_id, Artist.name, Artist.slug,
+    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+        ArtistSong.song_id.in_(song_ids),
+        ArtistSong.artist_is_main == True,
+    ).all()
+    artist_map = {}
+    for sid, aname, aslug in artist_rows:
+        artist_map.setdefault(sid, []).append({'name': aname, 'slug': aslug})
+
+    items = []
+    for s in songs:
+        artists = artist_map.get(s.id, [])
+        extracted = _extract_collab_names(s.name)
+        items.append({
+            'song_id': s.id,
+            'song_name': s.name,
+            'artists': artists,
+            'extracted_names': extracted,
+        })
+
+    return render_template('fragments/view_collab_candidates.html', items=items)
+
+
+@views_bp.route('/views/dismiss-collab', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def dismiss_collab():
+    song_id = request.form.get('song_id', type=int)
+    if not song_id:
+        abort(400)
+    try:
+        db.session.add(NotCollab(song_id=song_id))
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+    return '', 204
