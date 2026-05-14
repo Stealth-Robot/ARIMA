@@ -246,12 +246,14 @@ function submitReject(e) {
     var errDiv = document.getElementById('reject-error');
     errDiv.style.display = 'none';
 
-    fetch('/submissions/' + _rejectSubId + '/reject', {
+    var rejectId = _rejectSubId;
+    fetch('/submissions/' + rejectId + '/reject', {
         method: 'POST',
         body: formData,
     }).then(function(r) {
         if (r.ok) {
             closeRejectModal();
+            removeSubmissionRow(rejectId);
             refreshSubmissionsList();
         } else {
             r.text().then(function(t) {
@@ -337,16 +339,27 @@ function submitApprove(e) {
     e.preventDefault();
     var form = document.getElementById('approve-form');
     var formData = new FormData(form);
+    var approveId = _approveSubId;
 
-    fetch('/submissions/' + _approveSubId + '/approve', {
+    fetch('/submissions/' + approveId + '/approve', {
         method: 'POST',
         body: formData,
     }).then(function(r) {
         if (r.ok) {
             closeApproveModal();
+            removeSubmissionRow(approveId);
             refreshSubmissionsList();
         }
     });
+}
+
+function removeSubmissionRow(subId) {
+    var row = document.getElementById('submission-row-' + subId);
+    if (row) row.remove();
+    var tbody = document.querySelector('#submissions-list tbody');
+    if (tbody && tbody.children.length === 0) {
+        document.getElementById('submissions-list').innerHTML = '<p class="text-secondary-text">No submissions found.</p>';
+    }
 }
 
 function submitApproveDirectly(subId) {
@@ -357,6 +370,7 @@ function submitApproveDirectly(subId) {
         body: 'csrf_token=' + encodeURIComponent(csrfToken),
     }).then(function(r) {
         if (r.ok) {
+            removeSubmissionRow(subId);
             refreshSubmissionsList();
         }
     });
@@ -500,9 +514,13 @@ function bulkApprove() {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'csrf_token=' + encodeURIComponent(csrfToken),
-        }).then(function() {
+        }).then(function(r) {
+            if (r.ok) removeSubmissionRow(id);
             done++;
-            if (done === ids.length) refreshSubmissionsList();
+            if (done === ids.length) {
+                updateBulkActions();
+                refreshSubmissionsList();
+            }
         });
     });
 }
@@ -546,9 +564,11 @@ function bulkRejectPrompt() {
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: body,
             }).then(function(r) {
+                if (r.ok) removeSubmissionRow(id);
                 done++;
                 if (done === ids.length) {
                     closeRejectModal();
+                    updateBulkActions();
                     refreshSubmissionsList();
                 }
             });

@@ -108,12 +108,14 @@ function submitReject(e) {
     var formData = new FormData(form);
     var errDiv = document.getElementById('reject-error');
     errDiv.style.display = 'none';
-    fetch('/submissions/' + _rejectSubId + '/reject', {
+    var rejectId = _rejectSubId;
+    fetch('/submissions/' + rejectId + '/reject', {
         method: 'POST',
         body: formData,
     }).then(function(r) {
         if (r.ok) {
             closeRejectModal();
+            removeSubmissionRow(rejectId);
             refreshSubmissionsList();
         } else {
             r.text().then(function(t) {
@@ -124,6 +126,15 @@ function submitReject(e) {
     });
 }
 
+function removeSubmissionRow(subId) {
+    var row = document.getElementById('submission-row-' + subId);
+    if (row) row.remove();
+    var tbody = document.querySelector('#submissions-list tbody');
+    if (tbody && tbody.children.length === 0) {
+        document.getElementById('submissions-list').innerHTML = '<p class="text-secondary-text">No submissions found.</p>';
+    }
+}
+
 function approveSubmission(subId, subType) {
     var csrfToken = document.querySelector('meta[name=csrf-token]').content;
     fetch('/submissions/' + subId + '/approve', {
@@ -131,7 +142,10 @@ function approveSubmission(subId, subType) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'csrf_token=' + encodeURIComponent(csrfToken),
     }).then(function(r) {
-        if (r.ok) refreshSubmissionsList();
+        if (r.ok) {
+            removeSubmissionRow(subId);
+            refreshSubmissionsList();
+        }
     });
 }
 
@@ -215,7 +229,14 @@ function bulkApprove() {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'csrf_token=' + encodeURIComponent(csrfToken),
-        }).then(function() { done++; if (done === ids.length) refreshSubmissionsList(); });
+        }).then(function(r) {
+            if (r.ok) removeSubmissionRow(id);
+            done++;
+            if (done === ids.length) {
+                updateBulkActions();
+                refreshSubmissionsList();
+            }
+        });
     });
 }
 
@@ -241,7 +262,11 @@ function bulkRejectPrompt() {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'csrf_token=' + encodeURIComponent(csrfToken) + '&reason=' + encodeURIComponent(reason),
-            }).then(function() { done++; if (done === ids.length) { closeRejectModal(); refreshSubmissionsList(); } });
+            }).then(function(r) {
+                if (r.ok) removeSubmissionRow(id);
+                done++;
+                if (done === ids.length) { closeRejectModal(); updateBulkActions(); refreshSubmissionsList(); }
+            });
         });
         form.onsubmit = function(ev) { ev.preventDefault(); submitReject(ev); };
     };
