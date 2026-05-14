@@ -5,7 +5,7 @@ from flask import request, abort, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, song_genres
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, album_genres, song_genres
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
@@ -670,6 +670,28 @@ def perform_song_merge(kept, absorbed):
                 'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
             ), {'aid': link.album_id, 'sid': kept_song_id, 'tn': link.track_number})
 
+    # Step 2b: Merge misc artist links
+    kept_misc_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT misc_artist_id FROM song_misc_artist WHERE song_id = :sid'),
+        {'sid': kept_song_id}).fetchall()}
+    for link in SongMiscArtist.query.filter_by(song_id=absorbed_song_id).all():
+        if link.misc_artist_id not in kept_misc_ids:
+            db.session.execute(db.text(
+                'UPDATE song_misc_artist SET song_id = :kept WHERE misc_artist_id = :mid AND song_id = :absorbed'
+            ), {'kept': kept_song_id, 'mid': link.misc_artist_id, 'absorbed': absorbed_song_id})
+
+    # Step 2c: Merge song-level genres
+    kept_genre_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT genre_id FROM song_genres WHERE song_id = :sid'),
+        {'sid': kept_song_id}).fetchall()}
+    absorbed_genre_ids = {r[0] for r in db.session.execute(
+        db.text('SELECT genre_id FROM song_genres WHERE song_id = :sid'),
+        {'sid': absorbed_song_id}).fetchall()}
+    for gid in absorbed_genre_ids - kept_genre_ids:
+        db.session.execute(db.text(
+            'INSERT INTO song_genres (song_id, genre_id) VALUES (:sid, :gid)'
+        ), {'sid': kept_song_id, 'gid': gid})
+
     # Step 3b: Carry over flags and links
     if absorbed.is_promoted:
         kept.is_promoted = True
@@ -708,6 +730,8 @@ def perform_song_merge(kept, absorbed):
     Rating.query.filter_by(song_id=absorbed_song_id).delete()
     ArtistSong.query.filter_by(song_id=absorbed_song_id).delete()
     AlbumSong.query.filter_by(song_id=absorbed_song_id).delete()
+    SongMiscArtist.query.filter_by(song_id=absorbed_song_id).delete()
+    db.session.execute(db.text('DELETE FROM song_genres WHERE song_id = :sid'), {'sid': absorbed_song_id})
     db.session.query(Song).filter_by(id=absorbed_song_id).delete()
 
     # Step 5: Audit log
