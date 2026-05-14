@@ -40,10 +40,13 @@ function updatePromotedStyle(checkbox) {
         cell.style.borderLeft = '4px solid var(--promoted-song)';
         if (!tag) {
             tag = document.createElement('span');
-            tag.className = 'promoted-tag';
-            tag.style.cssText = 'font-size:9px;padding:1px 5px;margin-left:4px;border-radius:3px;background-color:var(--promoted-song);color:var(--text-primary);';
+            tag.className = 'promoted-tag rounded bg-promoted text-primary-text ml-1';
+            tag.style.cssText = 'font-size: 9px; padding: 1px 5px;';
             tag.textContent = 'promoted';
-            cell.appendChild(tag);
+            var dupTag = cell.querySelector('.duplicate-tag');
+            var ref = dupTag ? (dupTag.nextElementSibling || dupTag) : cell.querySelector('.edit-inline');
+            if (ref) ref.insertAdjacentElement('afterend', tag);
+            else cell.prepend(tag);
         }
     } else {
         cell.style.borderLeft = '1px solid var(--grid-line)';
