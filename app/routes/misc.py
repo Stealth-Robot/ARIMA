@@ -298,6 +298,19 @@ def unrated_count():
     return json.dumps({'unrated': unrated, 'total': total}), 200, {'Content-Type': 'application/json'}
 
 
+@misc_bp.route('/misc/song/<int:song_id>/country')
+@login_required
+def song_country(song_id):
+    row = db.session.query(MiscArtist.country_id).join(
+        SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
+    ).filter(
+        SongMiscArtist.song_id == song_id
+    ).order_by(SongMiscArtist.artist_is_main.desc()).first()
+    if not row:
+        return json.dumps({'country_id': None}), 200, {'Content-Type': 'application/json'}
+    return json.dumps({'country_id': row[0]}), 200, {'Content-Type': 'application/json'}
+
+
 @misc_bp.route('/misc/search-artists')
 @login_required
 def search_misc_artists():

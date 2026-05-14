@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug
 from app.services.audit import log_change
@@ -776,6 +776,11 @@ def add_artist_submit():
                         db.session.add(ArtistSong(artist_id=sa_id, song_id=song_obj.id, artist_is_main=sa.get('is_main', True)))
                 else:
                     db.session.add(ArtistSong(artist_id=artist.id, song_id=song_obj.id, artist_is_main=song_data.get('artist_is_main', True)))
+
+                for ma in song_data.get('misc_artists') or []:
+                    mid = int(ma['misc_artist_id'])
+                    if db.session.get(MiscArtist, mid):
+                        db.session.add(SongMiscArtist(song_id=song_obj.id, misc_artist_id=mid, artist_is_main=bool(ma.get('is_main'))))
 
         log_change(current_user, f'Added "{name}" artist with {len(albums_data)} albums, {total_songs} songs', artist=artist)
 

@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 
 from sqlalchemy import func
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
 from app.services.submission import create_submission, _close_orphaned_submissions
@@ -233,6 +233,11 @@ def add_album_to_artist(artist_id):
             else:
                 db.session.add(ArtistSong(artist_id=artist_id, song_id=song.id, artist_is_main=song_data.get('artist_is_main', True)))
 
+            for ma in song_data.get('misc_artists') or []:
+                mid = int(ma['misc_artist_id'])
+                if db.session.get(MiscArtist, mid):
+                    db.session.add(SongMiscArtist(song_id=song.id, misc_artist_id=mid, artist_is_main=bool(ma.get('is_main'))))
+
     existing_count = len(songs) - new_song_count
     if existing_count:
         log_change(current_user, f'Added "{album_name_val}" album with {new_song_count} new and {existing_count} existing songs', artist=artist, album=album)
@@ -381,6 +386,11 @@ def album_create_song(album_id):
             continue
         seen.add(aid)
         db.session.add(ArtistSong(artist_id=aid, song_id=song.id, artist_is_main=bool(a.get('is_main'))))
+
+    for ma in data.get('misc_artists') or []:
+        mid = int(ma['misc_artist_id'])
+        if db.session.get(MiscArtist, mid):
+            db.session.add(SongMiscArtist(song_id=song.id, misc_artist_id=mid, artist_is_main=bool(ma.get('is_main'))))
 
     log_change(current_user,
                f'Created "{name}" song in "{album.name}" album',

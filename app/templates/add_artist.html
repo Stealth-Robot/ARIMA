@@ -180,6 +180,7 @@
 
 <script>
 var allArtists = {{ artists_js | tojson }};
+var allCountries = [{% for c in countries %}{id:{{ c.id }},name:{{ c.country | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 let albumCount = 0;
 var _ytIconUrl = '{{ url_for("static", filename="img/youtube.png") }}';
 var _spIconUrl = '{{ url_for("static", filename="img/spotify.png") }}';
@@ -369,6 +370,109 @@ function onArtistDropdownChange(select, albumNum, songNum) {
     select.value = '';
 }
 
+function _initSongMiscSearch(songDiv) {
+    var input = songDiv.querySelector('.song-misc-search');
+    var resultsDiv = songDiv.querySelector('.song-misc-results');
+    if (!input || !resultsDiv) return;
+    var albumNum = input.dataset.album;
+    var songNum = input.dataset.song;
+    var timer;
+    function _csrfH() { var m = document.querySelector('meta[name="csrf-token"]'); var h = {}; if (m) h['X-CSRFToken'] = m.content; return h; }
+    function refresh() {
+        clearTimeout(timer);
+        var q = input.value.trim();
+        timer = setTimeout(function() {
+            fetch('/misc/search-artists?q=' + encodeURIComponent(q), { headers: _csrfH() })
+                .then(function(r) { return r.json(); })
+                .then(function(items) {
+                    resultsDiv.innerHTML = '';
+                    var usedIds = _getSongMiscArtistIds(albumNum, songNum);
+                    var filtered = items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
+                    if (!filtered.length) { resultsDiv.style.display = 'none'; return; }
+                    resultsDiv.style.display = 'block';
+                    filtered.forEach(function(item) {
+                        var row = document.createElement('div');
+                        row.textContent = item.name;
+                        row.style.cssText = 'font-size:12px; padding:2px 6px; cursor:pointer; border-radius:2px;';
+                        row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
+                        row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
+                        row.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            _addSongMiscArtist(albumNum, songNum, item.id, item.name);
+                            input.value = '';
+                            resultsDiv.style.display = 'none';
+                        });
+                        resultsDiv.appendChild(row);
+                    });
+                });
+        }, 150);
+    }
+    input.addEventListener('input', refresh);
+    input.addEventListener('focus', refresh);
+    input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
+    // + New button with country dropdown (matches misc page pattern)
+    var createRow = document.createElement('div');
+    createRow.style.cssText = 'display:flex; gap:4px; align-items:center; margin-top:4px;';
+    var newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.textContent = '+ New';
+    newBtn.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:3px; background:var(--edit-on-button,#16a34a); color:var(--button-text,#fff); border:none; cursor:pointer;';
+    var countrySel = document.createElement('select');
+    countrySel.style.cssText = 'font-size:11px; padding:2px 4px; border:1px solid var(--border); border-radius:3px;';
+    allCountries.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.name;
+        countrySel.appendChild(opt);
+    });
+    var countrySelect = document.querySelector('[name="country_id"]');
+    if (countrySelect && countrySelect.value) countrySel.value = countrySelect.value;
+    newBtn.addEventListener('click', function() {
+        var n = input.value.trim();
+        if (!n) return;
+        var cid = parseInt(countrySel.value);
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var headers = {'Content-Type': 'application/json'};
+        if (csrfMeta) headers['X-CSRFToken'] = csrfMeta.content;
+        fetch('/misc/add-misc-artist', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({name: n, country_id: cid}),
+        }).then(function(r) { return r.json(); }).then(function(d) {
+            _addSongMiscArtist(albumNum, songNum, d.id, d.name);
+            input.value = '';
+            resultsDiv.style.display = 'none';
+        });
+    });
+    createRow.appendChild(newBtn);
+    createRow.appendChild(countrySel);
+    input.parentElement.appendChild(createRow);
+}
+
+function _getSongMiscArtistIds(albumNum, songNum) {
+    var container = document.getElementById('song-misc-artists-' + albumNum + '-' + songNum);
+    var ids = [];
+    if (container) {
+        container.querySelectorAll('.song-misc-row').forEach(function(row) {
+            ids.push(parseInt(row.dataset.miscArtistId));
+        });
+    }
+    return ids;
+}
+
+function _addSongMiscArtist(albumNum, songNum, miscId, miscName) {
+    var container = document.getElementById('song-misc-artists-' + albumNum + '-' + songNum);
+    if (!container) return;
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-1 song-misc-row';
+    row.dataset.miscArtistId = miscId;
+    row.innerHTML =
+        '<span style="font-size:12px; margin-right:4px;">' + miscName.replace(/</g, '&lt;') + '</span>' +
+        '<select class="song-misc-role" style="font-size:11px; padding:1px 3px; border:1px solid var(--border); border-radius:3px;">' +
+            '<option value="main">Main</option><option value="feat" selected>Featured</option>' +
+        '</select>' +
+        '<button type="button" onclick="this.parentElement.remove()" style="font-size:12px; color:var(--delete-button); background:none; border:none; cursor:pointer;">x</button>';
+    container.appendChild(row);
+}
+
 function addSong(albumNum) {
     if (!songCounters[albumNum]) songCounters[albumNum] = 0;
     songCounters[albumNum]++;
@@ -398,8 +502,17 @@ function addSong(albumNum) {
             '</select>' +
             '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
             '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:4px;">' +
+            '<span style="font-size:12px; color:var(--text-secondary);">Misc:</span>' +
+            '<div id="song-misc-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+            '<div style="position:relative;">' +
+                '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + albumNum + '" data-song="' + songNum + '" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px; width:160px;">' +
+                '<div class="song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:4px; display:none; width:180px;"></div>' +
+            '</div>' +
         '</div>';
     container.appendChild(div);
+    _initSongMiscSearch(div);
     addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
 }
 
@@ -635,11 +748,20 @@ function collectFormState() {
                     var role = row.querySelector('.song-artist-role');
                     artists.push({ artist_id: isNew ? null : aid, is_main: role ? role.value === 'main' : true });
                 });
+                var miscArtists = [];
+                songDiv.querySelectorAll('.song-misc-row').forEach(function(mrow) {
+                    var role = mrow.querySelector('.song-misc-role');
+                    miscArtists.push({
+                        misc_artist_id: parseInt(mrow.dataset.miscArtistId),
+                        is_main: role ? role.value === 'main' : false,
+                    });
+                });
                 var songEntry = {
                     name: name,
                     is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
                     is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
                     artists: artists,
+                    misc_artists: miscArtists,
                 };
                 if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
                 if (songDiv.dataset.youtubeUrl) songEntry.youtube_url = songDiv.dataset.youtubeUrl;
@@ -888,9 +1010,23 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                         '</select>' +
                         '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
                         '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+                    '</div>' +
+                    '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:4px;">' +
+                        '<span style="font-size:12px; color:var(--text-secondary);">Misc:</span>' +
+                        '<div id="song-misc-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+                        '<div style="position:relative;">' +
+                            '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + num + '" data-song="' + sNum + '" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px; width:160px;">' +
+                            '<div class="song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:4px; display:none; width:180px;"></div>' +
+                        '</div>' +
                     '</div>';
                 if (songData.youtube_url) sdiv.dataset.youtubeUrl = songData.youtube_url;
                 sc.appendChild(sdiv);
+                _initSongMiscSearch(sdiv);
+
+                // Restore misc artist rows
+                (songData.misc_artists || []).forEach(function(ma) {
+                    _addSongMiscArtist(num, sNum, ma.misc_artist_id, ma.name || 'Misc #' + ma.misc_artist_id);
+                });
 
                 // Restore artist rows
                 var songArtists = songData.artists || [];

@@ -175,32 +175,33 @@ function _miscToggleCountry(cid) {
     arrow.innerHTML = hiding ? '▶' : '▼';
     if (hiding) {
         document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = 'none'; });
-    } else {
-        if (!_miscLoadedCountries[cid]) {
-            _miscLoadedCountries[cid] = true;
-            var loader = document.getElementById('misc-country-loader-' + cid);
-            if (loader) {
-                loader.style.display = '';
-                fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
-                    loader.outerHTML = html;
-                });
-            }
-        } else {
-            document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) {
-                if (r.id && r.id.startsWith('misc-genre-')) {
-                    r.style.display = '';
-                } else if (r.classList.toString().match(/misc-genre-row-/)) {
-                    var cls = r.className.match(/misc-genre-row-(\d+-\d+)/);
-                    if (cls) {
-                        var genreArrow = document.getElementById('misc-genre-arrow-' + cls[1]);
-                        r.style.display = _miscIsGenreCollapsed(genreArrow) ? 'none' : '';
-                    }
-                } else {
-                    r.style.display = '';
-                }
+        return Promise.resolve();
+    }
+    if (!_miscLoadedCountries[cid]) {
+        _miscLoadedCountries[cid] = true;
+        var loader = document.getElementById('misc-country-loader-' + cid);
+        if (loader) {
+            loader.style.display = '';
+            return fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
+                loader.outerHTML = html;
             });
         }
+        return Promise.resolve();
     }
+    document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) {
+        if (r.id && r.id.startsWith('misc-genre-')) {
+            r.style.display = '';
+        } else if (r.classList.toString().match(/misc-genre-row-/)) {
+            var cls = r.className.match(/misc-genre-row-(\d+-\d+)/);
+            if (cls) {
+                var genreArrow = document.getElementById('misc-genre-arrow-' + cls[1]);
+                r.style.display = _miscIsGenreCollapsed(genreArrow) ? 'none' : '';
+            }
+        } else {
+            r.style.display = '';
+        }
+    });
+    return Promise.resolve();
 }
 
 function _miscIsGenreCollapsed(arrow) {
@@ -264,6 +265,50 @@ function _miscCollapseAll() {
         if (!r.id || !r.id.startsWith('misc-country-')) r.style.display = 'none';
     });
 }
+
+/* Hash navigation — expand country/genre and scroll to song */
+(function() {
+    function revealSong(el) {
+        var genreClass = Array.from(el.classList).find(function(c) { return c.indexOf('misc-genre-row-') === 0; });
+        if (genreClass) {
+            var key = genreClass.replace('misc-genre-row-', '');
+            var genreArrow = document.getElementById('misc-genre-arrow-' + key);
+            if (_miscIsGenreCollapsed(genreArrow)) {
+                var parts = key.split('-');
+                _miscToggleGenre(parseInt(parts[0]), parseInt(parts[1]));
+            }
+        }
+        if (el.style.display === 'none') el.style.display = '';
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (typeof highlightRow === 'function') highlightRow(el);
+    }
+
+    function handleHash() {
+        var hash = location.hash;
+        if (!hash || hash.indexOf('#song-') !== 0) return;
+        var songId = hash.slice(6);
+        var el = document.getElementById('song-' + songId);
+        if (el) {
+            revealSong(el);
+            return;
+        }
+        fetch('/misc/song/' + songId + '/country').then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.country_id) return;
+            var cid = data.country_id;
+            var arrow = document.getElementById('misc-country-arrow-' + cid);
+            if (!arrow) return;
+            if (arrow.innerHTML !== '▼') {
+                _miscToggleCountry(cid).then(function() {
+                    var el = document.getElementById('song-' + songId);
+                    if (el) revealSong(el);
+                });
+            }
+        });
+    }
+
+    window.addEventListener('load', handleHash);
+    window.addEventListener('hashchange', handleHash);
+})();
 
 /* Sort */
 var _miscSortAsc = true;
