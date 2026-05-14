@@ -198,6 +198,8 @@ def _render_artist(artist, htmx=False, push_url=None):
             resp.headers['HX-Push-Url'] = push_url
         return resp
 
+    og_song = _build_og_song(request.args.get('song'))
+
     navbar = _get_filtered_navbar()
     # Ensure current artist always appears in navbar regardless of filters
     if artist.id not in {a.id for a in navbar} and artist.name != 'Misc. Artists':
@@ -213,13 +215,42 @@ def _render_artist(artist, htmx=False, push_url=None):
                            is_subscribed=is_subscribed,
                            last_updated=last_updated,
                            genres=genres, album_types=album_types,
-                           countries=countries, genders=genders)
+                           countries=countries, genders=genders,
+                           og_song=og_song)
 
 
 def _get_display_users():
     """Get users to show in rating columns, respecting viewer's stats page preferences."""
     from app.services.stats import get_display_users
     return get_display_users()
+
+
+def _build_og_song(song_param):
+    if not song_param:
+        return None
+    try:
+        song = db.session.get(Song, int(song_param))
+    except (ValueError, TypeError):
+        return None
+    if not song:
+        return None
+
+    album = db.session.query(Album).join(
+        AlbumSong, Album.id == AlbumSong.album_id
+    ).filter(AlbumSong.song_id == song.id).order_by(Album.release_date).first()
+
+    genre_names = []
+    if album:
+        genre_names = [g.genre for g in album.genres]
+    if not genre_names:
+        genre_names = [g.genre for g in song.genres]
+
+    return {
+        'name': song.name,
+        'album': album.name if album else None,
+        'release_date': album.release_date if album else None,
+        'genres': genre_names,
+    }
 
 
 def _get_filtered_navbar():

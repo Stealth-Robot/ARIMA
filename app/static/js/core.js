@@ -266,7 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Copy a link to a page anchor (song or album) to the clipboard */
 function copyAnchorLink(event, anchorId) {
     if (event) { event.stopPropagation(); event.preventDefault(); }
-    var url = window.location.href.split('#')[0] + '#' + anchorId;
+    var base = window.location.href.split('#')[0].split('?')[0];
+    var songMatch = anchorId.match(/^song-(\d+)$/);
+    var url = songMatch ? base + '?song=' + songMatch[1] + '#' + anchorId : base + '#' + anchorId;
     function fallback() {
         var ta = document.createElement('textarea');
         ta.value = url;
