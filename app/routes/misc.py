@@ -353,6 +353,8 @@ def add_misc_song():
         return json.dumps({'error': 'At least one artist must be marked as main'}), 400, {'Content-Type': 'application/json'}
 
     genre_ids = data.get('genre_ids', [])
+    if not genre_ids:
+        return json.dumps({'error': 'At least one genre is required'}), 400, {'Content-Type': 'application/json'}
 
     song = Song(
         name=song_name,
@@ -454,6 +456,26 @@ def delete_misc_artist(artist_id):
     log_change(current_user, f'Deleted misc artist "{name}"', change_type='artist')
     db.session.commit()
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@misc_bp.route('/misc/artist-songs')
+@login_required
+def artist_songs_list():
+    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+        abort(403)
+    ids = request.args.get('ids', '')
+    artist_ids = [int(x) for x in ids.split(',') if x.strip().isdigit()]
+    if not artist_ids:
+        return json.dumps({}), 200, {'Content-Type': 'application/json'}
+    rows = db.session.query(
+        SongMiscArtist.misc_artist_id, Song.id, Song.name,
+    ).join(Song, Song.id == SongMiscArtist.song_id).filter(
+        SongMiscArtist.misc_artist_id.in_(artist_ids)
+    ).order_by(Song.name).all()
+    result = {}
+    for ma_id, song_id, song_name in rows:
+        result.setdefault(str(ma_id), []).append({'id': song_id, 'name': song_name})
+    return json.dumps(result), 200, {'Content-Type': 'application/json'}
 
 
 @misc_bp.route('/misc/merge-artists', methods=['POST'])

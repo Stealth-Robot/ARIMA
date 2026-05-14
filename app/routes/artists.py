@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, ArtistSubscription, album_genres, SongMiscArtist, MiscArtist
+from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, ArtistSubscription, album_genres, song_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
@@ -555,6 +555,57 @@ def _build_discography(artist, children=None, hide_osts=False):
                 'song_artists': song_artists,
                 'song_misc_artists': song_misc_artists,
                 'duplicate_songs': {s.id for s, _ in album_songs if (s.id, album.id) in duplicate_song_album},
+            })
+
+    # Virtual "Misc" section: songs linked to this artist that didn't appear in any album above
+    covered_sids = set()
+    for entry in discography:
+        for s, _ in entry['songs']:
+            covered_sids.add(s.id)
+    misc_sids = song_ids - covered_sids
+    if misc_sids:
+        misc_songs_objs = {s.id: s for s in Song.query.filter(Song.id.in_(misc_sids)).all()}
+        if not include_remixes:
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if not s.is_remix}
+        if not include_featured:
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid in main_song_ids}
+        if genre_ids:
+            sg_rows = db.session.execute(
+                song_genres.select().where(song_genres.c.song_id.in_(misc_songs_objs.keys()))
+            ).fetchall()
+            sg_map = {}
+            for sid, gid in sg_rows:
+                sg_map.setdefault(sid, set()).add(gid)
+            genre_set = set(genre_ids)
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
+                               if sg_map.get(sid, set()) & genre_set}
+        if hide_osts and not edit_mode:
+            ost_genre = Genre.query.filter_by(genre='OST').first()
+            if ost_genre:
+                sg_rows_ost = db.session.execute(
+                    song_genres.select().where(song_genres.c.song_id.in_(misc_songs_objs.keys()))
+                ).fetchall()
+                ost_only = set()
+                sg_map_ost = {}
+                for sid, gid in sg_rows_ost:
+                    sg_map_ost.setdefault(sid, set()).add(gid)
+                for sid, gids in sg_map_ost.items():
+                    if gids == {ost_genre.id}:
+                        ost_only.add(sid)
+                misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid not in ost_only}
+        if misc_songs_objs:
+            misc_song_list = sorted(misc_songs_objs.values(), key=lambda s: (s.name or '').lower())
+            misc_song_tuples = [(s, None) for s in misc_song_list]
+            misc_obj_ids = [s.id for s in misc_song_list]
+            discography.append({
+                'album': None,
+                'songs': misc_song_tuples,
+                'ratings': {sid: all_ratings_map.get(sid, {}) for sid in misc_obj_ids},
+                'collab_labels': {sid: all_collab_labels[sid] for sid in misc_obj_ids if sid in all_collab_labels},
+                'song_artists': {sid: all_song_artists.get(sid, []) for sid in misc_obj_ids},
+                'song_misc_artists': {sid: all_song_misc_artists.get(sid, []) for sid in misc_obj_ids},
+                'duplicate_songs': set(),
+                'is_misc_section': True,
             })
 
     return discography

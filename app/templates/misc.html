@@ -82,6 +82,28 @@
     </div>
     {% else %}
 
+    <div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+        <span class="text-secondary-text">Sort:</span>
+        <select id="misc-sort-field" onchange="_miscApplySort()"
+                class="rounded border border-border cursor-pointer"
+                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+            <option value="name">Name</option>
+            <option value="release">Date</option>
+            <option value="artist">Artist</option>
+        </select>
+        <button id="misc-sort-dir" onclick="_miscToggleSortDir()" class="cursor-pointer rounded border-0 px-1"
+                style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
+                title="Toggle sort direction">&darr;</button>
+        <span class="text-secondary-text ml-2">Show:</span>
+        <select id="misc-scope-filter" onchange="_miscApplyScopeFilter()"
+                class="rounded border border-border cursor-pointer"
+                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+            <option value="all">All</option>
+            <option value="misc-only">Misc exclusive</option>
+            <option value="on-artist">On artist pages</option>
+        </select>
+    </div>
+
     <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
     <div class="flex gap-3 items-start">
     <table id="misc-table" class="text-xs border-collapse border border-grid-line" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
@@ -91,16 +113,6 @@
                     <span class="flex justify-between items-center">
                         DISCOGRAPHY
                         <span class="text-2xs font-normal flex items-center gap-2">
-                            <select id="misc-sort-field" onchange="_miscApplySort()"
-                                    class="rounded border border-border cursor-pointer"
-                                    style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
-                                <option value="name">Name</option>
-                                <option value="release">Date</option>
-                                <option value="artist">Artist</option>
-                            </select>
-                            <button id="misc-sort-dir" onclick="_miscToggleSortDir()" class="cursor-pointer rounded border-0 px-1"
-                                    style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
-                                    title="Toggle sort direction">&darr;</button>
                             <span onclick="_miscExpandAll()" class="text-secondary-text cursor-pointer"><span class="mobile-hide">&#9660; Expand</span><span class="mobile-show hidden">&#9660;</span></span>
                             <span onclick="_miscCollapseAll()" class="text-secondary-text cursor-pointer"><span class="mobile-hide">&#9654; Collapse</span><span class="mobile-show hidden">&#9654;</span></span>
                         </span>
@@ -129,15 +141,14 @@
             style="border-left: 6px solid var(--text-secondary);"
             onclick="_miscToggleCountry({{ country.country_id }})">
             <td colspan="100" class="font-bold text-sm- text-discography-text relative p-0 pl-2">
-                <span id="misc-country-arrow-{{ country.country_id }}" class="collapse-arrow text-xxs">&#9660;</span>
+                <span id="misc-country-arrow-{{ country.country_id }}" class="collapse-arrow text-xxs">&#9654;</span>
                 <span class="p-1">{{ country.country_name | upper }}</span>
+                <span class="text-2xs font-normal text-secondary-text ml-1">({{ country.song_count }})</span>
             </td>
         </tr>
 
-        <tr class="misc-country-row-{{ country.country_id }}"
-            hx-get="/misc/country/{{ country.country_id }}"
-            hx-trigger="load"
-            hx-swap="outerHTML">
+        <tr class="misc-country-row-{{ country.country_id }}" style="display:none;"
+            id="misc-country-loader-{{ country.country_id }}">
             <td colspan="100" class="text-center text-secondary-text py-2" style="font-size:11px;">Loading...</td>
         </tr>
         {% endfor %}
@@ -157,6 +168,7 @@
 })();
 
 /* Collapse/expand */
+var _miscLoadedCountries = {};
 function _miscToggleCountry(cid) {
     var arrow = document.getElementById('misc-country-arrow-' + cid);
     var hiding = arrow.innerHTML === '▼';
@@ -164,42 +176,74 @@ function _miscToggleCountry(cid) {
     if (hiding) {
         document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = 'none'; });
     } else {
-        document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) {
-            if (r.id && r.id.startsWith('misc-genre-')) {
-                r.style.display = '';
-            } else if (r.classList.toString().match(/misc-genre-row-/)) {
-                var cls = r.className.match(/misc-genre-row-(\d+-\d+)/);
-                if (cls) {
-                    var genreArrow = document.getElementById('misc-genre-arrow-' + cls[1]);
-                    r.style.display = (genreArrow && genreArrow.innerHTML === '▶') ? 'none' : '';
-                }
-            } else {
-                r.style.display = '';
+        if (!_miscLoadedCountries[cid]) {
+            _miscLoadedCountries[cid] = true;
+            var loader = document.getElementById('misc-country-loader-' + cid);
+            if (loader) {
+                loader.style.display = '';
+                fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
+                    loader.outerHTML = html;
+                });
             }
-        });
+        } else {
+            document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) {
+                if (r.id && r.id.startsWith('misc-genre-')) {
+                    r.style.display = '';
+                } else if (r.classList.toString().match(/misc-genre-row-/)) {
+                    var cls = r.className.match(/misc-genre-row-(\d+-\d+)/);
+                    if (cls) {
+                        var genreArrow = document.getElementById('misc-genre-arrow-' + cls[1]);
+                        r.style.display = _miscIsGenreCollapsed(genreArrow) ? 'none' : '';
+                    }
+                } else {
+                    r.style.display = '';
+                }
+            });
+        }
     }
+}
+
+function _miscIsGenreCollapsed(arrow) {
+    return arrow && arrow.style.transform && arrow.style.transform.indexOf('rotate') !== -1;
 }
 
 function _miscToggleGenre(cid, gid) {
     var arrow = document.getElementById('misc-genre-arrow-' + cid + '-' + gid);
+    var header = document.getElementById('misc-genre-' + cid + '-' + gid);
     var rows = document.querySelectorAll('.misc-genre-row-' + cid + '-' + gid);
-    var hiding = arrow.innerHTML === '▼';
-    rows.forEach(function(r) { r.style.display = hiding ? 'none' : ''; });
-    arrow.innerHTML = hiding ? '▶' : '▼';
+    var hiding = !_miscIsGenreCollapsed(arrow);
+    if (hiding) {
+        rows.forEach(function(r) { r.style.display = 'none'; });
+        if (arrow) arrow.style.transform = 'translateY(-50%) rotate(-90deg)';
+        if (header) header.classList.add('album-collapsed');
+    } else {
+        rows.forEach(function(r) { r.style.display = ''; });
+        if (arrow) arrow.style.transform = 'translateY(-50%)';
+        if (header) header.classList.remove('album-collapsed');
+    }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id^="misc-genre-arrow-"]').forEach(function(a) {
-        a.innerHTML = '▶';
-    });
-    document.querySelectorAll('[class*="misc-genre-row-"]').forEach(function(r) {
-        r.style.display = 'none';
-    });
-});
 
 function _miscExpandAll() {
-    document.querySelectorAll('[id^="misc-country-arrow-"], [id^="misc-genre-arrow-"]').forEach(function(a) {
+    document.querySelectorAll('[id^="misc-country-arrow-"]').forEach(function(a) {
         a.innerHTML = '▼';
+    });
+    document.querySelectorAll('[id^="misc-genre-arrow-"]').forEach(function(a) {
+        a.style.transform = 'translateY(-50%)';
+    });
+    document.querySelectorAll('[id^="misc-genre-"]').forEach(function(h) {
+        if (h.id.match(/misc-genre-\d+-\d+$/)) h.classList.remove('album-collapsed');
+    });
+    document.querySelectorAll('[id^="misc-country-loader-"]').forEach(function(loader) {
+        var cid = loader.id.replace('misc-country-loader-', '');
+        if (!_miscLoadedCountries[cid]) {
+            _miscLoadedCountries[cid] = true;
+            loader.style.display = '';
+            fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
+                loader.outerHTML = html;
+                document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = ''; });
+            });
+        }
     });
     document.querySelectorAll('[class*="misc-country-row-"], [class*="misc-genre-row-"]').forEach(function(r) {
         r.style.display = '';
@@ -207,8 +251,14 @@ function _miscExpandAll() {
 }
 
 function _miscCollapseAll() {
-    document.querySelectorAll('[id^="misc-country-arrow-"], [id^="misc-genre-arrow-"]').forEach(function(a) {
+    document.querySelectorAll('[id^="misc-country-arrow-"]').forEach(function(a) {
         a.innerHTML = '▶';
+    });
+    document.querySelectorAll('[id^="misc-genre-arrow-"]').forEach(function(a) {
+        a.style.transform = 'translateY(-50%) rotate(-90deg)';
+    });
+    document.querySelectorAll('[id^="misc-genre-"]').forEach(function(h) {
+        if (h.id.match(/misc-genre-\d+-\d+$/)) h.classList.add('album-collapsed');
     });
     document.querySelectorAll('[class*="misc-country-row-"]').forEach(function(r) {
         if (!r.id || !r.id.startsWith('misc-country-')) r.style.display = 'none';
@@ -258,6 +308,20 @@ function _miscApplySort() {
             ref.parentNode.insertBefore(row, ref.nextSibling);
             ref = row;
         });
+    });
+}
+
+function _miscApplyScopeFilter() {
+    var val = document.getElementById('misc-scope-filter').value;
+    document.querySelectorAll('[data-on-artist-page]').forEach(function(row) {
+        var onArtist = row.dataset.onArtistPage === '1';
+        if (val === 'all') {
+            row.style.display = '';
+        } else if (val === 'misc-only') {
+            row.style.display = onArtist ? 'none' : '';
+        } else if (val === 'on-artist') {
+            row.style.display = onArtist ? '' : 'none';
+        }
     });
 }
 
@@ -472,6 +536,88 @@ function _miscShowUserEdit(event, span, kind) {
 }
 
 /* ========== 1. MANAGE MISC ARTISTS ========== */
+function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
+    var keepId = selectedIds[0];
+    var keepArtist = allArtists.find(function(a){return a.id === keepId;});
+    var absorbArtists = selectedIds.slice(1).map(function(id) { return allArtists.find(function(a){return a.id === id;}); }).filter(Boolean);
+
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10001;';
+    var panel = document.createElement('div');
+    panel.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;';
+
+    var title = document.createElement('h3');
+    title.textContent = 'Confirm Merge';
+    title.style.cssText = 'margin:0 0 12px;font-size:16px;color:var(--text-primary);';
+    panel.appendChild(title);
+
+    var desc = document.createElement('p');
+    desc.style.cssText = 'font-size:12px;color:var(--text-secondary);margin:0 0 16px;';
+    var keepCountry = _allCountries.find(function(c){return c.id === keepArtist.country_id;});
+    desc.textContent = 'Songs from all selected artists will be merged into the first one selected. The others will be deleted. The first artist you checked ("' + keepArtist.name + '" — ' + (keepCountry ? keepCountry.name : '') + ', ' + keepArtist.song_count + ' songs) will be kept.';
+    panel.appendChild(desc);
+
+    var listDiv = document.createElement('div');
+    listDiv.style.cssText = 'font-size:12px;';
+    var loading = document.createElement('div');
+    loading.textContent = 'Loading songs...';
+    loading.style.cssText = 'color:var(--text-secondary);padding:8px 0;';
+    listDiv.appendChild(loading);
+    panel.appendChild(listDiv);
+
+    fetch('/misc/artist-songs?ids=' + selectedIds.join(',')).then(function(r){return r.json();}).then(function(songMap) {
+        listDiv.innerHTML = '';
+        selectedIds.forEach(function(aid, idx) {
+            var artist = allArtists.find(function(a){return a.id === aid;});
+            if (!artist) return;
+            var section = document.createElement('div');
+            section.style.cssText = 'margin-bottom:12px;padding:8px 10px;border-radius:4px;border:1px solid var(--border);' + (idx === 0 ? 'background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);' : 'background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);');
+            var header = document.createElement('div');
+            header.style.cssText = 'font-weight:bold;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
+            var badge = document.createElement('span');
+            badge.textContent = idx === 0 ? 'KEEP' : 'MERGE';
+            badge.style.cssText = 'font-size:9px;padding:1px 5px;border-radius:3px;font-weight:bold;color:#fff;background:' + (idx === 0 ? '#22c55e' : '#ef4444') + ';';
+            header.appendChild(badge);
+            var nameSpan = document.createElement('span');
+            nameSpan.textContent = artist.name;
+            nameSpan.style.color = 'var(--text-primary)';
+            header.appendChild(nameSpan);
+            var countSpan = document.createElement('span');
+            countSpan.textContent = '(' + artist.song_count + ' songs)';
+            countSpan.style.cssText = 'color:var(--text-secondary);font-weight:normal;';
+            header.appendChild(countSpan);
+            section.appendChild(header);
+            var songs = songMap[String(aid)] || [];
+            if (songs.length === 0) {
+                var empty = document.createElement('div');
+                empty.textContent = 'No songs';
+                empty.style.cssText = 'color:var(--text-secondary);font-style:italic;padding-left:4px;';
+                section.appendChild(empty);
+            } else {
+                songs.forEach(function(s) {
+                    var songRow = document.createElement('div');
+                    songRow.textContent = s.name;
+                    songRow.style.cssText = 'padding:1px 0 1px 4px;color:var(--text-secondary);';
+                    section.appendChild(songRow);
+                });
+            }
+            listDiv.appendChild(section);
+        });
+    });
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px;';
+    var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { overlay.remove(); });
+    var confirmBtn = _miscBtn('Merge', '#7C3AED', function() { overlay.remove(); onConfirm(); });
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmBtn);
+    panel.appendChild(btnRow);
+
+    overlay.appendChild(panel);
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+}
+
 function _showManageMiscArtists() {
     fetch('/misc/manage-artists').then(function(r){return r.json();}).then(function(data) {
         var bd = _miscBackdrop();
@@ -534,7 +680,8 @@ function _showManageMiscArtists() {
                 mergeCb.checked = mergeSelection.indexOf(a.id) !== -1;
                 mergeCb.onchange = function() {
                     if (mergeCb.checked) { mergeSelection.push(a.id); } else { mergeSelection = mergeSelection.filter(function(x){return x !== a.id;}); }
-                    mergeBtn.disabled = mergeSelection.length !== 2;
+                    mergeBtn.disabled = mergeSelection.length < 2;
+                    mergeCount.textContent = mergeSelection.length > 0 ? mergeSelection.length + ' selected' : '';
                 };
 
                 var delBtn = document.createElement('button');
@@ -563,20 +710,31 @@ function _showManageMiscArtists() {
         search.addEventListener('input', function() { renderList(search.value); });
 
         var btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;';
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;align-items:center;';
+        var mergeCount = document.createElement('span');
+        mergeCount.style.cssText = 'color:var(--text-secondary);font-size:12px;margin-right:auto;';
         var mergeBtn = _miscBtn('Merge Selected', '#7C3AED', function() {
-            if (mergeSelection.length !== 2) return;
-            var keepId = mergeSelection[0], absorbId = mergeSelection[1];
-            var keepName = artists.find(function(a){return a.id === keepId;});
-            var absorbName = artists.find(function(a){return a.id === absorbId;});
-            if (!confirm('Merge "' + (absorbName?absorbName.name:'') + '" into "' + (keepName?keepName.name:'') + '"?')) return;
-            fetch('/misc/merge-artists', {method:'POST', headers:_csrfJson(), body:JSON.stringify({keep_id:keepId, absorb_id:absorbId})})
-                .then(function(r){return r.json();}).then(function(d) {
-                    if (d.ok) { mergeSelection = []; fetch('/misc/manage-artists').then(function(r){return r.json();}).then(function(nd) { artists = nd.artists; renderList(search.value); }); }
+            if (mergeSelection.length < 2) return;
+            _showMergeConfirm(mergeSelection.slice(), artists, function() {
+                var keepId = mergeSelection[0];
+                var absorbIds = mergeSelection.slice(1);
+                var done = 0;
+                absorbIds.forEach(function(absorbId) {
+                    fetch('/misc/merge-artists', {method:'POST', headers:_csrfJson(), body:JSON.stringify({keep_id:keepId, absorb_id:absorbId})})
+                        .then(function(r){return r.json();}).then(function(d) {
+                            done++;
+                            if (done === absorbIds.length) {
+                                mergeSelection = [];
+                                mergeCount.textContent = '';
+                                fetch('/misc/manage-artists').then(function(r){return r.json();}).then(function(nd) { artists = nd.artists; renderList(search.value); });
+                            }
+                        });
                 });
+            });
         });
         mergeBtn.disabled = true;
         var closeBtn = _miscBtn('Close', '#6B7280', function() { bd.remove(); location.reload(); });
+        btnRow.appendChild(mergeCount);
         btnRow.appendChild(mergeBtn);
         btnRow.appendChild(closeBtn);
         modal.appendChild(btnRow);
