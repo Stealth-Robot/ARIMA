@@ -1,7 +1,7 @@
 import json
 import random
 
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, request, session
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import and_, func
@@ -177,45 +177,80 @@ def toggle_hide_disbanded():
     return json.dumps({'hide_disbanded': settings.hide_disbanded_maintained}), 200, {'Content-Type': 'application/json'}
 
 
-@home_bp.route('/shuffle')
-@login_required
-def shuffle():
-    if not current_user.can_rate:
-        return '', 204
-    backlog, _ = _get_rating_backlog()
-    if not backlog:
-        return '', 204
+def _shuffle_all_candidates():
+    rated_ids = {r.song_id for r in Rating.query.filter_by(user_id=current_user.id).all()}
+    all_as = ArtistSong.query.filter(ArtistSong.artist_is_main == True).all()
+    song_ids = {r.song_id for r in all_as if r.song_id not in rated_ids}
+    if not song_ids:
+        return []
+    songs = {s.id: s for s in Song.query.filter(Song.id.in_(song_ids)).all()}
+    artist_map = {a.id: a for a in Artist.query.filter(
+        Artist.id.in_({r.artist_id for r in all_as if r.song_id in song_ids})).all()}
+    album_song_rows = (db.session.query(AlbumSong.song_id, Album)
+                       .join(Album, Album.id == AlbumSong.album_id)
+                       .options(selectinload(Album.genres))
+                       .filter(AlbumSong.song_id.in_(song_ids)).all())
+    album_by_song = {}
+    for sid, album in album_song_rows:
+        album_by_song.setdefault(sid, album)
     candidates = []
-    for artist, (_count, album_groups) in backlog:
-        for album, songs in album_groups:
-            for song in songs:
-                candidates.append((song, artist, album))
-    if not candidates:
-        return '', 204
-    song, artist, album = random.choice(candidates)
+    artist_by_song = {}
+    for r in all_as:
+        if r.song_id in song_ids:
+            artist_by_song.setdefault(r.song_id, r.artist_id)
+    for sid in song_ids:
+        song = songs.get(sid)
+        aid = artist_by_song.get(sid)
+        album = album_by_song.get(sid)
+        if song and aid and aid in artist_map and album:
+            candidates.append((song, artist_map[aid], album))
+    return candidates
 
+
+def _render_shuffle_card(song, artist, album):
     from urllib.parse import quote
     from app.services.stats import get_display_users
+    from app.routes.artists import _collab_labels_from_song_artists
     artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
-
     song_artists_rows = db.session.query(
         ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
         ArtistSong.song_id == song.id
     ).all()
-    from app.routes.artists import _collab_labels_from_song_artists
     sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g}
                         for a, m, n, g in song_artists_rows]}
     collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
-
     return render_template('fragments/shuffle_card.html',
                            song=song, artist=artist, album=album,
                            artist_url=artist_url, artist_id=artist.id,
                            users=users, ratings=ratings,
                            collab_label=collab_label,
                            gender_css=GENDER_CSS)
+
+
+@home_bp.route('/shuffle')
+@login_required
+def shuffle():
+    if not current_user.can_rate:
+        return '', 204
+    mode = request.args.get('mode', 'subscribed')
+    if mode == 'all':
+        candidates = _shuffle_all_candidates()
+    else:
+        backlog, _ = _get_rating_backlog()
+        if not backlog:
+            return '', 204
+        candidates = []
+        for artist, (_count, album_groups) in backlog:
+            for album, songs in album_groups:
+                for song in songs:
+                    candidates.append((song, artist, album))
+    if not candidates:
+        return '', 204
+    song, artist, album = random.choice(candidates)
+    return _render_shuffle_card(song, artist, album)
 
 
 @home_bp.route('/')
@@ -257,4 +292,5 @@ def home():
                            gender_css=GENDER_CSS,
                            hide_disbanded=hide_disbanded,
                            has_any_maintained=has_any_maintained,
+                           can_rate=current_user.can_rate,
                            misc_owner=rules.misc_owner if rules else None)

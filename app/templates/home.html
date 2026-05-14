@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if owned_artists or has_any_maintained or backlog %}
+{% if owned_artists or has_any_maintained or backlog or can_rate %}
 <div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
     {% if owned_artists %}
     <h2 class="text-lg font-bold text-primary-text mb-3 flex items-center gap-2 cursor-pointer"
@@ -46,10 +46,11 @@
         {% endfor %}
     </div>
     {% endif %}
-    {% if backlog %}
+    {% if can_rate %}
     <div class="text-center mt-6">
         <span id="shuffle-controls">
             <button onclick="shuffleSong();" class="text-xs px-2 py-1 rounded cursor-pointer" style="background-color: var(--bg-secondary); color: var(--link); border: 1px solid var(--border, #ccc);">Shuffle</button>
+            <button id="shuffle-mode-toggle" onclick="toggleShuffleMode();" class="text-xs px-2 py-1 rounded cursor-pointer ml-1" style="background-color: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border, #ccc);">Subscribed</button>
             <button id="shuffle-dismiss" onclick="dismissShuffle();" class="text-xs px-1 rounded cursor-pointer ml-1" style="background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border,#ccc);visibility:hidden;">✕</button>
         </span>
     </div>
@@ -295,8 +296,22 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+var shuffleMode = 'subscribed';
+function toggleShuffleMode() {
+    var btn = document.getElementById('shuffle-mode-toggle');
+    if (shuffleMode === 'subscribed') {
+        shuffleMode = 'all';
+        btn.textContent = 'All';
+        btn.style.color = 'var(--link)';
+    } else {
+        shuffleMode = 'subscribed';
+        btn.textContent = 'Subscribed';
+        btn.style.color = 'var(--text-secondary)';
+    }
+    dismissShuffle();
+}
 function shuffleSong() {
-    fetch('/shuffle')
+    fetch('/shuffle?mode=' + shuffleMode)
         .then(function(r) {
             if (r.status === 204) {
                 dismissShuffle();
