@@ -611,19 +611,19 @@ def _build_discography(artist, children=None, hide_osts=False):
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
                                if sg_map.get(sid, set()) & genre_set}
         if hide_osts and not edit_mode:
-            ost_genre = Genre.query.filter_by(genre='OST').first()
-            if ost_genre:
-                sg_rows_ost = db.session.execute(
-                    song_genres.select().where(song_genres.c.song_id.in_(misc_songs_objs.keys()))
-                ).fetchall()
-                ost_only = set()
-                sg_map_ost = {}
-                for sid, gid in sg_rows_ost:
-                    sg_map_ost.setdefault(sid, set()).add(gid)
-                for sid, gids in sg_map_ost.items():
-                    if gids == {ost_genre.id}:
-                        ost_only.add(sid)
-                misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid not in ost_only}
+            ost_sids = set()
+            misc_album_rows = db.session.query(AlbumSong.song_id, Album).join(
+                Album, Album.id == AlbumSong.album_id
+            ).options(selectinload(Album.genres)).filter(
+                AlbumSong.song_id.in_(misc_songs_objs.keys())
+            ).all()
+            misc_albums_by_song = {}
+            for sid, alb in misc_album_rows:
+                misc_albums_by_song.setdefault(sid, []).append(alb)
+            for sid, albs in misc_albums_by_song.items():
+                if all(any(g.genre == 'OST' for g in a.genres) for a in albs):
+                    ost_sids.add(sid)
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid not in ost_sids}
         if misc_songs_objs:
             misc_song_list = sorted(misc_songs_objs.values(), key=lambda s: (s.name or '').lower())
             misc_song_tuples = [(s, None) for s in misc_song_list]
