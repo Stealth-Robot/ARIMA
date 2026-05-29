@@ -2,7 +2,7 @@
 function toggleSongFlag(cb, url) {
     var songId = cb.getAttribute('data-song-id');
     var field = cb.getAttribute('data-field');
-    if (field === 'is-promoted') updatePromotedStyle(cb);
+    updateSongPill(cb);
     fetch(url, {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
@@ -10,7 +10,7 @@ function toggleSongFlag(cb, url) {
     }).then(function(r) {
         if (!r.ok) {
             cb.checked = !cb.checked;
-            if (field === 'is-promoted') updatePromotedStyle(cb);
+            updateSongPill(cb);
             showToast('Failed to save — try refreshing');
             return;
         }
@@ -19,37 +19,68 @@ function toggleSongFlag(cb, url) {
         for (var i = 0; i < others.length; i++) {
             if (others[i] !== cb) {
                 others[i].checked = cb.checked;
-                if (field === 'is-promoted') updatePromotedStyle(others[i]);
+                updateSongPill(others[i]);
             }
         }
     }).catch(function() {
         cb.checked = !cb.checked;
-        if (field === 'is-promoted') updatePromotedStyle(cb);
+        updateSongPill(cb);
         showToast('Network error — try again');
     });
 }
 
 /* Inline text/date edit — edit mode only */
 
-function updatePromotedStyle(checkbox) {
+var SONG_PILL_META = {
+    'is-remix': { cls: 'remix-tag', bg: 'bg-remix', label: 'remix' },
+    'is-cover': { cls: 'cover-tag', bg: 'bg-cover', label: 'cover' },
+    'is-promoted': { cls: 'promoted-tag', bg: 'bg-promoted', label: 'promoted' }
+};
+// Canonical left-to-right pill order; live inserts must match the template order.
+var SONG_PILL_ORDER = ['remix-tag', 'cover-tag', 'promoted-tag'];
+
+function updateSongPill(checkbox) {
+    var meta = SONG_PILL_META[checkbox.getAttribute('data-field')];
+    if (!meta) return;
     var row = checkbox.closest('tr');
     var cell = row ? row.querySelector('td:first-child') : null;
     if (!cell) return;
-    var tag = cell.querySelector('.promoted-tag');
+    // Promoted also draws the left accent border; remix/cover are pill-only.
+    if (meta.cls === 'promoted-tag') {
+        cell.style.borderLeft = checkbox.checked ? '4px solid var(--promoted-song)' : '1px solid var(--grid-line)';
+    }
+    var tag = cell.querySelector('.' + meta.cls);
     if (checkbox.checked) {
-        cell.style.borderLeft = '4px solid var(--promoted-song)';
         if (!tag) {
             tag = document.createElement('span');
-            tag.className = 'promoted-tag rounded bg-promoted text-primary-text ml-1';
+            tag.className = meta.cls + ' rounded ' + meta.bg + ' text-primary-text ml-1';
             tag.style.cssText = 'font-size: 9px; padding: 1px 5px;';
-            tag.textContent = 'promoted';
-            var dupTag = cell.querySelector('.duplicate-tag');
-            var ref = dupTag ? (dupTag.nextElementSibling || dupTag) : cell.querySelector('.edit-inline');
-            if (ref) ref.insertAdjacentElement('afterend', tag);
-            else cell.prepend(tag);
+            tag.textContent = meta.label;
+            var myIdx = SONG_PILL_ORDER.indexOf(meta.cls);
+            // Insert before the first existing pill that should come after this one.
+            var nextPill = null;
+            for (var k = myIdx + 1; k < SONG_PILL_ORDER.length; k++) {
+                nextPill = cell.querySelector('.' + SONG_PILL_ORDER[k]);
+                if (nextPill) break;
+            }
+            if (nextPill) {
+                nextPill.parentNode.insertBefore(tag, nextPill);
+            } else {
+                // Otherwise place after the nearest earlier pill, or after the song name.
+                var ref = null;
+                for (var j = myIdx - 1; j >= 0; j--) {
+                    ref = cell.querySelector('.' + SONG_PILL_ORDER[j]);
+                    if (ref) break;
+                }
+                if (!ref) {
+                    var dupTag = cell.querySelector('.duplicate-tag');
+                    ref = dupTag ? (dupTag.nextElementSibling || dupTag) : cell.querySelector('.edit-inline');
+                }
+                if (ref) ref.insertAdjacentElement('afterend', tag);
+                else cell.prepend(tag);
+            }
         }
     } else {
-        cell.style.borderLeft = '1px solid var(--grid-line)';
         if (tag) tag.remove();
     }
 }
