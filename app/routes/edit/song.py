@@ -486,9 +486,10 @@ def song_artist_remove(song_id, artist_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
-    # Don't allow removing the last artist
+    # Don't allow removing the last artist (misc artists count toward this too)
     count = ArtistSong.query.filter_by(song_id=song_id).count()
-    if count <= 1:
+    misc_count = SongMiscArtist.query.filter_by(song_id=song_id).count()
+    if count + misc_count <= 1:
         return 'Cannot remove the only artist', 400
     existing = db.session.get(ArtistSong, (artist_id, song_id))
     if existing is None:
@@ -496,6 +497,14 @@ def song_artist_remove(song_id, artist_id):
     artist = db.session.get(Artist, artist_id)
     artist_name_val = artist.name if artist else 'Unknown'
     db.session.delete(existing)
+    db.session.flush()
+    # If only one artist (real or misc) remains and it's featured, make it main
+    remaining_real = ArtistSong.query.filter_by(song_id=song_id).all()
+    remaining_misc = SongMiscArtist.query.filter_by(song_id=song_id).all()
+    if len(remaining_real) + len(remaining_misc) == 1:
+        sole = remaining_real[0] if remaining_real else remaining_misc[0]
+        if not sole.artist_is_main:
+            sole.artist_is_main = True
     song.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Removed "{artist_name_val}" from "{song.name}" song', song=song)
     db.session.commit()

@@ -592,6 +592,15 @@ def update_song_misc_artists(song_id):
         abort(404)
     data = request.get_json(silent=True) or {}
 
+    # Don't allow leaving the song with zero artists (real or misc).
+    new_misc_count = len(data.get('misc_artists', []))
+    if 'real_artists' in data:
+        new_real_count = len(data['real_artists'])
+    else:
+        new_real_count = ArtistSong.query.filter_by(song_id=song_id).count()
+    if new_misc_count + new_real_count == 0:
+        return json.dumps({'error': 'Cannot remove the only artist'}), 400, {'Content-Type': 'application/json'}
+
     # Update misc artists
     SongMiscArtist.query.filter_by(song_id=song_id).delete()
     for ma_data in data.get('misc_artists', []):
@@ -614,6 +623,15 @@ def update_song_misc_artists(song_id):
                 artist_id=int(ra['artist_id']), song_id=song_id,
                 artist_is_main=bool(ra.get('is_main', False)),
             ))
+
+    db.session.flush()
+    # If only one artist (real or misc) remains and it's featured, make it main
+    remaining_real = ArtistSong.query.filter_by(song_id=song_id).all()
+    remaining_misc = SongMiscArtist.query.filter_by(song_id=song_id).all()
+    if len(remaining_real) + len(remaining_misc) == 1:
+        sole = remaining_real[0] if remaining_real else remaining_misc[0]
+        if not sole.artist_is_main:
+            sole.artist_is_main = True
 
     log_change(current_user, f'Updated misc artists on "{song.name}"', song=song)
     db.session.commit()

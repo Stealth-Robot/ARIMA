@@ -1899,7 +1899,7 @@ function showSongArtists(event, songId, span) {
             });
             row.appendChild(roleBtn);
 
-            if (artists.length > 1) {
+            if (artists.length + miscArtists.length > 1) {
                 var removeBtn = document.createElement('button');
                 removeBtn.textContent = '\u00d7';
                 removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
@@ -1917,7 +1917,9 @@ function showSongArtists(event, songId, span) {
                         }
                         artists = artists.filter(function(x) { return x.artist_id !== a.artist_id; });
                         _songArtists[songId] = artists;
+                        _promoteSoleArtist();
                         renderList();
+                        renderMiscList();
                         _updateCollabLabel(songId, artists);
                     });
                 });
@@ -1928,11 +1930,25 @@ function showSongArtists(event, songId, span) {
         });
     }
 
+    // Misc artists (from song_misc_artist table) — declared before renderList()
+    // so the real-artist list can count them toward the "keep at least one" rule.
+    var miscArtists = (typeof _songMiscArtists !== 'undefined' && _songMiscArtists[songId]) ? _songMiscArtists[songId].slice() : [];
+
+    // After a removal, if a single featured artist remains, promote it to main
+    // (mirrors the backend so the Main/Feat label updates without a reload).
+    function _promoteSoleArtist() {
+        if (artists.length + miscArtists.length !== 1) return;
+        if (artists.length === 1) {
+            artists[0].is_main = true;
+            _songArtists[songId] = artists;
+        } else if (miscArtists.length === 1) {
+            miscArtists[0].is_main = true;
+            if (typeof _songMiscArtists !== 'undefined') _songMiscArtists[songId] = miscArtists.slice();
+        }
+    }
+
     renderList();
     popover.appendChild(listContainer);
-
-    // Misc artists section (from song_misc_artist table)
-    var miscArtists = (typeof _songMiscArtists !== 'undefined' && _songMiscArtists[songId]) ? _songMiscArtists[songId].slice() : [];
 
     function _saveMiscArtists() {
         fetch('/misc/song/' + songId + '/misc-artists', {
@@ -1974,16 +1990,20 @@ function showSongArtists(event, songId, span) {
                 renderMiscList();
             });
             row.appendChild(roleBtn);
-            var removeBtn = document.createElement('button');
-            removeBtn.textContent = '×';
-            removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
-            removeBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                miscArtists = miscArtists.filter(function(x) { return x.misc_artist_id !== m.misc_artist_id; });
-                _saveMiscArtists();
-                renderMiscList();
-            });
-            row.appendChild(removeBtn);
+            if (artists.length + miscArtists.length > 1) {
+                var removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    miscArtists = miscArtists.filter(function(x) { return x.misc_artist_id !== m.misc_artist_id; });
+                    _promoteSoleArtist();
+                    _saveMiscArtists();
+                    renderMiscList();
+                    renderList();
+                });
+                row.appendChild(removeBtn);
+            }
             miscListContainer.appendChild(row);
         });
     }
@@ -2061,6 +2081,7 @@ function showSongArtists(event, songId, span) {
             miscArtists.push({ misc_artist_id: item.id, name: item.name, is_main: false });
             _saveMiscArtists();
             renderMiscList();
+            renderList();
         },
         onCreate: function(name, done) {
             var countryId = (typeof _currentArtistCountryId !== 'undefined') ? _currentArtistCountryId : null;
@@ -2072,6 +2093,7 @@ function showSongArtists(event, songId, span) {
                 miscArtists.push({ misc_artist_id: d.id, name: d.name, is_main: false });
                 _saveMiscArtists();
                 renderMiscList();
+                renderList();
                 if (done) done();
             });
         },
@@ -2099,6 +2121,7 @@ function showSongArtists(event, songId, span) {
                 artists.push({ artist_id: item.id, name: item.name, is_main: false });
                 _songArtists[songId] = artists;
                 renderList();
+                renderMiscList();
                 _updateCollabLabel(songId, artists);
             });
         },
