@@ -577,6 +577,7 @@ function _miscAutocomplete(input, url, onSelect, minLen) {
 </script>
 
 {% if edit_mode %}
+{% with password_required=true %}{% include "fragments/confirm_modal.html" %}{% endwith %}
 <!-- Genre/country/album-type data for JS -->
 {% for g in all_genres %}
 <span class="misc-genre-data hidden" data-id="{{ g.id }}" data-name="{{ g.genre }}"></span>
