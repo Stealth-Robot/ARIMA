@@ -85,6 +85,15 @@ function updateSongPill(checkbox) {
     }
 }
 
+// Clicking anywhere in a remix/cover/promoted cell toggles its checkbox.
+document.addEventListener('click', function(e) {
+    if (!e.target || e.target.tagName === 'INPUT') return; // checkbox handles its own clicks
+    var cell = e.target.closest ? e.target.closest('.checkbox-cell') : null;
+    if (!cell) return;
+    var cb = cell.querySelector('input[type="checkbox"]');
+    if (cb) cb.click();
+});
+
 function showArtistNameEdit(event, endpoint, span) {
     event.stopPropagation();
     var original = span.textContent.trim();
