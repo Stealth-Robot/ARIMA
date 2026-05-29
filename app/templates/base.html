@@ -73,10 +73,11 @@
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
              onclick="_toggleNavDd(this)">
-            <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page') %}border-b-3 border-navbar-active{% endif %}">Home</a>
+            <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day') %}border-b-3 border-navbar-active{% endif %}">Home</a>
             <div class="home-dd nav-dropdown-panel">
                 <a href="{{ url_for('home.home') }}" class="nav-dropdown-item">Home</a>
                 <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="nav-dropdown-item">Subscriptions</a>
+                <a href="{{ url_for('home.song_of_the_day') }}" class="nav-dropdown-item">Song of the Day</a>
             </div>
         </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
@@ -163,6 +164,7 @@
             <div id="mobile-menu-panel" class="fixed bg-navbar-bg border border-border rounded-md z-50 py-2" style="display:none; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px; max-height:calc(100vh - 50px); overflow-y:auto;">
                 <a href="{{ url_for('home.home') }}" class="mobile-menu-item">Home</a>
                 <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="mobile-menu-item">Subscriptions</a>
+                <a href="{{ url_for('home.song_of_the_day') }}" class="mobile-menu-item">Song of the Day</a>
                 <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>

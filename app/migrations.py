@@ -203,6 +203,18 @@ def run_startup_migrations():
         # 8. Parse (feat/with/ft/w/) from real artist song titles into misc_artist
         _migrate_collab_credits()
 
+        # ONE-TIME: seed first Song of the Day as LALISA — remove after deploy
+        from app.models.song_of_day import SongOfDay
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+        _today = _dt.now(_tz(_td(hours=-5))).date().isoformat()
+        if not db.session.get(SongOfDay, _today):
+            _lalisa = db.session.execute(db.text(
+                "SELECT id FROM song WHERE LOWER(name) = 'lalisa' LIMIT 1"
+            )).fetchone()
+            if _lalisa:
+                db.session.add(SongOfDay(date=_today, song_id=_lalisa[0]))
+                logger.info('Seeded first Song of the Day: LALISA (id=%d)', _lalisa[0])
+
         db.session.commit()
     except Exception:
         db.session.rollback()

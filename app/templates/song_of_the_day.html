@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
+    <h2 class="text-lg font-bold text-primary-text mb-1">Song of the Day History</h2>
+    <p class="text-xs text-secondary-text mb-4">Resets daily at midnight EST</p>
+    {% if cards %}
+    {% for card in cards %}
+    <div{% if not loop.first %} class="mt-4"{% endif %}>
+        <span class="text-xs text-secondary-text ml-1">{{ card.date_str }}</span>
+        {% include 'fragments/sotd_card.html' with context %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-secondary-text text-sm">No songs of the day yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

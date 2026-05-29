@@ -1,5 +1,6 @@
 import json
 import random
+from datetime import date, datetime, timedelta, timezone
 
 from flask import Blueprint, render_template, request, session
 from flask_login import login_required, current_user
@@ -9,6 +10,7 @@ from sqlalchemy import and_, func
 from app.extensions import db
 from app.models.music import (Artist, ArtistArtist, ArtistSubscription, ArtistSong,
                                AlbumSong, Album, Song, Rating, album_genres)
+from app.models.song_of_day import SongOfDay
 from app.models.user import UserSettings
 from app.models.rules import Rules
 
@@ -24,6 +26,121 @@ def _pick_canonical_album(albums, artist_id):
     def key(a):
         return (0 if a.artist_id == artist_id else 1, a.release_date or '', a.name.lower())
     return min(albums, key=key)
+
+
+EST = timezone(timedelta(hours=-5))
+
+
+def _est_today():
+    return datetime.now(EST).date()
+
+
+def _pick_random_sotd(as_of_date):
+    cutoff = (as_of_date - timedelta(days=30)).isoformat()
+    recent_ids = {r.song_id for r in SongOfDay.query.filter(
+        SongOfDay.date >= cutoff, SongOfDay.date < as_of_date.isoformat()
+    ).all()}
+
+    all_song_ids = {r.song_id for r in ArtistSong.query.filter(
+        ArtistSong.artist_is_main == True).all()}
+    candidates = all_song_ids - recent_ids
+
+    if not candidates:
+        candidates = all_song_ids
+    if not candidates:
+        return None
+    return random.choice(list(candidates))
+
+
+def _ensure_sotd_through_today():
+    today = _est_today()
+    today_str = today.isoformat()
+
+    if db.session.get(SongOfDay, today_str):
+        return db.session.get(SongOfDay, today_str)
+
+    last_entry = SongOfDay.query.order_by(SongOfDay.date.desc()).first()
+    if last_entry:
+        start = date.fromisoformat(last_entry.date) + timedelta(days=1)
+    else:
+        start = today
+
+    d = start
+    while d <= today:
+        d_str = d.isoformat()
+        if not db.session.get(SongOfDay, d_str):
+            chosen_id = _pick_random_sotd(d)
+            if chosen_id:
+                db.session.add(SongOfDay(date=d_str, song_id=chosen_id))
+        d += timedelta(days=1)
+
+    db.session.commit()
+    return db.session.get(SongOfDay, today_str)
+
+
+def _build_sotd_card(entry):
+    from urllib.parse import quote
+    from app.services.stats import get_display_users
+    from app.routes.artists import _collab_labels_from_song_artists
+
+    song = entry.song
+    if not song:
+        return None
+
+    as_row = ArtistSong.query.filter(
+        ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True
+    ).first()
+    if not as_row:
+        return None
+    artist = db.session.get(Artist, as_row.artist_id)
+    if not artist:
+        return None
+
+    album_row = (db.session.query(AlbumSong.song_id, Album)
+                 .join(Album, Album.id == AlbumSong.album_id)
+                 .options(selectinload(Album.genres))
+                 .filter(AlbumSong.song_id == song.id)
+                 .first())
+    album = album_row[1] if album_row else None
+
+    artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    users = get_display_users()
+    ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
+
+    song_artists_rows = db.session.query(
+        ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
+    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+        ArtistSong.song_id == song.id
+    ).all()
+    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g}
+                        for a, m, n, g in song_artists_rows]}
+    collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
+
+    return dict(song=song, artist=artist, album=album, artist_url=artist_url,
+                artist_id=artist.id, users=users, ratings=ratings,
+                collab_label=collab_label, date_str=entry.date)
+
+
+def _get_sotd_data():
+    today_entry = _ensure_sotd_through_today()
+    if not today_entry:
+        return None, []
+
+    today_str = today_entry.date
+    today_card = _build_sotd_card(today_entry)
+
+    past_entries = (SongOfDay.query
+                    .filter(SongOfDay.date < today_str)
+                    .order_by(SongOfDay.date.desc())
+                    .limit(5)
+                    .all())
+    history = []
+    for entry in past_entries:
+        card = _build_sotd_card(entry)
+        if card:
+            history.append(card)
+
+    return today_card, history
 
 
 def _get_rating_backlog():
@@ -257,6 +374,23 @@ def shuffle():
     return _render_shuffle_card(song, artist, album)
 
 
+@home_bp.route('/song-of-the-day')
+@login_required
+def song_of_the_day():
+    if not current_user.can_rate:
+        return render_template('song_of_the_day.html', cards=[])
+    _ensure_sotd_through_today()
+    entries = (SongOfDay.query
+               .order_by(SongOfDay.date.desc())
+               .all())
+    cards = []
+    for entry in entries:
+        card = _build_sotd_card(entry)
+        if card:
+            cards.append(card)
+    return render_template('song_of_the_day.html', cards=cards)
+
+
 @home_bp.route('/')
 @login_required
 def home():
@@ -284,7 +418,10 @@ def home():
     backlog = []
     ratings_map = {}
     users = []
+    sotd_today = None
+    sotd_history = []
     if current_user.can_rate:
+        sotd_today, sotd_history = _get_sotd_data()
         backlog, ratings_map = _get_rating_backlog()
         if backlog:
             from app.services.stats import get_display_users
@@ -297,4 +434,5 @@ def home():
                            hide_disbanded=hide_disbanded,
                            has_any_maintained=has_any_maintained,
                            can_rate=current_user.can_rate,
-                           misc_owner=rules.misc_owner if rules else None)
+                           misc_owner=rules.misc_owner if rules else None,
+                           sotd_today=sotd_today, sotd_history=sotd_history)

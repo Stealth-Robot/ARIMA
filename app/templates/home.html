@@ -3,47 +3,29 @@
 {% block content %}
 {% if owned_artists or has_any_maintained or backlog or can_rate %}
 <div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
-    {% if owned_artists %}
+    {% if can_rate and sotd_today %}
     <h2 class="text-lg font-bold text-primary-text mb-3 flex items-center gap-2 cursor-pointer"
-        data-collapse-key="home-owned" onclick="homeToggle(this)">
-        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> My Incomplete Artists</h2>
-    <div class="flex flex-col gap-2">
-        {% for a in owned_artists %}
-        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
-           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
-           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
-            <span class="font-bold text-sm">{{ a.name }}</span>
-            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
-            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
-                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
-            </span>
-        </a>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% if has_any_maintained %}
-    <h2 class="text-lg font-bold text-primary-text mb-3 {% if owned_artists %}mt-6{% endif %} flex items-center gap-2 cursor-pointer"
-        data-collapse-key="home-maintained" onclick="homeToggle(this)">
-        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Maintaining
-        <label class="text-sm font-normal text-secondary-text ml-auto cursor-pointer" onclick="event.stopPropagation();">
-            <input type="checkbox" {% if hide_disbanded %}checked{% endif %} autocomplete="off"
-                   onchange="fetch('/toggle-hide-disbanded',{method:'POST',headers:_csrfHeaders()}).then(function(r){if(r.ok)location.reload();});"
-                   class="cursor-pointer"> Hide Inactive
-        </label>
+        data-collapse-key="home-sotd" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Song of the Day
+        <span class="font-normal text-xs text-secondary-text">{{ sotd_today.date_str }}</span>
     </h2>
-    <div class="flex flex-col gap-2">
-        {% for a in maintained_artists %}
-        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
-           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
-           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
-            <span class="font-bold text-sm">{{ a.name }}</span>
-            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
-            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
-                {% if a.is_complete %}<span>Complete</span>{% endif %}
-                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
-            </span>
-        </a>
-        {% endfor %}
+    <div>
+        {% set card = sotd_today %}
+        {% include 'fragments/sotd_card.html' with context %}
+        {% if sotd_history %}
+        <div class="mt-3">
+            <span class="text-xs text-secondary-text cursor-pointer" onclick="var el=this.nextElementSibling;el.style.display=el.style.display==='none'?'':'none';this.textContent=el.style.display==='none'?'Show past days':'Hide past days';">Show past days</span>
+            <div style="display: none;">
+                {% for hist_card in sotd_history %}
+                <div class="mt-2">
+                    <span class="text-xs text-secondary-text ml-1">{{ hist_card.date_str }}</span>
+                    {% set card = hist_card %}
+                    {% include 'fragments/sotd_card.html' with context %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
     {% if can_rate %}
@@ -99,6 +81,49 @@
         </div>
         {% endif %}
     </div>
+    {% if owned_artists %}
+    <h2 class="text-lg font-bold text-primary-text mb-3 mt-6 flex items-center gap-2 cursor-pointer"
+        data-collapse-key="home-owned" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> My Incomplete Artists</h2>
+    <div class="flex flex-col gap-2">
+        {% for a in owned_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
+           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+            <span class="font-bold text-sm">{{ a.name }}</span>
+            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
+            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
+                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if has_any_maintained %}
+    <h2 class="text-lg font-bold text-primary-text mb-3 {% if owned_artists %}mt-6{% endif %} flex items-center gap-2 cursor-pointer"
+        data-collapse-key="home-maintained" onclick="homeToggle(this)">
+        <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Maintaining
+        <label class="text-sm font-normal text-secondary-text ml-auto cursor-pointer" onclick="event.stopPropagation();">
+            <input type="checkbox" {% if hide_disbanded %}checked{% endif %} autocomplete="off"
+                   onchange="fetch('/toggle-hide-disbanded',{method:'POST',headers:_csrfHeaders()}).then(function(r){if(r.ok)location.reload();});"
+                   class="cursor-pointer"> Hide Inactive
+        </label>
+    </h2>
+    <div class="flex flex-col gap-2">
+        {% for a in maintained_artists %}
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
+           class="flex items-center gap-3 rounded px-3 py-2 no-underline text-primary-text"
+           style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+            <span class="font-bold text-sm">{{ a.name }}</span>
+            <span class="text-xs text-secondary-text">{{ a.country.country if a.country else '' }}</span>
+            <span class="ml-auto flex items-center gap-2 text-xs text-secondary-text">
+                {% if a.is_complete %}<span>Complete</span>{% endif %}
+                {% if a.is_disbanded %}<span>Inactive</span>{% endif %}
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% if backlog %}
     {% set ns = namespace(total_songs=0) %}
     {% for _, (cnt, _) in backlog %}{% set ns.total_songs = ns.total_songs + cnt %}{% endfor %}
