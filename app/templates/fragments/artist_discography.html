@@ -249,11 +249,53 @@ function _restoreCollapseState() {
     _updateToggleAllLabel();
 }
 document.addEventListener('DOMContentLoaded', _restoreCollapseState);
+
+function _applyArtistRatingFilter() {
+    var el = document.getElementById('artist-rated-filter');
+    var val = el ? el.value : 'all';
+    document.querySelectorAll('tr[data-my-rated]').forEach(function(row) {
+        var isRated = row.dataset.myRated === '1';
+        var ok = val === 'all' || (val === 'rated' && isRated) || (val === 'unrated' && !isRated);
+        row.classList.toggle('rating-filtered', !ok);
+    });
+    function _anyVisible(selector) {
+        var rows = document.querySelectorAll(selector);
+        for (var i = 0; i < rows.length; i++) {
+            if (!rows[i].classList.contains('rating-filtered')) return true;
+        }
+        return false;
+    }
+    // Hide album sections (and their spacer) with no visible songs
+    document.querySelectorAll('tr[id^="album-"]').forEach(function(header) {
+        var show = _anyVisible('.album-row-' + header.id.substring(6) + '[data-my-rated]');
+        header.classList.toggle('rating-filtered', !show);
+        var prev = header.previousElementSibling;
+        if (prev && prev.querySelector('td.h-3.border-0')) prev.classList.toggle('rating-filtered', !show);
+    });
+    // Hide child-artist sections (and their spacer) with no visible songs
+    document.querySelectorAll('tr[id^="child-"]').forEach(function(header) {
+        var show = _anyVisible('.child-row-' + header.id.substring(6) + '[data-my-rated]');
+        header.classList.toggle('rating-filtered', !show);
+        var prev = header.previousElementSibling;
+        if (prev && prev.querySelector('td.h-5.border-0')) prev.classList.toggle('rating-filtered', !show);
+    });
+}
 </script>
 
 {% if not discography and not children %}
 <p class="text-secondary-text">No albums found.</p>
 {% else %}
+
+<div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+    <span class="text-secondary-text">Rated:</span>
+    <select id="artist-rated-filter" onchange="_applyArtistRatingFilter()"
+            class="rounded border border-border cursor-pointer"
+            style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+        <option value="all">All</option>
+        <option value="unrated">Unrated</option>
+        <option value="rated">Rated</option>
+    </select>
+</div>
 
 <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
 <div class="flex gap-3 items-start">
@@ -346,8 +388,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
         {% set album_name_safe = '' if is_misc else album.name %}
         {% set album_date_safe = '' if is_misc else (album.release_date or '') %}
         {% for song, track_num in songs %}
-
-        <tr id="song-{{ song.id }}" class="album-row-{{ album_key }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album_key }}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        {% set my_rating = ratings.get(song.id, {}).get(current_user.id) %}
+        <tr id="song-{{ song.id }}" class="album-row-{{ album_key }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album_key }}" data-my-rated="{% if my_rating and my_rating.rating is not none %}1{% else %}0{% endif %}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
         {% set ns.song_idx = ns.song_idx + 1 %}
                         <!-- Song name (no track number) -->
             <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
@@ -544,7 +586,8 @@ document.addEventListener('DOMContentLoaded', _restoreCollapseState);
         {% set album_name_safe = '' if is_misc else album.name %}
         {% set album_date_safe = '' if is_misc else (album.release_date or '') %}
         {% for song, track_num in songs %}
-        <tr id="song-{{ song.id }}" class="child-row-{{ child.artist.id }} album-row-{{ album_key }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album_key }}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        {% set my_rating = ratings.get(song.id, {}).get(current_user.id) %}
+        <tr id="song-{{ song.id }}" class="child-row-{{ child.artist.id }} album-row-{{ album_key }} border border-grid-line" data-song-id="{{ song.id }}" data-album-id="{{ album_key }}" data-my-rated="{% if my_rating and my_rating.rating is not none %}1{% else %}0{% endif %}" style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
         {% set ns.song_idx = ns.song_idx + 1 %}
                         <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
                 data-song-id="{{ song.id }}" title="{{ song.name | e }}"

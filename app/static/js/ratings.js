@@ -641,6 +641,14 @@ function submitRating(cell, songId, rating, targetUserId) {
         cell.textContent = '';
     }
 
+    // Keep the row's rated/unrated filter state in sync when the user rates their own cell
+    if (cell.classList.contains('my-cell')) {
+        var _filterRow = cell.closest('tr');
+        if (_filterRow && _filterRow.hasAttribute('data-my-rated')) {
+            _filterRow.dataset.myRated = rating !== null ? '1' : '0';
+        }
+    }
+
     const extraValues = targetUserId !== undefined ? { user_id: targetUserId } : {};
 
     if (rating === null) {

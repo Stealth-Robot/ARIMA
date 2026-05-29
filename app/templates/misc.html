@@ -95,12 +95,20 @@
                 style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
                 title="Toggle sort direction">&darr;</button>
         <span class="text-secondary-text ml-2">Show:</span>
-        <select id="misc-scope-filter" onchange="_miscApplyScopeFilter()"
+        <select id="misc-scope-filter" onchange="_miscApplyFilters()"
                 class="rounded border border-border cursor-pointer"
                 style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="all">All</option>
             <option value="misc-only">Misc exclusive</option>
             <option value="on-artist">On artist pages</option>
+        </select>
+        <span class="text-secondary-text ml-2">Rated:</span>
+        <select id="misc-rated-filter" onchange="_miscApplyFilters()"
+                class="rounded border border-border cursor-pointer"
+                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+            <option value="all">All</option>
+            <option value="unrated">Unrated</option>
+            <option value="rated">Rated</option>
         </select>
     </div>
 
@@ -184,6 +192,7 @@ function _miscToggleCountry(cid) {
             loader.style.display = '';
             return fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
+                _miscApplyFilters();
             });
         }
         return Promise.resolve();
@@ -243,12 +252,14 @@ function _miscExpandAll() {
             fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
                 document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = ''; });
+                _miscApplyFilters();
             });
         }
     });
     document.querySelectorAll('[class*="misc-country-row-"], [class*="misc-genre-row-"]').forEach(function(r) {
         r.style.display = '';
     });
+    _miscApplyFilters();
 }
 
 function _miscCollapseAll() {
@@ -356,19 +367,35 @@ function _miscApplySort() {
     });
 }
 
-function _miscApplyScopeFilter() {
-    var val = document.getElementById('misc-scope-filter').value;
-    document.querySelectorAll('[data-on-artist-page]').forEach(function(row) {
+function _miscApplyFilters() {
+    var scopeEl = document.getElementById('misc-scope-filter');
+    var ratedEl = document.getElementById('misc-rated-filter');
+    var scope = scopeEl ? scopeEl.value : 'all';
+    var rated = ratedEl ? ratedEl.value : 'all';
+    document.querySelectorAll('[data-my-rated]').forEach(function(row) {
         var onArtist = row.dataset.onArtistPage === '1';
-        if (val === 'all') {
-            row.style.display = '';
-        } else if (val === 'misc-only') {
-            row.style.display = onArtist ? 'none' : '';
-        } else if (val === 'on-artist') {
-            row.style.display = onArtist ? '' : 'none';
+        var isRated = row.dataset.myRated === '1';
+        var scopeOk = scope === 'all' || (scope === 'misc-only' && !onArtist) || (scope === 'on-artist' && onArtist);
+        var ratedOk = rated === 'all' || (rated === 'rated' && isRated) || (rated === 'unrated' && !isRated);
+        row.classList.toggle('rating-filtered', !(scopeOk && ratedOk));
+    });
+    // Hide genre sections (and their spacer) with no visible songs
+    document.querySelectorAll('[id^="misc-genre-"]').forEach(function(header) {
+        var m = header.id.match(/^misc-genre-(\d+)-(\d+)$/);
+        if (!m) return;
+        var rows = document.querySelectorAll('.misc-genre-row-' + m[1] + '-' + m[2] + '[data-my-rated]');
+        var show = false;
+        for (var i = 0; i < rows.length; i++) {
+            if (!rows[i].classList.contains('rating-filtered')) { show = true; break; }
         }
+        header.classList.toggle('rating-filtered', !show);
+        var prev = header.previousElementSibling;
+        if (prev && prev.querySelector('td.h-3.border-0')) prev.classList.toggle('rating-filtered', !show);
     });
 }
+
+/* Kept as an alias in case referenced elsewhere */
+function _miscApplyScopeFilter() { _miscApplyFilters(); }
 
 /* Song genre edit (calls same pattern as album genre edit) */
 function _showSongGenreEdit(event, songId, el) {

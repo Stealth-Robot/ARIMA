@@ -404,6 +404,9 @@ textarea {
     cursor: pointer;
 }
 
+/* Rows hidden by the rated/unrated filter — wins over collapse inline display */
+.rating-filtered { display: none !important; }
+
 /* ── Mobile responsive ── */
 .nav-spacer { display: none; }
 

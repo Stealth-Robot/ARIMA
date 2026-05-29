@@ -23,12 +23,14 @@
 
 {% for row in genre.songs %}
 {% set song = row.song %}
+{% set my_rating = row.ratings.get(current_user.id) %}
 <tr id="song-{{ song.id }}"
     class="misc-country-row-{{ country_id }} misc-genre-row-{{ country_id }}-{{ genre.genre_id }} border border-grid-line"
     data-song-name="{{ song.name | lower }}"
     data-release="{{ row.album.release_date or '' if row.album else '' }}"
     data-artist-name="{{ row.main_artists | join(', ') | lower }}"
     data-on-artist-page="{% if row.real_artists %}1{% else %}0{% endif %}"
+    data-my-rated="{% if my_rating and my_rating.rating is not none %}1{% else %}0{% endif %}"
     style="{% if ns.song_idx % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
     <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
         data-song-id="{{ song.id }}" title="{{ song.name | e }}"
