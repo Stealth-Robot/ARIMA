@@ -19,13 +19,16 @@ GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: 
 @artists_bp.route('/artists', strict_slashes=False)
 @login_required
 def artists_list():
-    """Redirect to the last visited artist, or the first in the navbar."""
-    last_id = session.get('last_artist_id')
-    if last_id:
-        artist = db.session.get(Artist, last_id)
-        if artist and artist.name != 'Misc. Artists':
-            return redirect(url_for('artists.artist_detail', artist_id=last_id))
+    """Redirect to the last visited artist, or the first in the navbar.
+
+    Only honor last_artist_id if that artist is still in the user's filtered
+    navbar — otherwise a stale id from a prior filter (e.g. aespa while filtered
+    to Japanese) would keep redirecting to an artist the user can't see.
+    """
     navbar = get_filtered_navbar()
+    last_id = session.get('last_artist_id')
+    if last_id and any(a.id == last_id for a in navbar):
+        return redirect(url_for('artists.artist_detail', artist_id=last_id))
     if navbar:
         return redirect(url_for('artists.artist_detail', artist_id=navbar[0].id))
     return redirect(url_for('misc.misc_page'))
