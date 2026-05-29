@@ -378,6 +378,21 @@ function _initSongMiscSearch(songDiv) {
     var songNum = input.dataset.song;
     var timer;
     function _csrfH() { var m = document.querySelector('meta[name="csrf-token"]'); var h = {}; if (m) h['X-CSRFToken'] = m.content; return h; }
+    function _createMiscArtist(name) {
+        var countrySelect = document.querySelector('[name="country_id"]');
+        var cid = countrySelect && countrySelect.value ? parseInt(countrySelect.value) : null;
+        var headers = {'Content-Type': 'application/json'};
+        var m = document.querySelector('meta[name="csrf-token"]');
+        if (m) headers['X-CSRFToken'] = m.content;
+        fetch('/misc/add-misc-artist', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({name: name, country_id: cid}),
+        }).then(function(r) { return r.json(); }).then(function(d) {
+            _addSongMiscArtist(albumNum, songNum, d.id, d.name);
+            input.value = '';
+            resultsDiv.style.display = 'none';
+        });
+    }
     function refresh() {
         clearTimeout(timer);
         var q = input.value.trim();
@@ -388,8 +403,19 @@ function _initSongMiscSearch(songDiv) {
                     resultsDiv.innerHTML = '';
                     var usedIds = _getSongMiscArtistIds(albumNum, songNum);
                     var filtered = items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
-                    if (!filtered.length) { resultsDiv.style.display = 'none'; return; }
+                    var showCreate = !!q;
+                    if (!filtered.length && !showCreate) { resultsDiv.style.display = 'none'; return; }
                     resultsDiv.style.display = 'block';
+                    // Inline "Create" option when the typed name has no exact match
+                    if (showCreate) {
+                        var createRow = document.createElement('div');
+                        createRow.textContent = '+ Create "' + q + '"';
+                        createRow.style.cssText = 'font-size:12px; padding:2px 6px; cursor:pointer; border-radius:2px; color:var(--link,#2563EB); font-weight:bold;';
+                        createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
+                        createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
+                        createRow.addEventListener('mousedown', function(e) { e.preventDefault(); _createMiscArtist(q); });
+                        resultsDiv.appendChild(createRow);
+                    }
                     filtered.forEach(function(item) {
                         var row = document.createElement('div');
                         row.textContent = item.name;
@@ -410,41 +436,6 @@ function _initSongMiscSearch(songDiv) {
     input.addEventListener('input', refresh);
     input.addEventListener('focus', refresh);
     input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
-    // + New button with country dropdown (matches misc page pattern)
-    var createRow = document.createElement('div');
-    createRow.style.cssText = 'display:flex; gap:4px; align-items:center; margin-top:4px;';
-    var newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.textContent = '+ New';
-    newBtn.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:3px; background:var(--edit-on-button,#16a34a); color:var(--button-text,#fff); border:none; cursor:pointer;';
-    var countrySel = document.createElement('select');
-    countrySel.style.cssText = 'font-size:11px; padding:2px 4px; border:1px solid var(--border); border-radius:3px;';
-    allCountries.forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = c.id; opt.textContent = c.name;
-        countrySel.appendChild(opt);
-    });
-    var countrySelect = document.querySelector('[name="country_id"]');
-    if (countrySelect && countrySelect.value) countrySel.value = countrySelect.value;
-    newBtn.addEventListener('click', function() {
-        var n = input.value.trim();
-        if (!n) return;
-        var cid = parseInt(countrySel.value);
-        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        var headers = {'Content-Type': 'application/json'};
-        if (csrfMeta) headers['X-CSRFToken'] = csrfMeta.content;
-        fetch('/misc/add-misc-artist', {
-            method: 'POST', headers: headers,
-            body: JSON.stringify({name: n, country_id: cid}),
-        }).then(function(r) { return r.json(); }).then(function(d) {
-            _addSongMiscArtist(albumNum, songNum, d.id, d.name);
-            input.value = '';
-            resultsDiv.style.display = 'none';
-        });
-    });
-    createRow.appendChild(newBtn);
-    createRow.appendChild(countrySel);
-    input.parentElement.appendChild(createRow);
 }
 
 function _getSongMiscArtistIds(albumNum, songNum) {

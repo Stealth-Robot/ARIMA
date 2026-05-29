@@ -2010,8 +2010,8 @@ function showSongArtists(event, songId, span) {
                 opts.getItems(q, function(items) {
                     results.innerHTML = '';
                     var usedIds = opts.getUsedIds();
-                    // Inline "Create" option when the typed name has no exact match
-                    if (opts.onCreate && q && !items.some(function(it) { return it.name.toLowerCase() === q.toLowerCase(); })) {
+                    // Inline "Create" option whenever something is typed
+                    if (opts.onCreate && q) {
                         var createRow = document.createElement('div');
                         createRow.textContent = '+ Create "' + q + '"';
                         createRow.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px; color:var(--link,#2563EB); font-weight:bold;';
