@@ -96,8 +96,8 @@
              onclick="_toggleNavDd(this)">
             <a href="{{ url_for('artists.artists_list') }}" class="nav-link {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug', 'misc.misc_page') %}border-b-3 border-navbar-active{% endif %}">Artists</a>
             <div class="artists-dd nav-dropdown-panel">
-                <a href="{{ url_for('artists.artists_list') }}" class="nav-dropdown-item">Artists</a>
                 <a href="{{ url_for('misc.misc_page') }}" class="nav-dropdown-item">Misc</a>
+                <a href="{{ url_for('artists.artists_list') }}" class="nav-dropdown-item">Artists</a>
             </div>
         </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
