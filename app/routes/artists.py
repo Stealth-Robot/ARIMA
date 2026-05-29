@@ -357,8 +357,13 @@ def unrated_count(artist_id):
     return json.dumps({'unrated': unrated, 'total': total}), 200, {'Content-Type': 'application/json'}
 
 
-def _collab_labels_from_song_artists(all_song_artists, artist):
-    """Derive collab labels from already-loaded song_artists data (no extra queries)."""
+def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_artists=None):
+    """Derive collab labels from already-loaded song_artists data (no extra queries).
+
+    If all_song_misc_artists is provided, misc artists are bucketed alongside real
+    artists so they share the same (by …)/(with …)/(feat. …) groups. On anime pages
+    a main misc artist is the primary singer ("by"), mirroring main real artists.
+    """
     ANIME_GENDER_ID = 3
     is_anime_page = artist.gender_id == ANIME_GENDER_ID
     song_data = {}
@@ -376,6 +381,15 @@ def _collab_labels_from_song_artists(all_song_artists, artist):
                 d['main'].append(a['name'])
             else:
                 d['feat'].append(a['name'])
+    for sid, misc_list in (all_song_misc_artists or {}).items():
+        for m in misc_list:
+            d = song_data.setdefault(sid, {'main': [], 'feat': [], 'by': [], 'for': []})
+            if not m['is_main']:
+                d['feat'].append(m['name'])
+            elif is_anime_page:
+                d['by'].append(m['name'])
+            else:
+                d['main'].append(m['name'])
     labels = {}
     for sid, d in song_data.items():
         parts = []
@@ -547,19 +561,8 @@ def _build_discography(artist, children=None, hide_osts=False):
         })
 
     # Derive collab labels from both real and misc artist data
-    all_collab_labels = _collab_labels_from_song_artists(all_song_artists, artist)
-    for sid, misc_list in all_song_misc_artists.items():
-        parts = []
-        main_names = [m['name'] for m in misc_list if m['is_main']]
-        feat_names = [m['name'] for m in misc_list if not m['is_main']]
-        if main_names:
-            parts.append('(with ' + ', '.join(main_names) + ')')
-        if feat_names:
-            parts.append('(feat. ' + ', '.join(feat_names) + ')')
-        if parts:
-            existing = all_collab_labels.get(sid, '')
-            label = ' '.join(parts)
-            all_collab_labels[sid] = (existing + ' ' + label).strip() if existing else label
+    all_collab_labels = _collab_labels_from_song_artists(
+        all_song_artists, artist, all_song_misc_artists)
 
     # Build album → songs structure (no per-album queries)
     discography = []

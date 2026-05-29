@@ -1820,8 +1820,11 @@ function _updateCollabLabel(songId, artists) {
     });
     var miscArtists = (typeof _songMiscArtists !== 'undefined' && _songMiscArtists[songId]) ? _songMiscArtists[songId] : [];
     miscArtists.forEach(function(m) {
-        if (m.is_main) mainNames.push(m.name);
-        else featNames.push(m.name);
+        // On anime pages a main misc artist is the primary singer ("by"),
+        // mirroring how main real artists are bucketed.
+        if (!m.is_main) featNames.push(m.name);
+        else if (isAnimePage) byNames.push(m.name);
+        else mainNames.push(m.name);
     });
     var parts = [];
     if (mainNames.length) parts.push('(with ' + mainNames.join(', ') + ')');
