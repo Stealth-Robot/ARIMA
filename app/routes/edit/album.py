@@ -428,29 +428,28 @@ def album_create_song(album_id):
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def move_song(album_id):
-    """Move a song to a specific position within an album (for drag-and-drop)."""
+    """Move a song relative to another song within an album (for drag-and-drop)."""
     _require_edit_mode()
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
     song_id = int(request.form.get('song_id', 0))
-    new_position = int(request.form.get('new_position', 0))
-    if not song_id or new_position < 1:
+    target_song_id = int(request.form.get('target_song_id', 0))
+    direction = request.form.get('direction', 'before')
+    if not song_id or not target_song_id or song_id == target_song_id:
         abort(400)
 
     links = AlbumSong.query.filter_by(album_id=album_id).order_by(AlbumSong.track_number).all()
     old_idx = next((i for i, l in enumerate(links) if l.song_id == song_id), None)
-    if old_idx is None:
+    target_idx = next((i for i, l in enumerate(links) if l.song_id == target_song_id), None)
+    if old_idx is None or target_idx is None:
         abort(404)
 
-    new_idx = min(new_position - 1, len(links) - 1)
-    if new_idx == old_idx:
-        return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
-
     moved = links.pop(old_idx)
+    target_idx = next(i for i, l in enumerate(links) if l.song_id == target_song_id)
+    new_idx = target_idx + 1 if direction == 'after' else target_idx
     links.insert(new_idx, moved)
 
-    # Set all to negative first to avoid unique constraint conflicts
     for i, link in enumerate(links):
         db.session.execute(db.text(
             'UPDATE album_song SET track_number = :tn WHERE album_id = :aid AND song_id = :sid'

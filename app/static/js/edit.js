@@ -3199,11 +3199,11 @@ function doRemoveFromAlbum(songId, albumId, deleteAlbum) {
 
 var _dragSongRow = null;
 
-function moveSong(songId, albumId, newPosition) {
+function moveSong(songId, albumId, targetSongId, direction) {
     fetch('/edit/album/' + albumId + '/move-song', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-        body: 'song_id=' + songId + '&new_position=' + newPosition,
+        body: 'song_id=' + songId + '&target_song_id=' + targetSongId + '&direction=' + direction,
     }).then(function(r) {
         if (!r.ok) throw new Error('failed');
         window.location.reload();
@@ -3278,13 +3278,10 @@ document.addEventListener('drop', function(e) {
 
     var albumId = _dragSongRow.dataset.albumId;
     var songId = _dragSongRow.dataset.songId;
-    var albumRows = document.querySelectorAll('tr.album-row-' + albumId + '[data-song-id]');
-    var newPosition = 1;
-    for (var i = 0; i < albumRows.length; i++) {
-        if (albumRows[i] === targetRow) { newPosition = i + 1; break; }
-    }
+    var targetSongId = targetRow.dataset.songId;
+    var dir = _dragDirection(albumId, _dragSongRow, targetRow);
     _clearDragIndicators();
-    moveSong(songId, albumId, newPosition);
+    moveSong(songId, albumId, targetSongId, dir === 'down' ? 'after' : 'before');
 });
 
 document.addEventListener('dragend', function(e) {
