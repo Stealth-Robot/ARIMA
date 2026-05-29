@@ -301,11 +301,13 @@ def unrated_count(artist_id):
         genre_ids = list(settings.genre_ids or [])
         include_remixes = settings.include_remixes
         include_featured = settings.include_featured
+        include_covers = settings.include_covers
         hide_osts = getattr(settings, 'hide_osts', False)
     else:
         genre_ids = list(session.get('genre_ids') or [])
         include_remixes = False
         include_featured = False
+        include_covers = True
         hide_osts = session.get('hide_osts', False)
 
     song_ids = {r.song_id for r in ArtistSong.query.filter_by(artist_id=artist.id).all()}
@@ -340,6 +342,8 @@ def unrated_count(artist_id):
     unrated = 0
     for song in songs:
         if not include_remixes and song.is_remix:
+            continue
+        if not include_covers and song.is_cover:
             continue
         if not include_featured and main_song_ids is not None and song.id not in main_song_ids:
             continue
@@ -420,11 +424,13 @@ def _build_discography(artist, children=None, hide_osts=False):
         genre_ids = list(current_user.settings.genre_ids or [])
         include_remixes = True if edit_mode else current_user.settings.include_remixes
         include_featured = True if edit_mode else current_user.settings.include_featured
+        include_covers = True if edit_mode else current_user.settings.include_covers
         album_sort_order = current_user.settings.album_sort_order or 'desc'
     else:
         genre_ids = list(session.get('genre_ids') or [])
         include_remixes = True if edit_mode else False
         include_featured = True if edit_mode else False
+        include_covers = True
         album_sort_order = session.get('album_sort_order', 'desc')
 
     # Get all albums containing these songs (NULLs sort last)
@@ -576,6 +582,10 @@ def _build_discography(artist, children=None, hide_osts=False):
         if not include_remixes:
             album_songs = [(s, tn) for s, tn in album_songs if not s.is_remix]
 
+        # Filter covers if setting is off
+        if not include_covers:
+            album_songs = [(s, tn) for s, tn in album_songs if not s.is_cover]
+
         # Filter featured songs if setting is off
         if not include_featured:
             album_songs = [(s, tn) for s, tn in album_songs
@@ -609,6 +619,8 @@ def _build_discography(artist, children=None, hide_osts=False):
         misc_songs_objs = {s.id: s for s in Song.query.filter(Song.id.in_(misc_sids)).all()}
         if not include_remixes:
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if not s.is_remix}
+        if not include_covers:
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if not s.is_cover}
         if not include_featured:
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid in main_song_ids}
         if genre_ids:

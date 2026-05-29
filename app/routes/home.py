@@ -43,6 +43,7 @@ def _get_rating_backlog():
     genre_ids = list((settings.genre_ids if settings else None) or session.get('genre_ids') or [])
     include_remixes = getattr(settings, 'include_remixes', False) if settings else False
     include_featured = getattr(settings, 'include_featured', False) if settings else False
+    include_covers = getattr(settings, 'include_covers', True) if settings else True
     hide_osts = getattr(settings, 'hide_osts', False) if settings else session.get('hide_osts', False)
     hide_dupes = getattr(settings, 'hide_duplicate_songs', False) if settings else False
 
@@ -111,6 +112,9 @@ def _get_rating_backlog():
             continue
 
         if not include_remixes and song.is_remix:
+            continue
+
+        if not include_covers and song.is_cover:
             continue
 
         if not include_featured and main_song_ids is not None and song.id not in main_song_ids:

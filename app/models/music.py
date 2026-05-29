@@ -128,6 +128,7 @@ class Song(db.Model):
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     is_promoted = db.Column(db.Boolean, nullable=False, default=False)
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
+    is_cover = db.Column(db.Boolean, nullable=False, default=False)
     note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
     spotify_url = db.Column(db.Text)

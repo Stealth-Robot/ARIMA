@@ -31,6 +31,7 @@ def profile():
             'theme': session.get('theme', 1),
             'include_featured': session.get('include_featured', False),
             'include_remixes': session.get('include_remixes', False),
+            'include_covers': session.get('include_covers', True),
             'album_sort_order': session.get('album_sort_order', 'desc'),
             'song_button_size': session.get('song_button_size', 13),
             'rating_labels': DEFAULT_RATING_LABELS,
@@ -49,6 +50,7 @@ def profile():
             'theme': s.theme if s else 0,
             'include_featured': s.include_featured if s else False,
             'include_remixes': s.include_remixes if s else False,
+            'include_covers': s.include_covers if s else True,
             'album_sort_order': s.album_sort_order if s else 'desc',
             'song_button_size': s.song_button_size if s else 13,
             'rating_labels': {score: s.rating_label(score) for score in range(6)} if s else DEFAULT_RATING_LABELS,
@@ -85,6 +87,7 @@ def _apply_theme_settings(set_field, form):
     if from_profile_page:
         set_field('include_featured', form.get('include_featured') == 'on')
         set_field('include_remixes', form.get('include_remixes') == 'on')
+        set_field('include_covers', form.get('include_covers') == 'on')
         set_field('show_track_numbers', form.get('show_track_numbers') == 'on')
         set_field('show_full_album_date', form.get('show_full_album_date') == 'on')
         set_field('hide_osts', form.get('hide_osts') == 'on')
@@ -98,6 +101,8 @@ def _apply_theme_settings(set_field, form):
             set_field('include_featured', form.get('include_featured') == 'on')
         if 'include_remixes' in form:
             set_field('include_remixes', form.get('include_remixes') == 'on')
+        if 'include_covers' in form:
+            set_field('include_covers', form.get('include_covers') == 'on')
         if 'album_sort_order' in form:
             val = form.get('album_sort_order')
             set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')

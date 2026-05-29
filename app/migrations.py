@@ -50,11 +50,16 @@ def run_startup_migrations():
                     logger.info('Added missing submission column: %s', col.name)
 
         # 1a. Add any new song columns (e.g. note)
+        import sqlalchemy
         from app.models.music import Song
         existing_song_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('song')"))}
         for col in Song.__table__.columns:
             if col.name not in existing_song_cols:
-                db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
+                if isinstance(col.type, sqlalchemy.Boolean):
+                    db.session.execute(db.text(
+                        f'ALTER TABLE song ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT 0'))
+                else:
+                    db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing song column: %s', col.name)
 
         # 1a'. Add owner/maintainer FK columns on artist

@@ -481,6 +481,7 @@ function addSong(albumNum) {
             '</div>' +
             '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"> Promoted</label>' +
             '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"> Remix</label>' +
+            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_cover" class="song-check" style="margin-right:3px;"> Cover</label>' +
             '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
             '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
             '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
@@ -751,6 +752,7 @@ function collectFormState() {
                     name: name,
                     is_promoted: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_promoted"]') || {}).checked,
                     is_remix: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_remix"]') || {}).checked,
+                    is_cover: !!(songDiv.querySelector('[data-song="' + songNum + '"][data-field="is_cover"]') || {}).checked,
                     artists: artists,
                     misc_artists: miscArtists,
                 };
@@ -989,6 +991,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                         '</div>' +
                         '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
                         '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_cover" class="song-check" style="margin-right:3px;"' + (songData.is_cover ? ' checked' : '') + '> Cover</label>' +
                         '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
                         '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
                         '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +

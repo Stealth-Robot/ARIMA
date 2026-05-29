@@ -19,6 +19,7 @@ def _get_viewer_settings():
         return {
             'include_featured': current_user.settings.include_featured,
             'include_remixes': current_user.settings.include_remixes,
+            'include_covers': current_user.settings.include_covers,
             'country_ids': list(current_user.settings.country_ids or []),
             'genre_ids': list(current_user.settings.genre_ids or []),
             'hide_osts': getattr(current_user.settings, 'hide_osts', False),
@@ -26,6 +27,7 @@ def _get_viewer_settings():
     return {
         'include_featured': False,
         'include_remixes': False,
+        'include_covers': True,
         'country_ids': list(session.get('country_ids') or []),
         'genre_ids': list(session.get('genre_ids') or []),
         'hide_osts': session.get('hide_osts', False),

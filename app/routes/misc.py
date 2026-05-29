@@ -31,6 +31,7 @@ def _get_user_filters():
             'genre_ids': list(s.genre_ids or []),
             'include_remixes': s.include_remixes,
             'include_featured': s.include_featured,
+            'include_covers': s.include_covers,
             'hide_osts': getattr(s, 'hide_osts', False),
         }
     return {
@@ -38,6 +39,7 @@ def _get_user_filters():
         'genre_ids': list(session.get('genre_ids') or []),
         'include_remixes': False,
         'include_featured': False,
+        'include_covers': True,
         'hide_osts': session.get('hide_osts', False),
     }
 
@@ -239,6 +241,8 @@ def _build_country_data(country_id):
         if not edit_mode:
             if not filters['include_remixes'] and song.is_remix:
                 continue
+            if not filters['include_covers'] and song.is_cover:
+                continue
             if not filters['include_featured']:
                 main_names, _ = _collab_labels(sid)
                 if not main_names:
@@ -346,6 +350,8 @@ def unrated_count():
             continue
         if not filters['include_remixes'] and song.is_remix:
             continue
+        if not filters['include_covers'] and song.is_cover:
+            continue
         genres = song_genre_map.get(song.id, set())
         if filters['hide_osts'] and ost_genre_id and genres == {ost_genre_id}:
             continue
@@ -434,6 +440,7 @@ def add_misc_song():
         submitted_by_id=current_user.id,
         is_promoted=bool(data.get('is_promoted')),
         is_remix=bool(data.get('is_remix')),
+        is_cover=bool(data.get('is_cover')),
         spotify_url=data.get('spotify_url') or None,
     )
     db.session.add(song)

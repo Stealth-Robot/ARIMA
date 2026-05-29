@@ -62,6 +62,7 @@ class UserSettings(db.Model):
     genre_ids = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
     include_featured = db.Column(db.Boolean, nullable=False, default=False)
     include_remixes = db.Column(db.Boolean, nullable=False, default=False)
+    include_covers = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
     theme = db.Column(db.Integer, db.ForeignKey('theme.id'), nullable=False, default=0)
     hide_duplicate_songs = db.Column(db.Boolean, nullable=False, default=False)
     album_sort_order = db.Column(db.String(4), nullable=False, default='desc')

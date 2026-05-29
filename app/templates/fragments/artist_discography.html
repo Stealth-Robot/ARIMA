@@ -330,6 +330,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             </th>
             {% if edit_mode %}
             <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Remix</th>
+            <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Cover</th>
             <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Promoted</th>
             {% endif %}
             {% for u in users %}
@@ -448,12 +449,17 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% endif %}
             </td>
 
-            <!-- Is Remix / Is Promoted checkboxes (edit mode only) -->
+            <!-- Is Remix / Is Cover / Is Promoted checkboxes (edit mode only) -->
             {% if edit_mode %}
             <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
                 <input type="checkbox" {% if song.is_remix %}checked{% endif %} autocomplete="off"
                        data-song-id="{{ song.id }}" data-field="is-remix"
                        onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-remix')">
+            </td>
+            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
+                <input type="checkbox" {% if song.is_cover %}checked{% endif %} autocomplete="off"
+                       data-song-id="{{ song.id }}" data-field="is-cover"
+                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-cover')">
             </td>
             <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
                 <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
@@ -649,6 +655,11 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 <input type="checkbox" {% if song.is_remix %}checked{% endif %} autocomplete="off"
                        data-song-id="{{ song.id }}" data-field="is-remix"
                        onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-remix')">
+            </td>
+            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
+                <input type="checkbox" {% if song.is_cover %}checked{% endif %} autocomplete="off"
+                       data-song-id="{{ song.id }}" data-field="is-cover"
+                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-cover')">
             </td>
             <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
                 <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"

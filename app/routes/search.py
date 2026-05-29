@@ -24,19 +24,21 @@ def _occurrences(fields, term):
 
 
 def _get_filters():
-    """Return (country_ids, genre_ids, hide_osts, include_remixes, include_featured)."""
+    """Return (country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers)."""
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
         s = current_user.settings
         return (list(s.country_ids or []),
                 list(s.genre_ids or []),
                 getattr(s, 'hide_osts', False),
                 s.include_remixes,
-                s.include_featured)
+                s.include_featured,
+                s.include_covers)
     return (list(session.get('country_ids') or []),
             list(session.get('genre_ids') or []),
             session.get('hide_osts', False),
             False,
-            False)
+            False,
+            True)
 
 
 @search_bp.route('/search')
@@ -50,7 +52,7 @@ def search():
     like = f'%{q}%'
     terms = q.lower().split()
     term_counts = Counter(terms)
-    country_ids, genre_ids, hide_osts, include_remixes, include_featured = _get_filters()
+    country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
     edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
     # Pre-compute OST album IDs to exclude from results
@@ -262,6 +264,8 @@ def search():
                     return False
                 if not edit_mode:
                     if not include_remixes and s.is_remix:
+                        return False
+                    if not include_covers and s.is_cover:
                         return False
                     if not include_featured and not has_main.get(s.id):
                         return False

@@ -86,6 +86,13 @@
         </div>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="include_covers"
+                       {% if settings.include_covers %}checked{% endif %}>
+                Show cover songs on artist pages and in stats
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="show_track_numbers"
                        {% if settings.show_track_numbers %}checked{% endif %}>
                 Show track numbers on artist pages

@@ -67,6 +67,22 @@ def song_is_promoted(song_id):
     return '', 204
 
 
+@edit_bp.route('/song/<int:song_id>/is-cover', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_is_cover(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    song.is_cover = request.form.get('checked') == 'true'
+    label = 'Marked' if song.is_cover else 'Unmarked'
+    with db.session.no_autoflush:
+        log_change(current_user, f'{label} "{song.name}" song as cover', song=song)
+    db.session.commit()
+    return '', 204
+
+
 @edit_bp.route('/song/<int:song_id>/note', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -365,6 +381,7 @@ def split_song(song_id):
         name=song.name,
         is_promoted=song.is_promoted,
         is_remix=song.is_remix,
+        is_cover=song.is_cover,
         note=song.note,
         spotify_url=song.spotify_url,
         youtube_url=song.youtube_url,
@@ -706,6 +723,8 @@ def perform_song_merge(kept, absorbed):
         kept.is_promoted = True
     if absorbed.is_remix:
         kept.is_remix = True
+    if absorbed.is_cover:
+        kept.is_cover = True
     if not kept.spotify_url and absorbed.spotify_url:
         kept.spotify_url = absorbed.spotify_url
     if not kept.youtube_url and absorbed.youtube_url:

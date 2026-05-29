@@ -1282,7 +1282,8 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
         cbRow.style.cssText = 'display:flex; gap:10px; margin-bottom:6px;';
         cbRow.innerHTML =
             '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-promoted" style="margin-right:2px;"> Promoted</label>' +
-            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-remix" style="margin-right:2px;"> Remix</label>';
+            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-remix" style="margin-right:2px;"> Remix</label>' +
+            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-cover" style="margin-right:2px;"> Cover</label>';
         form.appendChild(cbRow);
 
         // Artists section
@@ -1509,6 +1510,7 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                     misc_artists: _createMiscArtists.map(function(m) { return { misc_artist_id: m.misc_artist_id, is_main: m.is_main }; }),
                     is_promoted: form.querySelector('.create-song-promoted').checked,
                     is_remix: form.querySelector('.create-song-remix').checked,
+                    is_cover: form.querySelector('.create-song-cover').checked,
                 }),
             }).then(function(r) {
                 if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
@@ -2255,6 +2257,7 @@ function addNewAlbumSong(currentArtistId) {
             '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);" oninput="validateAddAlbum()">' +
             '<label class="text-xs"><input type="checkbox" class="new-song-promoted"> Promoted</label>' +
             '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
+            '<label class="text-xs"><input type="checkbox" class="new-song-cover"> Cover</label>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
         '</div>' +
         '<div class="flex items-center flex-wrap gap-2" style="padding: 4px 8px;">' +
@@ -2507,6 +2510,7 @@ function submitNewAlbum(artistId) {
             name: n,
             is_promoted: songDiv.querySelector('.new-song-promoted') ? songDiv.querySelector('.new-song-promoted').checked : false,
             is_remix: songDiv.querySelector('.new-song-remix') ? songDiv.querySelector('.new-song-remix').checked : false,
+            is_cover: songDiv.querySelector('.new-song-cover') ? songDiv.querySelector('.new-song-cover').checked : false,
             artists: artists,
             misc_artists: miscArtists,
         };

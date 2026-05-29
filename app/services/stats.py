@@ -58,7 +58,7 @@ def get_display_users(viewer=None):
 class _BulkData:
     """Pre-loaded stats via SQL aggregation (~5 queries, but returns aggregated rows)."""
 
-    def __init__(self, include_featured, include_remixes, artist_ids=None, genre_ids=None, hide_osts=False):
+    def __init__(self, include_featured, include_remixes, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False):
         scoped = artist_ids is not None
 
         # 0. If genre filter is active, find song IDs that belong to albums with any selected genre
@@ -124,6 +124,20 @@ class _BulkData:
         else:
             self.remix_ids = set()
 
+        # 3b. Cover song IDs
+        if not include_covers:
+            all_song_ids = set()
+            for song_ids in self.artist_songs.values():
+                all_song_ids |= song_ids
+            if scoped and all_song_ids:
+                self.cover_ids = {s.id for s in Song.query.filter(Song.is_cover == True, Song.id.in_(all_song_ids)).all()}
+            elif scoped:
+                self.cover_ids = set()
+            else:
+                self.cover_ids = {s.id for s in Song.query.filter(Song.is_cover == True).all()}
+        else:
+            self.cover_ids = set()
+
         # 4. SQL-aggregated ratings: per song_id per user_id → count and sum
         #    Returns (song_id, user_id, rating_count, rating_sum)
         if scoped:
@@ -174,12 +188,16 @@ class _BulkData:
                 self.all_song_ids |= song_ids
             if not include_remixes:
                 self.all_song_ids -= self.remix_ids
+            if not include_covers:
+                self.all_song_ids -= self.cover_ids
             if not include_featured and self.all_main_song_ids is not None:
                 self.all_song_ids &= self.all_main_song_ids
         else:
             all_songs_query = Song.query
             if not include_remixes:
                 all_songs_query = all_songs_query.filter(Song.is_remix == False)
+            if not include_covers:
+                all_songs_query = all_songs_query.filter(Song.is_cover == False)
             self.all_song_ids = {s.id for s in all_songs_query.all()}
             if not include_featured and self.all_main_song_ids is not None:
                 self.all_song_ids &= self.all_main_song_ids
@@ -195,6 +213,7 @@ class _BulkData:
 
         self.include_featured = include_featured
         self.include_remixes = include_remixes
+        self.include_covers = include_covers
 
     def get_song_ids(self, artist_id):
         """Get filtered song IDs for an artist (including subunit songs)."""
@@ -204,6 +223,9 @@ class _BulkData:
 
         if not self.include_remixes:
             song_ids -= self.remix_ids
+
+        if not self.include_covers:
+            song_ids -= self.cover_ids
 
         if not self.include_featured:
             main_ids = set(self.artist_main_songs.get(artist_id, set()))
@@ -313,9 +335,9 @@ def _artist_score_stats(artist_id, users, bulk):
 
 # --- Public API (used by routes) ---
 
-def load_bulk_data(include_featured=False, include_remixes=False, artist_ids=None, genre_ids=None, hide_osts=False):
+def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False):
     """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
-    return _BulkData(include_featured, include_remixes, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts)
+    return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts)
 
 
 def get_artist_stats(artist_id, users, bulk):
