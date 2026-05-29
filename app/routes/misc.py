@@ -42,6 +42,9 @@ def _get_user_filters():
     }
 
 
+MISC_SORT_FIELDS = {'name', 'release', 'artist', 'added'}
+
+
 def get_rated_filter():
     """Shared (misc + artist) rated/unrated filter preference."""
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
@@ -51,11 +54,54 @@ def get_rated_filter():
     return val if val in ('all', 'unrated', 'rated') else 'all'
 
 
+def get_misc_scope_filter():
+    """Misc-only 'Show' scope filter preference."""
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        val = getattr(current_user.settings, 'misc_scope_filter', None) or 'all'
+    else:
+        val = session.get('misc_scope_filter') or 'all'
+    return val if val in ('all', 'misc-only', 'on-artist') else 'all'
+
+
+def _get_misc_sort():
+    """Return (field, direction) for the misc sort, from user settings or session."""
+    field, direction = 'added', 'asc'
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        s = current_user.settings
+        field = getattr(s, 'misc_sort_field', None) or 'added'
+        direction = getattr(s, 'misc_sort_dir', None) or 'asc'
+    else:
+        field = session.get('misc_sort_field') or 'added'
+        direction = session.get('misc_sort_dir') or 'asc'
+    if field not in MISC_SORT_FIELDS:
+        field = 'added'
+    if direction not in ('asc', 'desc'):
+        direction = 'asc'
+    return field, direction
+
+
+def _sort_misc_songs(songs_list, field, direction):
+    """Sort song rows in place, matching the client-side _miscApplySort semantics."""
+    asc = direction == 'asc'
+    if field == 'name':
+        songs_list.sort(key=lambda r: (r['song'].name or '').lower(), reverse=not asc)
+    elif field == 'artist':
+        songs_list.sort(key=lambda r: ', '.join(r['main_artists']).lower(), reverse=not asc)
+    elif field == 'release':
+        songs_list.sort(key=lambda r: (
+            (r['album']['release_date'] or '') if r['album'] else '',
+            (r['song'].name or '').lower(),
+        ), reverse=not asc)
+    else:  # 'added' — newest first when ascending, matching the client default
+        songs_list.sort(key=lambda r: r['song'].id, reverse=asc)
+
+
 def _build_misc_shell():
     """Build lightweight page shell: country list with song counts, no song data."""
     from app.services.stats import get_display_users
 
     filters = _get_user_filters()
+    sort_field, sort_dir = _get_misc_sort()
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
 
     query = db.session.query(
@@ -85,7 +131,10 @@ def _build_misc_shell():
         'all_album_types': AlbumType.query.order_by(AlbumType.id).all() if edit_mode else [],
         'all_countries': Country.query.order_by(Country.id).all() if edit_mode else [],
         'navbar_artists': get_filtered_navbar(),
+        'misc_sort_field': sort_field,
+        'misc_sort_dir': sort_dir,
         'rated_filter': get_rated_filter(),
+        'misc_scope_filter': get_misc_scope_filter(),
         'gender_css': GENDER_CSS,
         'assignable_users': User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all() if edit_mode else [],
         'rules': db.session.get(Rules, 1),
@@ -97,6 +146,7 @@ def _build_country_data(country_id):
     from app.services.stats import get_display_users
 
     filters = _get_user_filters()
+    sort_field, sort_dir = _get_misc_sort()
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
 
     sma_rows = db.session.query(
@@ -223,7 +273,7 @@ def _build_country_data(country_id):
         genre = all_genres.get(gid)
         genre_name = genre.genre if genre else 'Uncategorized'
         songs_list = genre_data[gid]
-        songs_list.sort(key=lambda r: (r['song'].name or '').lower())
+        _sort_misc_songs(songs_list, sort_field, sort_dir)
         genre_sections.append({
             'genre_id': gid,
             'genre_name': genre_name,

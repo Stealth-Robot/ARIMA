@@ -87,20 +87,21 @@
         <select id="misc-sort-field" onchange="_miscApplySort()"
                 class="rounded border border-border cursor-pointer"
                 style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
-            <option value="name">Name</option>
-            <option value="release">Date</option>
-            <option value="artist">Artist</option>
+            <option value="name"{% if misc_sort_field == 'name' %} selected{% endif %}>Name</option>
+            <option value="release"{% if misc_sort_field == 'release' %} selected{% endif %}>Date</option>
+            <option value="artist"{% if misc_sort_field == 'artist' %} selected{% endif %}>Artist</option>
+            <option value="added"{% if misc_sort_field == 'added' %} selected{% endif %}>Last added</option>
         </select>
         <button id="misc-sort-dir" onclick="_miscToggleSortDir()" class="cursor-pointer rounded border-0 px-1"
                 style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
-                title="Toggle sort direction">&darr;</button>
+                title="Toggle sort direction">{% if misc_sort_dir == 'desc' %}&uarr;{% else %}&darr;{% endif %}</button>
         <span class="text-secondary-text ml-2">Show:</span>
-        <select id="misc-scope-filter" onchange="_miscApplyFilters()"
+        <select id="misc-scope-filter" onchange="_miscFilterChanged()"
                 class="rounded border border-border cursor-pointer"
                 style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
-            <option value="all">All</option>
-            <option value="misc-only">Misc exclusive</option>
-            <option value="on-artist">On artist pages</option>
+            <option value="all"{% if misc_scope_filter == 'all' %} selected{% endif %}>All</option>
+            <option value="misc-only"{% if misc_scope_filter == 'misc-only' %} selected{% endif %}>Misc exclusive</option>
+            <option value="on-artist"{% if misc_scope_filter == 'on-artist' %} selected{% endif %}>On artist pages</option>
         </select>
         <span class="text-secondary-text ml-2">Rated:</span>
         <select id="misc-rated-filter" onchange="_miscFilterChanged()"
@@ -322,7 +323,7 @@ function _miscCollapseAll() {
 })();
 
 /* Sort */
-var _miscSortAsc = true;
+var _miscSortAsc = {{ 'false' if misc_sort_dir == 'desc' else 'true' }};
 
 function _miscToggleSortDir() {
     _miscSortAsc = !_miscSortAsc;
@@ -330,7 +331,17 @@ function _miscToggleSortDir() {
     _miscApplySort();
 }
 
+function _miscSaveSort() {
+    var field = document.getElementById('misc-sort-field').value;
+    fetch('/profile/settings', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded', 'HX-Request': 'true'}),
+        body: 'misc_sort_field=' + encodeURIComponent(field) + '&misc_sort_dir=' + (_miscSortAsc ? 'asc' : 'desc'),
+    });
+}
+
 function _miscApplySort() {
+    _miscSaveSort();
     var field = document.getElementById('misc-sort-field').value;
     var dir = _miscSortAsc ? 1 : -1;
 
@@ -354,6 +365,9 @@ function _miscApplySort() {
                     return dA.localeCompare(dB) * dir;
                 case 'artist':
                     return (a.dataset.artistName || '').localeCompare(b.dataset.artistName || '') * dir;
+                case 'added':
+                    var iA = parseInt(a.id.slice(5)) || 0, iB = parseInt(b.id.slice(5)) || 0;
+                    return (iB - iA) * dir;
                 default:
                     return 0;
             }

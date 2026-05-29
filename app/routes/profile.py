@@ -103,6 +103,17 @@ def _apply_theme_settings(set_field, form):
             set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
 
 
+def _parse_misc_sort(form):
+    """Validate misc sort field/direction from a form, returning (field, direction)."""
+    field = form.get('misc_sort_field')
+    direction = form.get('misc_sort_dir')
+    if field not in ('name', 'release', 'artist', 'added'):
+        field = 'added'
+    if direction not in ('asc', 'desc'):
+        direction = 'asc'
+    return field, direction
+
+
 def _valid_choice(val, valid, default):
     return val if val in valid else default
 
@@ -130,8 +141,14 @@ def update_settings():
             session['hide_autogen_youtube'] = request.form.get('hide_autogen_youtube') == 'on'
             session['hide_all_youtube'] = request.form.get('hide_all_youtube') == 'on'
             session['hide_all_spotify'] = request.form.get('hide_all_spotify') == 'on'
+        if 'misc_sort_field' in request.form:
+            field, direction = _parse_misc_sort(request.form)
+            session['misc_sort_field'] = field
+            session['misc_sort_dir'] = direction
         if 'rated_filter' in request.form:
             session['rated_filter'] = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
+        if 'misc_scope_filter' in request.form:
+            session['misc_scope_filter'] = _valid_choice(request.form.get('misc_scope_filter'), ('all', 'misc-only', 'on-artist'), 'all')
     else:
         settings = current_user.settings
         if not settings:
@@ -166,8 +183,12 @@ def update_settings():
                 if set(vals) == set(UserSettings.EDIT_BUTTON_DEFAULTS):
                     vals = ['__all__']
                 settings.edit_buttons = vals
+            if 'misc_sort_field' in request.form:
+                settings.misc_sort_field, settings.misc_sort_dir = _parse_misc_sort(request.form)
             if 'rated_filter' in request.form:
                 settings.rated_filter = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
+            if 'misc_scope_filter' in request.form:
+                settings.misc_scope_filter = _valid_choice(request.form.get('misc_scope_filter'), ('all', 'misc-only', 'on-artist'), 'all')
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200
