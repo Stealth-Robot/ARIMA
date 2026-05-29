@@ -68,6 +68,8 @@ module.exports = {
         "button-secondary": "var(--button-secondary)",
         "border": "var(--border)",
         "promoted": "var(--promoted-song)",
+        "remix": "var(--remix-song)",
+        "cover": "var(--cover-song)",
         "male": "var(--gender-male)",
         "female": "var(--gender-female)",
         "mixed-gender": "var(--gender-mixed)",

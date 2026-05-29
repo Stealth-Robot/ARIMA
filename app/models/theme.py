@@ -15,6 +15,8 @@ class Theme(db.Model):
     navbar_text = db.Column(db.Text)
     header_row = db.Column(db.Text)
     promoted_song = db.Column(db.Text)
+    remix_song = db.Column(db.Text)
+    cover_song = db.Column(db.Text)
     gender_female = db.Column(db.Text)
     gender_male = db.Column(db.Text)
     gender_mixed = db.Column(db.Text)
