@@ -355,6 +355,8 @@ function closeSearchOverlay() {
     if (overlay) overlay.style.display = 'none';
     if (results) { results.style.display = 'none'; results.innerHTML = ''; }
     if (input) { input.value = ''; input.blur(); }
+    var cb = document.getElementById('search-show-hidden');
+    if (cb) cb.checked = false;
 }
 
 (function () {
@@ -376,7 +378,10 @@ function closeSearchOverlay() {
             return;
         }
         searchTimer = setTimeout(function () {
-            fetch('/search?q=' + encodeURIComponent(q))
+            var showHidden = document.getElementById('search-show-hidden');
+            var url = '/search?q=' + encodeURIComponent(q);
+            if (showHidden && showHidden.checked) url += '&show_hidden=1';
+            fetch(url)
                 .then(function (r) {
                     if (!r.ok) { throw new Error('server error'); }
                     return r.text();
@@ -392,6 +397,13 @@ function closeSearchOverlay() {
                 });
         }, 300);
     });
+
+    var showHiddenCb = document.getElementById('search-show-hidden');
+    if (showHiddenCb) {
+        showHiddenCb.addEventListener('change', function () {
+            searchInput.dispatchEvent(new Event('input'));
+        });
+    }
 
     searchInput.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {

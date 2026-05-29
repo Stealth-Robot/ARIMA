@@ -258,10 +258,12 @@
     <!-- Search overlay (outside nav, positioned by JS near trigger button) -->
     <div id="search-overlay"
          class="hidden fixed top-11 z-40" style="width: 320px;">
+        <label class="flex items-center gap-1 px-2.5 py-1 text-xs bg-secondary-bg border border-border border-b-0 rounded-t cursor-pointer" style="box-shadow: 0 -2px 12px rgba(0,0,0,0.3);">
+            <input id="search-show-hidden" type="checkbox"> <span class="text-secondary-text">Show hidden songs</span>
+        </label>
         <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                autocomplete="off"
-               class="bg-secondary-bg text-primary-text border border-border text-sm rounded w-full"
-               style="padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+               class="px-2.5 py-1.5 bg-secondary-bg text-primary-text border border-border text-sm rounded-none w-full" style="box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div id="search-results"
              class="hidden overflow-y-auto bg-secondary-bg border border-border border-t-0"
              style="max-height: 400px; border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">

@@ -52,7 +52,12 @@ def search():
     like = f'%{q}%'
     terms = q.lower().split()
     term_counts = Counter(terms)
-    country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
+    show_hidden = request.args.get('show_hidden') == '1'
+    if show_hidden:
+        country_ids, genre_ids, hide_osts = [], [], False
+        include_remixes, include_featured, include_covers = True, True, True
+    else:
+        country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
     edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
     # Pre-compute OST album IDs to exclude from results
