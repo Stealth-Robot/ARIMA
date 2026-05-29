@@ -1549,10 +1549,13 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                             row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
                             row.addEventListener('mousedown', function(e) {
                                 e.preventDefault();
+                            });
+                            row.addEventListener('click', function(e) {
+                                e.stopPropagation();
                                 _createMiscArtists.push({ misc_artist_id: item.id, name: item.name, is_main: false });
                                 renderCreateMiscList();
                                 miscInput.value = '';
-                                miscRefresh();
+                                miscResults.innerHTML = '';
                             });
                             miscResults.appendChild(row);
                         });
@@ -2504,7 +2507,10 @@ function showSongArtists(event, songId, span) {
                         createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
                         createRow.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            opts.onCreate(q, function() { input.value = ''; refresh(); });
+                        });
+                        createRow.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            opts.onCreate(q, function() { input.value = ''; results.innerHTML = ''; });
                         });
                         results.appendChild(createRow);
                     }
@@ -2517,9 +2523,12 @@ function showSongArtists(event, songId, span) {
                         row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
                         row.addEventListener('mousedown', function(e) {
                             e.preventDefault();
+                        });
+                        row.addEventListener('click', function(e) {
+                            e.stopPropagation();
                             opts.onSelect(item);
                             input.value = '';
-                            refresh();
+                            results.innerHTML = '';
                         });
                         results.appendChild(row);
                     });
