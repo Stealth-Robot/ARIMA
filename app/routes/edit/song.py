@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from flask import request, abort, redirect, url_for
+from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -654,6 +654,53 @@ def merge_search(song_id):
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/song/<int:kept_id>/merge-preview/<int:absorbed_id>')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def merge_preview(kept_id, absorbed_id):
+    _require_edit_mode()
+    if kept_id == absorbed_id:
+        abort(400)
+    kept = db.session.get(Song, kept_id)
+    absorbed = db.session.get(Song, absorbed_id)
+    if kept is None or absorbed is None:
+        abort(404)
+
+    from app.models.user import User
+
+    def _song_context(song):
+        artist_link = ArtistSong.query.filter_by(song_id=song.id, artist_is_main=True).first()
+        artist_name = Artist.query.get(artist_link.artist_id).name if artist_link else None
+        album_link = AlbumSong.query.filter_by(song_id=song.id).first()
+        album_name = Album.query.get(album_link.album_id).name if album_link else None
+        return {
+            'id': song.id, 'name': song.name,
+            'is_promoted': song.is_promoted, 'is_lead': song.is_lead,
+            'is_remix': song.is_remix, 'is_cover': song.is_cover,
+            'spotify_url': song.spotify_url, 'youtube_url': song.youtube_url,
+            'note': song.note, 'artist': artist_name, 'album': album_name,
+        }
+
+    kept_ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=kept_id).all()}
+    absorbed_ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=absorbed_id).all()}
+    all_user_ids = set(kept_ratings) | set(absorbed_ratings)
+    users = {u.id: u.username for u in User.query.filter(User.id.in_(all_user_ids)).all()} if all_user_ids else {}
+
+    ratings = []
+    for uid in sorted(all_user_ids):
+        kr = kept_ratings.get(uid)
+        ar = absorbed_ratings.get(uid)
+        ratings.append({
+            'user_id': uid, 'username': users.get(uid, '?'),
+            'kept_rating': kr.rating if kr else None,
+            'kept_note': kr.note if kr else None,
+            'absorbed_rating': ar.rating if ar else None,
+            'absorbed_note': ar.note if ar else None,
+        })
+
+    return jsonify(kept=_song_context(kept), absorbed=_song_context(absorbed), ratings=ratings)
+
+
 @edit_bp.route('/song/<int:kept_song_id>/merge', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -664,28 +711,56 @@ def merge_song(kept_song_id):
     if kept is None:
         abort(404)
 
-    absorbed_song_id = request.form.get('absorbed_song_id', type=int)
+    data = request.get_json(silent=True) if request.is_json else None
+
+    absorbed_song_id = (data or {}).get('absorbed_song_id') or request.form.get('absorbed_song_id', type=int)
     if absorbed_song_id is None:
         abort(400)
+    absorbed_song_id = int(absorbed_song_id)
     if absorbed_song_id == kept_song_id:
         return 'Cannot merge a song with itself', 400
     absorbed = db.session.get(Song, absorbed_song_id)
     if absorbed is None:
         return 'Absorbed song not found', 400
 
-    if not _verify_password():
+    password = (data or {}).get('password') or request.form.get('password', '')
+    from app.routes.auth import _check_password
+    if not password or not current_user.password or not _check_password(current_user.password, password):
         return 'Incorrect password', 403
 
-    perform_song_merge(kept, absorbed)
+    overrides = {}
+    if data:
+        if 'name' in data:
+            overrides['chosen_name'] = data['name']
+        flags = {}
+        for f in ('is_promoted', 'is_lead', 'is_remix', 'is_cover'):
+            if f in data:
+                flags[f] = bool(data[f])
+        if flags:
+            overrides['chosen_flags'] = flags
+        urls = {}
+        for f in ('spotify_url', 'youtube_url'):
+            if f in data:
+                urls[f] = data[f] or None
+        if urls:
+            overrides['chosen_urls'] = urls
+        if 'note' in data:
+            overrides['chosen_note'] = data['note'] or None
+        if 'ratings' in data:
+            overrides['chosen_ratings'] = data['ratings']
 
-    # Find the first artist linked to the kept song to redirect to their page
+    perform_song_merge(kept, absorbed, **overrides)
+
+    if data:
+        return jsonify(ok=True)
     artist_link = ArtistSong.query.filter_by(song_id=kept_song_id).first()
     if artist_link:
         return redirect(url_for('artists.artist_detail', artist_id=artist_link.artist_id))
     return redirect(request.referrer or url_for('home.home'))
 
 
-def perform_song_merge(kept, absorbed):
+def perform_song_merge(kept, absorbed, *, chosen_name=None, chosen_flags=None,
+                       chosen_urls=None, chosen_note=None, chosen_ratings=None):
     """Merge absorbed song into kept song: ratings, links, flags, then delete absorbed."""
     kept_song_id = kept.id
     absorbed_song_id = absorbed.id
@@ -693,16 +768,44 @@ def perform_song_merge(kept, absorbed):
 
     # Step 1: Merge ratings
     kept_ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=kept_song_id).all()}
-    absorbed_ratings = Rating.query.filter_by(song_id=absorbed_song_id).all()
-    for ar in absorbed_ratings:
-        if ar.user_id not in kept_ratings:
-            db.session.execute(db.text(
-                'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
-            ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': ar.user_id})
-        else:
-            kr = kept_ratings[ar.user_id]
-            if ar.note:
-                kr.note = f"{kr.note}\n{ar.note}" if kr.note else ar.note
+    absorbed_ratings_list = Rating.query.filter_by(song_id=absorbed_song_id).all()
+    absorbed_ratings = {r.user_id: r for r in absorbed_ratings_list}
+
+    if chosen_ratings is not None:
+        chosen_map = {int(cr['user_id']): cr for cr in chosen_ratings}
+        all_uids = set(kept_ratings) | set(absorbed_ratings)
+        for uid in all_uids:
+            cr = chosen_map.get(uid)
+            chosen_score = cr.get('rating') if cr else None
+            chosen_note_val = cr.get('note') if cr else None
+            if chosen_score is not None:
+                chosen_score = int(chosen_score)
+                if chosen_score < 0 or chosen_score > 5:
+                    chosen_score = None
+            kr = kept_ratings.get(uid)
+            ar = absorbed_ratings.get(uid)
+            if kr:
+                kr.rating = chosen_score
+                kr.note = chosen_note_val
+            elif ar:
+                db.session.execute(db.text(
+                    'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
+                ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': uid})
+                db.session.flush()
+                moved = Rating.query.filter_by(song_id=kept_song_id, user_id=uid).first()
+                if moved:
+                    moved.rating = chosen_score
+                    moved.note = chosen_note_val
+    else:
+        for ar in absorbed_ratings_list:
+            if ar.user_id not in kept_ratings:
+                db.session.execute(db.text(
+                    'UPDATE rating SET song_id = :kept WHERE song_id = :absorbed AND user_id = :uid'
+                ), {'kept': kept_song_id, 'absorbed': absorbed_song_id, 'uid': ar.user_id})
+            else:
+                kr = kept_ratings[ar.user_id]
+                if ar.note:
+                    kr.note = f"{kr.note}\n{ar.note}" if kr.note else ar.note
 
     # Step 2: Merge artist links
     kept_artist_ids = {r[0] for r in db.session.execute(
@@ -752,20 +855,36 @@ def perform_song_merge(kept, absorbed):
         ), {'sid': kept_song_id, 'gid': gid})
 
     # Step 3b: Carry over flags and links
-    if absorbed.is_promoted:
-        kept.is_promoted = True
-    if absorbed.is_lead:
-        kept.is_lead = True
-    if absorbed.is_remix:
-        kept.is_remix = True
-    if absorbed.is_cover:
-        kept.is_cover = True
-    if not kept.spotify_url and absorbed.spotify_url:
-        kept.spotify_url = absorbed.spotify_url
-    if not kept.youtube_url and absorbed.youtube_url:
-        kept.youtube_url = absorbed.youtube_url
-    if absorbed.note:
-        kept.note = f"{kept.note}\n{absorbed.note}" if kept.note else absorbed.note
+    if chosen_flags is not None:
+        for f in ('is_promoted', 'is_lead', 'is_remix', 'is_cover'):
+            if f in chosen_flags:
+                setattr(kept, f, chosen_flags[f])
+    else:
+        if absorbed.is_promoted:
+            kept.is_promoted = True
+        if absorbed.is_lead:
+            kept.is_lead = True
+        if absorbed.is_remix:
+            kept.is_remix = True
+        if absorbed.is_cover:
+            kept.is_cover = True
+
+    if chosen_urls is not None:
+        if 'spotify_url' in chosen_urls:
+            kept.spotify_url = chosen_urls['spotify_url']
+        if 'youtube_url' in chosen_urls:
+            kept.youtube_url = chosen_urls['youtube_url']
+    else:
+        if not kept.spotify_url and absorbed.spotify_url:
+            kept.spotify_url = absorbed.spotify_url
+        if not kept.youtube_url and absorbed.youtube_url:
+            kept.youtube_url = absorbed.youtube_url
+
+    if chosen_note is not None:
+        kept.note = chosen_note or None
+    else:
+        if absorbed.note:
+            kept.note = f"{kept.note}\n{absorbed.note}" if kept.note else absorbed.note
 
     # Step 3c: Transfer NotDuplicate pairs from absorbed to kept song
     lo, hi = min(absorbed_song_id, kept_song_id), max(absorbed_song_id, kept_song_id)
@@ -797,11 +916,15 @@ def perform_song_merge(kept, absorbed):
     db.session.execute(db.text('DELETE FROM song_genres WHERE song_id = :sid'), {'sid': absorbed_song_id})
     db.session.query(Song).filter_by(id=absorbed_song_id).delete()
 
-    # Step 5: Audit log
+    # Step 5: Audit log (before renaming so both original names appear)
     kept.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user,
                f'Merged song "{absorbed_name}" (id={absorbed_song_id}) into "{kept.name}" (id={kept_song_id})',
                song=kept)
+
+    if chosen_name and chosen_name != kept.name:
+        kept.name = chosen_name
+
     db.session.commit()
 
 

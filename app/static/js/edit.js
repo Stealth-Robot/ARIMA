@@ -1815,7 +1815,7 @@ function _openMergePopover(songId, songName, span) {
         btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
         btn.addEventListener('click', function() {
             closeMergePopover();
-            showMergeConfirm(songId, songName, item.id, item.name, item.artist, item.album);
+            showMergeDiffModal(songId, songName, item.id, item.name, item.artist, item.album);
         });
         return btn;
     }
@@ -1893,19 +1893,352 @@ function _openMergePopover(songId, songName, span) {
     activeMergePopover = parts.popover;
 }
 
-function showMergeConfirm(keptId, keptName, absorbedId, absorbedName, absorbedArtist, absorbedAlbum) {
-    var msg = 'Merge "' + absorbedName + ' \u2014 ' + absorbedArtist + ' (' + absorbedAlbum + ')" into "' + keptName + '"? The absorbed song will be deleted. Ratings and links will be combined. If both songs have a rating from the same user, the kept song\'s rating is preserved.';
-    showDeleteConfirm('Merge songs?', msg, '/edit/song/' + keptId + '/merge', true, 'Merge');
-    // Override the form submit to include absorbed_song_id
-    var form = document.getElementById('confirm-delete-form');
-    // Remove any previous absorbed_song_id hidden input
-    var prev = form.querySelector('input[name="absorbed_song_id"]');
-    if (prev) prev.remove();
-    var hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.name = 'absorbed_song_id';
-    hidden.value = absorbedId;
-    form.appendChild(hidden);
+function showMergeDiffModal(keptId, keptName, absorbedId) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+    var container = document.createElement('div');
+    container.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;width:700px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;';
+    overlay.appendChild(container);
+
+    var header = document.createElement('div');
+    header.style.cssText = 'padding:20px 24px 12px;flex-shrink:0;';
+    header.innerHTML = '<div style="font-size:16px;font-weight:bold;color:var(--text-primary);">Merge Songs</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Loading...</div>';
+    container.appendChild(header);
+    document.body.appendChild(overlay);
+
+    fetch('/edit/song/' + keptId + '/merge-preview/' + absorbedId, {headers: _csrfHeaders({})})
+    .then(function(r) { if (!r.ok) throw new Error('failed'); return r.json(); })
+    .then(function(data) { _buildMergeDiff(overlay, container, header, data, keptId, absorbedId); })
+    .catch(function() { header.lastChild.textContent = 'Failed to load merge data.'; });
+}
+
+function _ratingStyle(score) {
+    if (score === null || score === undefined || score === '') return '';
+    var s = parseInt(score);
+    var root = document.documentElement;
+    var bg = getComputedStyle(root).getPropertyValue('--rating-' + s + '-bg').trim();
+    var text = getComputedStyle(root).getPropertyValue('--rating-' + s + '-text').trim();
+    if (bg) return 'background:' + bg + ';color:' + text + ';';
+    return '';
+}
+
+function _makeChip(text, side, active) {
+    var chip = document.createElement('span');
+    chip.textContent = text || '(none)';
+    chip.dataset.side = side;
+    chip.style.cssText = 'padding:2px 8px;border-radius:4px;border:1px solid var(--border);cursor:pointer;font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:inline-block;' + (text ? '' : 'color:var(--text-secondary);font-style:italic;');
+    if (active) chip.style.outline = '2px solid var(--link)';
+    return chip;
+}
+
+function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
+    var k = data.kept, a = data.absorbed;
+    header.lastChild.innerHTML = '<span style="color:var(--text-primary);">Kept:</span> ' + _escHtml(k.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(k.artist || '?') + ')</span> &larr; <span style="color:var(--text-primary);">Absorbed:</span> ' + _escHtml(a.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(a.artist || '?') + ')</span>';
+
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:0 24px 16px;overflow-y:auto;flex:1;';
+    container.appendChild(body);
+
+    var inputs = {};
+    var ratingInputs = [];
+
+    function addTextRow(label, field, keptVal, absorbedVal, useTextarea) {
+        var section = document.createElement('div');
+        section.style.cssText = 'margin-bottom:14px;';
+        var lbl = document.createElement('div');
+        lbl.textContent = label;
+        lbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;';
+        section.appendChild(lbl);
+
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:6px;align-items:' + (useTextarea ? 'flex-start' : 'center') + ';';
+
+        var defaultVal = keptVal || absorbedVal || '';
+        var chipK = _makeChip(keptVal, 'kept', defaultVal === keptVal && keptVal);
+        var chipA = _makeChip(absorbedVal, 'absorbed', false);
+        var arrow = document.createElement('span');
+        arrow.textContent = '\u2192';
+        arrow.style.cssText = 'color:var(--text-secondary);font-size:14px;flex-shrink:0;';
+
+        var input;
+        if (useTextarea) {
+            input = document.createElement('textarea');
+            input.rows = 3;
+            input.style.cssText = 'flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-primary);color:var(--text-primary);resize:vertical;';
+        } else {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.style.cssText = 'flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-primary);color:var(--text-primary);';
+        }
+        input.value = defaultVal;
+        inputs[field] = input;
+
+        function selectChip(chip, val) {
+            chipK.style.outline = '';
+            chipA.style.outline = '';
+            chip.style.outline = '2px solid var(--link)';
+            input.value = val || '';
+        }
+        chipK.addEventListener('click', function() { selectChip(chipK, keptVal); });
+        chipA.addEventListener('click', function() { selectChip(chipA, absorbedVal); });
+
+        if (useTextarea && keptVal && absorbedVal && keptVal !== absorbedVal) {
+            var combineChip = document.createElement('span');
+            combineChip.textContent = 'Combine';
+            combineChip.style.cssText = 'padding:2px 8px;border-radius:4px;border:1px dashed var(--border);cursor:pointer;font-size:11px;color:var(--text-secondary);white-space:nowrap;';
+            combineChip.addEventListener('click', function() {
+                chipK.style.outline = '';
+                chipA.style.outline = '';
+                combineChip.style.outline = '2px solid var(--link)';
+                input.value = keptVal + '\n' + absorbedVal;
+            });
+            row.appendChild(chipK);
+            row.appendChild(chipA);
+            row.appendChild(combineChip);
+        } else {
+            row.appendChild(chipK);
+            row.appendChild(chipA);
+        }
+        row.appendChild(arrow);
+        row.appendChild(input);
+        section.appendChild(row);
+        body.appendChild(section);
+    }
+
+    addTextRow('Song Name', 'name', k.name, a.name, false);
+
+    var flagFields = [
+        {field: 'is_promoted', label: 'Promoted'},
+        {field: 'is_lead', label: 'Lead'},
+        {field: 'is_remix', label: 'Remix'},
+        {field: 'is_cover', label: 'Cover'}
+    ];
+    var flagSection = document.createElement('div');
+    flagSection.style.cssText = 'margin-bottom:14px;';
+    var flagLbl = document.createElement('div');
+    flagLbl.textContent = 'FLAGS';
+    flagLbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;';
+    flagSection.appendChild(flagLbl);
+    var flagGrid = document.createElement('div');
+    flagGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;';
+
+    flagFields.forEach(function(ff) {
+        var cell = document.createElement('div');
+        cell.style.cssText = 'text-align:center;';
+        var title = document.createElement('div');
+        title.textContent = ff.label;
+        title.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:4px;';
+        cell.appendChild(title);
+
+        var kVal = k[ff.field], aVal = a[ff.field];
+        var chipRow = document.createElement('div');
+        chipRow.style.cssText = 'display:flex;gap:4px;justify-content:center;margin-bottom:4px;';
+        var cK = document.createElement('span');
+        cK.textContent = kVal ? 'Yes' : 'No';
+        cK.style.cssText = 'font-size:10px;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px solid var(--border);' + (kVal ? 'background:var(--promoted-song);color:#000;' : '');
+        var cA = document.createElement('span');
+        cA.textContent = aVal ? 'Yes' : 'No';
+        cA.style.cssText = 'font-size:10px;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px solid var(--border);' + (aVal ? 'background:var(--promoted-song);color:#000;' : '');
+        chipRow.appendChild(cK);
+        chipRow.appendChild(cA);
+        cell.appendChild(chipRow);
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = kVal || aVal;
+        inputs[ff.field] = cb;
+        cK.addEventListener('click', function() { cb.checked = kVal; });
+        cA.addEventListener('click', function() { cb.checked = aVal; });
+        cell.appendChild(cb);
+        flagGrid.appendChild(cell);
+    });
+    flagSection.appendChild(flagGrid);
+    body.appendChild(flagSection);
+
+    addTextRow('Spotify URL', 'spotify_url', k.spotify_url, a.spotify_url, false);
+    addTextRow('YouTube URL', 'youtube_url', k.youtube_url, a.youtube_url, false);
+    addTextRow('Song Note', 'note', k.note, a.note, true);
+
+    if (data.ratings.length) {
+        var ratSection = document.createElement('div');
+        ratSection.style.cssText = 'margin-bottom:14px;';
+        var ratLbl = document.createElement('div');
+        ratLbl.textContent = 'RATINGS';
+        ratLbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;';
+        ratSection.appendChild(ratLbl);
+
+        var ratTable = document.createElement('table');
+        ratTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;';
+        var thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th style="text-align:left;padding:4px 6px;color:var(--text-secondary);font-size:10px;">User</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Kept</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Absorbed</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Result</th></tr>';
+        ratTable.appendChild(thead);
+
+        var ratBody = document.createElement('tbody');
+
+        data.ratings.forEach(function(r) {
+            var tr = document.createElement('tr');
+            tr.style.cssText = 'border-top:1px solid var(--border);';
+
+            var tdUser = document.createElement('td');
+            tdUser.textContent = r.username;
+            tdUser.style.cssText = 'padding:6px;color:var(--text-primary);white-space:nowrap;';
+            tr.appendChild(tdUser);
+
+            function makeRatingChip(score, note) {
+                var wrapper = document.createElement('div');
+                wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;';
+                var badge = document.createElement('span');
+                badge.textContent = score !== null && score !== undefined ? score : '-';
+                badge.style.cssText = 'padding:2px 8px;border-radius:4px;font-weight:bold;min-width:24px;text-align:center;border:1px solid var(--border);' + _ratingStyle(score);
+                wrapper.appendChild(badge);
+                if (note) {
+                    var noteEl = document.createElement('div');
+                    noteEl.textContent = note.length > 30 ? note.substring(0, 30) + '...' : note;
+                    noteEl.title = note;
+                    noteEl.style.cssText = 'font-size:10px;color:var(--text-secondary);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                    wrapper.appendChild(noteEl);
+                }
+                return wrapper;
+            }
+
+            var tdKept = document.createElement('td');
+            tdKept.style.cssText = 'padding:6px;text-align:center;';
+            var kChip = makeRatingChip(r.kept_rating, r.kept_note);
+            tdKept.appendChild(kChip);
+            tr.appendChild(tdKept);
+
+            var tdAbsorbed = document.createElement('td');
+            tdAbsorbed.style.cssText = 'padding:6px;text-align:center;';
+            var aChip = makeRatingChip(r.absorbed_rating, r.absorbed_note);
+            tdAbsorbed.appendChild(aChip);
+            tr.appendChild(tdAbsorbed);
+
+            var tdResult = document.createElement('td');
+            tdResult.style.cssText = 'padding:6px;text-align:center;';
+            var resultWrap = document.createElement('div');
+            resultWrap.style.cssText = 'display:flex;gap:4px;align-items:center;justify-content:center;';
+            var scoreInput = document.createElement('input');
+            scoreInput.type = 'number';
+            scoreInput.min = '0';
+            scoreInput.max = '5';
+            scoreInput.style.cssText = 'width:42px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg-primary);color:var(--text-primary);';
+            var defaultScore = r.kept_rating !== null && r.kept_rating !== undefined ? r.kept_rating : r.absorbed_rating;
+            scoreInput.value = defaultScore !== null && defaultScore !== undefined ? defaultScore : '';
+
+            var noteInput = document.createElement('input');
+            noteInput.type = 'text';
+            noteInput.placeholder = 'note';
+            noteInput.style.cssText = 'flex:1;min-width:0;width:80px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;background:var(--bg-primary);color:var(--text-primary);';
+            var defaultNote = r.kept_note !== null && r.kept_note !== undefined ? r.kept_note : r.absorbed_note;
+            noteInput.value = defaultNote || '';
+
+            function highlightChips(side) {
+                kChip.style.outline = side === 'kept' ? '2px solid var(--link)' : '';
+                aChip.style.outline = side === 'absorbed' ? '2px solid var(--link)' : '';
+            }
+            kChip.addEventListener('click', function() {
+                scoreInput.value = r.kept_rating !== null && r.kept_rating !== undefined ? r.kept_rating : '';
+                noteInput.value = r.kept_note || '';
+                highlightChips('kept');
+            });
+            aChip.addEventListener('click', function() {
+                scoreInput.value = r.absorbed_rating !== null && r.absorbed_rating !== undefined ? r.absorbed_rating : '';
+                noteInput.value = r.absorbed_note || '';
+                highlightChips('absorbed');
+            });
+
+            if (r.kept_rating !== null && r.kept_rating !== undefined) highlightChips('kept');
+            else if (r.absorbed_rating !== null && r.absorbed_rating !== undefined) highlightChips('absorbed');
+
+            resultWrap.appendChild(scoreInput);
+            resultWrap.appendChild(noteInput);
+            tdResult.appendChild(resultWrap);
+            tr.appendChild(tdResult);
+            ratBody.appendChild(tr);
+
+            ratingInputs.push({userId: r.user_id, scoreInput: scoreInput, noteInput: noteInput});
+        });
+
+        ratTable.appendChild(ratBody);
+        ratSection.appendChild(ratTable);
+        body.appendChild(ratSection);
+    }
+
+    var footer = document.createElement('div');
+    footer.style.cssText = 'padding:12px 24px 20px;border-top:1px solid var(--border);flex-shrink:0;';
+
+    var pwLabel = document.createElement('label');
+    pwLabel.textContent = 'Enter your password to confirm';
+    pwLabel.style.cssText = 'display:block;font-size:13px;margin-bottom:4px;color:var(--text-primary);';
+    footer.appendChild(pwLabel);
+
+    var pwInput = document.createElement('input');
+    pwInput.type = 'password';
+    pwInput.autocomplete = 'current-password';
+    pwInput.required = true;
+    pwInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;margin-bottom:12px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+    footer.appendChild(pwInput);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:8px 16px;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:var(--button-secondary);color:var(--text-primary);';
+    cancelBtn.addEventListener('click', function() { overlay.remove(); });
+
+    var mergeBtn = document.createElement('button');
+    mergeBtn.type = 'button';
+    mergeBtn.textContent = 'Merge';
+    mergeBtn.style.cssText = 'padding:8px 16px;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:var(--button-primary);color:#fff;font-weight:bold;';
+
+    mergeBtn.addEventListener('click', function() {
+        if (!inputs.name.value.trim()) { alert('Song name is required.'); return; }
+        if (!pwInput.value) { alert('Password is required.'); return; }
+        mergeBtn.disabled = true;
+        mergeBtn.textContent = 'Merging...';
+
+        var payload = {
+            absorbed_song_id: absorbedId,
+            password: pwInput.value,
+            name: inputs.name.value.trim(),
+            is_promoted: inputs.is_promoted.checked,
+            is_lead: inputs.is_lead.checked,
+            is_remix: inputs.is_remix.checked,
+            is_cover: inputs.is_cover.checked,
+            spotify_url: inputs.spotify_url.value.trim() || null,
+            youtube_url: inputs.youtube_url.value.trim() || null,
+            note: inputs.note.value.trim() || null,
+            ratings: ratingInputs.map(function(ri) {
+                return {
+                    user_id: ri.userId,
+                    rating: ri.scoreInput.value !== '' ? parseInt(ri.scoreInput.value) : null,
+                    note: ri.noteInput.value.trim() || null
+                };
+            })
+        };
+
+        fetch('/edit/song/' + keptId + '/merge', {
+            method: 'POST',
+            headers: _csrfHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify(payload)
+        }).then(function(r) {
+            if (r.status === 403) { alert('Incorrect password.'); mergeBtn.disabled = false; mergeBtn.textContent = 'Merge'; return; }
+            if (!r.ok) throw new Error('failed');
+            window.location.reload();
+        }).catch(function() {
+            showToast('Merge failed \u2014 try again');
+            mergeBtn.disabled = false;
+            mergeBtn.textContent = 'Merge';
+        });
+    });
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(mergeBtn);
+    footer.appendChild(btnRow);
+    container.appendChild(footer);
 }
 
 /* Song artist management popover */
