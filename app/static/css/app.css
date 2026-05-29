@@ -280,7 +280,8 @@ nav::-webkit-scrollbar, .artist-nav::-webkit-scrollbar {
 }
 
 /* Search results dropdown */
-.search-result-item:hover {
+.search-result-item:hover,
+.search-result-item.search-active {
     background-color: var(--bg-primary, #16213e);
 }
 

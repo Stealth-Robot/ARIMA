@@ -405,10 +405,69 @@ function closeSearchOverlay() {
         });
     }
 
+    function getVisibleItems() {
+        return Array.prototype.slice.call(
+            searchResults.querySelectorAll('.search-section-body:not([style*="display: none"]) .search-result-item')
+        );
+    }
+
+    function getVisibleSections() {
+        return Array.prototype.slice.call(
+            searchResults.querySelectorAll('.search-section-body:not([style*="display: none"])')
+        );
+    }
+
+    function clearActive() {
+        var prev = searchResults.querySelector('.search-result-item.search-active');
+        if (prev) prev.classList.remove('search-active');
+    }
+
+    function setActive(el) {
+        clearActive();
+        if (el) {
+            el.classList.add('search-active');
+            el.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function moveVertical(dir) {
+        var items = getVisibleItems();
+        if (!items.length) return;
+        var cur = searchResults.querySelector('.search-result-item.search-active');
+        var idx = cur ? items.indexOf(cur) : -1;
+        var next = idx + dir;
+        if (next < 0) next = items.length - 1;
+        if (next >= items.length) next = 0;
+        setActive(items[next]);
+    }
+
+    function moveBin(dir) {
+        var sections = getVisibleSections();
+        if (!sections.length) return;
+        var cur = searchResults.querySelector('.search-result-item.search-active');
+        var curSection = cur ? cur.closest('.search-section-body') : null;
+        var secIdx = curSection ? sections.indexOf(curSection) : -1;
+        var nextSec = secIdx + dir;
+        if (nextSec < 0) nextSec = sections.length - 1;
+        if (nextSec >= sections.length) nextSec = 0;
+        var first = sections[nextSec].querySelector('.search-result-item');
+        if (first) setActive(first);
+    }
+
     searchInput.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             e.preventDefault();
             closeSearchOverlay();
+            return;
+        }
+        var k = e.key;
+        if (k === 'ArrowDown') { e.preventDefault(); moveVertical(1); return; }
+        if (k === 'ArrowUp') { e.preventDefault(); moveVertical(-1); return; }
+        if (k === 'ArrowRight') { e.preventDefault(); moveBin(1); return; }
+        if (k === 'ArrowLeft') { e.preventDefault(); moveBin(-1); return; }
+        if (k === 'Enter') {
+            var active = searchResults.querySelector('.search-result-item.search-active');
+            if (active) { e.preventDefault(); window.location.href = active.href; }
         }
     });
 
