@@ -2010,6 +2010,19 @@ function showSongArtists(event, songId, span) {
                 opts.getItems(q, function(items) {
                     results.innerHTML = '';
                     var usedIds = opts.getUsedIds();
+                    // Inline "Create" option when the typed name has no exact match
+                    if (opts.onCreate && q && !items.some(function(it) { return it.name.toLowerCase() === q.toLowerCase(); })) {
+                        var createRow = document.createElement('div');
+                        createRow.textContent = '+ Create "' + q + '"';
+                        createRow.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px; color:var(--link,#2563EB); font-weight:bold;';
+                        createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
+                        createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
+                        createRow.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            opts.onCreate(q, function() { input.value = ''; refresh(); });
+                        });
+                        results.appendChild(createRow);
+                    }
                     items.forEach(function(item) {
                         if (usedIds.indexOf(item.id) !== -1) return;
                         var row = document.createElement('div');
@@ -2048,6 +2061,19 @@ function showSongArtists(event, songId, span) {
             miscArtists.push({ misc_artist_id: item.id, name: item.name, is_main: false });
             _saveMiscArtists();
             renderMiscList();
+        },
+        onCreate: function(name, done) {
+            var countryId = (typeof _currentArtistCountryId !== 'undefined') ? _currentArtistCountryId : null;
+            fetch('/misc/add-misc-artist', {
+                method: 'POST',
+                headers: _csrfHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({ name: name, country_id: countryId }),
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                miscArtists.push({ misc_artist_id: d.id, name: d.name, is_main: false });
+                _saveMiscArtists();
+                renderMiscList();
+                if (done) done();
+            });
         },
     }));
     popover.appendChild(miscSection);
