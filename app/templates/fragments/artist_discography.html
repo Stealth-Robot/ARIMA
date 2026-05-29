@@ -118,10 +118,10 @@
 
 {% if edit_mode %}
 <script>
-var _allGenres = [{% for g in genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allGenders = [{% for g in genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allAlbumTypes = [{% for t in album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allGenres = [{% for g in edit_genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allCountries = [{% for c in edit_countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allGenders = [{% for g in edit_genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allAlbumTypes = [{% for t in edit_album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _assignableUsers = [{% for u in assignable_users %}{ id: {{ u.id }}, username: {{ u.username | tojson }}, profileImage: {{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
@@ -890,7 +890,7 @@ function submitConvertArtist() {
 
             <label class="block text-sm mb-1 text-primary-text">Genres <span class="text-delete">*</span></label>
             <div id="new-album-genres" class="flex flex-wrap gap-2 mb-3 text-xs">
-                {% for g in genres %}
+                {% for g in edit_genres %}
                 <label class="cursor-pointer"><input type="checkbox" value="{{ g.id }}" class="mr-0.5">{{ g.genre }}</label>
                 {% endfor %}
             </div>

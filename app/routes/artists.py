@@ -162,16 +162,16 @@ def _render_artist(artist, htmx=False, push_url=None):
     # Edit mode data (lightweight — heavy album/song lists are now lazy-loaded via search endpoints)
     all_artists = []
     artist_parent_map = {}
-    genres = []
-    album_types = []
-    countries = []
-    genders = []
+    edit_genres = []
+    edit_album_types = []
+    edit_countries = []
+    edit_genders = []
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(func.lower(Artist.name)).all()
-        genres = Genre.query.order_by(Genre.id).all()
-        album_types = AlbumType.query.order_by(AlbumType.id).all()
-        countries = Country.query.order_by(Country.id).all()
-        genders = GroupGender.query.order_by(GroupGender.id).all()
+        edit_genres = Genre.query.order_by(Genre.id).all()
+        edit_album_types = AlbumType.query.order_by(AlbumType.id).all()
+        edit_countries = Country.query.order_by(Country.id).all()
+        edit_genders = GroupGender.query.order_by(GroupGender.id).all()
         parent_rows = db.session.execute(db.text(
             'SELECT c.name, p.name FROM artist_artist aa '
             'JOIN artist c ON c.id = aa.artist_2 '
@@ -198,8 +198,8 @@ def _render_artist(artist, htmx=False, push_url=None):
             assignable_users=assignable_users,
             is_subscribed=is_subscribed,
             last_updated=last_updated,
-            genres=genres, album_types=album_types,
-            countries=countries, genders=genders,
+            edit_genres=edit_genres, edit_album_types=edit_album_types,
+            edit_countries=edit_countries, edit_genders=edit_genders,
             rated_filter=rated_filter))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url
@@ -221,8 +221,8 @@ def _render_artist(artist, htmx=False, push_url=None):
                            assignable_users=assignable_users,
                            is_subscribed=is_subscribed,
                            last_updated=last_updated,
-                           genres=genres, album_types=album_types,
-                           countries=countries, genders=genders,
+                           edit_genres=edit_genres, edit_album_types=edit_album_types,
+                           edit_countries=edit_countries, edit_genders=edit_genders,
                            rated_filter=rated_filter,
                            og_song=og_song)
 
