@@ -235,6 +235,26 @@ function _miscToggleGenre(cid, gid) {
 }
 
 
+/* Delete a misc song without reloading, preserving expand/collapse state */
+function _miscDeleteSong(songId, songName) {
+    showDeleteConfirm('Delete song?', songName, '/edit/song/' + songId + '/delete', true, null, null, function() {
+        var rows = document.querySelectorAll('[id="song-' + songId + '"]');
+        var genreKeys = {};
+        rows.forEach(function(r) {
+            var m = r.className.match(/misc-genre-row-(\d+-\d+)/);
+            if (m) genreKeys[m[1]] = true;
+            r.remove();
+        });
+        // Drop any genre header rows whose songs are now all gone
+        Object.keys(genreKeys).forEach(function(key) {
+            if (document.querySelectorAll('.misc-genre-row-' + key).length === 0) {
+                var header = document.getElementById('misc-genre-' + key);
+                if (header) header.remove();
+            }
+        });
+    });
+}
+
 function _miscExpandAll() {
     document.querySelectorAll('[id^="misc-country-arrow-"]').forEach(function(a) {
         a.innerHTML = '▼';

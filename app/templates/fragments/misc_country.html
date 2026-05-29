@@ -54,7 +54,7 @@
         <span class="cursor-pointer ml-0.5" style="font-size: 12px; color: var(--link);" title="Move to artist"
               onclick='event.stopPropagation(); _showMoveSongToArtist(event, {{ song.id }}, {{ song.name | tojson }})'>&#8618;</span>
         <span class="edit-inline cursor-pointer text-delete ml-0.5" style="font-size: inherit;" title="Delete song"
-              onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>
+              onclick='_miscDeleteSong({{ song.id }}, {{ song.name | tojson }})'>&#10005;</span>
         </span>
         {% endif %}
         <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">

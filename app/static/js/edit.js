@@ -2786,6 +2786,8 @@ var _deleteIsAjax = false;
 
 var _deleteRedirectUrl = null;
 
+var _deleteOnSuccess = null;
+
 function confirmDeleteAlbum(albumId, albumName) {
     fetch('/edit/album/' + albumId + '/delete-info')
         .then(function(r) {
@@ -2815,9 +2817,10 @@ function confirmDeleteAlbum(albumId, albumName) {
         });
 }
 
-function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
+function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl, onSuccess) {
     _deleteIsAjax = !!ajax;
     _deleteRedirectUrl = redirectUrl || null;
+    _deleteOnSuccess = (typeof onSuccess === 'function') ? onSuccess : null;
     document.getElementById('confirm-delete-title').textContent = title;
     document.getElementById('confirm-delete-msg').textContent = msg;
     var form = document.getElementById('confirm-delete-form');
@@ -2853,7 +2856,9 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl) {
             if (r.status === 403) { alert('Incorrect password'); return; }
             if (!r.ok) throw new Error('failed');
             document.getElementById('confirm-delete-modal').style.display = 'none';
-            if (_deleteRedirectUrl) {
+            if (_deleteOnSuccess) {
+                _deleteOnSuccess();
+            } else if (_deleteRedirectUrl) {
                 window.location.href = _deleteRedirectUrl;
             } else {
                 window.location.reload();
