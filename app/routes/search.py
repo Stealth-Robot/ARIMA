@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, MiscArtist, SongMiscArtist
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +24,19 @@ def _occurrences(fields, term):
 
 
 def _get_filters():
-    """Return (country_ids, genre_ids, hide_osts) from user settings or session."""
+    """Return (country_ids, genre_ids, hide_osts, include_remixes, include_featured)."""
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
-        return (list(current_user.settings.country_ids or []),
-                list(current_user.settings.genre_ids or []),
-                getattr(current_user.settings, 'hide_osts', False))
+        s = current_user.settings
+        return (list(s.country_ids or []),
+                list(s.genre_ids or []),
+                getattr(s, 'hide_osts', False),
+                s.include_remixes,
+                s.include_featured)
     return (list(session.get('country_ids') or []),
             list(session.get('genre_ids') or []),
-            session.get('hide_osts', False))
+            session.get('hide_osts', False),
+            False,
+            False)
 
 
 @search_bp.route('/search')
@@ -45,7 +50,8 @@ def search():
     like = f'%{q}%'
     terms = q.lower().split()
     term_counts = Counter(terms)
-    country_ids, genre_ids, hide_osts = _get_filters()
+    country_ids, genre_ids, hide_osts, include_remixes, include_featured = _get_filters()
+    edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
     # Pre-compute OST album IDs to exclude from results
     ost_album_ids = None
@@ -216,6 +222,57 @@ def search():
 
         # Exclude songs already found via normal search
         misc_song_rows = [s for s in misc_song_rows if s.id not in seen]
+
+        # Apply the same content filters the Misc page uses, so search never
+        # links to a misc song the page would hide (mirrors _build_country_data).
+        if misc_song_rows:
+            misc_sids = [s.id for s in misc_song_rows]
+
+            sg_map = {}
+            for sid, gid in db.session.execute(
+                song_genres.select().where(song_genres.c.song_id.in_(misc_sids))
+            ).fetchall():
+                sg_map.setdefault(sid, set()).add(gid)
+
+            ost_genre_id = None
+            if hide_osts:
+                from app.models.lookups import Genre
+                ost_genre = Genre.query.filter_by(genre='OST').first()
+                ost_genre_id = ost_genre.id if ost_genre else None
+
+            misc_countries = {}
+            has_main = {}
+            for sid, cid, is_main in db.session.query(
+                SongMiscArtist.song_id, MiscArtist.country_id, SongMiscArtist.artist_is_main
+            ).join(MiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id).filter(
+                SongMiscArtist.song_id.in_(misc_sids)
+            ).all():
+                misc_countries.setdefault(sid, set()).add(cid)
+                if is_main:
+                    has_main[sid] = True
+            if not include_featured and not edit_mode:
+                for sid, is_main in db.session.query(
+                    ArtistSong.song_id, ArtistSong.artist_is_main
+                ).filter(ArtistSong.song_id.in_(misc_sids)).all():
+                    if is_main:
+                        has_main[sid] = True
+
+            def _keep_misc(s):
+                if country_ids and not (misc_countries.get(s.id, set()) & set(country_ids)):
+                    return False
+                if not edit_mode:
+                    if not include_remixes and s.is_remix:
+                        return False
+                    if not include_featured and not has_main.get(s.id):
+                        return False
+                genres = sg_map.get(s.id, set())
+                if hide_osts and ost_genre_id and genres == {ost_genre_id}:
+                    return False
+                if genre_ids and not (genres & set(genre_ids)):
+                    return False
+                return True
+
+            misc_song_rows = [s for s in misc_song_rows if _keep_misc(s)]
 
         # Get misc artist names per song
         if misc_song_rows:
