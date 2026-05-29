@@ -103,6 +103,10 @@ def _apply_theme_settings(set_field, form):
             set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
 
 
+def _valid_choice(val, valid, default):
+    return val if val in valid else default
+
+
 @profile_bp.route('/profile/settings', methods=['POST'])
 @login_required
 def update_settings():
@@ -126,6 +130,8 @@ def update_settings():
             session['hide_autogen_youtube'] = request.form.get('hide_autogen_youtube') == 'on'
             session['hide_all_youtube'] = request.form.get('hide_all_youtube') == 'on'
             session['hide_all_spotify'] = request.form.get('hide_all_spotify') == 'on'
+        if 'rated_filter' in request.form:
+            session['rated_filter'] = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
     else:
         settings = current_user.settings
         if not settings:
@@ -160,6 +166,8 @@ def update_settings():
                 if set(vals) == set(UserSettings.EDIT_BUTTON_DEFAULTS):
                     vals = ['__all__']
                 settings.edit_buttons = vals
+            if 'rated_filter' in request.form:
+                settings.rated_filter = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200

@@ -810,6 +810,8 @@ document.addEventListener('htmx:afterSettle', function(e) {
                 link.style.borderBottom = '';
             }
         });
+        // Re-apply the saved rated/unrated filter after artist navigation
+        if (typeof _applyArtistRatingFilter === 'function') _applyArtistRatingFilter();
     }
 
     // Restore album/subunit collapse state after content swap

@@ -42,6 +42,15 @@ def _get_user_filters():
     }
 
 
+def get_rated_filter():
+    """Shared (misc + artist) rated/unrated filter preference."""
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        val = getattr(current_user.settings, 'rated_filter', None) or 'all'
+    else:
+        val = session.get('rated_filter') or 'all'
+    return val if val in ('all', 'unrated', 'rated') else 'all'
+
+
 def _build_misc_shell():
     """Build lightweight page shell: country list with song counts, no song data."""
     from app.services.stats import get_display_users
@@ -76,6 +85,7 @@ def _build_misc_shell():
         'all_album_types': AlbumType.query.order_by(AlbumType.id).all() if edit_mode else [],
         'all_countries': Country.query.order_by(Country.id).all() if edit_mode else [],
         'navbar_artists': get_filtered_navbar(),
+        'rated_filter': get_rated_filter(),
         'gender_css': GENDER_CSS,
         'assignable_users': User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all() if edit_mode else [],
         'rules': db.session.get(Rules, 1),

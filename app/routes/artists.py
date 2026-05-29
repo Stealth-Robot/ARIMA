@@ -182,6 +182,9 @@ def _render_artist(artist, htmx=False, push_url=None):
     is_subscribed = bool(ArtistSubscription.query.filter_by(
         user_id=current_user.id, artist_id=artist_id).first()) if current_user.can_rate else False
 
+    from app.routes.misc import get_rated_filter
+    rated_filter = get_rated_filter()
+
     if htmx:
         resp = make_response(render_template(
             'fragments/artist_discography.html',
@@ -193,7 +196,8 @@ def _render_artist(artist, htmx=False, push_url=None):
             is_subscribed=is_subscribed,
             last_updated=last_updated,
             genres=genres, album_types=album_types,
-            countries=countries, genders=genders))
+            countries=countries, genders=genders,
+            rated_filter=rated_filter))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url
         return resp
@@ -216,6 +220,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            last_updated=last_updated,
                            genres=genres, album_types=album_types,
                            countries=countries, genders=genders,
+                           rated_filter=rated_filter,
                            og_song=og_song)
 
 

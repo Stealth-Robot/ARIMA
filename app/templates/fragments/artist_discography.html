@@ -280,6 +280,22 @@ function _applyArtistRatingFilter() {
         if (prev && prev.querySelector('td.h-5.border-0')) prev.classList.toggle('rating-filtered', !show);
     });
 }
+
+function _saveArtistRatingFilter() {
+    var val = document.getElementById('artist-rated-filter').value;
+    fetch('/profile/settings', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded', 'HX-Request': 'true'}),
+        body: 'rated_filter=' + encodeURIComponent(val),
+    });
+}
+
+function _artistRatingFilterChanged() {
+    _applyArtistRatingFilter();
+    _saveArtistRatingFilter();
+}
+
+document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
 </script>
 
 {% if not discography and not children %}
@@ -288,12 +304,12 @@ function _applyArtistRatingFilter() {
 
 <div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
     <span class="text-secondary-text">Rated:</span>
-    <select id="artist-rated-filter" onchange="_applyArtistRatingFilter()"
+    <select id="artist-rated-filter" onchange="_artistRatingFilterChanged()"
             class="rounded border border-border cursor-pointer"
             style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
-        <option value="all">All</option>
-        <option value="unrated">Unrated</option>
-        <option value="rated">Rated</option>
+        <option value="all"{% if rated_filter == 'all' %} selected{% endif %}>All</option>
+        <option value="unrated"{% if rated_filter == 'unrated' %} selected{% endif %}>Unrated</option>
+        <option value="rated"{% if rated_filter == 'rated' %} selected{% endif %}>Rated</option>
     </select>
 </div>
 

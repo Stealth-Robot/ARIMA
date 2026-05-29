@@ -103,12 +103,12 @@
             <option value="on-artist">On artist pages</option>
         </select>
         <span class="text-secondary-text ml-2">Rated:</span>
-        <select id="misc-rated-filter" onchange="_miscApplyFilters()"
+        <select id="misc-rated-filter" onchange="_miscFilterChanged()"
                 class="rounded border border-border cursor-pointer"
                 style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
-            <option value="all">All</option>
-            <option value="unrated">Unrated</option>
-            <option value="rated">Rated</option>
+            <option value="all"{% if rated_filter == 'all' %} selected{% endif %}>All</option>
+            <option value="unrated"{% if rated_filter == 'unrated' %} selected{% endif %}>Unrated</option>
+            <option value="rated"{% if rated_filter == 'rated' %} selected{% endif %}>Rated</option>
         </select>
     </div>
 
@@ -396,6 +396,21 @@ function _miscApplyFilters() {
 
 /* Kept as an alias in case referenced elsewhere */
 function _miscApplyScopeFilter() { _miscApplyFilters(); }
+
+function _miscSaveFilters() {
+    var scope = document.getElementById('misc-scope-filter').value;
+    var rated = document.getElementById('misc-rated-filter').value;
+    fetch('/profile/settings', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded', 'HX-Request': 'true'}),
+        body: 'misc_scope_filter=' + encodeURIComponent(scope) + '&rated_filter=' + encodeURIComponent(rated),
+    });
+}
+
+function _miscFilterChanged() {
+    _miscApplyFilters();
+    _miscSaveFilters();
+}
 
 /* Song genre edit (calls same pattern as album genre edit) */
 function _showSongGenreEdit(event, songId, el) {

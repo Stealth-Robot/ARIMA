@@ -65,6 +65,7 @@ class UserSettings(db.Model):
     theme = db.Column(db.Integer, db.ForeignKey('theme.id'), nullable=False, default=0)
     hide_duplicate_songs = db.Column(db.Boolean, nullable=False, default=False)
     album_sort_order = db.Column(db.String(4), nullable=False, default='desc')
+    rated_filter = db.Column(db.String(10), nullable=False, server_default='all')
     song_button_size = db.Column(db.Integer, nullable=False, default=13)
     rating_label_5 = db.Column(db.String(50), nullable=False, server_default='Fucking banger')
     rating_label_4 = db.Column(db.String(50), nullable=False, server_default='Great song')
