@@ -45,7 +45,7 @@
         {{ song.name }}
         {% endif %}
         {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | join(', ') }})</span>{% endif %}
-        {% if song.is_lead %}<span class="lead-star mr-1{% if edit_mode %} cursor-pointer{% endif %}" data-song-id="{{ song.id }}" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1{% if edit_mode %} cursor-pointer{% endif %}" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
+        {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
         {% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}
         {% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
         {% set search_terms = song.name + ' ' + (row.main_artists | join(' ')) %}
@@ -104,7 +104,6 @@
         <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
                data-song-id="{{ song.id }}" data-field="is-promoted"
                onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-promoted')">
-        <span class="lead-cell-star cursor-pointer" data-song-id="{{ song.id }}" title="Toggle lead track" onclick="event.stopPropagation();toggleLeadTrack({{ song.id }}, this.closest('tr').querySelector('td:first-child'))" style="font-size: 19px; line-height: 1; color: {% if song.is_lead %}var(--lead-song){% else %}#888{% endif %};">★</span>
     </td>
     {% endif %}
     {% for u in users %}
