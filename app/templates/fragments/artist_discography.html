@@ -91,7 +91,8 @@
     {% endif %}
     {% if soloist_parents %}
     <span class="text-xs text-secondary-text">
-        Soloist from {% for sp in soloist_parents %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=sp.id) }}" class="text-link">{{ sp.name }}</a>{% endfor %}
+        Soloist from {% for sp in soloist_parents %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=sp.id) }}" class="text-link">{{ sp.name }}</a>{% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}<span class="cursor-pointer text-link ml-0.5" title="Unlink {{ artist.name | e }} as soloist of {{ sp.name | e }}"
+              onclick="showDeleteConfirm('Unlink from {{ sp.name | e }}?', 'This will remove {{ artist.name | e }} as a soloist of {{ sp.name | e }}. Their songs and albums will not be affected.', '/edit/artist/{{ artist.id }}/unlink?parent_id={{ sp.id }}', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=artist.id) }}')">&#128279;</span>{% endif %}{% endfor %}
     </span>
     {% endif %}
     {% if last_updated %}
