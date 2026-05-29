@@ -36,8 +36,7 @@ var SONG_PILL_META = {
     'is-cover': { cls: 'cover-tag', bg: 'bg-cover', label: 'cover' },
     'is-promoted': { cls: 'promoted-tag', bg: 'bg-promoted', label: 'promoted' }
 };
-// Canonical left-to-right pill order; live inserts must match the template order.
-var SONG_PILL_ORDER = ['remix-tag', 'cover-tag', 'promoted-tag'];
+var SONG_PILL_ORDER = ['promoted-tag', 'cover-tag', 'remix-tag'];
 
 function updateSongPill(checkbox) {
     var meta = SONG_PILL_META[checkbox.getAttribute('data-field')];
@@ -45,9 +44,14 @@ function updateSongPill(checkbox) {
     var row = checkbox.closest('tr');
     var cell = row ? row.querySelector('td:first-child') : null;
     if (!cell) return;
-    // Promoted also draws the left accent border; remix/cover are pill-only.
     if (meta.cls === 'promoted-tag') {
         cell.style.borderLeft = checkbox.checked ? '4px solid var(--promoted-song)' : '1px solid var(--grid-line)';
+        if (!checkbox.checked) {
+            var leadStar = cell.querySelector('.lead-star');
+            if (leadStar) leadStar.remove();
+            var cellStar = row ? row.querySelector('.lead-cell-star') : null;
+            if (cellStar) cellStar.style.color = '#888';
+        }
     }
     var tag = cell.querySelector('.' + meta.cls);
     if (checkbox.checked) {
@@ -57,7 +61,6 @@ function updateSongPill(checkbox) {
             tag.style.cssText = 'font-size: 9px; padding: 1px 5px;';
             tag.textContent = meta.label;
             var myIdx = SONG_PILL_ORDER.indexOf(meta.cls);
-            // Insert before the first existing pill that should come after this one.
             var nextPill = null;
             for (var k = myIdx + 1; k < SONG_PILL_ORDER.length; k++) {
                 nextPill = cell.querySelector('.' + SONG_PILL_ORDER[k]);
@@ -66,7 +69,6 @@ function updateSongPill(checkbox) {
             if (nextPill) {
                 nextPill.parentNode.insertBefore(tag, nextPill);
             } else {
-                // Otherwise place after the nearest earlier pill, or after the song name.
                 var ref = null;
                 for (var j = myIdx - 1; j >= 0; j--) {
                     ref = cell.querySelector('.' + SONG_PILL_ORDER[j]);
@@ -85,13 +87,101 @@ function updateSongPill(checkbox) {
     }
 }
 
+function _ensurePromotedVisual(row) {
+    var cell = row.querySelector('td:first-child');
+    if (!cell) return;
+    var cb = row.querySelector('input[data-field="is-promoted"]');
+    if (cb && !cb.checked) {
+        cb.checked = true;
+        updateSongPill(cb);
+    }
+    var cellStar = row.querySelector('.lead-cell-star');
+    if (cellStar) cellStar.classList.remove('hidden');
+}
+
+function _setLeadVisual(row, songId, isLead) {
+    var cell = row.querySelector('td:first-child');
+    if (!cell) return;
+    var star = cell.querySelector('.lead-star');
+    if (isLead) {
+        if (!star) {
+            star = document.createElement('span');
+            star.className = 'lead-star mr-1';
+            star.style.cssText = 'color: var(--lead-song); font-size: 19px; cursor: pointer; line-height: 1;';
+            star.textContent = '★';
+            star.setAttribute('data-song-id', songId);
+            var pill = cell.querySelector('.promoted-tag');
+            if (pill) {
+                pill.insertAdjacentElement('beforebegin', star);
+            } else {
+                var editSpan = cell.querySelector('.edit-inline');
+                var dupTag = cell.querySelector('.duplicate-tag');
+                var ref = dupTag || editSpan;
+                if (ref) ref.insertAdjacentElement('afterend', star);
+                else cell.prepend(star);
+            }
+        }
+    } else {
+        if (star) star.remove();
+    }
+    var cellStar = row.querySelector('.lead-cell-star');
+    if (cellStar) cellStar.style.color = isLead ? 'var(--lead-song)' : '#888';
+}
+
+function toggleLeadTrack(songId, nameCell) {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var headers = {};
+    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    fetch('/edit/song/' + songId + '/is-lead', {
+        method: 'POST',
+        headers: headers,
+    }).then(function(r) {
+        if (!r.ok) { showToast('Failed to save — try refreshing'); return; }
+        return r.json();
+    }).then(function(data) {
+        if (!data) return;
+        var rows = document.querySelectorAll('tr[data-song-id="' + songId + '"]');
+        for (var i = 0; i < rows.length; i++) {
+            if (data.is_promoted) _ensurePromotedVisual(rows[i]);
+            _setLeadVisual(rows[i], songId, data.is_lead);
+        }
+        if (data.is_lead) {
+            var albumRow = nameCell ? nameCell.closest('tr') : null;
+            var albumId = albumRow ? albumRow.dataset.albumId : null;
+            if (albumId) {
+                var siblings = document.querySelectorAll('tr[data-album-id="' + albumId + '"]');
+                for (var j = 0; j < siblings.length; j++) {
+                    var sid = siblings[j].dataset.songId;
+                    if (sid && sid !== String(songId)) {
+                        _setLeadVisual(siblings[j], sid, false);
+                    }
+                }
+            }
+        }
+    }).catch(function() { showToast('Network error — try again'); });
+}
+
 // Clicking anywhere in a remix/cover/promoted cell toggles its checkbox.
 document.addEventListener('click', function(e) {
-    if (!e.target || e.target.tagName === 'INPUT') return; // checkbox handles its own clicks
+    if (!e.target || e.target.tagName === 'INPUT') return;
     var cell = e.target.closest ? e.target.closest('.checkbox-cell') : null;
     if (!cell) return;
     var cb = cell.querySelector('input[type="checkbox"]');
     if (cb) cb.click();
+});
+
+// Clicking a promoted pill or lead star toggles lead status.
+document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    var isPill = e.target.classList.contains('promoted-tag');
+    var isStar = e.target.classList.contains('lead-star');
+    if (!isPill && !isStar) return;
+    var row = e.target.closest('tr');
+    if (!row) return;
+    var songId = row.dataset.songId;
+    if (!songId) return;
+    var nameCell = row.querySelector('td:first-child');
+    if (nameCell) toggleLeadTrack(parseInt(songId), nameCell);
 });
 
 function showArtistNameEdit(event, endpoint, span) {

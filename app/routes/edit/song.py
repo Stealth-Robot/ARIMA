@@ -60,11 +60,44 @@ def song_is_promoted(song_id):
     if song is None:
         abort(404)
     song.is_promoted = request.form.get('checked') == 'true'
+    if not song.is_promoted:
+        song.is_lead = False
     label = 'Marked' if song.is_promoted else 'Unmarked'
     with db.session.no_autoflush:
         log_change(current_user, f'{label} "{song.name}" song as promoted', song=song)
     db.session.commit()
     return '', 204
+
+
+@edit_bp.route('/song/<int:song_id>/is-lead', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_is_lead(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    song.is_lead = not song.is_lead
+    if song.is_lead:
+        song.is_promoted = True
+        album_ids = [r[0] for r in db.session.execute(
+            db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
+            {'sid': song_id}).fetchall()]
+        if album_ids:
+            sibling_ids = {r[0] for r in db.session.execute(
+                db.text(
+                    'SELECT DISTINCT song_id FROM album_song'
+                    ' WHERE album_id IN (' + ','.join(str(int(a)) for a in album_ids) + ')'
+                    ' AND song_id != :sid'),
+                {'sid': song_id}).fetchall()}
+            if sibling_ids:
+                Song.query.filter(Song.id.in_(sibling_ids), Song.is_lead == True).update(
+                    {Song.is_lead: False}, synchronize_session='fetch')
+    label = 'Marked' if song.is_lead else 'Unmarked'
+    with db.session.no_autoflush:
+        log_change(current_user, f'{label} "{song.name}" song as lead track', song=song)
+    db.session.commit()
+    return json.dumps({'is_lead': song.is_lead, 'is_promoted': song.is_promoted}), 200, {'Content-Type': 'application/json'}
 
 
 @edit_bp.route('/song/<int:song_id>/is-cover', methods=['POST'])
@@ -721,6 +754,8 @@ def perform_song_merge(kept, absorbed):
     # Step 3b: Carry over flags and links
     if absorbed.is_promoted:
         kept.is_promoted = True
+    if absorbed.is_lead:
+        kept.is_lead = True
     if absorbed.is_remix:
         kept.is_remix = True
     if absorbed.is_cover:

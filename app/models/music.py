@@ -127,6 +127,7 @@ class Song(db.Model):
     name = db.Column(db.Text, nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     is_promoted = db.Column(db.Boolean, nullable=False, default=False)
+    is_lead = db.Column(db.Boolean, nullable=False, default=False)
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
     is_cover = db.Column(db.Boolean, nullable=False, default=False)
     note = db.Column(db.Text)
