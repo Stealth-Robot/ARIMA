@@ -179,7 +179,6 @@ def artist_is_disbanded(artist_id):
 @login_required
 @role_required(ADMIN)
 def artist_is_tracked(artist_id):
-    _require_edit_mode()
     artist = db.session.get(Artist, artist_id)
     if artist is None:
         abort(404)
