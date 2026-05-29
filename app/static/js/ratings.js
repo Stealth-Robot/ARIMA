@@ -892,7 +892,7 @@ var _tooltipSelecting = false;
 
     // Hide tooltip when mouse leaves the tooltip itself
     tooltip.addEventListener('mouseout', function (e) {
-        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note')) {
+        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note') && !e.relatedTarget?.closest('td.album-name-cell.has-album-note')) {
             hideTooltip(tooltip);
         }
     });
@@ -902,6 +902,17 @@ var _tooltipSelecting = false;
 
      document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.song-name-cell.has-song-note');
+        if (!td) return;
+        if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
+            hideTooltip(tooltip);
+        }
+    });
+
+    // set up album header cell tooltip event listeners
+    document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.album-name-cell.has-album-note', 'data-album-note'));
+
+    document.addEventListener('mouseout', function (e) {
+        const td = e.target.closest('td.album-name-cell.has-album-note');
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
             hideTooltip(tooltip);

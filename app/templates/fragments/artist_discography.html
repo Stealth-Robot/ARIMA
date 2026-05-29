@@ -363,12 +363,13 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             {% if edit_mode %}
             <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
+            <td class="border border-grid-line">&nbsp;</td>
             {% endif %}
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% else %}
         <tr id="album-{{ album.id }}" class="border border-grid-line cursor-pointer" onclick="toggleAlbum(event, {{ album.id }})">
-            <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative">
+            <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative album-name-cell{% if album.note %} has-album-note{% endif %}" data-album-id="{{ album.id }}"{% if album.note %} data-album-note="{{ album.note | e }}"{% endif %}>
                 <span id="album-arrow-{{ album.id }}" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
                 {% if edit_mode %}
                 <span class="cursor-pointer text-delete absolute" style="left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
@@ -394,6 +395,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% endif %}
             </td>
             {% if edit_mode %}
+            <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
             {% endif %}
@@ -566,12 +568,13 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             {% if edit_mode %}
             <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
+            <td class="border border-grid-line">&nbsp;</td>
             {% endif %}
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% else %}
         <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }} border border-grid-line cursor-pointer" onclick="toggleAlbum(event, {{ album.id }})">
-            <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative">
+            <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative album-name-cell{% if album.note %} has-album-note{% endif %}" data-album-id="{{ album.id }}"{% if album.note %} data-album-note="{{ album.note | e }}"{% endif %}>
                 <span id="album-arrow-{{ album.id }}" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
                 {% if edit_mode %}
                 <span class="cursor-pointer text-delete absolute" style="left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
@@ -597,6 +600,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% endif %}
             </td>
             {% if edit_mode %}
+            <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
             <td class="border border-grid-line">&nbsp;</td>
             {% endif %}

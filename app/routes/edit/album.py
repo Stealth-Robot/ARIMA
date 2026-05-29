@@ -56,6 +56,27 @@ def album_release_date(album_id):
     return value
 
 
+@edit_bp.route('/album/<int:album_id>/note', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_note(album_id):
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    note = (request.form.get('value', '') or '').strip() or None
+    old_note = album.note
+    album.note = note
+    if note and not old_note:
+        log_change(current_user, f'Added note to "{album.name}"', album=album)
+    elif not note and old_note:
+        log_change(current_user, f'Removed note from "{album.name}"', album=album)
+    elif note != old_note:
+        log_change(current_user, f'Updated note on "{album.name}"', album=album)
+    db.session.commit()
+    return note or ''
+
+
 @edit_bp.route('/album/<int:album_id>/type', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

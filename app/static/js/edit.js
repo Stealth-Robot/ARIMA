@@ -3070,6 +3070,114 @@ document.addEventListener('mousedown', function (e) {
     }
 });
 
+// Album note editor — edit-mode only, triggered by right-click on album header cell
+var activeAlbumNote = null;
+
+function showAlbumNoteInput(event, tdEl) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (activeAlbumNote) closeAlbumNoteInput();
+
+    var albumId = tdEl.getAttribute('data-album-id');
+    var existingNote = tdEl.getAttribute('data-album-note') || '';
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,.25); width:240px;';
+
+    var noteTitle = document.createElement('div');
+    noteTitle.textContent = 'Album note';
+    noteTitle.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:6px; color:var(--text-secondary);';
+    overlay.appendChild(noteTitle);
+    _makeDraggable(overlay, noteTitle);
+
+    var textarea = document.createElement('textarea');
+    textarea.value = existingNote;
+    textarea.style.cssText = 'width:100%; height:80px; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px; padding:6px; font-size:12px; font-family:inherit;';
+    overlay.appendChild(textarea);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:6px; margin-top:8px; justify-content:flex-end;';
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:12px;';
+    saveBtn.onclick = function () { submitAlbumNote(albumId, textarea.value.trim(), tdEl); };
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:12px;';
+    cancelBtn.onclick = closeAlbumNoteInput;
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    overlay.appendChild(btnRow);
+    document.body.appendChild(overlay);
+
+    var rect = getZoomedRect(tdEl);
+    overlay.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
+    overlay.style.top = (rect.bottom + 6) + 'px';
+
+    textarea.focus();
+    textarea.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); closeAlbumNoteInput(); }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAlbumNote(albumId, textarea.value.trim(), tdEl); }
+    });
+
+    activeAlbumNote = { overlay: overlay, td: tdEl };
+}
+
+function closeAlbumNoteInput() {
+    if (!activeAlbumNote) return;
+    activeAlbumNote.overlay.remove();
+    activeAlbumNote = null;
+}
+
+function submitAlbumNote(albumId, noteText, tdEl) {
+    var formData = new FormData();
+    formData.append('value', noteText);
+    fetch('/edit/album/' + albumId + '/note', { method: 'POST', headers: _csrfHeaders({}), body: formData })
+        .then(function (r) { return r.text(); })
+        .then(function (text) {
+            var note = text.trim();
+            if (note) {
+                tdEl.classList.add('has-album-note');
+                tdEl.setAttribute('data-album-note', note);
+            } else {
+                tdEl.classList.remove('has-album-note');
+                tdEl.removeAttribute('data-album-note');
+            }
+            closeAlbumNoteInput();
+        });
+}
+
+// Right-click on album header cell opens note editor (edit mode only)
+document.addEventListener('contextmenu', function (e) {
+    var td = e.target.closest('td.album-name-cell');
+    if (!td) return;
+    if (!td.querySelector('.edit-inline')) return;
+    showAlbumNoteInput(e, td);
+});
+
+// 'n' key on hovered album header cell opens note editor (edit mode only)
+var _hoveredAlbumCell = null;
+document.addEventListener('mouseover', function (e) {
+    var td = e.target.closest('td.album-name-cell');
+    _hoveredAlbumCell = td || null;
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'n' || !_hoveredAlbumCell || activeAlbumNote) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (!_hoveredAlbumCell.querySelector('.edit-inline')) return;
+    e.preventDefault();
+    showAlbumNoteInput(e, _hoveredAlbumCell);
+});
+
+// Close album note overlay on outside click
+document.addEventListener('mousedown', function (e) {
+    if (activeAlbumNote && !activeAlbumNote.overlay.contains(e.target) && !activeAlbumNote.td.contains(e.target)) {
+        closeAlbumNoteInput();
+    }
+});
+
 function splitSong(songId, albumId) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
