@@ -325,7 +325,7 @@ function _miscCollapseAll() {
             return;
         }
         fetch('/misc/song/' + songId + '/country').then(function(r) { return r.json(); }).then(function(data) {
-            if (!data.country_id) return;
+            if (data.country_id == null) return;
             var cid = data.country_id;
             var arrow = document.getElementById('misc-country-arrow-' + cid);
             if (!arrow) return;
