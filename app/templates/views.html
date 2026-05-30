@@ -162,7 +162,18 @@ function confirmAlbumDate(btn, albumId) {
     }).then(function(r) {
         if (r.ok) {
             var li = document.getElementById('incomplete-album-' + albumId);
-            if (li) li.remove();
+            if (li) {
+                var content = li.closest('.view-content');
+                li.remove();
+                if (content) {
+                    var header = content.previousElementSibling;
+                    var span = header && header.querySelector('.view-count');
+                    if (span) {
+                        var n = parseInt(span.textContent.replace(/\D/g, '')) - 1;
+                        span.textContent = '— ' + n;
+                    }
+                }
+            }
         }
     });
 }
