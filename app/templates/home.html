@@ -8,6 +8,8 @@
         data-collapse-key="home-sotd" onclick="homeToggle(this)">
         <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span> Song of the Day
         <span class="font-normal text-xs text-secondary-text">{{ sotd_today.date_str }}</span>
+        <a href="/song-of-the-day" class="font-normal text-xs text-link hover:underline" onclick="event.stopPropagation();">History</a>
+        <span class="font-normal text-xs text-secondary-text" id="sotd-countdown-wrap" style="display:none;">Next song in: <span id="sotd-countdown"></span></span>
     </h2>
     <div>
         {% set card = sotd_today %}
@@ -360,5 +362,26 @@ function dismissShuffle() {
     if (container) container.innerHTML = '';
     document.getElementById('shuffle-dismiss').style.visibility = 'hidden';
 }
+(function() {
+    var wrap = document.getElementById('sotd-countdown-wrap');
+    var el = document.getElementById('sotd-countdown');
+    if (!el || !wrap) return;
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function tick() {
+        var now = new Date();
+        var est = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+        var midnight = new Date(est);
+        midnight.setDate(midnight.getDate() + 1);
+        midnight.setHours(0, 0, 0, 0);
+        var diff = Math.max(0, Math.floor((midnight - est) / 1000));
+        var h = Math.floor(diff / 3600);
+        var m = Math.floor((diff % 3600) / 60);
+        var s = diff % 60;
+        el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        wrap.style.display = '';
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
 </script>
 {% endblock %}
