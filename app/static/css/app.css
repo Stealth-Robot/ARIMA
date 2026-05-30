@@ -478,7 +478,7 @@ textarea {
     }
 
     /* Prevent wide tables from causing page-level horizontal scroll */
-    .discography-scroll-wrapper { max-width: 100vw !important; overflow-x: auto !important; }
+    #main-content { overflow-x: clip; }
 
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
