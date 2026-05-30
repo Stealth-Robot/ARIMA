@@ -144,6 +144,17 @@ function dismissCollab(songId) {
         }
     });
 }
+function markInactive(btn, artistId) {
+    fetch('/edit/artist/' + artistId + '/is-disbanded', {
+        method: 'POST',
+        headers: _csrfHeaders({}),
+    }).then(function(r) {
+        if (r.ok) {
+            var row = document.getElementById('disbanded-row-' + artistId);
+            if (row) { row.style.opacity = '0.4'; row.style.textDecoration = 'line-through'; btn.disabled = true; }
+        }
+    });
+}
 function confirmAlbumDate(btn, albumId) {
     fetch('/edit/album/' + albumId + '/confirm-date', {
         method: 'POST',

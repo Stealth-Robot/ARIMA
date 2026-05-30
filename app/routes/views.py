@@ -134,8 +134,8 @@ def view_orphan_albums():
         name_esc = Markup.escape(a.name)
         label = f'"{name_esc}"'
         if edit_mode:
-            label += (f' <span style="cursor:pointer; color:var(--delete-button, #EF4444); margin-left:6px;" title="Delete album"'
-                      f' onclick="deleteOrphanAlbum({a.id}, this)">&#10005;</span>')
+            label += (f' <button class="ml-1 px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer"'
+                      f' onclick="deleteOrphanAlbum({a.id}, this)">Delete</button>')
         result.append({'label': f'id={a.id} — {label}', 'safe': True})
     return render_template('fragments/view_list.html', items=result)
 
