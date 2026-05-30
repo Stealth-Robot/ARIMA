@@ -64,6 +64,10 @@ table.text-xs th {
 
 /* Whole remix/cover/promoted cell is clickable, not just the checkbox */
 .checkbox-cell { cursor: pointer; }
+.checkbox-cell input[type="checkbox"],
+.checkbox-cell .lead-cell-star {
+    vertical-align: middle;
+}
 
 /* Current user's column: subtle glow on unrated cells, outline on header */
 td.my-cell:not([style*="background-color"]) {
