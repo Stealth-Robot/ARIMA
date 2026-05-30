@@ -60,7 +60,8 @@ def search():
         country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
     edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
-    # Pre-compute OST album IDs to exclude from results
+    # Pre-compute OST album IDs to exclude from results (exempt anime artists)
+    ANIME_GENDER_ID = 3
     ost_album_ids = None
     if hide_osts:
         from app.models.lookups import Genre
@@ -69,6 +70,17 @@ def search():
             ost_album_ids = {row[0] for row in db.session.query(album_genres.c.album_id).filter(
                 album_genres.c.genre_id == ost_genre.id
             ).all()}
+            if ost_album_ids:
+                anime_ost_ids = {row[0] for row in db.session.query(AlbumSong.album_id).join(
+                    ArtistSong, AlbumSong.song_id == ArtistSong.song_id
+                ).join(
+                    Artist, ArtistSong.artist_id == Artist.id
+                ).filter(
+                    AlbumSong.album_id.in_(ost_album_ids),
+                    ArtistSong.artist_is_main == True,
+                    Artist.gender_id == ANIME_GENDER_ID,
+                ).distinct().all()}
+                ost_album_ids -= anime_ost_ids
 
     # --- Artists ---
     artist_query = Artist.query.filter(Artist.name.ilike(like))
@@ -242,10 +254,19 @@ def search():
                 sg_map.setdefault(sid, set()).add(gid)
 
             ost_genre_id = None
+            anime_misc_sids = set()
             if hide_osts:
                 from app.models.lookups import Genre
                 ost_genre = Genre.query.filter_by(genre='OST').first()
                 ost_genre_id = ost_genre.id if ost_genre else None
+                if ost_genre_id:
+                    anime_misc_sids = {row[0] for row in db.session.query(ArtistSong.song_id).join(
+                        Artist, ArtistSong.artist_id == Artist.id
+                    ).filter(
+                        ArtistSong.song_id.in_(misc_sids),
+                        ArtistSong.artist_is_main == True,
+                        Artist.gender_id == ANIME_GENDER_ID,
+                    ).all()}
 
             misc_countries = {}
             has_main = {}
@@ -275,7 +296,7 @@ def search():
                     if not include_featured and not has_main.get(s.id):
                         return False
                 genres = sg_map.get(s.id, set())
-                if hide_osts and ost_genre_id and genres == {ost_genre_id}:
+                if hide_osts and ost_genre_id and genres == {ost_genre_id} and s.id not in anime_misc_sids:
                     return False
                 if genre_ids and not (genres & set(genre_ids)):
                     return False

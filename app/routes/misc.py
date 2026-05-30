@@ -223,6 +223,10 @@ def _build_country_data(country_id):
     all_genres = {g.id: g for g in Genre.query.all()}
     ost_genre = Genre.query.filter_by(genre='OST').first()
     ost_genre_id = ost_genre.id if ost_genre else None
+    ANIME_GENDER_ID = 3
+
+    def _is_anime_song(sid):
+        return any(a['gender_id'] == ANIME_GENDER_ID for a in song_real_artists.get(sid, []) if a['is_main'])
 
     def _collab_labels(sid):
         misc_as = song_misc_artists.get(sid, [])
@@ -248,7 +252,7 @@ def _build_country_data(country_id):
                 if not main_names:
                     continue
         genre_ids = song_genre_map.get(sid, set())
-        if filters['hide_osts'] and ost_genre_id and genre_ids == {ost_genre_id}:
+        if filters['hide_osts'] and ost_genre_id and genre_ids == {ost_genre_id} and not _is_anime_song(sid):
             continue
         if filters['genre_ids']:
             if not genre_ids.intersection(set(filters['genre_ids'])):
@@ -326,6 +330,16 @@ def unrated_count():
 
     ost_genre = Genre.query.filter_by(genre='OST').first()
     ost_genre_id = ost_genre.id if ost_genre else None
+    ANIME_GENDER_ID = 3
+    anime_song_ids = set()
+    if filters['hide_osts'] and ost_genre_id:
+        anime_song_ids = {row[0] for row in db.session.query(ArtistSong.song_id).join(
+            Artist, ArtistSong.artist_id == Artist.id
+        ).filter(
+            ArtistSong.song_id.in_(misc_song_ids),
+            ArtistSong.artist_is_main == True,
+            Artist.gender_id == ANIME_GENDER_ID,
+        ).all()}
 
     # Country filtering
     if filters['country_ids']:
@@ -353,7 +367,7 @@ def unrated_count():
         if not filters['include_covers'] and song.is_cover:
             continue
         genres = song_genre_map.get(song.id, set())
-        if filters['hide_osts'] and ost_genre_id and genres == {ost_genre_id}:
+        if filters['hide_osts'] and ost_genre_id and genres == {ost_genre_id} and song.id not in anime_song_ids:
             continue
         if filters['genre_ids'] and not genres.intersection(set(filters['genre_ids'])):
             continue
