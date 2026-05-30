@@ -299,32 +299,26 @@ def toggle_hide_disbanded():
 
 
 def _shuffle_all_candidates():
-    rated_ids = {r.song_id for r in Rating.query.filter_by(user_id=current_user.id).all()}
-    all_as = ArtistSong.query.filter(ArtistSong.artist_is_main == True).all()
-    song_ids = {r.song_id for r in all_as if r.song_id not in rated_ids}
-    if not song_ids:
-        return []
-    songs = {s.id: s for s in Song.query.filter(Song.id.in_(song_ids)).all()}
-    artist_map = {a.id: a for a in Artist.query.filter(
-        Artist.id.in_({r.artist_id for r in all_as if r.song_id in song_ids})).all()}
-    album_song_rows = (db.session.query(AlbumSong.song_id, Album)
-                       .join(Album, Album.id == AlbumSong.album_id)
-                       .options(selectinload(Album.genres))
-                       .filter(AlbumSong.song_id.in_(song_ids)).all())
-    album_by_song = {}
-    for sid, album in album_song_rows:
-        album_by_song.setdefault(sid, album)
+    rated_sq = db.session.query(Rating.song_id).filter(
+        Rating.user_id == current_user.id
+    ).subquery()
+    rows = (db.session.query(Song, Artist, Album)
+            .join(ArtistSong, db.and_(
+                ArtistSong.song_id == Song.id,
+                ArtistSong.artist_is_main == True,
+            ))
+            .join(Artist, Artist.id == ArtistSong.artist_id)
+            .join(AlbumSong, AlbumSong.song_id == Song.id)
+            .join(Album, Album.id == AlbumSong.album_id)
+            .outerjoin(rated_sq, Song.id == rated_sq.c.song_id)
+            .filter(rated_sq.c.song_id == None)
+            .all())
+    seen = set()
     candidates = []
-    artist_by_song = {}
-    for r in all_as:
-        if r.song_id in song_ids:
-            artist_by_song.setdefault(r.song_id, r.artist_id)
-    for sid in song_ids:
-        song = songs.get(sid)
-        aid = artist_by_song.get(sid)
-        album = album_by_song.get(sid)
-        if song and aid and aid in artist_map and album:
-            candidates.append((song, artist_map[aid], album))
+    for song, artist, album in rows:
+        if song.id not in seen:
+            seen.add(song.id)
+            candidates.append((song, artist, album))
     return candidates
 
 
