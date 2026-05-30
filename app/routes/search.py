@@ -60,7 +60,7 @@ def search():
         country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
     edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
-    # Pre-compute OST album IDs to exclude from results (exempt anime artists)
+    # Pre-compute OST album IDs to exclude from results (exempt anime artists per row)
     ANIME_GENDER_ID = 3
     ost_album_ids = None
     if hide_osts:
@@ -70,17 +70,6 @@ def search():
             ost_album_ids = {row[0] for row in db.session.query(album_genres.c.album_id).filter(
                 album_genres.c.genre_id == ost_genre.id
             ).all()}
-            if ost_album_ids:
-                anime_ost_ids = {row[0] for row in db.session.query(AlbumSong.album_id).join(
-                    ArtistSong, AlbumSong.song_id == ArtistSong.song_id
-                ).join(
-                    Artist, ArtistSong.artist_id == Artist.id
-                ).filter(
-                    AlbumSong.album_id.in_(ost_album_ids),
-                    ArtistSong.artist_is_main == True,
-                    Artist.gender_id == ANIME_GENDER_ID,
-                ).distinct().all()}
-                ost_album_ids -= anime_ost_ids
 
     # --- Artists ---
     artist_query = Artist.query.filter(Artist.name.ilike(like))
@@ -112,7 +101,10 @@ def search():
             album_genres, Album.id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id.in_(genre_ids))
     if ost_album_ids:
-        album_query = album_query.filter(~Album.id.in_(ost_album_ids))
+        album_query = album_query.filter(db.or_(
+            ~Album.id.in_(ost_album_ids),
+            Artist.gender_id == ANIME_GENDER_ID,
+        ))
     if len(terms) > 1:
         album_fields = [Album.name, Artist.name]
         for term, count in term_counts.items():
@@ -155,7 +147,10 @@ def search():
     else:
         song_id_q = song_id_q.filter(Song.name.ilike(like))
     if ost_album_ids:
-        song_id_q = song_id_q.filter(~Album.id.in_(ost_album_ids))
+        song_id_q = song_id_q.filter(db.or_(
+            ~Album.id.in_(ost_album_ids),
+            Artist.gender_id == ANIME_GENDER_ID,
+        ))
     matched_song_ids = song_id_q.distinct()
 
     # Step 2: display rows — main artist only, with country/genre filters
@@ -178,7 +173,10 @@ def search():
             album_genres, Album.id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id.in_(genre_ids))
     if ost_album_ids:
-        song_query = song_query.filter(~Album.id.in_(ost_album_ids))
+        song_query = song_query.filter(db.or_(
+            ~Album.id.in_(ost_album_ids),
+            Artist.gender_id == ANIME_GENDER_ID,
+        ))
     song_rows = song_query.order_by(func.lower(Song.name), func.lower(Artist.name)).all()
 
     # Step 3: deduplicate by song ID
