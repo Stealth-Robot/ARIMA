@@ -354,24 +354,29 @@ def _render_shuffle_card(song, artist, album):
 @home_bp.route('/shuffle')
 @login_required
 def shuffle():
+    import logging
     if not current_user.can_rate:
         return '', 204
     mode = request.args.get('mode', 'subscribed')
-    if mode == 'all':
-        candidates = _shuffle_all_candidates()
-    else:
-        backlog, _ = _get_rating_backlog()
-        if not backlog:
+    try:
+        if mode == 'all':
+            candidates = _shuffle_all_candidates()
+        else:
+            backlog, _ = _get_rating_backlog()
+            if not backlog:
+                return '', 204
+            candidates = []
+            for artist, (_count, album_groups) in backlog:
+                for album, songs in album_groups:
+                    for song in songs:
+                        candidates.append((song, artist, album))
+        if not candidates:
             return '', 204
-        candidates = []
-        for artist, (_count, album_groups) in backlog:
-            for album, songs in album_groups:
-                for song in songs:
-                    candidates.append((song, artist, album))
-    if not candidates:
-        return '', 204
-    song, artist, album = random.choice(candidates)
-    return _render_shuffle_card(song, artist, album)
+        song, artist, album = random.choice(candidates)
+        return _render_shuffle_card(song, artist, album)
+    except Exception:
+        logging.getLogger(__name__).exception('Shuffle failed (mode=%s, user=%s)', mode, current_user.id)
+        raise
 
 
 @home_bp.route('/song-of-the-day')
