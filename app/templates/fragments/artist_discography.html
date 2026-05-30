@@ -671,6 +671,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
                        data-song-id="{{ song.id }}" data-field="is-promoted"
                        onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-promoted')">
+                <span class="lead-cell-star cursor-pointer" data-song-id="{{ song.id }}" title="Toggle lead track" onclick="event.stopPropagation();toggleLeadTrack({{ song.id }}, this.closest('tr').querySelector('td:first-child'))" style="font-size: 19px; line-height: 1; color: {% if song.is_lead %}var(--lead-song){% else %}#888{% endif %};">★</span>
             </td>
             {% endif %}
             {% for u in users %}
