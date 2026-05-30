@@ -1831,19 +1831,36 @@ function _openMergePopover(songId, songName, span) {
                     }
                 });
                 if (exactMatches.length) {
-                    var header = document.createElement('div');
-                    header.textContent = 'Exact Matches';
-                    header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-                    exactContainer.appendChild(header);
-                    exactMatches.sort(function(a, b) {
-                        var aRank = a.artist === currentArtistName ? 0 : 1;
-                        var bRank = b.artist === currentArtistName ? 0 : 1;
-                        if (aRank !== bRank) return aRank - bRank;
-                        return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
-                    });
+                    var sameArtist = [];
+                    var diffArtist = [];
                     exactMatches.forEach(function(item) {
-                        exactContainer.appendChild(_makeMergeBtn(item, null));
+                        var resolved = parentMap[item.artist] || item.artist;
+                        if (resolved === currentArtistName) sameArtist.push(item);
+                        else diffArtist.push(item);
                     });
+                    var sortByArtist = function(a, b) {
+                        return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
+                    };
+                    if (sameArtist.length) {
+                        var h1 = document.createElement('div');
+                        h1.textContent = 'Exact Matches — Same Artist';
+                        h1.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                        exactContainer.appendChild(h1);
+                        sameArtist.sort(sortByArtist);
+                        sameArtist.forEach(function(item) {
+                            exactContainer.appendChild(_makeMergeBtn(item, null));
+                        });
+                    }
+                    if (diffArtist.length) {
+                        var h2 = document.createElement('div');
+                        h2.textContent = 'Exact Matches — Different Artist';
+                        h2.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                        exactContainer.appendChild(h2);
+                        diffArtist.sort(sortByArtist);
+                        diffArtist.forEach(function(item) {
+                            exactContainer.appendChild(_makeMergeBtn(item, null));
+                        });
+                    }
                     var sep = document.createElement('div');
                     sep.style.cssText = 'border-bottom:1px solid var(--border,#ccc); margin:4px 0;';
                     exactContainer.appendChild(sep);
