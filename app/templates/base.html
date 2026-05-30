@@ -67,8 +67,10 @@
     </style>
 </head>
 <body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
-    <!-- Navbar — all inline styles to guarantee single line -->
+    <!-- Navbar -->
     <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 10px; padding: 0 12px; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
+        <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('home.home') }}" style="display:none;">Home</a>
+        <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug', 'misc.misc_page') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('artists.artists_list') }}" style="display:none;">Artists</a>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
@@ -156,7 +158,6 @@
         {% endif %}
         {% endif %}
 
-        <!-- Search trigger (compact in navbar) -->
         <!-- Mobile menu button (hidden on desktop) -->
         <div id="mobile-menu-wrapper" class="hidden flex-shrink-0 relative ml-auto">
             <button onclick="var m=document.getElementById('mobile-menu-panel'),b=this.getBoundingClientRect();if(m.style.display==='block'){m.style.display='none'}else{m.style.top=b.bottom+2+'px';m.style.right=(window.innerWidth-b.right)+'px';m.style.display='block'}" type="button"
@@ -169,6 +170,8 @@
                 <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
                 <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
+                <div class="border-t border-border my-1"></div>
+                <a href="{{ url_for('artists.artists_list') }}" class="mobile-menu-item">Artists</a>
                 <a href="{{ url_for('misc.misc_page') }}" class="mobile-menu-item">Misc Artists</a>
                 <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('changelog.changelog') }}" class="mobile-menu-item">Changelog</a>

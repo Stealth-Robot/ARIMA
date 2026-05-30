@@ -477,6 +477,9 @@ textarea {
         width: 45px;
     }
 
+    /* Prevent wide tables from causing page-level horizontal scroll */
+    .discography-scroll-wrapper { max-width: 100vw !important; overflow-x: auto !important; }
+
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
     .mobile-show { display: inline !important; }
@@ -489,7 +492,7 @@ textarea {
     /* Sticky header on mobile — pin below the taller mobile navbar */
     .thead-sticky { top: 52px !important; }
 
-    nav { gap: 4px !important; font-size: 14px !important; height: 52px !important; padding: 0 8px !important; }
+    nav { gap: 10px !important; font-size: 14px !important; height: 52px !important; padding: 0 8px !important; }
 
     /* Artist bottom bar: taller on mobile for touch targets */
     .artist-nav-container {
