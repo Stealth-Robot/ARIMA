@@ -79,6 +79,7 @@ def views_page():
         ).count(),
         'incomplete_date_albums': db.session.query(Album).filter(
             Album.release_date.like('%-01-01'),
+            Album.date_confirmed == False,
             db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
         ).count(),
         'potentially_disbanded': _potentially_disbanded_query().count(),
@@ -198,6 +199,7 @@ def view_incomplete_date_albums():
         selectinload(Album.genres),
     ).filter(
         Album.release_date.like('%-01-01'),
+        Album.date_confirmed == False,
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).order_by(Album.release_date.desc(), func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
@@ -205,7 +207,7 @@ def view_incomplete_date_albums():
     return render_template('fragments/view_album_dates.html',
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode, id_prefix='incomplete',
-                           show_year=True)
+                           show_confirm=True)
 
 
 def _potentially_disbanded_query():

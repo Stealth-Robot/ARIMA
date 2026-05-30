@@ -155,6 +155,7 @@ class Album(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete='SET NULL'), nullable=True)
     note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
+    date_confirmed = db.Column(db.Boolean, nullable=False, default=False)
 
     album_type = db.relationship('AlbumType')
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])

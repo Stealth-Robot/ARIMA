@@ -97,6 +97,7 @@ def fetch_album_dates():
     albums = Album.query.filter(
         Album.release_date.isnot(None),
         Album.release_date.like('%-01-01'),
+        Album.date_confirmed == False,
     ).all()
     print(f'{len(albums)} albums with year-only dates', flush=True)
 

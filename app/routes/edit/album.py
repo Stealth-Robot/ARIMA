@@ -56,6 +56,23 @@ def album_release_date(album_id):
     return value
 
 
+@edit_bp.route('/album/<int:album_id>/confirm-date', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_confirm_date(album_id):
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    album.date_confirmed = not album.date_confirmed
+    log_change(current_user,
+               f'{"Confirmed" if album.date_confirmed else "Unconfirmed"} release date of "{album.name}"',
+               album=album)
+    db.session.commit()
+    return json.dumps({'date_confirmed': album.date_confirmed}), 200, \
+        {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/album/<int:album_id>/note', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

@@ -144,6 +144,17 @@ function dismissCollab(songId) {
         }
     });
 }
+function confirmAlbumDate(btn, albumId) {
+    fetch('/edit/album/' + albumId + '/confirm-date', {
+        method: 'POST',
+        headers: _csrfHeaders({}),
+    }).then(function(r) {
+        if (r.ok) {
+            var li = document.getElementById('incomplete-album-' + albumId);
+            if (li) li.remove();
+        }
+    });
+}
 </script>
 {% with password_required=true %}{% include "fragments/confirm_modal.html" %}{% endwith %}
 <script>
