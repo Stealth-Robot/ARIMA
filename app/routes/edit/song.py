@@ -80,19 +80,6 @@ def song_is_lead(song_id):
     song.is_lead = not song.is_lead
     if song.is_lead:
         song.is_promoted = True
-        album_ids = [r[0] for r in db.session.execute(
-            db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
-            {'sid': song_id}).fetchall()]
-        if album_ids:
-            sibling_ids = {r[0] for r in db.session.execute(
-                db.text(
-                    'SELECT DISTINCT song_id FROM album_song'
-                    ' WHERE album_id IN (' + ','.join(str(int(a)) for a in album_ids) + ')'
-                    ' AND song_id != :sid'),
-                {'sid': song_id}).fetchall()}
-            if sibling_ids:
-                Song.query.filter(Song.id.in_(sibling_ids), Song.is_lead == True).update(
-                    {Song.is_lead: False}, synchronize_session='fetch')
     label = 'Marked' if song.is_lead else 'Unmarked'
     with db.session.no_autoflush:
         log_change(current_user, f'{label} "{song.name}" song as lead track', song=song)

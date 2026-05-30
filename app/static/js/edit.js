@@ -145,19 +145,6 @@ function toggleLeadTrack(songId, nameCell) {
             if (data.is_promoted) _ensurePromotedVisual(rows[i]);
             _setLeadVisual(rows[i], songId, data.is_lead);
         }
-        if (data.is_lead) {
-            var albumRow = nameCell ? nameCell.closest('tr') : null;
-            var albumId = albumRow ? albumRow.dataset.albumId : null;
-            if (albumId) {
-                var siblings = document.querySelectorAll('tr[data-album-id="' + albumId + '"]');
-                for (var j = 0; j < siblings.length; j++) {
-                    var sid = siblings[j].dataset.songId;
-                    if (sid && sid !== String(songId)) {
-                        _setLeadVisual(siblings[j], sid, false);
-                    }
-                }
-            }
-        }
     }).catch(function() { showToast('Network error — try again'); });
 }
 
