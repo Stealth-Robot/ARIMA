@@ -126,7 +126,7 @@ def _build_misc_shell():
             })
 
     return {
-        'countries': country_sections,
+        'misc_countries': country_sections,
         'users': get_display_users(),
         'edit_mode': edit_mode,
         'all_genres': Genre.query.order_by(Genre.id).all() if edit_mode else [],
@@ -160,7 +160,7 @@ def _build_country_data(country_id):
 
     song_ids = {r[0] for r in sma_rows}
     if not song_ids:
-        return {'genres': [], 'users': get_display_users(), 'edit_mode': edit_mode, 'country_id': country_id}
+        return {'misc_genres': [], 'users': get_display_users(), 'edit_mode': edit_mode, 'country_id': country_id}
 
     song_misc_artists = defaultdict(list)
     for sid, maid, is_main, ma_name, cid in sma_rows:
@@ -285,7 +285,7 @@ def _build_country_data(country_id):
         })
 
     return {
-        'genres': genre_sections,
+        'misc_genres': genre_sections,
         'users': get_display_users(),
         'edit_mode': edit_mode,
         'country_id': country_id,

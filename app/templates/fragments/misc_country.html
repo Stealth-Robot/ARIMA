@@ -2,7 +2,7 @@
 {% set is_editable = current_user.can_rate %}
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
-{% for genre in genres %}
+{% for genre in misc_genres %}
 {% if not loop.first %}
 <tr class="misc-country-row-{{ country_id }}"><td colspan="100" class="h-3 border-0"></td></tr>
 {% endif %}

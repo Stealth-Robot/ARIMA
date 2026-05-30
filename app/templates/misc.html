@@ -76,7 +76,7 @@
         {% endif %}
     </div>
 
-    {% if not countries %}
+    {% if not misc_countries %}
     <div class="text-center text-secondary-text py-6">
         {% if edit_mode %}No misc songs yet. Add one above.{% else %}No misc songs yet.{% endif %}
     </div>
@@ -142,7 +142,7 @@
         {% set is_editable = current_user.can_rate %}
         {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
-        {% for country in countries %}
+        {% for country in misc_countries %}
         {% if not loop.first %}
         <tr><td colspan="100" class="h-5 border-0"></td></tr>
         {% endif %}
