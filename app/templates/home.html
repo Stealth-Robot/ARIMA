@@ -12,20 +12,31 @@
         <span class="font-normal text-xs text-secondary-text" id="sotd-countdown-wrap" style="display:none;">Next song in: <span id="sotd-countdown"></span></span>
     </h2>
     <div>
-        {% set card = sotd_today %}
-        {% include 'fragments/sotd_card.html' with context %}
+        <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
+        <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th class="py-1 px-2 text-left text-secondary-text" style="width: 80px; border: none;">Date</th>
+                    <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none;"></th>
+                    {% for u in sotd_today.users %}
+                    <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% set card = sotd_today %}
+                {% include 'fragments/sotd_row.html' with context %}
+                {% for hist_card in sotd_history %}
+                {% set card = hist_card %}
+                {% set sotd_past = true %}
+                {% include 'fragments/sotd_row.html' with context %}
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
         {% if sotd_history %}
         <div class="mt-3">
-            <span class="text-xs text-secondary-text cursor-pointer" onclick="var el=this.nextElementSibling;el.style.display=el.style.display==='none'?'':'none';this.textContent=el.style.display==='none'?'Show past days':'Hide past days';">Show past days</span>
-            <div style="display: none;">
-                {% for hist_card in sotd_history %}
-                <div class="mt-2">
-                    <span class="text-xs text-secondary-text ml-1">{{ hist_card.date_str }}</span>
-                    {% set card = hist_card %}
-                    {% include 'fragments/sotd_card.html' with context %}
-                </div>
-                {% endfor %}
-            </div>
+            <span class="text-xs text-secondary-text cursor-pointer" onclick="toggleSotdPast(this)">Show past days</span>
         </div>
         {% endif %}
     </div>
@@ -246,6 +257,13 @@
 </div>
 {% endif %}
 <script>
+function toggleSotdPast(el) {
+    var rows = document.querySelectorAll('.sotd-past-row');
+    if (!rows.length) return;
+    var show = rows[0].style.display === 'none';
+    rows.forEach(function(r) { r.style.display = show ? '' : 'none'; });
+    el.textContent = show ? 'Hide past days' : 'Show past days';
+}
 function homeToggle(el) {
     var t = el.nextElementSibling;
     var collapsed = t.style.display !== 'none';

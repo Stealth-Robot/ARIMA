@@ -18,38 +18,7 @@
         </thead>
         <tbody>
             {% for card in cards %}
-            <tr>
-                <td class="border border-grid-line text-secondary-text" style="padding: 4px 6px; width: 80px; white-space: nowrap;">{{ card.date_str }}</td>
-                <td class="song-name-cell{% if card.song.note %} has-song-note{% endif %} border border-grid-line"
-                    title="{{ card.song.name | e }}" data-song-id="{{ card.song.id }}"
-                    {% if card.song.note %}data-song-note="{{ card.song.note | e }}"{% endif %}
-                    style="padding: 4px 6px 4px 16px; width: 200px; max-width: 200px;{% if card.song.is_promoted %} border-left: 4px solid var(--promoted-song);{% endif %}">
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <a href="{{ card.artist_url }}" class="text-secondary-text italic no-underline">{{ card.artist.name }}</a>{% if card.collab_label %} <span class="text-secondary-text italic">{{ card.collab_label }}</span>{% endif %}
-                    </div>
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <a href="{{ card.artist_url }}" class="no-underline" style="color: var(--link);">{{ card.song.name }}</a>{% if card.song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if card.song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if card.song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if card.song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
-                    </div>
-                    {% if card.album %}
-                    <div class="text-secondary-text" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        {{ card.album.name }}{% if card.album.release_date %} ({{ card.album.release_date[:4] }}){% endif %}{% if card.album.genres %} &middot; {{ card.album.genres | map(attribute='genre') | join(', ') }}{% endif %}
-                    </div>
-                    {% endif %}
-                </td>
-                {% for u in card.users %}
-                {% set r = card.ratings.get(u.id) %}
-                {% set cell_style = rating_cell_style(r.rating if r else None) %}
-                {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
-                {% set cell_editable = current_user.can_rate and (u.id == current_user.id or rating_all) %}
-                <td id="rating-{{ card.song.id }}-{{ u.id }}"
-                    class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-70{% endif %}"
-                    style="vertical-align: middle;{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
-                    {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
-                    {% if cell_editable %}onclick="showRatingInput(event, {{ card.song.id }}, {{ u.id }})"{% endif %}>
-                    {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
-                </td>
-                {% endfor %}
-            </tr>
+            {% include 'fragments/sotd_row.html' with context %}
             {% endfor %}
         </tbody>
     </table>

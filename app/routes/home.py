@@ -132,7 +132,7 @@ def _get_sotd_data():
     past_entries = (SongOfDay.query
                     .filter(SongOfDay.date < today_str)
                     .order_by(SongOfDay.date.desc())
-                    .limit(5)
+                    .limit(2)
                     .all())
     history = []
     for entry in past_entries:
