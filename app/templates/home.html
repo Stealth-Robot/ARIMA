@@ -36,7 +36,7 @@
         </div>
         {% if sotd_history %}
         <div class="mt-3">
-            <span class="text-xs text-secondary-text cursor-pointer" onclick="toggleSotdPast(this)">Show past days</span>
+            <span class="text-xs text-secondary-text cursor-pointer" onclick="toggleSotdPast(this)">Show last 3</span>
         </div>
         {% endif %}
     </div>
@@ -262,7 +262,7 @@ function toggleSotdPast(el) {
     if (!rows.length) return;
     var show = rows[0].style.display === 'none';
     rows.forEach(function(r) { r.style.display = show ? '' : 'none'; });
-    el.textContent = show ? 'Hide past days' : 'Show past days';
+    el.textContent = show ? 'Hide last 3' : 'Show last 3';
 }
 function homeToggle(el) {
     var t = el.nextElementSibling;
