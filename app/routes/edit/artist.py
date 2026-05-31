@@ -44,6 +44,29 @@ def artist_name(artist_id):
     return jsonify(name=name, slug=artist.slug)
 
 
+@edit_bp.route('/artist/<int:artist_id>/spotify-url', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_spotify_url(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    old = artist.spotify_url
+    artist.spotify_url = url
+    if url and not old:
+        log_change(current_user, f'Added Spotify link to "{artist.name}"', artist=artist, change_type='link')
+    elif not url and old:
+        log_change(current_user, f'Removed Spotify link from "{artist.name}"', artist=artist, change_type='link')
+    elif url != old:
+        log_change(current_user, f'Updated Spotify link on "{artist.name}"', artist=artist, change_type='link')
+    db.session.commit()
+    return url or ''
+
+
 @edit_bp.route('/artist/<int:artist_id>/country', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -612,6 +635,7 @@ def add_artist_submit():
     name = request.form.get('artist_name', '').strip()
     gender_id = request.form.get('gender_id', '').strip()
     country_id = request.form.get('country_id', '').strip()
+    artist_spotify_url = request.form.get('artist_spotify_url', '').strip() or None
     albums_json = request.form.get('albums_data', '[]')
 
     if not name:
@@ -676,6 +700,7 @@ def add_artist_submit():
             'is_disbanded': request.form.get('is_disbanded'),
             'is_complete': request.form.get('is_complete'),
             'is_tracked': request.form.get('is_tracked'),
+            'artist_spotify_url': artist_spotify_url or '',
             'albums_json': albums_json,
         }
         return render_template('add_artist.html',
@@ -703,6 +728,7 @@ def add_artist_submit():
             is_disbanded=bool(request.form.get('is_disbanded')),
             is_complete=bool(request.form.get('is_complete')),
             is_tracked=bool(request.form.get('is_tracked')),
+            spotify_url=artist_spotify_url,
         )
         db.session.add(artist)
         db.session.flush()
@@ -728,6 +754,7 @@ def add_artist_submit():
                 album_type_id=album_data['album_type_id'],
                 submitted_by_id=current_user.id,
                 artist_id=artist.id,
+                spotify_url=(album_data.get('spotify_url') or None),
             )
             db.session.add(new_album)
             db.session.flush()

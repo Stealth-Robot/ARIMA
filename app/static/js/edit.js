@@ -276,6 +276,9 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
             if (!r.ok) { input.style.borderColor = 'var(--delete-button,red)'; return; }
             // Store saved value for next edit and update the link icon
             if (btnEl) btnEl.dataset.savedUrl = val;
+            // Artist/album header edits don't live in a song .song-links cell;
+            // reload to reflect the change rather than doing in-place DOM surgery.
+            if (btnEl && btnEl.dataset.reloadOnSave) { window.location.reload(); return; }
             if (btnEl && linkType) {
                 var td = btnEl.closest('td');
                 var songLinks = td ? td.querySelector('.song-links') : null;
@@ -2623,6 +2626,7 @@ function showSongArtists(event, songId, span) {
 /* Add album modal helpers */
 
 var _newAlbumSongCount = 0;
+var _newAlbumSpotifyUrl = null;
 
 function _onTargetArtistChange() {
     var select = document.getElementById('add-album-target-artist');
@@ -2671,6 +2675,7 @@ function _autofillSingleName() {
 
 function resetAddAlbumModal() {
     _newAlbumSongCount = 0;
+    _newAlbumSpotifyUrl = null;
     var targetArtist = document.getElementById('add-album-target-artist');
     if (targetArtist) targetArtist.selectedIndex = 0;
     var name = document.getElementById('new-album-name');
@@ -3005,6 +3010,7 @@ function submitNewAlbum(artistId) {
             album_type_id: typeId,
             genre_ids: genreIds,
             songs: songs,
+            spotify_url: _newAlbumSpotifyUrl || null,
         };
 
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -3652,6 +3658,7 @@ function importAlbumFromSpotify(artistId) {
         })
         .then(function (data) {
             if (data.artists) _allArtists = data.artists;
+            _newAlbumSpotifyUrl = data.spotify_url || null;
             var nameEl = document.getElementById('new-album-name');
             if (nameEl) nameEl.value = data.name;
             var dateEl = document.getElementById('new-album-date');
@@ -3763,14 +3770,38 @@ function _showAutoSpotifyResults(data) {
     var matchedByLink = data.matched_by_link || [];
     var needsReview = data.needs_review || [];
     var notFound = data.not_found || [];
+    var artistLink = data.artist_link || null;
+    var albumMatches = data.album_matches || [];
+
+    // Artist & album links section (checkbox list, like songs)
+    var entitySection = document.getElementById('auto-spotify-entity-section');
+    var entityList = document.getElementById('auto-spotify-entity-list');
+    entityList.innerHTML = '';
+    var entityItems = [];
+    if (artistLink) entityItems.push({ type: 'artist', id: artistLink.artist_id, label: 'Artist: ' + artistLink.name, url: artistLink.spotify_url });
+    albumMatches.forEach(function (al) {
+        entityItems.push({ type: 'album', id: al.album_id, label: 'Album: ' + al.name, url: al.spotify_url });
+    });
+    entityItems.forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'flex items-center gap-2 py-1';
+        row.innerHTML = '<label class="flex items-center gap-2 text-sm cursor-pointer">' +
+            '<input type="checkbox" checked class="auto-spotify-entity-check cursor-pointer" ' +
+            'data-entity-type="' + it.type + '" data-entity-id="' + it.id + '" data-spotify-url="' + _escAttr(it.url) + '">' +
+            '<span class="text-primary-text">' + _escHtml(it.label) + '</span></label>';
+        entityList.appendChild(row);
+    });
+    entitySection.style.display = entityItems.length ? '' : 'none';
 
     // Summary
     var summary = document.getElementById('auto-spotify-summary');
     var parts = [];
+    if (artistLink) parts.push('artist link');
+    if (albumMatches.length) parts.push(albumMatches.length + ' album link' + (albumMatches.length !== 1 ? 's' : ''));
     if (matchedByLink.length) parts.push(matchedByLink.length + ' matched by link');
     if (needsReview.length) parts.push(needsReview.length + ' need review');
     if (notFound.length) parts.push(notFound.length + ' not found');
-    summary.textContent = parts.join(', ');
+    summary.textContent = parts.length ? parts.join(', ') : 'Nothing to update.';
 
     // Helper to build a checkbox list
     function _buildCheckList(container, items) {
@@ -3868,8 +3899,21 @@ function autoSpotifyConfirm() {
         }
     });
 
-    if (!selections.length) {
-        document.getElementById('auto-spotify-modal').style.display = 'none';
+    // Collect checked artist + album link entries
+    var artistLink = null;
+    var albumSelections = [];
+    document.querySelectorAll('.auto-spotify-entity-check:checked').forEach(function (cb) {
+        if (!cb.dataset.spotifyUrl) return;
+        if (cb.dataset.entityType === 'artist') {
+            artistLink = {artist_id: parseInt(cb.dataset.entityId), spotify_url: cb.dataset.spotifyUrl};
+        } else {
+            albumSelections.push({album_id: parseInt(cb.dataset.entityId), spotify_url: cb.dataset.spotifyUrl});
+        }
+    });
+
+    var asModal = document.getElementById('auto-spotify-modal');
+    if (!selections.length && !artistLink && !albumSelections.length) {
+        asModal.style.display = 'none';
         return;
     }
 
@@ -3880,7 +3924,11 @@ function autoSpotifyConfirm() {
     fetch('/edit/auto-spotify/confirm', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/json'}),
-        body: JSON.stringify({selections: selections}),
+        body: JSON.stringify({
+            selections: selections,
+            artist_link: artistLink,
+            album_selections: albumSelections,
+        }),
     })
     .then(function (r) { return r.json(); })
     .then(function (data) {

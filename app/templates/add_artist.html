@@ -162,6 +162,7 @@
 
         <!-- Hidden serialised album data -->
         <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
+        <input type="hidden" name="artist_spotify_url" id="artist-spotify-url" value="{{ form_data.get('artist_spotify_url', '') }}">
 
         <div class="flex gap-3 sticky bottom-0 py-3 mt-4 bg-primary-bg z-10" style="border-top: 1px solid var(--border);">
             <button type="submit" id="submit-btn" disabled
@@ -681,6 +682,7 @@ document.getElementById('add-artist-form').addEventListener('submit', function(e
     localStorage.removeItem(_draftKey);
     var state = collectFormState();
     document.getElementById('albums-data').value = state.albums_json;
+    document.getElementById('artist-spotify-url').value = state.artist_spotify_url || '';
 });
 
 // Close search results when clicking outside
@@ -723,6 +725,7 @@ function collectFormState() {
             genre_ids: [],
             songs: [],
         };
+        if (albumDiv.dataset.spotifyUrl) album.spotify_url = albumDiv.dataset.spotifyUrl;
         albumDiv.querySelectorAll('[data-album="' + albumNum + '"][data-genre]').forEach(function(cb) {
             if (cb.checked) album.genre_ids.push(parseInt(cb.dataset.genre));
         });
@@ -767,6 +770,7 @@ function collectFormState() {
         artist_name: document.getElementById('artist_name').value,
         gender_id: document.querySelector('[name="gender_id"]').value,
         country_id: document.querySelector('[name="country_id"]').value,
+        artist_spotify_url: document.getElementById('artist-spotify-url').value || '',
         albums_json: JSON.stringify(albums),
     };
 }
@@ -910,6 +914,9 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                 if (draft.country_id && !document.querySelector('[name="country_id"]').value) {
                     document.querySelector('[name="country_id"]').value = draft.country_id;
                 }
+                if (draft.artist_spotify_url && !document.getElementById('artist-spotify-url').value) {
+                    document.getElementById('artist-spotify-url').value = draft.artist_spotify_url;
+                }
             }
         } catch(e) {}
     }
@@ -960,6 +967,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                     '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
                 '</div>';
             container.appendChild(div);
+            if (albumData.spotify_url) div.dataset.spotifyUrl = albumData.spotify_url;
             if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
 
             // Set album type
@@ -1013,6 +1021,7 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                             '<div class="song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:4px; display:none; width:180px;"></div>' +
                         '</div>' +
                     '</div>';
+                if (songData.spotify_url) sdiv.dataset.spotifyUrl = songData.spotify_url;
                 if (songData.youtube_url) sdiv.dataset.youtubeUrl = songData.youtube_url;
                 sc.appendChild(sdiv);
                 _initSongMiscSearch(sdiv);
@@ -1080,6 +1089,7 @@ function populateArtistFromSpotify(data) {
         nameEl.value = data.name;
         nameEl.dispatchEvent(new Event('input'));
     }
+    document.getElementById('artist-spotify-url').value = data.spotify_url || '';
     document.getElementById('albums-container').innerHTML = '';
     albumCount = 0;
     songCounters = {};
@@ -1122,6 +1132,7 @@ function populateArtistFromSpotify(data) {
                 '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
             '</div>';
         container.appendChild(div);
+        if (albumData.spotify_url) div.dataset.spotifyUrl = albumData.spotify_url;
         if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
         var sel = div.querySelector('[data-album="' + num + '"][data-field="album_type_id"]');
         if (sel) sel.value = String(albumData.album_type_id);

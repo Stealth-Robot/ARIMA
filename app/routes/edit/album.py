@@ -56,6 +56,29 @@ def album_release_date(album_id):
     return value
 
 
+@edit_bp.route('/album/<int:album_id>/spotify-url', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_spotify_url(album_id):
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    old = album.spotify_url
+    album.spotify_url = url
+    if url and not old:
+        log_change(current_user, f'Added Spotify link to "{album.name}" album', album=album, change_type='link')
+    elif not url and old:
+        log_change(current_user, f'Removed Spotify link from "{album.name}" album', album=album, change_type='link')
+    elif url != old:
+        log_change(current_user, f'Updated Spotify link on "{album.name}" album', album=album, change_type='link')
+    db.session.commit()
+    return url or ''
+
+
 @edit_bp.route('/album/<int:album_id>/confirm-date', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -221,6 +244,7 @@ def add_album_to_artist(artist_id):
         album_type_id=int(album_type_id),
         submitted_by_id=current_user.id,
         artist_id=artist_id,
+        spotify_url=(data.get('spotify_url') or None),
     )
     db.session.add(album)
     db.session.flush()

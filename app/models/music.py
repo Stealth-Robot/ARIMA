@@ -106,6 +106,7 @@ class Artist(db.Model):
     is_tracked = db.Column(db.Boolean, nullable=False, default=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     maintainer_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+    spotify_url = db.Column(db.Text)
 
     gender = db.relationship('GroupGender')
     country = db.relationship('Country')
@@ -156,6 +157,7 @@ class Album(db.Model):
     note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
     date_confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    spotify_url = db.Column(db.Text)
 
     album_type = db.relationship('AlbumType')
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])

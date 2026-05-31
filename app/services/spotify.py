@@ -167,8 +167,38 @@ def fetch_album(url):
         'release_date': _normalize_date(data.get('release_date', '')),
         'album_type_id': _album_type_id(
             data.get('album_type', ''), data.get('total_tracks', 0)),
+        'spotify_url': data.get('external_urls', {}).get('spotify', url),
         'tracks': tracks,
     }
+
+
+def artist_url_from_track(track_url, expected_name=None):
+    """Resolve an artist's Spotify page URL from one of their track URLs.
+
+    When expected_name is given, only return the track artist whose name
+    matches it (guards against a collab track resolving to a featured artist).
+    Returns the artist's open.spotify.com URL, or None.
+    """
+    if not track_url or '/track/' not in track_url:
+        return None
+    try:
+        track_id = _parse_id(track_url, 'track')
+    except SpotifyError:
+        return None
+    data = _api_get(f'/tracks/{track_id}')
+    artists = data.get('artists', [])
+    if not artists:
+        return None
+    if expected_name:
+        norm = _normalize_name(expected_name)
+        for a in artists:
+            an = _normalize_name(a.get('name', ''))
+            if an and (an == norm or norm in an or an in norm):
+                url = a.get('external_urls', {}).get('spotify')
+                if url:
+                    return url
+        return None  # no name match — don't guess
+    return artists[0].get('external_urls', {}).get('spotify') or None
 
 
 def fetch_track(url):
@@ -209,6 +239,7 @@ def fetch_artist(url, on_progress=None, cancel=None):
         artist_id = _parse_id(url, 'artist')
         artist_data = _api_get(f'/artists/{artist_id}')
         artist_name = artist_data['name']
+        artist_spotify_url = artist_data.get('external_urls', {}).get('spotify', url)
         _progress(f'Found: {artist_name}', 10)
 
         albums_raw = []
@@ -254,12 +285,14 @@ def fetch_artist(url, on_progress=None, cancel=None):
                 'album_type_id': _album_type_id(
                     full.get('album_type', ''),
                     full.get('total_tracks', 0)),
+                'spotify_url': full.get('external_urls', {}).get('spotify', ''),
                 'tracks': tracks,
             })
 
         _progress('Almost done...', 95)
         return {
             'name': artist_name,
+            'spotify_url': artist_spotify_url,
             'albums': albums,
         }
     finally:
@@ -338,6 +371,8 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
         matched_by_link = []
         needs_review = []
         not_found = []
+        artist_spotify_url = None
+        album_links = {}
 
         unmatched = {s['id']: s for s in songs}
 
@@ -347,6 +382,7 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
             _progress('Fetching discography from Spotify...', 5)
             try:
                 artist_id = _parse_id(spotify_url, 'artist')
+                artist_spotify_url = f'https://open.spotify.com/artist/{artist_id}'
                 albums_raw = []
                 offset = 0
                 while True:
@@ -378,6 +414,9 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                         full = _api_get(f'/albums/{raw["id"]}')
                     except SpotifyError:
                         continue
+                    alb_url = full.get('external_urls', {}).get('spotify', '')
+                    if alb_url:
+                        album_links[_normalize_name(full.get('name', ''))] = alb_url
                     for t in full.get('tracks', {}).get('items', []):
                         t_url = t.get('external_urls', {}).get('spotify', '')
                         if t_url:
@@ -445,6 +484,8 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
             'matched_by_link': matched_by_link,
             'needs_review': needs_review,
             'not_found': not_found,
+            'artist_spotify_url': artist_spotify_url,
+            'album_links': album_links,
         }
     finally:
         _local.on_status = None
