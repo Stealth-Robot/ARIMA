@@ -82,6 +82,7 @@ class UserSettings(db.Model):
     hide_autogen_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
     hide_all_youtube = db.Column(db.Boolean, nullable=False, server_default='0')
     hide_all_spotify = db.Column(db.Boolean, nullable=False, server_default='0')
+    spotify_open_in_app = db.Column(db.Boolean, nullable=False, server_default='1')
     show_track_numbers = db.Column(db.Boolean, nullable=False, server_default='1')
     show_full_album_date = db.Column(db.Boolean, nullable=False, server_default='1')
     hide_osts = db.Column(db.Boolean, nullable=False, server_default='0')

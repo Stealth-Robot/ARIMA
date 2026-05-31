@@ -120,9 +120,11 @@ def create_app():
             hide_autogen_youtube = getattr(s, 'hide_autogen_youtube', False) if s else session.get('hide_autogen_youtube', False)
             hide_all_youtube = getattr(s, 'hide_all_youtube', False) if s else session.get('hide_all_youtube', False)
             hide_all_spotify = getattr(s, 'hide_all_spotify', False) if s else session.get('hide_all_spotify', False)
+            spotify_open_in_app = getattr(s, 'spotify_open_in_app', True) if s else session.get('spotify_open_in_app', True)
             show_track_numbers = getattr(s, 'show_track_numbers', True) if s else session.get('show_track_numbers', True)
             show_full_album_date = getattr(s, 'show_full_album_date', True) if s else session.get('show_full_album_date', True)
             countries, genres, genders, album_types = get_cached_filters()
+            from app.services.spotify import to_app_uri
             return {
                 'current_country_ids': country_ids,
                 'current_genre_ids': genre_ids,
@@ -134,10 +136,13 @@ def create_app():
                 'hide_autogen_youtube': hide_autogen_youtube,
                 'hide_all_youtube': hide_all_youtube,
                 'hide_all_spotify': hide_all_spotify,
+                'spotify_href': (lambda url: to_app_uri(url)) if spotify_open_in_app else (lambda url: url),
+                'spotify_link_target': '_self' if spotify_open_in_app else '_blank',
                 'show_track_numbers': show_track_numbers,
                 'show_full_album_date': show_full_album_date,
             }
-        return {'current_country_ids': [], 'current_genre_ids': [], 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'show_track_numbers': True, 'show_full_album_date': True}
+        from app.services.spotify import to_app_uri
+        return {'current_country_ids': [], 'current_genre_ids': [], 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'spotify_href': (lambda url: to_app_uri(url)), 'spotify_link_target': '_self', 'show_track_numbers': True, 'show_full_album_date': True}
 
     @flask_app.after_request
     def sw_no_cache(response):

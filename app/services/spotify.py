@@ -127,6 +127,22 @@ def _parse_id(url, kind):
     return m.group(1)
 
 
+def to_app_uri(url):
+    """Convert an open.spotify.com web URL to a spotify: desktop-app URI.
+
+    Returns the original url unchanged if it isn't a recognized Spotify link.
+    """
+    if not url:
+        return url
+    m = re.search(
+        r'open\.spotify\.com/(?:intl-[a-z]+/)?'
+        r'(track|album|artist|playlist|episode|show)/([A-Za-z0-9]+)',
+        url)
+    if not m:
+        return url
+    return f'spotify:{m.group(1)}:{m.group(2)}'
+
+
 _TYPE_MAP = {'album': 0, 'single': 2, 'compilation': 0}
 
 

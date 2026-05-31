@@ -263,6 +263,14 @@
                     Hide all Spotify links
                 </label>
             </div>
+            <div class="mb-3">
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="spotify_open_in_app"
+                           {% if settings.spotify_open_in_app %}checked{% endif %}>
+                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-3.5 h-3.5">
+                    Open Spotify links in desktop app
+                </label>
+            </div>
         </form>
     </div>
 

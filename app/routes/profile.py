@@ -40,6 +40,7 @@ def profile():
             'hide_autogen_youtube': session.get('hide_autogen_youtube', False),
             'hide_all_youtube': session.get('hide_all_youtube', False),
             'hide_all_spotify': session.get('hide_all_spotify', False),
+            'spotify_open_in_app': session.get('spotify_open_in_app', True),
             'show_track_numbers': session.get('show_track_numbers', True),
             'show_full_album_date': session.get('show_full_album_date', True),
             'hide_osts': session.get('hide_osts', False),
@@ -59,6 +60,7 @@ def profile():
             'hide_autogen_youtube': getattr(s, 'hide_autogen_youtube', False) if s else False,
             'hide_all_youtube': getattr(s, 'hide_all_youtube', False) if s else False,
             'hide_all_spotify': getattr(s, 'hide_all_spotify', False) if s else False,
+            'spotify_open_in_app': getattr(s, 'spotify_open_in_app', True) if s else True,
             'show_track_numbers': getattr(s, 'show_track_numbers', True) if s else True,
             'show_full_album_date': getattr(s, 'show_full_album_date', True) if s else True,
             'hide_osts': getattr(s, 'hide_osts', False) if s else False,
@@ -146,6 +148,7 @@ def update_settings():
             session['hide_autogen_youtube'] = request.form.get('hide_autogen_youtube') == 'on'
             session['hide_all_youtube'] = request.form.get('hide_all_youtube') == 'on'
             session['hide_all_spotify'] = request.form.get('hide_all_spotify') == 'on'
+            session['spotify_open_in_app'] = request.form.get('spotify_open_in_app') == 'on'
         if 'misc_sort_field' in request.form:
             field, direction = _parse_misc_sort(request.form)
             session['misc_sort_field'] = field
@@ -175,6 +178,7 @@ def update_settings():
                 settings.hide_autogen_youtube = request.form.get('hide_autogen_youtube') == 'on'
                 settings.hide_all_youtube = request.form.get('hide_all_youtube') == 'on'
                 settings.hide_all_spotify = request.form.get('hide_all_spotify') == 'on'
+                settings.spotify_open_in_app = request.form.get('spotify_open_in_app') == 'on'
             # Rating key labels + show_my_key (only from profile page form)
             if 'theme' in request.form:
                 settings.show_my_key = request.form.get('show_my_key') == 'on'
