@@ -59,6 +59,59 @@ def add_country():
     return redirect(url_for('admin.admin_page'))
 
 
+@admin_bp.route('/admin/rename-genre', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def rename_genre():
+    genre_id = request.form.get('id', '').strip()
+    name = request.form.get('name', '').strip()
+    if not genre_id or not name:
+        return redirect(url_for('admin.admin_page'))
+
+    genre = db.session.get(Genre, int(genre_id))
+    if genre is None:
+        return redirect(url_for('admin.admin_page'))
+
+    # 'OST' is special-cased by name in filtering logic across the app; renaming it
+    # would silently break those lookups, so it cannot be renamed.
+    if genre.genre == 'OST':
+        return redirect(url_for('admin.admin_page'))
+
+    if name.lower() != genre.genre.lower() and Genre.query.filter(
+        db.func.lower(Genre.genre) == name.lower(), Genre.id != genre.id
+    ).first():
+        return redirect(url_for('admin.admin_page'))
+
+    genre.genre = name
+    db.session.commit()
+    clear_filter_cache()
+    return redirect(url_for('admin.admin_page'))
+
+
+@admin_bp.route('/admin/rename-country', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def rename_country():
+    country_id = request.form.get('id', '').strip()
+    name = request.form.get('name', '').strip()
+    if not country_id or not name:
+        return redirect(url_for('admin.admin_page'))
+
+    country = db.session.get(Country, int(country_id))
+    if country is None:
+        return redirect(url_for('admin.admin_page'))
+
+    if name.lower() != country.country.lower() and Country.query.filter(
+        db.func.lower(Country.country) == name.lower(), Country.id != country.id
+    ).first():
+        return redirect(url_for('admin.admin_page'))
+
+    country.country = name
+    db.session.commit()
+    clear_filter_cache()
+    return redirect(url_for('admin.admin_page'))
+
+
 @admin_bp.route('/admin/replace-database', methods=['GET', 'POST'])
 @login_required
 @role_required(ADMIN)

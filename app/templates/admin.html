@@ -10,7 +10,17 @@
         <h2 class="text-lg font-bold mb-3">Genres</h2>
         <div class="flex flex-wrap gap-2 mb-3">
             {% for g in genres %}
+            {% if g.genre == 'OST' %}
             <span class="text-xs px-2 py-1 rounded bg-secondary-bg border border-border">{{ g.genre }}</span>
+            {% else %}
+            <form method="POST" action="{{ url_for('admin.rename_genre') }}" class="flex items-center gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="{{ g.id }}">
+                <input type="text" name="name" value="{{ g.genre }}" required
+                       class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">
+                <button type="submit" class="text-xs px-2 py-1 rounded bg-button-primary text-button-text">Save</button>
+            </form>
+            {% endif %}
             {% endfor %}
         </div>
         <form method="POST" action="{{ url_for('admin.add_genre') }}" class="flex gap-2">
@@ -27,7 +37,13 @@
         <h2 class="text-lg font-bold mb-3">Countries</h2>
         <div class="flex flex-wrap gap-2 mb-3">
             {% for c in countries %}
-            <span class="text-xs px-2 py-1 rounded bg-secondary-bg border border-border">{{ c.country }}</span>
+            <form method="POST" action="{{ url_for('admin.rename_country') }}" class="flex items-center gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="{{ c.id }}">
+                <input type="text" name="name" value="{{ c.country }}" required
+                       class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">
+                <button type="submit" class="text-xs px-2 py-1 rounded bg-button-primary text-button-text">Save</button>
+            </form>
             {% endfor %}
         </div>
         <form method="POST" action="{{ url_for('admin.add_country') }}" class="flex gap-2">
