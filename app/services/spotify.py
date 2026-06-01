@@ -11,7 +11,8 @@ import base64
 import logging
 import threading
 
-from app.services.api_queue import spotify_queue, ApiQueueError
+from app.services.api_queue import (
+    spotify_queue, ApiQueueError, RateLimitedError, _cooldown_message)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def _get_token():
                 on_status=on_status,
             )
         except ApiQueueError as e:
-            raise SpotifyError(str(e))
+            raise _wrap_queue_error(e)
         if resp.status_code != 200:
             raise SpotifyError(f'Token request failed: {resp.status_code}')
         _status('Auth token OK')
@@ -91,7 +92,7 @@ def _api_get(path_or_url):
             on_status=on_status,
         )
     except ApiQueueError as e:
-        raise SpotifyError(str(e))
+        raise _wrap_queue_error(e)
     if resp.status_code == 401:
         _invalidate_token()
         token = _get_token()
@@ -102,7 +103,7 @@ def _api_get(path_or_url):
                 on_status=on_status,
             )
         except ApiQueueError as e:
-            raise SpotifyError(str(e))
+            raise _wrap_queue_error(e)
     if resp.status_code == 404:
         raise SpotifyError('Not found on Spotify')
     if resp.status_code != 200:
@@ -271,6 +272,8 @@ def fetch_artist(url, on_progress=None, cancel=None):
             _progress(f'Loading tracks ({idx + 1} of {total})', pct)
             try:
                 full = _api_get(f'/albums/{raw["id"]}')
+            except SpotifyRateLimited:
+                raise
             except SpotifyError as e:
                 logger.warning('Failed to fetch album %s: %s', raw['id'], e)
                 continue
@@ -412,6 +415,8 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                         pct)
                     try:
                         full = _api_get(f'/albums/{raw["id"]}')
+                    except SpotifyRateLimited:
+                        raise
                     except SpotifyError:
                         continue
                     alb_url = full.get('external_urls', {}).get('spotify', '')
@@ -450,6 +455,8 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                     f'Discography matched {len(matched_by_link)} '
                     f'of {len(songs)} songs', 58)
 
+            except SpotifyRateLimited:
+                raise
             except SpotifyError as e:
                 _progress(
                     f'Discography fetch failed ({e}), '
@@ -465,6 +472,8 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                 f'{song["name"]}', pct)
             try:
                 candidates = search_track(song['name'], artist_name)
+            except SpotifyRateLimited:
+                raise
             except SpotifyError:
                 candidates = []
 
@@ -541,3 +550,34 @@ def artist_album_links(artist_spotify_id, cancel=None):
 
 class SpotifyError(Exception):
     pass
+
+
+class SpotifyRateLimited(SpotifyError):
+    """Spotify asked us to back off longer than we'll wait inline.
+
+    `retry_after` is the seconds remaining on the cooldown.
+    """
+
+    def __init__(self, message, retry_after):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+def _wrap_queue_error(e):
+    """Map a queue error to the Spotify-layer equivalent, preserving the
+    rate-limit signal so callers can surface the cooldown to the user."""
+    if isinstance(e, RateLimitedError):
+        return SpotifyRateLimited(str(e), e.retry_after)
+    return SpotifyError(str(e))
+
+
+def cooldown_remaining():
+    """Seconds left on Spotify's remembered backoff (0 if not rate-limited)."""
+    return spotify_queue.cooldown_remaining()
+
+
+def cooldown_message(remaining=None):
+    """User-facing rate-limit message for the current (or given) cooldown."""
+    if remaining is None:
+        remaining = spotify_queue.cooldown_remaining()
+    return _cooldown_message(remaining)

@@ -59,11 +59,9 @@ def save_billing_costs():
             continue
         cycle_start = key[len('cost_'):]
         raw = raw.strip()
-        existing = db.session.get(BillingCost, cycle_start)
         if raw == '':
-            if existing:
-                db.session.delete(existing)
             continue
+        existing = db.session.get(BillingCost, cycle_start)
         try:
             amount = float(raw)
         except ValueError:
@@ -222,7 +220,13 @@ def bulk_spotify_start():
     from app.models.user import User
     from app.services.audit import log_change
     from app.services.spotify import (
-        find_artist_url, artist_album_links, _normalize_name, SpotifyError)
+        find_artist_url, artist_album_links, _normalize_name, SpotifyError,
+        SpotifyRateLimited, cooldown_remaining, cooldown_message)
+
+    # Fail fast if Spotify already has us in a long cooldown.
+    remaining = cooldown_remaining()
+    if remaining > 120:
+        return jsonify({'error': cooldown_message(remaining)}), 429
 
     try:
         limit = int(request.form.get('limit', 50))
@@ -290,6 +294,11 @@ def bulk_spotify_start():
                                 int(100 * (i / max(len(artist_ids), 1))))
                     try:
                         match = find_artist_url(artist.name)
+                    except SpotifyRateLimited as e:
+                        db.session.commit()
+                        _bulk_spotify_jobs[job_id] = {
+                            'error': str(e), '_ts': time.time()}
+                        return
                     except SpotifyError:
                         match = None
                     if not match:
@@ -303,6 +312,11 @@ def bulk_spotify_start():
 
                     try:
                         links = artist_album_links(match['id'], cancel=cancel)
+                    except SpotifyRateLimited as e:
+                        db.session.commit()
+                        _bulk_spotify_jobs[job_id] = {
+                            'error': str(e), '_ts': time.time()}
+                        return
                     except SpotifyError:
                         links = {}
                     for album in _albums_for_artist(aid) if links else []:

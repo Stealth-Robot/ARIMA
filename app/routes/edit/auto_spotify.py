@@ -38,6 +38,13 @@ def auto_spotify_start(artist_id):
     if artist is None:
         abort(404)
 
+    # Fail fast if Spotify already has us in a long cooldown — surface the
+    # rate-limit + when it clears to the modal instead of starting a job.
+    from app.services.spotify import cooldown_remaining, cooldown_message
+    remaining = cooldown_remaining()
+    if remaining > 120:
+        return jsonify({'error': cooldown_message(remaining)}), 429
+
     spotify_url = request.form.get('spotify_url', '').strip() or None
 
     # Collect songs without spotify_url for this artist, plus a few existing

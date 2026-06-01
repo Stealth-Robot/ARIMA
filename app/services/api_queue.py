@@ -24,12 +24,26 @@ class ApiQueueError(Exception):
     pass
 
 
+class RateLimitedError(ApiQueueError):
+    """Raised when the remembered cooldown is too long to wait out.
+
+    `retry_after` is the seconds remaining on the cooldown.
+    """
+
+    def __init__(self, message, retry_after):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
 class ApiQueue:
 
     def __init__(self):
         self._q = queue.Queue()
         self._worker = None
         self._lock = threading.Lock()
+        # Wall-clock time until which the remote has asked us not to call it
+        # (set from Retry-After on a 429). Only touched by the worker thread.
+        self._cooldown_until = 0.0
 
     def _ensure_worker(self):
         with self._lock:
@@ -60,6 +74,10 @@ class ApiQueue:
 
     def _execute(self, method, url, headers, data, timeout, on_status):
         for attempt in range(_MAX_RETRIES + 1):
+            # Honor any cooldown the remote previously imposed before we call
+            # it again — short waits are slept out, long ones fail fast so we
+            # don't sit on the worker (and don't re-trip the limit).
+            self._honor_cooldown(on_status)
             try:
                 resp = http_lib.request(method, url, headers=headers,
                                         data=data, timeout=timeout)
@@ -79,26 +97,44 @@ class ApiQueue:
             if resp.status_code != 429:
                 return resp
 
-            if attempt >= _MAX_RETRIES:
-                raise ApiQueueError(
-                    'Rate limit retries exhausted. '
-                    'Please wait a minute and try again.'
-                )
-
+            # Remember the backoff window so this and every later request
+            # waits it out instead of hammering the remote.
             wait = _parse_retry_after(resp, attempt)
-            if wait > _MAX_RETRY_WAIT:
-                mins = (wait + 59) // 60
-                raise ApiQueueError(
-                    f'Rate limit too long ({mins} min). '
-                    'Please wait and try again later.'
-                )
-            logger.warning('429 on %s, Retry-After=%s, attempt %d/%d',
-                           url, resp.headers.get('Retry-After', '?'),
+            self._cooldown_until = max(self._cooldown_until, time.time() + wait)
+            logger.warning('429 on %s, Retry-After=%s, cooldown %ds '
+                           '(attempt %d/%d)', url,
+                           resp.headers.get('Retry-After', '?'), wait,
                            attempt + 1, _MAX_RETRIES)
-            if on_status:
-                on_status(f'Rate-limited, waiting {wait}s '
-                          f'(attempt {attempt + 1}/{_MAX_RETRIES})...')
-            time.sleep(wait)
+
+        # Retries exhausted on 429 — surface the remembered cooldown (raises if
+        # it's still long, otherwise falls through to the generic message).
+        self._honor_cooldown(on_status)
+        raise ApiQueueError(
+            'Rate limit retries exhausted. Please wait a minute and try again.'
+        )
+
+    def cooldown_remaining(self):
+        """Seconds left on the remembered cooldown (0 if not rate-limited)."""
+        return max(0.0, self._cooldown_until - time.time())
+
+    def _honor_cooldown(self, on_status):
+        """Block (or fail fast) until the remembered cooldown has elapsed."""
+        remaining = self._cooldown_until - time.time()
+        if remaining <= 0:
+            return
+        if remaining > _MAX_RETRY_WAIT:
+            raise RateLimitedError(_cooldown_message(remaining), remaining)
+        if on_status:
+            on_status(f'Rate-limited, waiting {int(remaining) + 1}s...')
+        time.sleep(remaining)
+
+
+def _cooldown_message(remaining):
+    import datetime
+    mins = int((remaining + 59) // 60)
+    until = datetime.datetime.now() + datetime.timedelta(seconds=remaining)
+    return (f'Rate-limited for ~{mins} min (until {until:%H:%M}). '
+            'Please try again later.')
 
 
 def _parse_retry_after(resp, attempt):

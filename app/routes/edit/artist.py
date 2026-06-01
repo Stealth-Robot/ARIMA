@@ -866,7 +866,12 @@ def spotify_artist_start():
     url = request.form.get('url', '').strip()
     if not url:
         return jsonify({'error': 'No URL provided'}), 400
-    from app.services.spotify import fetch_artist
+    from app.services.spotify import fetch_artist, cooldown_remaining, cooldown_message
+    # Fail fast if Spotify already has us in a long cooldown, before spawning
+    # the import thread.
+    remaining = cooldown_remaining()
+    if remaining > 120:
+        return jsonify({'error': cooldown_message(remaining)}), 429
     import uuid
     import threading
 

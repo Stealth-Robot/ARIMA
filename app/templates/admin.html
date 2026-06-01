@@ -58,7 +58,7 @@
 
     <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Railway Billing Costs</h2>
-        <p class="text-xs text-secondary-text mb-2">Real amount paid per billing cycle (17th–17th). Leave blank to clear.</p>
+        <p class="text-xs text-secondary-text mb-2">Real amount paid per billing cycle (17th–17th).</p>
         <form method="POST" action="{{ url_for('admin.save_billing_costs') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex gap-3 overflow-x-auto pb-2">
