@@ -63,7 +63,7 @@ def run_startup_migrations():
                 logger.info('Added missing song column: %s', col.name)
 
         # 1a''. Add any new album columns (e.g. note)
-        from app.models.music import Album
+        from app.models.music import Album, Artist
         existing_album_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album')"))}
         for col in Album.__table__.columns:
             if col.name not in existing_album_cols:
@@ -74,12 +74,18 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE album ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing album column: %s', col.name)
 
-        # 1a'. Add owner/maintainer FK columns on artist
+        # 1a'. Add any new artist columns (e.g. owner_id, maintainer_id, spotify_url)
         existing_artist_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('artist')"))}
-        for col_name in ('owner_id', 'maintainer_id'):
-            if col_name not in existing_artist_cols:
-                db.session.execute(db.text(f'ALTER TABLE artist ADD COLUMN {col_name} INTEGER'))
-                logger.info('Added artist column: %s', col_name)
+        for col in Artist.__table__.columns:
+            if col.name not in existing_artist_cols:
+                if isinstance(col.type, sqlalchemy.Boolean):
+                    db.session.execute(db.text(
+                        f'ALTER TABLE artist ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT 0'))
+                elif isinstance(col.type, sqlalchemy.Integer):
+                    db.session.execute(db.text(f'ALTER TABLE artist ADD COLUMN {col.name} INTEGER'))
+                else:
+                    db.session.execute(db.text(f'ALTER TABLE artist ADD COLUMN {col.name} TEXT'))
+                logger.info('Added missing artist column: %s', col.name)
 
         # 1b. Add any new theme colour columns
         existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}

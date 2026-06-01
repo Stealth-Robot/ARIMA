@@ -11,3 +11,5 @@ from app.models.not_duplicate import NotDuplicate  # noqa: F401
 from app.models.not_variant import NotVariant  # noqa: F401
 from app.models.duplicate_display_override import DuplicateDisplayOverride  # noqa: F401
 from app.models.song_of_day import SongOfDay  # noqa: F401
+from app.models.railway_metric import RailwayMetricSample  # noqa: F401
+from app.models.billing_cost import BillingCost  # noqa: F401

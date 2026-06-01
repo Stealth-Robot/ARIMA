@@ -1,0 +1,16 @@
+{% if not railway.available %}
+<div class="text-xs text-secondary-text border border-grid-line px-3 py-2">
+    Railway usage unavailable{% if railway.reason %}: {{ railway.reason }}{% endif %}.
+</div>
+{% elif railway.costs %}
+{% set c = railway.costs %}
+<div class="grid grid-cols-3 gap-3 mb-2">
+    {% for label, val in [('Current usage', c.current_total), ('Estimated usage', c.estimated_total), ('CPU usage', c.cpu), ('Memory usage', c.memory), ('Network usage', c.network), ('Volume usage', c.volume)] %}
+    <div class="border border-grid-line bg-secondary-bg rounded p-4 text-center">
+        <div class="text-sm text-secondary-text mb-1">{{ label }}</div>
+        <div class="text-2xl font-bold text-primary-text">$ {{ '%.2f'|format(val) }}</div>
+    </div>
+    {% endfor %}
+</div>
+<div class="text-xs text-secondary-text">Estimated resource usage from Railway list prices (excludes the $5 Hobby plan fee); the API does not return billed dollars.</div>
+{% endif %}

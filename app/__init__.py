@@ -229,4 +229,8 @@ def create_app():
     from app.services.backup import start_backup_scheduler
     start_backup_scheduler(flask_app)
 
+    # Start Railway metrics retention poller (if enabled, after migrations)
+    from app.services.railway_retention import start_retention_scheduler
+    start_retention_scheduler(flask_app)
+
     return flask_app

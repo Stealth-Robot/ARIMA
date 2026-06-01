@@ -1,14 +1,42 @@
 """Stats calculation service — SQL-aggregated, viewer-relative."""
 
+import os
 import math
+import time
 from collections import defaultdict
 
 from app.extensions import db
-from app.models.music import Rating, ArtistSong, Song, ArtistArtist, AlbumSong, album_genres, Artist
+from app.models.music import Rating, ArtistSong, Song, ArtistArtist, AlbumSong, Album, album_genres, Artist
 from app.models.user import User
 
 SCORED_GROUP_THRESHOLD = 0.80
 SUBUNIT = 0
+
+# Wall-clock time this module was imported — close enough to process start for uptime.
+_PROCESS_START = time.time()
+
+
+def get_app_ops_stats():
+    """In-process operational stats: DB file size, uptime, and row counts.
+
+    Cheap to compute (one stat() call + a handful of COUNTs), so it's not cached.
+    """
+    db_path = db.engine.url.database
+    db_size = os.path.getsize(db_path) if db_path and os.path.exists(db_path) else None
+
+    return {
+        'db_path': db_path,
+        'db_size_bytes': db_size,
+        'process_start': _PROCESS_START,
+        'uptime_seconds': time.time() - _PROCESS_START,
+        'counts': {
+            'artists': db.session.query(Artist).count(),
+            'albums': db.session.query(Album).count(),
+            'songs': db.session.query(Song).count(),
+            'ratings': db.session.query(Rating).count(),
+            'users': db.session.query(User).count(),
+        },
+    }
 
 
 def _is_mobile():

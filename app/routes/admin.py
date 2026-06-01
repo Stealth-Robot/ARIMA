@@ -18,9 +18,39 @@ admin_bp = Blueprint('admin', __name__)
 @login_required
 @role_required(ADMIN)
 def admin_page():
+    from app.services.billing import get_billing_cycles
     genres = Genre.query.order_by(func.lower(Genre.genre)).all()
     countries = Country.query.order_by(func.lower(Country.country)).all()
-    return render_template('admin.html', genres=genres, countries=countries)
+    return render_template('admin.html', genres=genres, countries=countries,
+                           billing_cycles=get_billing_cycles())
+
+
+@admin_bp.route('/admin/billing-costs', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def save_billing_costs():
+    """Save the manually-entered real cost for each billing cycle."""
+    from app.models.billing_cost import BillingCost
+    for key, raw in request.form.items():
+        if not key.startswith('cost_'):
+            continue
+        cycle_start = key[len('cost_'):]
+        raw = raw.strip()
+        existing = db.session.get(BillingCost, cycle_start)
+        if raw == '':
+            if existing:
+                db.session.delete(existing)
+            continue
+        try:
+            amount = float(raw)
+        except ValueError:
+            continue
+        if existing:
+            existing.amount = amount
+        else:
+            db.session.add(BillingCost(cycle_start=cycle_start, amount=amount))
+    db.session.commit()
+    return redirect(url_for('admin.admin_page'))
 
 
 @admin_bp.route('/admin/add-genre', methods=['POST'])

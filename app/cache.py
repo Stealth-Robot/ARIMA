@@ -110,3 +110,41 @@ def get_cached_bulk_data(include_featured, include_remixes, include_covers=True,
 def clear_stats_cache():
     """Invalidate all stats cache entries (e.g. after a rating change or data edit)."""
     _stats_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# Part D — Railway platform stats (slow external API, shared across all users)
+# ---------------------------------------------------------------------------
+
+_railway_cache = {'data': None, 'ts': -9999.0}
+_RAILWAY_TTL = 90  # seconds — Railway's API is slow and rate-limited
+
+def get_cached_railway_stats():
+    """Return Railway platform stats, refreshing at most once per TTL.
+
+    On a failed refresh, returns the last good value rather than blanking the
+    section; the underlying service already degrades per-section on its own.
+    """
+    from app.services.railway import get_railway_stats
+
+    now = time.monotonic()
+    if _railway_cache['data'] is None or now - _railway_cache['ts'] > _RAILWAY_TTL:
+        try:
+            _railway_cache['data'] = get_railway_stats()
+            _railway_cache['ts'] = now
+        except Exception:
+            if _railway_cache['data'] is None:
+                _railway_cache['data'] = {'available': False, 'reason': 'Railway stats unavailable'}
+    return _railway_cache['data']
+
+
+def get_cache_status():
+    """Snapshot of in-process cache occupancy for the operational-stats page."""
+    now = time.monotonic()
+    filter_age = now - _filter_cache['ts'] if _filter_cache['ts'] > 0 else None
+    return {
+        'theme_cache_entries': len(_theme_cache),
+        'stats_cache_entries': len(_stats_cache),
+        'filter_cache_age_seconds': filter_age,
+        'railway_cache_age_seconds': (now - _railway_cache['ts']) if _railway_cache['data'] is not None else None,
+    }

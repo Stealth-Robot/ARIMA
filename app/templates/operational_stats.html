@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Operational Stats{% endblock %}
+{% block og_title %}A.R.I.M.A. - Operational Stats{% endblock %}
+{% block og_description %}App health and Railway platform statistics{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/uPlot.min.css') }}">
+<style>
+    /* Dual-handle range slider: two range inputs overlaid on one track */
+    .range-slider { position: relative; height: 28px; }
+    .range-slider input[type=range] {
+        position: absolute; left: 0; top: 0; width: 100%; margin: 0; height: 28px;
+        background: none; pointer-events: none; -webkit-appearance: none; appearance: none;
+    }
+    .range-slider input[type=range]::-webkit-slider-thumb {
+        pointer-events: auto; -webkit-appearance: none; appearance: none;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: var(--navbar-active, #22c55e); border: 2px solid var(--primary-bg, #111); cursor: pointer;
+    }
+    .range-slider input[type=range]::-moz-range-thumb {
+        pointer-events: auto; width: 14px; height: 14px; border-radius: 50%;
+        background: var(--navbar-active, #22c55e); border: 2px solid var(--primary-bg, #111); cursor: pointer;
+    }
+    .range-slider .range-track {
+        position: absolute; left: 0; right: 0; top: 12px; height: 4px; border-radius: 2px;
+        background: var(--border, #444);
+    }
+    .uplot { font-family: Arial, Helvetica, sans-serif; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto pb-11" style="max-width: 1100px;">
+
+    <h1 class="text-lg font-bold text-primary-text mt-4 mb-3">Operational Stats</h1>
+
+    <!-- RAILWAY PROJECT USAGE ($ cards) — lazy-loaded -->
+    <div hx-get="{{ url_for('stats.operational_stats_railway_costs') }}"
+         hx-trigger="load"
+         hx-swap="innerHTML"
+         class="text-xs text-secondary-text mb-4">
+        Loading usage…
+    </div>
+
+    <!-- DATE-RANGE SLIDER — constrains the charts' start/stop window -->
+    <div class="border border-grid-line bg-secondary-bg rounded p-3 mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-secondary-text">Time range</span>
+            <div class="flex gap-1">
+                <button type="button" data-hours="24" class="range-preset text-xs py-0.5 px-2 rounded bg-navbar-bg text-navbar-text border border-border cursor-pointer">24h</button>
+                <button type="button" data-hours="168" class="range-preset text-xs py-0.5 px-2 rounded bg-navbar-bg text-navbar-text border border-border cursor-pointer">7d</button>
+                <button type="button" data-hours="720" class="range-preset text-xs py-0.5 px-2 rounded bg-navbar-bg text-navbar-text border border-border cursor-pointer">30d</button>
+                <button type="button" data-hours="2160" class="range-preset text-xs py-0.5 px-2 rounded bg-navbar-bg text-navbar-text border border-border cursor-pointer">90d</button>
+                <button type="button" data-hours="8760" class="range-preset text-xs py-0.5 px-2 rounded bg-navbar-bg text-navbar-text border border-border cursor-pointer">1y</button>
+            </div>
+        </div>
+        <div class="range-slider">
+            <div class="range-track"></div>
+            <input id="range-start" type="range" min="1" max="8760" step="1" value="168">
+            <input id="range-end" type="range" min="0" max="8759" step="1" value="0">
+        </div>
+        <div id="range-label" class="text-xs text-secondary-text mt-1 text-center"></div>
+    </div>
+
+    <!-- RESOURCE CHARTS -->
+    <div id="charts-status" class="text-xs text-secondary-text mb-3" style="display:none;"></div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        {% for cid, title in [('chart-cpu','CPU usage (vCPU)'),('chart-mem','Memory usage (GB)'),('chart-net','Network egress (GB)'),('chart-disk','Disk usage (GB)')] %}
+        <div class="border border-grid-line bg-secondary-bg rounded p-3">
+            <div class="text-sm font-semibold text-primary-text mb-2">{{ title }}</div>
+            <div id="{{ cid }}"></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- RAILWAY SUMMARY (latest metrics, usage, deployments) — lazy-loaded -->
+    <h2 class="text-sm font-semibold text-secondary-text mb-1">Railway platform</h2>
+    <div hx-get="{{ url_for('stats.operational_stats_railway') }}"
+         hx-trigger="load"
+         hx-swap="innerHTML"
+         class="text-xs text-secondary-text mb-6">
+        Loading Railway stats…
+    </div>
+
+    <!-- REAL COST PER BILLING CYCLE (entered manually on the admin page) -->
+    <h2 class="text-sm font-semibold text-secondary-text mb-1">Real cost per billing cycle</h2>
+    <div class="flex gap-3 overflow-x-auto pb-2 mb-6">
+        {% for c in billing_cycles %}
+        <div class="flex-shrink-0 border border-grid-line bg-secondary-bg rounded p-3 text-center" style="min-width: 140px;">
+            <div class="text-xs text-secondary-text mb-1">{{ c.start.strftime('%b %d') }} – {{ c.end.strftime('%b %d, %Y') }}</div>
+            <div class="text-xl font-bold text-primary-text">{% if c.amount is not none %}$ {{ '%.2f'|format(c.amount) }}{% else %}—{% endif %}</div>
+            <div class="text-xs text-secondary-text mt-1">billed {{ c.end.strftime('%b %d') }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- APP-LEVEL STATS -->
+    <h2 class="text-sm font-semibold text-secondary-text mb-1">Application</h2>
+    <table class="text-xs border-collapse w-full border border-grid-line mb-5">
+        <tbody>
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">Database size</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">
+                    {% if ops.db_size_bytes is not none %}{{ '%.1f'|format(ops.db_size_bytes / 1048576) }} MB{% else %}unknown{% endif %}
+                </td>
+            </tr>
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">Uptime</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">
+                    {{ (ops.uptime_seconds // 86400)|int }}d
+                    {{ ((ops.uptime_seconds % 86400) // 3600)|int }}h
+                    {{ ((ops.uptime_seconds % 3600) // 60)|int }}m
+                </td>
+            </tr>
+            {% for label, key in [('Artists','artists'),('Albums','albums'),('Songs','songs'),('Ratings','ratings'),('Users','users')] %}
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">{{ label }}</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">{{ '{:,}'.format(ops.counts[key]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- CACHE STATE -->
+    <h2 class="text-sm font-semibold text-secondary-text mb-1">In-process caches</h2>
+    <table class="text-xs border-collapse w-full border border-grid-line mb-5">
+        <tbody>
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">Theme cache entries</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">{{ cache_status.theme_cache_entries }}</td>
+            </tr>
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">Stats cache entries</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">{{ cache_status.stats_cache_entries }}</td>
+            </tr>
+            <tr class="border border-grid-line">
+                <td class="px-3 py-1.5 font-semibold border border-grid-line bg-header-row">Filter cache age</td>
+                <td class="px-3 py-1.5 text-right border border-grid-line">
+                    {% if cache_status.filter_cache_age_seconds is not none %}{{ cache_status.filter_cache_age_seconds|int }}s{% else %}—{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/uPlot.iife.min.js') }}"></script>
+<script>
+(function () {
+    var METRICS_URL = "{{ url_for('stats.operational_stats_metrics') }}";
+    var charts = {};
+    var defs = [
+        {key: 'CPU_USAGE',       el: 'chart-cpu',  label: 'CPU',             unit: 'vCPU', color: '#22c55e'},
+        {key: 'MEMORY_USAGE_GB', el: 'chart-mem',  label: 'Memory',          unit: 'GB',   color: '#22c55e'},
+        {key: 'NETWORK_TX_GB',   el: 'chart-net',  label: 'Network egress',  unit: 'GB',   color: '#22c55e'},
+        {key: 'DISK_USAGE_GB',   el: 'chart-disk', label: 'Disk',            unit: 'GB',   color: '#a855f7'},
+    ];
+
+    function yFmt(unit) {
+        return function (self, ticks) {
+            return ticks.map(function (v) { return v == null ? '' : v.toFixed(2) + ' ' + unit; });
+        };
+    }
+
+    function makeChart(def, data) {
+        var elc = document.getElementById(def.el);
+        var w = elc.clientWidth || 480;
+        var opts = {
+            width: w, height: 200,
+            scales: {x: {time: true}},
+            axes: [
+                {stroke: '#9ca3af', grid: {stroke: 'rgba(148,163,184,0.12)'}, ticks: {stroke: 'rgba(148,163,184,0.2)'}},
+                {stroke: '#9ca3af', size: 70, grid: {stroke: 'rgba(148,163,184,0.12)'}, ticks: {stroke: 'rgba(148,163,184,0.2)'},
+                 values: yFmt(def.unit)}
+            ],
+            series: [
+                {},
+                {label: def.label, stroke: def.color, width: 1.5, points: {show: false}}
+            ],
+            legend: {show: false},
+        };
+        charts[def.el] = new uPlot(opts, data, elc);
+    }
+
+    function load(start, end) {
+        var status = document.getElementById('charts-status');
+        fetch(METRICS_URL + '?start=' + start + '&end=' + end)
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!j.available) {
+                    status.textContent = 'Charts unavailable: ' + (j.reason || 'unknown');
+                    status.style.display = '';
+                    return;
+                }
+                status.style.display = 'none';
+                defs.forEach(function (def) {
+                    var s = j.series[def.key] || {ts: [], value: []};
+                    var data = [s.ts, s.value];
+                    if (charts[def.el]) charts[def.el].setData(data);
+                    else makeChart(def, data);
+                });
+            })
+            .catch(function () {
+                status.textContent = 'Failed to load charts.';
+                status.style.display = '';
+            });
+    }
+
+    var startEl = document.getElementById('range-start');
+    var endEl = document.getElementById('range-end');
+    var lbl = document.getElementById('range-label');
+
+    function update(doFetch) {
+        var sa = parseInt(startEl.value, 10);   // hours ago for the start (further in the past)
+        var ea = parseInt(endEl.value, 10);     // hours ago for the end (closer to now)
+        if (sa <= ea) { sa = ea + 1; startEl.value = sa; }
+        var now = Math.floor(Date.now() / 1000);
+        var start = now - sa * 3600;
+        var end = now - ea * 3600;
+        lbl.textContent = new Date(start * 1000).toLocaleString() + '  →  ' + new Date(end * 1000).toLocaleString();
+        if (doFetch) load(start, end);
+    }
+
+    startEl.addEventListener('input', function () { update(false); });
+    endEl.addEventListener('input', function () { update(false); });
+    startEl.addEventListener('change', function () { update(true); });
+    endEl.addEventListener('change', function () { update(true); });
+    document.querySelectorAll('.range-preset').forEach(function (b) {
+        b.addEventListener('click', function () {
+            endEl.value = 0;
+            startEl.value = parseInt(b.dataset.hours, 10);
+            update(true);
+        });
+    });
+    window.addEventListener('resize', function () {
+        defs.forEach(function (def) {
+            var c = charts[def.el];
+            if (c) c.setSize({width: document.getElementById(def.el).clientWidth, height: 200});
+        });
+    });
+
+    update(true);
+})();
+</script>
+{% endblock %}

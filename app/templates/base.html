@@ -65,6 +65,7 @@
             border-color: var(--border);
         }
     </style>
+    {% block head_extra %}{% endblock %}
 </head>
 <body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar -->
@@ -86,11 +87,12 @@
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
              onclick="_toggleNavDd(this)">
-            <a href="{{ url_for('stats.global_stats') }}" class="nav-link {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Stats</a>
+            <a href="{{ url_for('stats.global_stats') }}" class="nav-link {% if request.endpoint in ('stats.artist_stats', 'stats.global_stats', 'stats.operational_stats', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Stats</a>
             <div class="stats-dd nav-dropdown-panel">
                 <a href="{{ url_for('stats.artist_stats') }}" class="nav-dropdown-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="nav-dropdown-item">Global Stats</a>
                 <a href="{{ url_for('updates.updates_timeline') }}" class="nav-dropdown-item">Update Stats</a>
+                <a href="{{ url_for('stats.operational_stats') }}" class="nav-dropdown-item">Operational Stats</a>
             </div>
         </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
@@ -170,6 +172,7 @@
                 <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
                 <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>
                 <a href="{{ url_for('updates.updates_timeline') }}" class="mobile-menu-item">Update Stats</a>
+                <a href="{{ url_for('stats.operational_stats') }}" class="mobile-menu-item">Operational Stats</a>
                 <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('artists.artists_list') }}" class="mobile-menu-item">Artists</a>
                 <a href="{{ url_for('misc.misc_page') }}" class="mobile-menu-item">Misc Artists</a>
