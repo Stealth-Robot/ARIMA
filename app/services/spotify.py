@@ -249,7 +249,7 @@ def fetch_artist(url, on_progress=None, cancel=None):
             _check()
             page = _api_get(
                 f'/artists/{artist_id}/albums'
-                f'?include_groups=album,single&limit=10&offset={offset}')
+                f'?include_groups=album,single&limit=50&offset={offset}')
             items = page.get('items', [])
             albums_raw.extend(items)
             _progress(
@@ -392,7 +392,7 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                     _check()
                     page = _api_get(
                         f'/artists/{artist_id}/albums'
-                        f'?include_groups=album,single&limit=10'
+                        f'?include_groups=album,single&limit=50'
                         f'&offset={offset}')
                     items = page.get('items', [])
                     albums_raw.extend(items)
@@ -535,7 +535,7 @@ def artist_album_links(artist_spotify_id, cancel=None):
             raise _Cancelled('Cancelled')
         page = _api_get(
             f'/artists/{artist_spotify_id}/albums'
-            f'?include_groups=album,single&limit=10&offset={offset}')
+            f'?include_groups=album,single&limit=50&offset={offset}')
         items = page.get('items', [])
         for a in items:
             url = a.get('external_urls', {}).get('spotify', '')

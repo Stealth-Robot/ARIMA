@@ -6,6 +6,7 @@ handles 429/Retry-After and network errors internally — callers get back
 a requests.Response or an ApiQueueError.
 """
 
+import os
 import time
 import queue
 import random
@@ -37,13 +38,18 @@ class RateLimitedError(ApiQueueError):
 
 class ApiQueue:
 
-    def __init__(self):
+    def __init__(self, min_interval=0.0):
         self._q = queue.Queue()
         self._worker = None
         self._lock = threading.Lock()
         # Wall-clock time until which the remote has asked us not to call it
         # (set from Retry-After on a 429). Only touched by the worker thread.
         self._cooldown_until = 0.0
+        # Proactive pacing: minimum seconds between successive requests, to
+        # stay under the remote's rolling-window limit and avoid earning a
+        # long ban in the first place. Only touched by the worker thread.
+        self._min_interval = min_interval
+        self._last_request = 0.0
 
     def _ensure_worker(self):
         with self._lock:
@@ -78,6 +84,7 @@ class ApiQueue:
             # it again — short waits are slept out, long ones fail fast so we
             # don't sit on the worker (and don't re-trip the limit).
             self._honor_cooldown(on_status)
+            self._pace()
             try:
                 resp = http_lib.request(method, url, headers=headers,
                                         data=data, timeout=timeout)
@@ -117,6 +124,15 @@ class ApiQueue:
         """Seconds left on the remembered cooldown (0 if not rate-limited)."""
         return max(0.0, self._cooldown_until - time.time())
 
+    def _pace(self):
+        """Sleep so successive requests are at least _min_interval apart."""
+        if self._min_interval <= 0:
+            return
+        gap = self._min_interval - (time.time() - self._last_request)
+        if gap > 0:
+            time.sleep(gap)
+        self._last_request = time.time()
+
     def _honor_cooldown(self, on_status):
         """Block (or fail fast) until the remembered cooldown has elapsed."""
         remaining = self._cooldown_until - time.time()
@@ -150,5 +166,14 @@ def _parse_retry_after(resp, attempt):
     return int(min(2 ** attempt + random.uniform(0, 2), 60))
 
 
-spotify_queue = ApiQueue()
+# Pace Spotify calls to stay under its rolling-window limit and avoid long
+# bans. 0.4s == ~2.5 req/s (~75 per 30s window). Tunable via
+# SPOTIFY_MIN_REQUEST_INTERVAL (seconds).
+try:
+    _SPOTIFY_MIN_INTERVAL = max(0.0, float(
+        os.environ.get('SPOTIFY_MIN_REQUEST_INTERVAL', '0.4')))
+except ValueError:
+    _SPOTIFY_MIN_INTERVAL = 0.4
+
+spotify_queue = ApiQueue(min_interval=_SPOTIFY_MIN_INTERVAL)
 railway_queue = ApiQueue()
