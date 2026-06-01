@@ -1,8 +1,12 @@
 import os
+import time
+import uuid
 import shutil
+import threading
 
-from flask import Blueprint, request, render_template, redirect, url_for, current_app
-from flask_login import login_required
+from flask import (Blueprint, request, render_template, redirect, url_for,
+                   current_app, jsonify)
+from flask_login import login_required, current_user
 
 from sqlalchemy import func
 
@@ -13,16 +17,35 @@ from app.cache import clear_filter_cache
 
 admin_bp = Blueprint('admin', __name__)
 
+# In-memory bulk Spotify fill jobs (mirrors the per-artist auto-spotify flow).
+_bulk_spotify_jobs = {}
+_bulk_spotify_cancel = {}
+_BULK_JOB_TTL = 1800  # 30 minutes
+
+
+def _bulk_sweep():
+    now = time.time()
+    for k in [k for k, v in _bulk_spotify_jobs.items()
+              if now - v.get('_ts', 0) > _BULK_JOB_TTL]:
+        _bulk_spotify_jobs.pop(k, None)
+
 
 @admin_bp.route('/admin')
 @login_required
 @role_required(ADMIN)
 def admin_page():
     from app.services.billing import get_billing_cycles
+    from app.models.music import Artist, Album
     genres = Genre.query.order_by(func.lower(Genre.genre)).all()
     countries = Country.query.order_by(func.lower(Country.country)).all()
+    artists_missing = Artist.query.filter(
+        db.or_(Artist.spotify_url.is_(None), Artist.spotify_url == '')).count()
+    albums_missing = Album.query.filter(
+        db.or_(Album.spotify_url.is_(None), Album.spotify_url == '')).count()
     return render_template('admin.html', genres=genres, countries=countries,
-                           billing_cycles=get_billing_cycles())
+                           billing_cycles=get_billing_cycles(),
+                           artists_missing=artists_missing,
+                           albums_missing=albums_missing)
 
 
 @admin_bp.route('/admin/billing-costs', methods=['POST'])
@@ -182,3 +205,139 @@ def replace_database():
             os.remove(wal_path)
 
     return redirect(url_for('home.home'))
+
+
+@admin_bp.route('/admin/bulk-spotify', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def bulk_spotify_start():
+    """Bulk-fill Spotify links for artists (by name) and their albums.
+
+    For each artist still missing a link (up to `limit`), search Spotify by
+    name and apply the link only on an exact normalized-name match. When an
+    artist is matched, walk its discography and fill that artist's albums
+    that match by name. Nothing is overwritten; ambiguous names are skipped.
+    """
+    from app.models.music import Artist, Album, ArtistSong, AlbumSong
+    from app.models.user import User
+    from app.services.audit import log_change
+    from app.services.spotify import (
+        find_artist_url, artist_album_links, _normalize_name, SpotifyError)
+
+    try:
+        limit = int(request.form.get('limit', 50))
+    except (TypeError, ValueError):
+        limit = 50
+    limit = max(1, min(limit, 500))
+
+    artist_ids = [a.id for a in Artist.query.filter(
+        db.or_(Artist.spotify_url.is_(None), Artist.spotify_url == '')
+    ).order_by(func.lower(Artist.name)).limit(limit).all()]
+
+    if not artist_ids:
+        return jsonify({'error': 'No artists are missing Spotify links'}), 400
+
+    app = current_app._get_current_object()
+    user_id = current_user.id
+    _bulk_sweep()
+
+    old = _bulk_spotify_cancel.pop(user_id, None)
+    if old:
+        old.set()
+
+    job_id = uuid.uuid4().hex[:12]
+    cancel = threading.Event()
+    _bulk_spotify_cancel[user_id] = cancel
+    _bulk_spotify_jobs[job_id] = {'progress': 'Starting...', 'percent': 0,
+                                  '_ts': time.time()}
+
+    def on_progress(msg, pct):
+        _bulk_spotify_jobs[job_id] = {'progress': msg, 'percent': pct,
+                                      '_ts': time.time()}
+
+    def _albums_for_artist(aid):
+        """Albums belonging to an artist via their songs, plus any directly
+        linked via artist_id (mirrors the discography query)."""
+        song_ids = [r.song_id for r in
+                    ArtistSong.query.filter_by(artist_id=aid).all()]
+        albums = []
+        seen = set()
+        if song_ids:
+            albums = (db.session.query(Album)
+                      .join(AlbumSong, Album.id == AlbumSong.album_id)
+                      .filter(AlbumSong.song_id.in_(song_ids))
+                      .distinct().all())
+            seen = {a.id for a in albums}
+        direct = (db.session.query(Album).filter(
+            Album.artist_id == aid,
+            ~Album.id.in_(seen) if seen else db.true()).all())
+        albums.extend(direct)
+        return albums
+
+    def run():
+        with app.app_context():
+            user = db.session.get(User, user_id)
+            stats = {'artists_filled': 0, 'artists_skipped': 0,
+                     'albums_filled': 0, 'total': len(artist_ids)}
+            try:
+                for i, aid in enumerate(artist_ids):
+                    if cancel.is_set():
+                        break
+                    artist = db.session.get(Artist, aid)
+                    if not artist or (artist.spotify_url or '').strip():
+                        continue
+                    on_progress(f'({i + 1}/{len(artist_ids)}) {artist.name}',
+                                int(100 * (i / max(len(artist_ids), 1))))
+                    try:
+                        match = find_artist_url(artist.name)
+                    except SpotifyError:
+                        match = None
+                    if not match:
+                        stats['artists_skipped'] += 1
+                        continue
+
+                    artist.spotify_url = match['url']
+                    log_change(user, f'Auto-linked Spotify to "{artist.name}"',
+                               artist=artist, change_type='link')
+                    stats['artists_filled'] += 1
+
+                    try:
+                        links = artist_album_links(match['id'], cancel=cancel)
+                    except SpotifyError:
+                        links = {}
+                    for album in _albums_for_artist(aid) if links else []:
+                        if (album.spotify_url or '').strip():
+                            continue
+                        url = links.get(_normalize_name(album.name))
+                        if url:
+                            album.spotify_url = url
+                            log_change(
+                                user,
+                                f'Auto-linked Spotify to "{album.name}" album',
+                                album=album, artist=artist, change_type='link')
+                            stats['albums_filled'] += 1
+
+                    db.session.commit()
+
+                stats['cancelled'] = cancel.is_set()
+                _bulk_spotify_jobs[job_id] = {'done': True, 'data': stats,
+                                              '_ts': time.time()}
+            except Exception as e:
+                db.session.rollback()
+                _bulk_spotify_jobs[job_id] = {
+                    'error': str(e) or 'Bulk fill failed', '_ts': time.time()}
+            finally:
+                _bulk_spotify_cancel.pop(user_id, None)
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({'job_id': job_id, 'total': len(artist_ids)})
+
+
+@admin_bp.route('/admin/bulk-spotify/progress')
+@login_required
+@role_required(ADMIN)
+def bulk_spotify_progress():
+    job = _bulk_spotify_jobs.get(request.args.get('job_id', ''))
+    if not job:
+        return jsonify({'error': 'Unknown job'}), 404
+    return jsonify({k: v for k, v in job.items() if k != '_ts'})

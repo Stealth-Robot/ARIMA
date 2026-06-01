@@ -79,10 +79,122 @@
     </div>
 
     <div class="mb-8">
+        <h2 class="text-lg font-bold mb-3">Spotify Links</h2>
+        <p class="text-xs text-secondary-text mb-2">
+            Searches Spotify by name and fills links for artists missing one,
+            then their albums. Applies only on an exact name match (ambiguous
+            names are skipped) and never overwrites an existing link.
+        </p>
+        <p class="text-sm mb-3">
+            <span class="font-semibold">{{ artists_missing }}</span> artists and
+            <span class="font-semibold">{{ albums_missing }}</span> albums currently missing links.
+        </p>
+        <div id="bulk-spotify-input" class="flex items-center gap-2">
+            <label for="bulk-spotify-limit" class="text-sm">Artists per run</label>
+            <input type="number" id="bulk-spotify-limit" value="50" min="1" max="500"
+                   class="text-sm px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-20">
+            <button type="button" id="bulk-spotify-start"
+                    class="text-sm px-4 py-1 rounded bg-button-primary text-button-text">Fill Links</button>
+        </div>
+        <div id="bulk-spotify-progress" style="display:none;" class="mt-3">
+            <div id="bulk-spotify-msg" class="text-sm text-secondary-text mb-2">Starting...</div>
+            <div class="rounded overflow-hidden h-2 mb-1.5" style="background:var(--border);">
+                <div id="bulk-spotify-bar" class="h-full" style="background:var(--link); width:0%; transition:width 0.3s ease;"></div>
+            </div>
+            <div id="bulk-spotify-pct" class="text-xs text-secondary-text">0%</div>
+        </div>
+        <div id="bulk-spotify-result" style="display:none;" class="mt-3 text-sm"></div>
+    </div>
+
+    <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Database</h2>
         <a href="{{ url_for('admin.replace_database') }}" class="text-sm px-4 py-1 rounded inline-block bg-delete text-button-text no-underline">
             Replace Database
         </a>
     </div>
 </div>
+
+<script>
+(function () {
+    var startBtn = document.getElementById('bulk-spotify-start');
+    if (!startBtn) return;
+    var inputEl = document.getElementById('bulk-spotify-input');
+    var progressEl = document.getElementById('bulk-spotify-progress');
+    var msgEl = document.getElementById('bulk-spotify-msg');
+    var barEl = document.getElementById('bulk-spotify-bar');
+    var pctEl = document.getElementById('bulk-spotify-pct');
+    var resultEl = document.getElementById('bulk-spotify-result');
+
+    function csrf() {
+        var m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.content : '';
+    }
+
+    function poll(jobId) {
+        fetch('/admin/bulk-spotify/progress?job_id=' + jobId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.done) {
+                    var s = data.data || {};
+                    progressEl.style.display = 'none';
+                    resultEl.style.display = '';
+                    resultEl.innerHTML =
+                        'Done' + (s.cancelled ? ' (cancelled)' : '') + ': linked <b>' +
+                        (s.artists_filled || 0) + '</b> artists and <b>' +
+                        (s.albums_filled || 0) + '</b> albums; skipped <b>' +
+                        (s.artists_skipped || 0) + '</b> artists (no exact match). ' +
+                        'Reload to refresh counts.';
+                    startBtn.disabled = false;
+                    inputEl.style.display = '';
+                } else if (data.error) {
+                    msgEl.textContent = data.error;
+                    barEl.style.background = 'var(--delete-button)';
+                    startBtn.disabled = false;
+                    inputEl.style.display = '';
+                } else {
+                    msgEl.textContent = data.progress || '';
+                    barEl.style.width = (data.percent || 0) + '%';
+                    pctEl.textContent = (data.percent || 0) + '%';
+                    setTimeout(function () { poll(jobId); }, 600);
+                }
+            })
+            .catch(function () {
+                msgEl.textContent = 'Lost connection. Please try again.';
+                barEl.style.background = 'var(--delete-button)';
+                startBtn.disabled = false;
+                inputEl.style.display = '';
+            });
+    }
+
+    startBtn.addEventListener('click', function () {
+        startBtn.disabled = true;
+        inputEl.style.display = 'none';
+        resultEl.style.display = 'none';
+        progressEl.style.display = '';
+        msgEl.textContent = 'Starting...';
+        barEl.style.width = '0%';
+        barEl.style.background = 'var(--link)';
+        pctEl.textContent = '0%';
+
+        var form = new FormData();
+        form.append('limit', document.getElementById('bulk-spotify-limit').value || '50');
+        fetch('/admin/bulk-spotify', {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf()},
+            body: form
+        })
+            .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); })
+            .then(function (res) {
+                if (!res.ok) { throw new Error(res.j.error || 'Failed to start'); }
+                poll(res.j.job_id);
+            })
+            .catch(function (e) {
+                msgEl.textContent = e.message || 'Failed to start';
+                barEl.style.background = 'var(--delete-button)';
+                startBtn.disabled = false;
+                inputEl.style.display = '';
+            });
+    });
+})();
+</script>
 {% endblock %}

@@ -491,5 +491,53 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
         _local.on_status = None
 
 
+def find_artist_url(name):
+    """Find a Spotify artist by name (Client Credentials search).
+
+    Returns {'id', 'url', 'name'} for the most popular artist whose
+    normalized name exactly matches the query, or None when there is no
+    exact-name match (ambiguous or typo'd names are skipped, not guessed).
+    """
+    from urllib.parse import quote
+    norm = _normalize_name(name)
+    if not norm:
+        return None
+    data = _api_get(f'/search?q={quote(name)}&type=artist&limit=10')
+    items = data.get('artists', {}).get('items', [])
+    exact = [a for a in items if _normalize_name(a.get('name', '')) == norm]
+    if not exact:
+        return None
+    best = max(exact, key=lambda a: a.get('popularity', 0))
+    url = best.get('external_urls', {}).get('spotify')
+    if not url or not best.get('id'):
+        return None
+    return {'id': best['id'], 'url': url, 'name': best['name']}
+
+
+def artist_album_links(artist_spotify_id, cancel=None):
+    """Return {normalized_album_name: spotify_url} for an artist's albums
+    and singles. Used to bulk-match local albums by name without fetching
+    each album's full track listing.
+    """
+    album_links = {}
+    offset = 0
+    while True:
+        if cancel and cancel.is_set():
+            raise _Cancelled('Cancelled')
+        page = _api_get(
+            f'/artists/{artist_spotify_id}/albums'
+            f'?include_groups=album,single&limit=10&offset={offset}')
+        items = page.get('items', [])
+        for a in items:
+            url = a.get('external_urls', {}).get('spotify', '')
+            nm = _normalize_name(a.get('name', ''))
+            if url and nm and nm not in album_links:
+                album_links[nm] = url
+        if not items or not page.get('next'):
+            break
+        offset += len(items)
+    return album_links
+
+
 class SpotifyError(Exception):
     pass
