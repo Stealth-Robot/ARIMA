@@ -1090,3 +1090,17 @@ function showSubscribeConfirm(cb, artistId, data) {
         else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
     });
 }
+
+/* Replace a UTC ISO "(until ...Z)" in a rate-limit message with the viewer's
+   local time. Falls back to the original (UTC) string if parsing fails, so a
+   server message is always readable even before this runs. */
+function localizeCooldown(s) {
+    if (!s) return s;
+    return String(s).replace(
+        /until (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z)/g,
+        function (_m, iso) {
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return 'until ' + iso;
+            return 'until ' + d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+        });
+}

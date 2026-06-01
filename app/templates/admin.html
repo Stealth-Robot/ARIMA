@@ -147,7 +147,7 @@
                     startBtn.disabled = false;
                     inputEl.style.display = '';
                 } else if (data.error) {
-                    msgEl.textContent = data.error;
+                    msgEl.textContent = localizeCooldown(data.error);
                     barEl.style.background = 'var(--delete-button)';
                     startBtn.disabled = false;
                     inputEl.style.display = '';
@@ -189,7 +189,7 @@
                 poll(res.j.job_id);
             })
             .catch(function (e) {
-                msgEl.textContent = e.message || 'Failed to start';
+                msgEl.textContent = localizeCooldown(e.message || 'Failed to start');
                 barEl.style.background = 'var(--delete-button)';
                 startBtn.disabled = false;
                 inputEl.style.display = '';

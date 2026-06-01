@@ -1076,7 +1076,7 @@ function showSpotifyError(msg) {
     document.getElementById('spotify-progress-icon').textContent = '\u2715';
     document.getElementById('spotify-progress-title').textContent = 'Import failed';
     document.getElementById('spotify-progress-title').style.color = 'var(--delete-button)';
-    document.getElementById('spotify-progress-msg').textContent = msg;
+    document.getElementById('spotify-progress-msg').textContent = localizeCooldown(msg);
     document.getElementById('spotify-progress-bar').style.width = '100%';
     document.getElementById('spotify-progress-bar').style.background = 'var(--delete-button)';
     document.getElementById('spotify-progress-pct').textContent = '';

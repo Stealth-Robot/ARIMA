@@ -130,10 +130,13 @@ class ApiQueue:
 
 
 def _cooldown_message(remaining):
+    # Emit the expiry as a UTC ISO timestamp; the client localizes it to the
+    # user's timezone (and it stays readable as UTC if that doesn't run).
     import datetime
     mins = int((remaining + 59) // 60)
-    until = datetime.datetime.now() + datetime.timedelta(seconds=remaining)
-    return (f'Rate-limited for ~{mins} min (until {until:%H:%M}). '
+    until = (datetime.datetime.now(datetime.timezone.utc)
+             + datetime.timedelta(seconds=remaining))
+    return (f'Rate-limited for ~{mins} min (until {until:%Y-%m-%dT%H:%MZ}). '
             'Please try again later.')
 
 

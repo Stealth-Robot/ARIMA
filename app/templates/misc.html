@@ -896,7 +896,7 @@ function _showAddMiscSong() {
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 spotBtn.disabled = false;
-                if (d.error) { spotStatus.textContent = d.error; return; }
+                if (d.error) { spotStatus.textContent = localizeCooldown(d.error); return; }
                 if (d.name && !nameInp.value.trim()) nameInp.value = d.name;
                 if (d.spotify_url) spotInp.value = d.spotify_url;
                 spotStatus.textContent = 'Linked: ' + d.name;

@@ -3680,7 +3680,7 @@ function importAlbumFromSpotify(artistId) {
             });
             validateAddAlbum();
         })
-        .catch(function (e) { showToast(e.message || 'Spotify import failed'); })
+        .catch(function (e) { showToast(localizeCooldown(e.message || 'Spotify import failed')); })
         .finally(function () { btn.disabled = false; btn.textContent = 'Import'; });
 }
 
@@ -3729,7 +3729,7 @@ function autoSpotifyStart() {
             _pollAutoSpotify(data.job_id);
         })
         .catch(function (e) {
-            document.getElementById('auto-spotify-progress-msg').textContent = e.message || 'Failed to start';
+            document.getElementById('auto-spotify-progress-msg').textContent = localizeCooldown(e.message || 'Failed to start');
             document.getElementById('auto-spotify-progress-bar').style.width = '100%';
             document.getElementById('auto-spotify-progress-bar').style.background = 'var(--delete-button)';
             document.getElementById('auto-spotify-progress-pct').textContent = '';
@@ -3745,7 +3745,7 @@ function _pollAutoSpotify(jobId) {
             if (data.done) {
                 _showAutoSpotifyResults(data.data);
             } else if (data.error) {
-                document.getElementById('auto-spotify-progress-msg').textContent = data.error;
+                document.getElementById('auto-spotify-progress-msg').textContent = localizeCooldown(data.error);
                 document.getElementById('auto-spotify-progress-bar').style.width = '100%';
                 document.getElementById('auto-spotify-progress-bar').style.background = 'var(--delete-button)';
                 document.getElementById('auto-spotify-progress-pct').textContent = '';
