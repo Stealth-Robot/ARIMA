@@ -8,7 +8,7 @@ from flask import request, session, abort, jsonify, current_app
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong
 from app.services.audit import log_change
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
@@ -127,7 +127,25 @@ def auto_spotify_start(artist_id):
                 album_links = result.get('album_links') or {}
                 album_matches = []
                 if album_links:
-                    for album in Album.query.filter_by(artist_id=artist_id).all():
+                    # An artist's albums are primarily linked through their
+                    # songs (album.artist_id is usually NULL); mirror the
+                    # discography query so song-associated albums are included.
+                    albums = []
+                    seen_ids = set()
+                    if song_ids:
+                        albums = (db.session.query(Album)
+                                  .join(AlbumSong,
+                                        Album.id == AlbumSong.album_id)
+                                  .filter(AlbumSong.song_id.in_(song_ids))
+                                  .distinct().all())
+                        seen_ids = {a.id for a in albums}
+                    direct = (db.session.query(Album)
+                              .filter(Album.artist_id == artist_id,
+                                      ~Album.id.in_(seen_ids)
+                                      if seen_ids else db.true())
+                              .all())
+                    albums.extend(direct)
+                    for album in albums:
                         if album.spotify_url:
                             continue
                         url = album_links.get(_normalize_name(album.name))
