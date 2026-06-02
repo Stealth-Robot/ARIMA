@@ -46,12 +46,13 @@ def artist_stats():
     genre_ids = settings.pop('genre_ids')
     bulk = get_cached_bulk_data(**settings, genre_ids=genre_ids)
 
-    summary = get_summary_stats(users, bulk)
-
     artists = get_top_level_artists(bulk)
     if country_ids:
         country_set = set(country_ids)
         artists = [a for a in artists if a.country_id in country_set]
+
+    summary = get_summary_stats(users, bulk, artists=artists)
+
     hide_osts = settings.get('hide_osts', False)
     artist_rows = []
     for a in artists:

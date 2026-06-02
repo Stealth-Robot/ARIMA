@@ -378,19 +378,29 @@ def get_artist_score_stats(artist_id, users, bulk):
     return _artist_score_stats(artist_id, users, bulk)
 
 
-def get_summary_stats(users, bulk):
-    """Top-table summary stats for all users."""
-    total_songs = len(bulk.all_song_ids)
+def get_summary_stats(users, bulk, artists=None):
+    """Top-table summary stats for all users.
+
+    When ``artists`` is given (e.g. after applying the country filter), the
+    summary is scoped to those top-level artists' filtered songs so it stays in
+    sync with the per-artist table below. Otherwise it covers every artist.
+    """
+    from app.services.artist import get_top_level_artists
+    top_artists = list(artists) if artists is not None else get_top_level_artists(bulk)
+
+    if artists is not None:
+        relevant_song_ids = set()
+        for artist in top_artists:
+            relevant_song_ids |= bulk.get_song_ids(artist.id)
+    else:
+        relevant_song_ids = bulk.all_song_ids
+    total_songs = len(relevant_song_ids)
 
     # Count ratings per user across all relevant songs
     user_total_rated = defaultdict(int)
-    for sid in bulk.all_song_ids:
+    for sid in relevant_song_ids:
         for uid in bulk.song_rated_by.get(sid, set()):
             user_total_rated[uid] += 1
-
-    # Scored group counts per user
-    from app.services.artist import get_top_level_artists
-    top_artists = get_top_level_artists(bulk)
 
     user_scored_groups_80 = {u.id: 0 for u in users}
     user_scored_groups_any = {u.id: 0 for u in users}
