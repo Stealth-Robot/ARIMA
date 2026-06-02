@@ -27,6 +27,7 @@
         ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
         ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
         ('Collab candidates (feat/ft/with in song title, no misc artist link)', counts.collab_candidates, url_for('views.view_collab_candidates')),
+        ('Duplicate misc artists (match a real artist or another misc artist)', counts.dupe_misc_artists, url_for('views.view_dupe_misc_artists')),
     ] %}
 
     {% for title, count, url in sections %}

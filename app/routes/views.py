@@ -64,6 +64,7 @@ def views_page():
             ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ).count(),
         'feat_only_songs': _feat_only_query().count(),
+        'dupe_misc_artists': len(_dupe_misc_artists()),
         'orphan_albums': db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
             Album.artist_id.is_(None),
@@ -315,6 +316,44 @@ def view_invalid_date_albums():
     return render_template('fragments/view_invalid_dates.html',
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode)
+
+
+def _dupe_misc_artists():
+    """Misc artists whose name (case-insensitive) matches a real artist or
+    another misc artist — likely duplicates that should be merged/relinked."""
+    miscs = db.session.query(MiscArtist.id, MiscArtist.name).all()
+    counts = dict(db.session.query(
+        SongMiscArtist.misc_artist_id, func.count(SongMiscArtist.song_id)
+    ).group_by(SongMiscArtist.misc_artist_id).all())
+    real_by_name = {}
+    for aid, aname, aslug in db.session.query(Artist.id, Artist.name, Artist.slug).all():
+        real_by_name.setdefault((aname or '').strip().lower(), []).append(
+            {'id': aid, 'name': aname, 'slug': aslug})
+    misc_by_name = {}
+    for mid, mname in miscs:
+        misc_by_name.setdefault((mname or '').strip().lower(), []).append({'id': mid, 'name': mname})
+
+    items = []
+    for mid, mname in miscs:
+        key = (mname or '').strip().lower()
+        real_matches = real_by_name.get(key, [])
+        other_misc = [m for m in misc_by_name.get(key, []) if m['id'] != mid]
+        if not real_matches and not other_misc:
+            continue
+        items.append({
+            'id': mid, 'name': mname, 'song_count': counts.get(mid, 0),
+            'real_matches': real_matches,
+            'misc_dupes': [{'name': m['name'], 'song_count': counts.get(m['id'], 0)} for m in other_misc],
+        })
+    items.sort(key=lambda x: (x['name'] or '').lower())
+    return items
+
+
+@views_bp.route('/views/dupe-misc-artists')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_dupe_misc_artists():
+    return render_template('fragments/view_dupe_misc.html', items=_dupe_misc_artists())
 
 
 def _potentially_disbanded_query():

@@ -1,0 +1,21 @@
+<span data-view-count="{{ items | length }}" class="hidden"></span>
+{% if items %}
+<ul class="text-sm space-y-1">
+    {% for m in items %}
+    <li>
+        <span class="text-primary-text">"{{ m.name }}"</span>
+        <span class="text-secondary-text">(misc, {{ m.song_count }} song{{ '' if m.song_count == 1 else 's' }})</span>
+        {% if m.real_matches %}
+        <span class="text-secondary-text">— same as artist:</span>
+        {% for a in m.real_matches %}<a href="/artists/{{ a.slug }}" class="text-link no-underline">{{ a.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% endif %}
+        {% if m.misc_dupes %}
+        <span class="text-secondary-text">— also misc:</span>
+        {% for d in m.misc_dupes %}<span class="text-primary-text">"{{ d.name }}"</span> <span class="text-secondary-text">({{ d.song_count }})</span>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}
