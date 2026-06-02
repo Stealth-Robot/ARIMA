@@ -133,11 +133,15 @@ def song_spotify_url(song_id):
     if song is None:
         abort(404)
     url = (request.form.get('value', '') or '').strip() or None
-    if url and not url.startswith('https://'):
+    if url and url.lower() == 'n/a':
+        url = 'n/a'  # sentinel: song is not on Spotify
+    elif url and not url.startswith('https://'):
         abort(400)
     old = song.spotify_url
     song.spotify_url = url
-    if url and not old:
+    if url == 'n/a' and old != 'n/a':
+        log_change(current_user, f'Marked "{song.name}" as not on Spotify', song=song, change_type='link')
+    elif url and url != 'n/a' and (not old or old == 'n/a'):
         log_change(current_user, f'Added Spotify link to "{song.name}"', song=song, change_type='link')
     elif not url and old:
         log_change(current_user, f'Removed Spotify link from "{song.name}"', song=song, change_type='link')

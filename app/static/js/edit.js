@@ -254,6 +254,13 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
     input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
     popover.appendChild(input);
 
+    if (linkType === 'spotify') {
+        var hint = document.createElement('div');
+        hint.textContent = 'Type n/a if the song isn’t on Spotify.';
+        hint.style.cssText = 'font-size:10px; color:var(--text-secondary,#888); margin-top:-2px; margin-bottom:6px;';
+        popover.appendChild(hint);
+    }
+
     var btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex; gap:4px; justify-content:flex-end;';
 
@@ -279,6 +286,15 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
             // Artist/album header edits don't live in a song .song-links cell;
             // reload to reflect the change rather than doing in-place DOM surgery.
             if (btnEl && btnEl.dataset.reloadOnSave) { window.location.reload(); return; }
+            // The "not on Spotify" (n/a) state renders as a struck-through icon, not a
+            // link — in-place DOM surgery can't produce it, so reload to show it correctly
+            // (covers both setting n/a and changing away from a prior n/a).
+            if (linkType === 'spotify' &&
+                ((val && val.toLowerCase() === 'n/a') ||
+                 (currentValue && String(currentValue).toLowerCase() === 'n/a'))) {
+                window.location.reload();
+                return;
+            }
             if (btnEl && linkType) {
                 var td = btnEl.closest('td');
                 var songLinks = td ? td.querySelector('.song-links') : null;
