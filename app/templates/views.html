@@ -115,6 +115,9 @@ _restoreViews();
 function deleteOrphanAlbum(albumId, span) {
     showDeleteConfirm('Delete empty album?', 'This orphaned album will be permanently deleted.', '/edit/album/' + albumId + '/delete', true, 'Delete');
 }
+function deleteEmptyAlbum(albumId, span) {
+    showDeleteConfirm('Delete empty album?', 'This empty album (no songs) will be permanently deleted.', '/edit/album/' + albumId + '/delete', true, 'Delete');
+}
 function deleteVariantSong(songId, span) {
     showDeleteConfirm('Delete song variant?', 'This song and all its ratings will be permanently deleted.', '/edit/song/' + songId + '/delete', true, 'Delete');
 }
@@ -196,23 +199,7 @@ function dismissDuplicate(id1, id2, btn) {
 
 function mergeDuplicate(btn) {
     var d = btn.dataset;
-    var keptId = parseInt(d.keptId), absorbedId = parseInt(d.absorbedId);
-    if (!confirm('Merge "' + d.absorbedName + ' \u2014 ' + d.absorbedArtist + '" into "' + d.keptName + ' \u2014 ' + d.keptArtist + '"?\n\nThe absorbed song will be deleted. Ratings and links will be combined.')) return;
-    var csrf = document.querySelector('meta[name="csrf-token"]');
-    fetch('/views/merge-duplicate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
-        body: 'kept_id=' + keptId + '&absorbed_id=' + absorbedId,
-    }).then(function(r) {
-        if (r.ok) {
-            document.querySelectorAll('[id^="dup-group-"]').forEach(function(el) {
-                var parts = el.id.replace('dup-group-', '').split('-');
-                if (parseInt(parts[0]) === absorbedId || parseInt(parts[1]) === absorbedId) el.remove();
-            });
-        } else {
-            r.text().then(function(t) { alert(t || 'Merge failed'); });
-        }
-    });
+    showMergeDiffModal(parseInt(d.keptId), d.keptName, parseInt(d.absorbedId), d.absorbedName, d.absorbedArtist);
 }
 </script>
 {% endblock %}

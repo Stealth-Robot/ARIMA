@@ -29,10 +29,10 @@ def _misc_artist_ids():
 
 
 def _album_artists(album_ids):
-    """Return {album_id: [artist_name, ...]} for main artists."""
+    """Return {album_id: [{'id': .., 'name': ..}, ...]} for main artists."""
     if not album_ids:
         return {}
-    rows = db.session.query(AlbumSong.album_id, Artist.name).join(
+    rows = db.session.query(AlbumSong.album_id, Artist.id, Artist.name).join(
         ArtistSong, AlbumSong.song_id == ArtistSong.song_id
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
@@ -41,8 +41,8 @@ def _album_artists(album_ids):
         ArtistSong.artist_is_main == True,
     ).distinct().all()
     result = {}
-    for album_id, artist_name in rows:
-        result.setdefault(album_id, []).append(artist_name)
+    for album_id, artist_id, artist_name in rows:
+        result.setdefault(album_id, []).append({'id': artist_id, 'name': artist_name})
     return result
 
 
@@ -56,6 +56,7 @@ def views_page():
         'orphan_songs': db.session.query(Song).filter(
             ~Song.id.in_(db.session.query(AlbumSong.song_id)),
             ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
+            ~Song.id.in_(db.session.query(ArtistSong.song_id)),
         ).count(),
         'no_artist_songs': db.session.query(Song).filter(
             ~Song.id.in_(db.session.query(ArtistSong.song_id)),
@@ -71,7 +72,8 @@ def views_page():
             ~Album.artist_id.in_(misc_ids),
         ).count(),
         'empty_artists': db.session.query(Artist).filter(
-            ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
+            ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
+            ~Artist.id.in_(db.session.query(ArtistArtist.artist_1)),
         ).count(),
         'undated_albums': db.session.query(Album).filter(
             db.or_(Album.release_date.is_(None), Album.release_date == ''),
@@ -100,6 +102,7 @@ def view_orphan_songs():
     items = db.session.query(Song).filter(
         ~Song.id.in_(db.session.query(AlbumSong.song_id)),
         ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
+        ~Song.id.in_(db.session.query(ArtistSong.song_id)),
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={s.id} — "{s.name}"'} for s in items
@@ -152,10 +155,14 @@ def view_empty_albums():
         Album.artist_id.isnot(None),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).all()
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     result = []
     for a in items:
         name_esc = Markup.escape(a.name)
         label = f'<a href="{url_for("artists.artist_detail", artist_id=a.artist_id)}" style="color: var(--link, #2563EB); text-decoration: none;">"{name_esc}"</a>'
+        if edit_mode:
+            label += (f' <button class="ml-1 px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer"'
+                      f' onclick="deleteEmptyAlbum({a.id}, this)">Delete</button>')
         result.append({'label': f'id={a.id} — {label}', 'safe': True})
     return render_template('fragments/view_list.html', items=result)
 
@@ -165,7 +172,8 @@ def view_empty_albums():
 @role_required(EDITOR_OR_ADMIN)
 def view_empty_artists():
     items = db.session.query(Artist).filter(
-        ~Artist.id.in_(db.session.query(ArtistSong.artist_id))
+        ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
+        ~Artist.id.in_(db.session.query(ArtistArtist.artist_1)),
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={a.id} — "{a.name}"'} for a in items
