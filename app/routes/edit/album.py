@@ -65,11 +65,15 @@ def album_spotify_url(album_id):
     if album is None:
         abort(404)
     url = (request.form.get('value', '') or '').strip() or None
-    if url and not url.startswith('https://'):
+    if url and url.lower() == 'n/a':
+        url = 'n/a'  # sentinel: album is not on Spotify
+    elif url and not url.startswith('https://'):
         abort(400)
     old = album.spotify_url
     album.spotify_url = url
-    if url and not old:
+    if url == 'n/a' and old != 'n/a':
+        log_change(current_user, f'Marked "{album.name}" album as not on Spotify', album=album, change_type='link')
+    elif url and url != 'n/a' and (not old or old == 'n/a'):
         log_change(current_user, f'Added Spotify link to "{album.name}" album', album=album, change_type='link')
     elif not url and old:
         log_change(current_user, f'Removed Spotify link from "{album.name}" album', album=album, change_type='link')

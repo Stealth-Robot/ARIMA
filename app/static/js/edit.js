@@ -256,7 +256,7 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
 
     if (linkType === 'spotify') {
         var hint = document.createElement('div');
-        hint.textContent = 'Type n/a if the song isn’t on Spotify.';
+        hint.textContent = 'Type n/a if it isn’t on Spotify.';
         hint.style.cssText = 'font-size:10px; color:var(--text-secondary,#888); margin-top:-2px; margin-bottom:6px;';
         popover.appendChild(hint);
     }

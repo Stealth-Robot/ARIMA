@@ -53,11 +53,15 @@ def artist_spotify_url(artist_id):
     if artist is None:
         abort(404)
     url = (request.form.get('value', '') or '').strip() or None
-    if url and not url.startswith('https://'):
+    if url and url.lower() == 'n/a':
+        url = 'n/a'  # sentinel: artist is not on Spotify
+    elif url and not url.startswith('https://'):
         abort(400)
     old = artist.spotify_url
     artist.spotify_url = url
-    if url and not old:
+    if url == 'n/a' and old != 'n/a':
+        log_change(current_user, f'Marked "{artist.name}" as not on Spotify', artist=artist, change_type='link')
+    elif url and url != 'n/a' and (not old or old == 'n/a'):
         log_change(current_user, f'Added Spotify link to "{artist.name}"', artist=artist, change_type='link')
     elif not url and old:
         log_change(current_user, f'Removed Spotify link from "{artist.name}"', artist=artist, change_type='link')
