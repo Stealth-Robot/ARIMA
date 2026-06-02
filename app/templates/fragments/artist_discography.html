@@ -25,7 +25,7 @@
         </label>
         <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
             <input type="checkbox" {% if artist.is_complete %}checked{% endif %} autocomplete="off"
-                   onchange="var cb=this;fetch('/edit/artist/{{ artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok){cb.checked=!cb.checked;return;}setOwnerSpanComplete({{ artist.id }}, cb.checked);});"
+                   onchange='confirmCompleteTab(this, {{ artist.id }}, {{ artist.name | tojson }})'
                    class="cursor-pointer"> Complete
         </label>
         {% endif %}
@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 </label>
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_complete %}checked{% endif %} autocomplete="off"
-                           onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
+                           onchange='confirmCompleteTab(this, {{ child.artist.id }}, {{ child.artist.name | tojson }})'
                            class="cursor-pointer"> Complete
                 </label>
                 {% elif child.is_soloist %}
@@ -999,6 +999,44 @@ function submitConvertArtist() {
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Mark-complete checklist modal (shared across main artist + children) -->
+<div id="complete-checklist-modal" style="display:none; position:fixed; inset:0; z-index:10000;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+     onclick="if(event.target===this)cancelCompleteTab()">
+    <div class="bg-secondary-bg border border-border rounded-lg p-6" style="width:440px; max-width:90vw;">
+        <h3 class="text-lg font-bold mb-1 text-primary-text">Mark tab complete?</h3>
+        <p class="text-sm text-secondary-text mb-4">Confirm you've checked the following before marking <span id="complete-checklist-artist" class="font-semibold text-primary-text"></span> complete.</p>
+        <div class="flex flex-col gap-2 mb-5">
+            <label class="flex items-start gap-2 text-sm cursor-pointer text-primary-text">
+                <input type="checkbox" class="complete-checklist-item cursor-pointer mt-0.5" autocomplete="off" onchange="syncCompleteTabBtn()">
+                <span>Singles aren't marked as albums</span>
+            </label>
+            <label class="flex items-start gap-2 text-sm cursor-pointer text-primary-text">
+                <input type="checkbox" class="complete-checklist-item cursor-pointer mt-0.5" autocomplete="off" onchange="syncCompleteTabBtn()">
+                <span>Songs are flagged with remix / promoted where applicable</span>
+            </label>
+            <label class="flex items-start gap-2 text-sm cursor-pointer text-primary-text">
+                <input type="checkbox" class="complete-checklist-item cursor-pointer mt-0.5" autocomplete="off" onchange="syncCompleteTabBtn()">
+                <span>Titles include both kanji and romaji or English</span>
+            </label>
+            <label class="flex items-start gap-2 text-sm cursor-pointer text-primary-text">
+                <input type="checkbox" class="complete-checklist-item cursor-pointer mt-0.5" autocomplete="off" onchange="syncCompleteTabBtn()">
+                <span>All albums have complete release dates</span>
+            </label>
+            <label class="flex items-start gap-2 text-sm cursor-pointer text-primary-text">
+                <input type="checkbox" class="complete-checklist-item cursor-pointer mt-0.5" autocomplete="off" onchange="syncCompleteTabBtn()">
+                <span>Ran Spotify auto-import to fill song links</span>
+            </label>
+        </div>
+        <div class="flex gap-3 justify-end">
+            <button type="button" onclick="cancelCompleteTab()"
+                    class="px-4 py-2 rounded text-sm cursor-pointer bg-button-secondary text-primary-text" style="border:none;">Cancel</button>
+            <button type="button" id="complete-checklist-confirm-btn" onclick="confirmCompleteTabFinalize()" disabled
+                    class="px-4 py-2 rounded text-sm text-button-text" style="background:var(--link); border:none; opacity:0.5; cursor:not-allowed;">Mark Complete</button>
+        </div>
     </div>
 </div>
 

@@ -851,6 +851,61 @@ function setOwnerSpanComplete(artistId, isComplete) {
     }
 }
 
+/* Mark-complete checklist — show a reminder popup before completing a tab */
+var _completeTabCtx = null;
+
+function _postArtistComplete(cb, artistId, value) {
+    fetch('/edit/artist/' + artistId + '/is-complete', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+        body: 'value=' + value
+    }).then(function (r) {
+        if (!r.ok) { cb.checked = !cb.checked; return; }
+        setOwnerSpanComplete(artistId, cb.checked);
+    });
+}
+
+function confirmCompleteTab(cb, artistId, artistName) {
+    // Unchecking (un-completing) is immediate — no checklist.
+    if (!cb.checked) { _postArtistComplete(cb, artistId, '0'); return; }
+
+    var modal = document.getElementById('complete-checklist-modal');
+    if (!modal) { _postArtistComplete(cb, artistId, '1'); return; }
+
+    _completeTabCtx = { cb: cb, artistId: artistId };
+    var nameEl = document.getElementById('complete-checklist-artist');
+    if (nameEl) nameEl.textContent = artistName || '';
+    document.querySelectorAll('#complete-checklist-modal .complete-checklist-item').forEach(function (c) {
+        c.checked = false;
+    });
+    syncCompleteTabBtn();
+    modal.style.display = 'flex';
+}
+
+function syncCompleteTabBtn() {
+    var btn = document.getElementById('complete-checklist-confirm-btn');
+    if (!btn) return;
+    var items = document.querySelectorAll('#complete-checklist-modal .complete-checklist-item');
+    var allChecked = items.length > 0 && Array.prototype.every.call(items, function (c) { return c.checked; });
+    btn.disabled = !allChecked;
+    btn.style.opacity = allChecked ? '1' : '0.5';
+    btn.style.cursor = allChecked ? 'pointer' : 'not-allowed';
+}
+
+function cancelCompleteTab() {
+    var modal = document.getElementById('complete-checklist-modal');
+    if (modal) modal.style.display = 'none';
+    if (_completeTabCtx && _completeTabCtx.cb) _completeTabCtx.cb.checked = false;
+    _completeTabCtx = null;
+}
+
+function confirmCompleteTabFinalize() {
+    var modal = document.getElementById('complete-checklist-modal');
+    if (modal) modal.style.display = 'none';
+    if (_completeTabCtx) _postArtistComplete(_completeTabCtx.cb, _completeTabCtx.artistId, '1');
+    _completeTabCtx = null;
+}
+
 /* Inline album type edit — pick type popover */
 
 var activeAlbumTypePopover = null;
