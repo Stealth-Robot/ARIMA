@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist
+from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist, MiscArtist
 from app.models.not_duplicate import NotDuplicate
 from app.models.not_variant import NotVariant
 from app.models.not_collab import NotCollab
@@ -406,9 +406,17 @@ def view_potential_duplicates():
         ArtistSong.song_id.in_(all_song_ids),
         ArtistSong.artist_is_main == False,
     ).all()
+    misc_feat_rows = db.session.query(
+        SongMiscArtist.song_id, MiscArtist.name
+    ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+        SongMiscArtist.song_id.in_(all_song_ids),
+        SongMiscArtist.artist_is_main == False,
+    ).all()
     feat_map = {}
     for sid, aname in feat_rows:
         feat_map.setdefault(sid, []).append(aname)
+    for sid, mname in misc_feat_rows:
+        feat_map.setdefault(sid, []).append(mname)
     for g in groups.values():
         for s in g['songs']:
             s['featured_artists'] = feat_map.get(s['id'], [])
