@@ -2704,6 +2704,12 @@ function validateAddAlbum() {
     var name = document.getElementById('new-album-name');
     if (!name || !name.value.trim()) valid = false;
 
+    var date = document.getElementById('new-album-date');
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date.value.trim())) valid = false;
+
+    var genreChecked = document.querySelector('#new-album-genres input:checked');
+    if (!genreChecked) valid = false;
+
     var songDivs = document.querySelectorAll('#new-album-songs > [id^="new-song-"]');
     if (!songDivs.length) valid = false;
 
@@ -2954,6 +2960,7 @@ function submitNewAlbum(artistId) {
     var typeId = parseInt(document.getElementById('new-album-type').value);
 
     if (!name) { showToast('Album name is required'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) { showToast('A full release date (yyyy-mm-dd) is required'); return; }
 
     var genreIds = [];
     document.querySelectorAll('#new-album-genres input:checked').forEach(function(cb) {
