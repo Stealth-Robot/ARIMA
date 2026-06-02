@@ -1,5 +1,4 @@
 import json
-import re
 from datetime import datetime, timezone
 
 from flask import request, abort, jsonify, redirect, url_for
@@ -10,6 +9,7 @@ from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
+from app.services.dates import is_valid_release_date
 from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
@@ -46,7 +46,7 @@ def album_release_date(album_id):
         abort(404)
     value = request.form.get('value', '').strip()
     new_date = None if value == '' else value
-    if new_date and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', new_date):
+    if new_date and not is_valid_release_date(new_date):
         abort(400)
     if new_date == album.release_date:
         return value
@@ -231,7 +231,7 @@ def add_album_to_artist(artist_id):
 
     if not album_name_val or album_type_id is None:
         abort(400)
-    if release_date and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', release_date):
+    if release_date and not is_valid_release_date(release_date):
         abort(400)
     if not genre_ids:
         abort(400)

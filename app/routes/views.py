@@ -13,6 +13,7 @@ from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistA
 from app.models.not_duplicate import NotDuplicate
 from app.models.not_variant import NotVariant
 from app.models.not_collab import NotCollab
+from app.services.dates import is_valid_release_date
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 views_bp = Blueprint('views', __name__)
@@ -84,6 +85,7 @@ def views_page():
             Album.date_confirmed == False,
             db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
         ).count(),
+        'invalid_date_albums': len(_invalid_date_albums()),
         'potentially_disbanded': _potentially_disbanded_query().count(),
         'incomplete_tabs': db.session.query(Artist).filter(
             Artist.is_complete == False,
@@ -222,6 +224,30 @@ def view_incomplete_date_albums():
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode, id_prefix='incomplete',
                            show_confirm=True)
+
+
+def _invalid_date_albums():
+    """Albums whose release_date is set but isn't a real YYYY-MM-DD calendar date
+    (malformed strings or impossible dates like 2021-02-30)."""
+    misc_ids = _misc_artist_ids()
+    candidates = db.session.query(Album).filter(
+        Album.release_date.isnot(None),
+        Album.release_date != '',
+        db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
+    ).order_by(func.lower(Album.name)).all()
+    return [a for a in candidates if not is_valid_release_date(a.release_date)]
+
+
+@views_bp.route('/views/invalid-date-albums')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_invalid_date_albums():
+    albums = _invalid_date_albums()
+    album_artists = _album_artists([a.id for a in albums])
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    return render_template('fragments/view_invalid_dates.html',
+                           albums=albums, album_artists=album_artists,
+                           edit_mode=edit_mode)
 
 
 def _potentially_disbanded_query():

@@ -14,6 +14,7 @@
         ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
         ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
+        ('Albums with invalid date (impossible or malformed)', counts.invalid_date_albums, url_for('views.view_invalid_date_albums')),
         ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
         ('Artists without a maintainer', counts.no_maintainer_artists, url_for('views.view_no_maintainer_artists')),

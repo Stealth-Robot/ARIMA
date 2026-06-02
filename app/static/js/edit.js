@@ -503,7 +503,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
         if (committed) return;
         committed = true;
         const val = input.value.trim();
-        if (val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        if (val && !isRealDate(val)) {
             input.style.borderColor = 'var(--delete-button, red)';
             committed = false;
             return;
@@ -2777,7 +2777,7 @@ function validateAddAlbum() {
     if (!name || !name.value.trim()) valid = false;
 
     var date = document.getElementById('new-album-date');
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date.value.trim())) valid = false;
+    if (!date || !isRealDate(date.value.trim())) valid = false;
 
     var genreChecked = document.querySelector('#new-album-genres input:checked');
     if (!genreChecked) valid = false;
@@ -3032,7 +3032,7 @@ function submitNewAlbum(artistId) {
     var typeId = parseInt(document.getElementById('new-album-type').value);
 
     if (!name) { showToast('Album name is required'); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) { showToast('A full release date (yyyy-mm-dd) is required'); return; }
+    if (!isRealDate(date.trim())) { showToast('A valid full release date (yyyy-mm-dd) is required'); return; }
 
     var genreIds = [];
     document.querySelectorAll('#new-album-genres input:checked').forEach(function(cb) {

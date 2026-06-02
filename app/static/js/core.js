@@ -779,6 +779,15 @@ function _setupDateGuide(input, pattern) {
     return updateGuide;
 }
 
+// True only for a real YYYY-MM-DD calendar date (rejects 2023-13-40, 2021-02-30, etc.)
+function isRealDate(str) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+    var parts = str.split('-');
+    var y = +parts[0], m = +parts[1], d = +parts[2];
+    var dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
 function applyDateFormat(input) {
     if (input._dateFormatApplied) return;
     input._dateFormatApplied = true;
