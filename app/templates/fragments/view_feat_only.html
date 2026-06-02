@@ -1,0 +1,16 @@
+<span data-view-count="{{ items | length }}" class="hidden"></span>
+{% if items %}
+<ul class="text-sm space-y-1">
+    {% for s in items %}
+    <li id="featonly-song-{{ s.id }}">
+        {% if s.link %}<a href="{{ s.link }}" class="text-link">"{{ s.name }}"</a>{% else %}<span class="text-primary-text">"{{ s.name }}"</span>{% endif %}
+        {% if s.artists %}
+        <span class="text-secondary-text">— feat.</span>
+        {% for art in s.artists %}<span class="inline-flex items-center gap-1 ml-1">{% if art.kind == 'misc' %}<span class="text-primary-text">{{ art.name }}</span><span class="text-xs text-secondary-text">(misc)</span>{% else %}<a href="{{ url_for('artists.artist_detail', artist_id=art.id) }}" class="text-link no-underline">{{ art.name }}</a>{% endif %}{% if edit_mode %}<button onclick="markFeatMain({{ s.id }}, {{ art.id }}, '{{ art.kind }}')" class="px-2 py-1 rounded text-xs bg-button-secondary text-primary-text border-0 cursor-pointer">Make main</button>{% endif %}</span>{% if not loop.last %}<span class="text-secondary-text">,</span>{% endif %}{% endfor %}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}

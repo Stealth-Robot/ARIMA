@@ -63,6 +63,7 @@ def views_page():
             ~Song.id.in_(db.session.query(ArtistSong.song_id)),
             ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ).count(),
+        'feat_only_songs': _feat_only_query().count(),
         'orphan_albums': db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
             Album.artist_id.is_(None),
@@ -128,6 +129,72 @@ def view_no_artist_songs():
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={s.id} — "{s.name}"'} for s in items
     ])
+
+
+def _feat_only_query():
+    """Songs that have artist links (real and/or misc) but no main artist of any
+    kind — i.e. feat-only songs that need a main assigned."""
+    return db.session.query(Song).filter(
+        db.or_(
+            Song.id.in_(db.session.query(ArtistSong.song_id)),
+            Song.id.in_(db.session.query(SongMiscArtist.song_id)),
+        ),
+        ~Song.id.in_(db.session.query(ArtistSong.song_id).filter(ArtistSong.artist_is_main == True)),
+        ~Song.id.in_(db.session.query(SongMiscArtist.song_id).filter(SongMiscArtist.artist_is_main == True)),
+    )
+
+
+@views_bp.route('/views/feat-only')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_feat_only():
+    songs = _feat_only_query().order_by(func.lower(Song.name)).all()
+    song_ids = [s.id for s in songs]
+    artist_map = {}
+    link_slug = {}
+    if song_ids:
+        rows = db.session.query(
+            ArtistSong.song_id, Artist.id, Artist.name, Artist.slug
+        ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+            ArtistSong.song_id.in_(song_ids),
+            ArtistSong.artist_is_main == False,
+        ).order_by(func.lower(Artist.name)).all()
+        for sid, aid, aname, aslug in rows:
+            artist_map.setdefault(sid, []).append({'id': aid, 'name': aname, 'kind': 'real'})
+            link_slug.setdefault(sid, aslug)  # link song via a featured real artist
+        misc_rows = db.session.query(
+            SongMiscArtist.song_id, MiscArtist.id, MiscArtist.name
+        ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+            SongMiscArtist.song_id.in_(song_ids),
+            SongMiscArtist.artist_is_main == False,
+        ).order_by(func.lower(MiscArtist.name)).all()
+        misc_song_ids = set()
+        for sid, mid, mname in misc_rows:
+            artist_map.setdefault(sid, []).append({'id': mid, 'name': mname, 'kind': 'misc'})
+            misc_song_ids.add(sid)
+        # Fallback for misc-only songs: link via the album's artist
+        missing = [sid for sid in song_ids if sid not in link_slug]
+        if missing:
+            alb_rows = db.session.query(AlbumSong.song_id, Artist.slug).join(
+                Album, Album.id == AlbumSong.album_id
+            ).join(Artist, Artist.id == Album.artist_id).filter(
+                AlbumSong.song_id.in_(missing)
+            ).all()
+            for sid, aslug in alb_rows:
+                link_slug.setdefault(sid, aslug)
+    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    items = []
+    for s in songs:
+        slug = link_slug.get(s.id)
+        if slug:
+            link = f'/artists/{slug}#song-{s.id}'        # real/album artist page
+        elif s.id in misc_song_ids:
+            link = f'/misc#song-{s.id}'                   # misc page (auto-expands)
+        else:
+            link = None
+        items.append({'id': s.id, 'name': s.name, 'link': link,
+                      'artists': artist_map.get(s.id, [])})
+    return render_template('fragments/view_feat_only.html', items=items, edit_mode=edit_mode)
 
 
 @views_bp.route('/views/orphan-albums')

@@ -5,7 +5,7 @@ from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, album_genres, song_genres
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
@@ -570,6 +570,28 @@ def song_artist_role(song_id, artist_id):
     label = 'main' if existing.artist_is_main else 'featured'
     song.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Changed "{artist_name_val}" to {label} on "{song.name}" song', song=song)
+    db.session.commit()
+    return json.dumps({'is_main': existing.artist_is_main}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:song_id>/misc-artists/<int:misc_artist_id>/role', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_misc_artist_role(song_id, misc_artist_id):
+    """Toggle a misc artist's role (main/featured) on a song."""
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    existing = db.session.get(SongMiscArtist, (song_id, misc_artist_id))
+    if existing is None:
+        abort(404)
+    existing.artist_is_main = not existing.artist_is_main
+    misc = db.session.get(MiscArtist, misc_artist_id)
+    misc_name_val = misc.name if misc else 'Unknown'
+    label = 'main' if existing.artist_is_main else 'featured'
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Changed "{misc_name_val}" to {label} on "{song.name}" song', song=song)
     db.session.commit()
     return json.dumps({'is_main': existing.artist_is_main}), 200, {'Content-Type': 'application/json'}
 

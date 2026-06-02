@@ -4,11 +4,16 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Data Integrity Views</h1>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold m-0">Data Integrity Views</h1>
+        <button id="hide-empty-btn" onclick="toggleEmptyViews(this)"
+                class="px-3 py-1 rounded text-sm bg-button-secondary text-primary-text border-0 cursor-pointer">Hide empty views</button>
+    </div>
 
     {% set sections = [
         ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs')),
         ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs')),
+        ('Feat-only songs (no main artist)', counts.feat_only_songs, url_for('views.view_feat_only')),
         ('Orphaned albums (no songs, no artist)', counts.orphan_albums, url_for('views.view_orphan_albums')),
         ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums')),
         ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
@@ -123,6 +128,29 @@ function _restoreViews() {
 }
 _restoreViews();
 
+// "Hide empty views" — collapse sections whose count is 0. Sections with an
+// unknown count ('…', e.g. duplicates) stay visible. State persists per tab.
+function _applyHideEmpty(hide) {
+    document.querySelectorAll('h2[data-index]').forEach(function(h) {
+        var span = h.querySelector('.view-count');
+        var n = span ? parseInt(span.textContent.replace(/\D/g, ''), 10) : NaN;
+        h.parentElement.style.display = (hide && n === 0) ? 'none' : '';
+    });
+}
+function toggleEmptyViews(btn) {
+    var hide = sessionStorage.getItem('hideEmptyViews') !== '1';
+    sessionStorage.setItem('hideEmptyViews', hide ? '1' : '0');
+    btn.textContent = hide ? 'Show empty views' : 'Hide empty views';
+    _applyHideEmpty(hide);
+}
+(function() {
+    var btn = document.getElementById('hide-empty-btn');
+    if (!btn) return;
+    var hide = sessionStorage.getItem('hideEmptyViews') === '1';
+    btn.textContent = hide ? 'Show empty views' : 'Hide empty views';
+    if (hide) _applyHideEmpty(true);
+})();
+
 // Intercept edit mode toggle — submit via fetch, then reload to get fresh state
 (function() {
     var form = document.getElementById('edit-mode-form');
@@ -184,6 +212,30 @@ function markInactive(btn, artistId) {
         if (r.ok) {
             var row = document.getElementById('disbanded-row-' + artistId);
             if (row) { row.style.opacity = '0.4'; row.style.textDecoration = 'line-through'; btn.disabled = true; }
+        }
+    });
+}
+function markFeatMain(songId, artistId, kind) {
+    var url = kind === 'misc'
+        ? '/edit/song/' + songId + '/misc-artists/' + artistId + '/role'
+        : '/edit/song/' + songId + '/artists/' + artistId + '/role';
+    fetch(url, {
+        method: 'POST',
+        headers: _csrfHeaders({}),
+    }).then(function(r) {
+        if (!r.ok) return;
+        var li = document.getElementById('featonly-song-' + songId);
+        if (li) {
+            var content = li.closest('.view-content');
+            li.remove();
+            if (content) {
+                var header = content.previousElementSibling;
+                var span = header && header.querySelector('.view-count');
+                if (span) {
+                    var n = parseInt(span.textContent.replace(/\D/g, '')) - 1;
+                    span.textContent = '— ' + n;
+                }
+            }
         }
     });
 }
