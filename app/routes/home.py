@@ -1,6 +1,7 @@
 import json
 import random
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, render_template, request, session
 from flask_login import login_required, current_user
@@ -28,11 +29,13 @@ def _pick_canonical_album(albums, artist_id):
     return min(albums, key=key)
 
 
-EST = timezone(timedelta(hours=-5))
+# Eastern wall-clock time, DST-aware (UTC-4 in summer, UTC-5 in winter).
+# A fixed offset would skew the day boundary by an hour for half the year.
+EASTERN = ZoneInfo('America/New_York')
 
 
 def _est_today():
-    return datetime.now(EST).date()
+    return datetime.now(EASTERN).date()
 
 
 def _pick_random_sotd(as_of_date):
