@@ -88,11 +88,17 @@ def views_page():
         'incomplete_tabs': db.session.query(Artist).filter(
             Artist.is_complete == False,
         ).count(),
+        'no_maintainer_artists': _no_maintainer_artists_query().count(),
+        'no_owner_incomplete': _no_owner_incomplete_query().count(),
         'variant_songs': len(_variant_songs()),
         'duplicate_songs': '…',
         'collab_candidates': _collab_candidate_query().count(),
     }
-    return render_template('views.html', counts=counts)
+    from app.models.user import User
+    assignable_users = User.query.filter(
+        User.sort_order.isnot(None)
+    ).order_by(User.sort_order).all()
+    return render_template('views.html', counts=counts, assignable_users=assignable_users)
 
 
 @views_bp.route('/views/orphan-songs')
@@ -497,6 +503,72 @@ def view_incomplete_tabs():
         {'label': f'<a href="/artists/{a.slug}" style="color: var(--link);">{a.name}</a>', 'safe': True}
         for a in artists
     ])
+
+
+def _no_owner_incomplete_query():
+    """Incomplete artists (tab not finished) with no owner assigned.
+    Excludes the Misc. Artists bucket and its subunits."""
+    misc_ids = _misc_artist_ids()
+    q = db.session.query(Artist).filter(
+        Artist.is_complete == False,
+        Artist.owner_id.is_(None),
+    )
+    if misc_ids:
+        q = q.filter(~Artist.id.in_(misc_ids))
+    return q.order_by(Artist.name)
+
+
+@views_bp.route('/views/no-owner-incomplete')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_no_owner_incomplete():
+    artists = _no_owner_incomplete_query().all()
+    ids = [a.id for a in artists]
+    song_counts = {}
+    if ids:
+        rows = db.session.query(
+            ArtistSong.artist_id, func.count(ArtistSong.song_id)
+        ).filter(
+            ArtistSong.artist_id.in_(ids),
+            ArtistSong.artist_is_main == True,
+        ).group_by(ArtistSong.artist_id).all()
+        song_counts = {aid: c for aid, c in rows}
+    items = [{'artist': a, 'song_count': song_counts.get(a.id, 0)} for a in artists]
+    return render_template('fragments/view_no_owner.html', items=items)
+
+
+def _no_maintainer_artists_query():
+    """Artists with a real discography (at least one main-artist song) and no
+    maintainer assigned. Excludes the Misc. Artists bucket and its subunits."""
+    misc_ids = _misc_artist_ids()
+    q = db.session.query(Artist).filter(
+        Artist.maintainer_id.is_(None),
+        Artist.id.in_(
+            db.session.query(ArtistSong.artist_id).filter(ArtistSong.artist_is_main == True)
+        ),
+    )
+    if misc_ids:
+        q = q.filter(~Artist.id.in_(misc_ids))
+    return q.order_by(Artist.name)
+
+
+@views_bp.route('/views/no-maintainer-artists')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_no_maintainer_artists():
+    artists = _no_maintainer_artists_query().all()
+    ids = [a.id for a in artists]
+    song_counts = {}
+    if ids:
+        rows = db.session.query(
+            ArtistSong.artist_id, func.count(ArtistSong.song_id)
+        ).filter(
+            ArtistSong.artist_id.in_(ids),
+            ArtistSong.artist_is_main == True,
+        ).group_by(ArtistSong.artist_id).all()
+        song_counts = {aid: c for aid, c in rows}
+    items = [{'artist': a, 'song_count': song_counts.get(a.id, 0)} for a in artists]
+    return render_template('fragments/view_no_maintainer.html', items=items)
 
 
 _COLLAB_LIKE = [

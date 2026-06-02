@@ -1,0 +1,49 @@
+<span data-view-count="{{ items | length }}" class="hidden"></span>
+{% if items %}
+{% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
+{% if not edit_mode %}
+<p class="text-xs text-secondary-text mb-2">Enable edit mode to assign maintainers.</p>
+{% endif %}
+<table class="w-full text-sm border-collapse border border-grid-line">
+    <thead>
+        <tr class="bg-header-row">
+            <th class="text-left px-3 py-1 border border-grid-line">Artist</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 80px;">Songs</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 110px;">Complete</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 220px;">Maintainer</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        {% set a = item.artist %}
+        <tr id="no-maint-row-{{ a.id }}" class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="px-3 py-1 border border-grid-line">
+                <a href="/artists/{{ a.slug }}" class="text-link">{{ a.name }}</a>
+            </td>
+            <td class="px-3 py-1 border border-grid-line text-secondary-text">{{ item.song_count }}</td>
+            <td class="px-3 py-1 border border-grid-line">
+                {% if a.is_complete %}
+                <span style="color: var(--edit-on);">&#10003; Complete</span>
+                {% else %}
+                <span class="text-secondary-text">Incomplete</span>
+                {% endif %}
+            </td>
+            <td class="px-3 py-1 border border-grid-line">
+                {% if edit_mode %}
+                <span id="maintainer-span-{{ a.id }}" data-maintainer-id="" title="Assign maintainer"
+                      class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                      onclick="viewAssignArtistUser(event, this, {{ a.id }}, 'maintainer')">
+                    <span aria-label="Maintainer">🔧</span>
+                    <span class="user-pill-content inline-flex items-center gap-1 text-secondary-text">Assign…</span>
+                </span>
+                {% else %}
+                <span class="text-secondary-text">🔧 —</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}

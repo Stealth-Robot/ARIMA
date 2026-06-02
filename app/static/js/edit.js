@@ -794,7 +794,7 @@ function _updateArtistUserSpan(span, userId, username, imageUrl) {
     content.appendChild(document.createTextNode(username));
 }
 
-function showArtistUserEdit(event, artistId, span, kind) {
+function showArtistUserEdit(event, artistId, span, kind, onCommit) {
     event.stopPropagation();
     closeArtistUserPopover();
 
@@ -823,6 +823,7 @@ function showArtistUserEdit(event, artistId, span, kind) {
             span.dataset[currentAttr] = newId == null ? '' : newId;
             _updateArtistUserSpan(span, newId, username, imageUrl);
             closeArtistUserPopover();
+            if (typeof onCommit === 'function') onCommit(newId);
         }).catch(function() {
             showToast('Failed to save — try again');
             closeArtistUserPopover();

@@ -16,6 +16,8 @@
         ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
         ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
+        ('Artists without a maintainer', counts.no_maintainer_artists, url_for('views.view_no_maintainer_artists')),
+        ('Incomplete artists without an owner', counts.no_owner_incomplete, url_for('views.view_no_owner_incomplete')),
         ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
         ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
         ('Collab candidates (feat/ft/with in song title, no misc artist link)', counts.collab_candidates, url_for('views.view_collab_candidates')),
@@ -38,6 +40,32 @@
 </div>
 
 <script>
+// Users assignable as maintainer (raters+), for the inline picker in the
+// "Artists without a maintainer" view. Loaded at page level so the picker
+// (showArtistUserEdit) works even though view content is fetched via innerHTML.
+var _assignableUsers = [{% for u in assignable_users %}{ id: {{ u.id }}, username: {{ u.username | tojson }}, profileImage: {{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+
+// Inline owner/maintainer assignment for the "without a maintainer/owner" views.
+// On a real assignment the row no longer belongs in the list, so drop it and
+// decrement the section count. Assigning "Unassigned" leaves the row in place.
+function viewAssignArtistUser(event, span, artistId, kind) {
+    showArtistUserEdit(event, artistId, span, kind, function(newId) {
+        if (newId == null) return;
+        var row = span.closest('tr');
+        if (!row) return;
+        var content = row.closest('.view-content');
+        row.remove();
+        if (content) {
+            var header = content.previousElementSibling;
+            var countSpan = header && header.querySelector('.view-count');
+            if (countSpan) {
+                var n = parseInt(countSpan.textContent.replace(/\D/g, '')) - 1;
+                countSpan.textContent = '— ' + (isNaN(n) ? '' : n);
+            }
+        }
+    });
+}
+
 function _getOpenViews() {
     try { return JSON.parse(sessionStorage.getItem('openViews') || '[]'); } catch(e) { return []; }
 }
