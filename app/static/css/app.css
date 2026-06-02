@@ -437,8 +437,12 @@ textarea {
     .nav-spacer { display: none !important; }
     html { zoom: 1 !important; }
 
-    /* Discography table: no overflow container — page handles horizontal scroll
-       so position:sticky on the thead still works against the viewport */
+    /* App-shell on mobile: the page itself never scrolls, so the fixed navbar
+       can never move. All scrolling happens inside #main-content below. */
+    html, body { overflow: hidden !important; }
+
+    /* Discography table: no inner overflow container — #main-content is the
+       scroll region, so position:sticky on the thead/song column pins against it */
     .discography-scroll-wrapper {
         max-width: none !important;
         margin: 0 !important;
@@ -477,8 +481,18 @@ textarea {
         width: 45px;
     }
 
-    /* Prevent wide tables from causing page-level horizontal scroll */
-    #main-content { overflow-x: clip; }
+    /* Scroll region: fills the viewport below the fixed navbar and scrolls
+       both axes internally. Wide content pans horizontally here while the
+       navbar stays burned into the top of the screen. */
+    #main-content {
+        position: fixed !important;
+        top: 52px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
 
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
@@ -487,12 +501,14 @@ textarea {
     .search-label { display: none; }
     #search-trigger { font-size: 16px !important; padding: 4px 10px !important; margin-left: 0 !important; }
 
-    /* Adjust content offset for taller mobile navbar */
+    /* Clear the fixed artist bottom bar at the end of the scroll region */
     #main-content { padding-bottom: 48px !important; }
-    /* Sticky header on mobile — pin below the taller mobile navbar */
-    .thead-sticky { top: 52px !important; }
+    /* Sticky header pins to the top of the scroll region (just under the navbar) */
+    .thead-sticky { top: 0 !important; }
 
     nav { gap: 10px !important; font-size: 14px !important; height: 52px !important; padding: 0 8px !important; }
+    /* Pin only the top navbar (direct child of body) — not the nested artist pills nav */
+    body > nav { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; }
 
     /* Artist bottom bar: taller on mobile for touch targets */
     .artist-nav-container {
