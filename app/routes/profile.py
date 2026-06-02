@@ -31,6 +31,7 @@ def profile():
             'theme': session.get('theme', 1),
             'include_featured': session.get('include_featured', False),
             'include_remixes': session.get('include_remixes', False),
+            'show_rated_remixes': session.get('show_rated_remixes', True),
             'include_covers': session.get('include_covers', True),
             'album_sort_order': session.get('album_sort_order', 'desc'),
             'song_button_size': session.get('song_button_size', 13),
@@ -51,6 +52,7 @@ def profile():
             'theme': s.theme if s else 0,
             'include_featured': s.include_featured if s else False,
             'include_remixes': s.include_remixes if s else False,
+            'show_rated_remixes': getattr(s, 'show_rated_remixes', True) if s else True,
             'include_covers': s.include_covers if s else True,
             'album_sort_order': s.album_sort_order if s else 'desc',
             'song_button_size': s.song_button_size if s else 13,
@@ -89,6 +91,7 @@ def _apply_theme_settings(set_field, form):
     if from_profile_page:
         set_field('include_featured', form.get('include_featured') == 'on')
         set_field('include_remixes', form.get('include_remixes') == 'on')
+        set_field('show_rated_remixes', form.get('show_rated_remixes') == 'on')
         set_field('include_covers', form.get('include_covers') == 'on')
         set_field('show_track_numbers', form.get('show_track_numbers') == 'on')
         set_field('show_full_album_date', form.get('show_full_album_date') == 'on')

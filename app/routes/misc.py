@@ -240,10 +240,13 @@ def _build_country_data(country_id):
                 feat_names.append(a['name'])
         return main_names, feat_names
 
+    from app.services.preferences import rated_remix_override_ids
+    keep_remix_ids = rated_remix_override_ids(filters['include_remixes'], set(song_map.keys()))
+
     genre_data = defaultdict(list)
     for sid, song in song_map.items():
         if not edit_mode:
-            if not filters['include_remixes'] and song.is_remix:
+            if not filters['include_remixes'] and song.is_remix and sid not in keep_remix_ids:
                 continue
             if not filters['include_covers'] and song.is_cover:
                 continue
@@ -357,12 +360,15 @@ def unrated_count():
         Rating.user_id == current_user.id,
         Rating.song_id.in_(misc_song_ids)).all()}
 
+    from app.services.preferences import rated_remix_override_ids
+    keep_remix_ids = rated_remix_override_ids(filters['include_remixes'], misc_song_ids)
+
     total = 0
     unrated = 0
     for song in songs:
         if song.id not in valid_song_ids:
             continue
-        if not filters['include_remixes'] and song.is_remix:
+        if not filters['include_remixes'] and song.is_remix and song.id not in keep_remix_ids:
             continue
         if not filters['include_covers'] and song.is_cover:
             continue

@@ -17,14 +17,17 @@ GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: 
 
 def _get_viewer_settings():
     """Get the viewing user's filter settings."""
+    from app.services.preferences import rated_remix_override_ids
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        include_remixes = current_user.settings.include_remixes
         return {
             'include_featured': current_user.settings.include_featured,
-            'include_remixes': current_user.settings.include_remixes,
+            'include_remixes': include_remixes,
             'include_covers': current_user.settings.include_covers,
             'country_ids': list(current_user.settings.country_ids or []),
             'genre_ids': list(current_user.settings.genre_ids or []),
             'hide_osts': getattr(current_user.settings, 'hide_osts', False),
+            'keep_remix_ids': rated_remix_override_ids(include_remixes),
         }
     return {
         'include_featured': False,
@@ -33,6 +36,7 @@ def _get_viewer_settings():
         'country_ids': list(session.get('country_ids') or []),
         'genre_ids': list(session.get('genre_ids') or []),
         'hide_osts': session.get('hide_osts', False),
+        'keep_remix_ids': set(),
     }
 
 

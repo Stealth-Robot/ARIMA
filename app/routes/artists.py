@@ -338,10 +338,13 @@ def unrated_count(artist_id):
         Rating.user_id == current_user.id,
         Rating.song_id.in_(song_ids)).all()}
 
+    from app.services.preferences import rated_remix_override_ids
+    keep_remix_ids = rated_remix_override_ids(include_remixes, song_ids)
+
     total = 0
     unrated = 0
     for song in songs:
-        if not include_remixes and song.is_remix:
+        if not include_remixes and song.is_remix and song.id not in keep_remix_ids:
             continue
         if not include_covers and song.is_cover:
             continue
@@ -432,6 +435,9 @@ def _build_discography(artist, children=None, hide_osts=False):
         include_featured = True if edit_mode else False
         include_covers = True
         album_sort_order = session.get('album_sort_order', 'desc')
+
+    from app.services.preferences import rated_remix_override_ids
+    keep_remix_ids = rated_remix_override_ids(include_remixes, song_ids)
 
     # Get all albums containing these songs (NULLs sort last)
     if album_sort_order == 'asc':
@@ -580,7 +586,8 @@ def _build_discography(artist, children=None, hide_osts=False):
 
         # Filter remixes if setting is off
         if not include_remixes:
-            album_songs = [(s, tn) for s, tn in album_songs if not s.is_remix]
+            album_songs = [(s, tn) for s, tn in album_songs
+                           if not s.is_remix or s.id in keep_remix_ids]
 
         # Filter covers if setting is off
         if not include_covers:
@@ -618,7 +625,8 @@ def _build_discography(artist, children=None, hide_osts=False):
     if misc_sids:
         misc_songs_objs = {s.id: s for s in Song.query.filter(Song.id.in_(misc_sids)).all()}
         if not include_remixes:
-            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if not s.is_remix}
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
+                               if not s.is_remix or sid in keep_remix_ids}
         if not include_covers:
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if not s.is_cover}
         if not include_featured:

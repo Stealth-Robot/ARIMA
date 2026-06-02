@@ -86,8 +86,9 @@ def get_display_users(viewer=None):
 class _BulkData:
     """Pre-loaded stats via SQL aggregation (~5 queries, but returns aggregated rows)."""
 
-    def __init__(self, include_featured, include_remixes, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False):
+    def __init__(self, include_featured, include_remixes, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
         scoped = artist_ids is not None
+        keep_remix_ids = set(keep_remix_ids or ())
 
         # 0. If genre filter is active, find song IDs that belong to albums with any selected genre
         if genre_ids:
@@ -149,6 +150,9 @@ class _BulkData:
                 self.remix_ids = set()
             else:
                 self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True).all()}
+            # Keep remixes the viewer has rated visible (opt-in 'show rated remixes')
+            if keep_remix_ids:
+                self.remix_ids -= keep_remix_ids
         else:
             self.remix_ids = set()
 
@@ -223,7 +227,11 @@ class _BulkData:
         else:
             all_songs_query = Song.query
             if not include_remixes:
-                all_songs_query = all_songs_query.filter(Song.is_remix == False)
+                if keep_remix_ids:
+                    all_songs_query = all_songs_query.filter(
+                        db.or_(Song.is_remix == False, Song.id.in_(keep_remix_ids)))
+                else:
+                    all_songs_query = all_songs_query.filter(Song.is_remix == False)
             if not include_covers:
                 all_songs_query = all_songs_query.filter(Song.is_cover == False)
             self.all_song_ids = {s.id for s in all_songs_query.all()}
@@ -363,9 +371,9 @@ def _artist_score_stats(artist_id, users, bulk):
 
 # --- Public API (used by routes) ---
 
-def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False):
+def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
     """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
-    return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts)
+    return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
 
 
 def get_artist_stats(artist_id, users, bulk):

@@ -91,18 +91,19 @@ def clear_theme_cache_for_theme(theme_id):
 _stats_cache = {}
 _STATS_TTL = 300  # 5 minutes
 
-def get_cached_bulk_data(include_featured, include_remixes, include_covers=True, genre_ids=None, hide_osts=False):
+def get_cached_bulk_data(include_featured, include_remixes, include_covers=True, genre_ids=None, hide_osts=False, keep_remix_ids=None):
     """Return cached BulkData, refreshing at most once per TTL."""
     from app.services.stats import load_bulk_data
 
     genre_key = tuple(sorted(genre_ids)) if genre_ids else ()
-    key = (include_featured, include_remixes, include_covers, genre_key, hide_osts)
+    keep_key = tuple(sorted(keep_remix_ids)) if keep_remix_ids else ()
+    key = (include_featured, include_remixes, include_covers, genre_key, hide_osts, keep_key)
     now = time.monotonic()
     entry = _stats_cache.get(key)
     if entry and now - entry['ts'] < _STATS_TTL:
         return entry['data']
 
-    data = load_bulk_data(include_featured=include_featured, include_remixes=include_remixes, include_covers=include_covers, genre_ids=genre_ids, hide_osts=hide_osts)
+    data = load_bulk_data(include_featured=include_featured, include_remixes=include_remixes, include_covers=include_covers, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
     _stats_cache[key] = {'data': data, 'ts': now}
     return data
 

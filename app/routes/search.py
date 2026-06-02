@@ -283,11 +283,14 @@ def search():
                     if is_main:
                         has_main[sid] = True
 
+            from app.services.preferences import rated_remix_override_ids
+            keep_remix_ids = rated_remix_override_ids(include_remixes, set(misc_sids))
+
             def _keep_misc(s):
                 if country_ids and not (misc_countries.get(s.id, set()) & set(country_ids)):
                     return False
                 if not edit_mode:
-                    if not include_remixes and s.is_remix:
+                    if not include_remixes and s.is_remix and s.id not in keep_remix_ids:
                         return False
                     if not include_covers and s.is_cover:
                         return False
