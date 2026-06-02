@@ -36,16 +36,16 @@ def _est_today():
 
 
 def _pick_random_sotd(as_of_date):
-    cutoff = (as_of_date - timedelta(days=30)).isoformat()
-    recent_ids = {r.song_id for r in SongOfDay.query.filter(
-        SongOfDay.date >= cutoff, SongOfDay.date < as_of_date.isoformat()
+    used_ids = {r.song_id for r in SongOfDay.query.filter(
+        SongOfDay.date < as_of_date.isoformat()
     ).all()}
 
     all_song_ids = {r.song_id for r in ArtistSong.query.filter(
         ArtistSong.artist_is_main == True).all()}
-    candidates = all_song_ids - recent_ids
+    candidates = all_song_ids - used_ids
 
     if not candidates:
+        # Every eligible song has already been Song of the Day; only then reuse.
         candidates = all_song_ids
     if not candidates:
         return None
