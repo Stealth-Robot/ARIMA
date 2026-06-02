@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 
 from app.services.stats import (
     get_display_users, get_artist_stats, get_summary_stats,
-    get_artist_score_stats, load_bulk_data, get_app_ops_stats,
+    get_artist_score_stats, get_overall_score_stats, load_bulk_data,
+    get_app_ops_stats,
 )
 from app.cache import get_cached_bulk_data, get_cached_railway_stats, get_cache_status
 from app.services.railway import get_metrics_series
@@ -56,6 +57,7 @@ def artist_stats():
         artists = [a for a in artists if a.country_id in country_set]
 
     summary = get_summary_stats(users, bulk, artists=artists)
+    overall = get_overall_score_stats(users, bulk, artists=artists)
 
     hide_osts = settings.get('hide_osts', False)
     artist_rows = []
@@ -70,7 +72,7 @@ def artist_stats():
         })
 
     return render_template('artist_stats.html',
-                           users=users, summary=summary, artist_rows=artist_rows,
+                           users=users, summary=summary, overall=overall, artist_rows=artist_rows,
                            gender_css=GENDER_CSS, navbar_artists=get_filtered_navbar())
 
 
@@ -123,8 +125,10 @@ def global_stats():
             'has_subunits': bulk.has_subunits(a.id),
         })
 
+    overall = get_overall_score_stats(users, bulk, artists=artists)
+
     return render_template('global_stats.html',
-                           users=users, artist_rows=artist_rows,
+                           users=users, artist_rows=artist_rows, overall=overall,
                            gender_css=GENDER_CSS, navbar_artists=get_filtered_navbar())
 
 

@@ -369,6 +369,42 @@ def _artist_score_stats(artist_id, users, bulk):
     }
 
 
+def _overall_score_stats(users, bulk, artists=None):
+    """Average score across ALL displayed songs, per user (Global Stats top row)."""
+    from app.services.artist import get_top_level_artists
+    top_artists = list(artists) if artists is not None else get_top_level_artists(bulk)
+
+    song_ids = set()
+    for a in top_artists:
+        song_ids |= bulk.get_song_ids(a.id)
+
+    user_sum = defaultdict(float)
+    user_count = defaultdict(int)
+    for sid in song_ids:
+        for uid, stats in bulk.song_user_stats.get(sid, {}).items():
+            user_sum[uid] += stats['sum']
+            user_count[uid] += stats['count']
+
+    per_user = {}
+    user_avgs = []
+    for u in users:
+        cnt = user_count.get(u.id, 0)
+        if cnt > 0:
+            avg = round(user_sum[u.id] / cnt, 2)
+            per_user[u.id] = avg
+            user_avgs.append(avg)
+        else:
+            per_user[u.id] = None
+
+    global_avg = round(sum(user_avgs) / len(user_avgs), 2) if user_avgs else None
+
+    return {
+        'song_count': len(song_ids),
+        'per_user': per_user,
+        'global_avg': global_avg,
+    }
+
+
 # --- Public API (used by routes) ---
 
 def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
@@ -384,6 +420,11 @@ def get_artist_stats(artist_id, users, bulk):
 def get_artist_score_stats(artist_id, users, bulk):
     """Per-artist score stats using pre-loaded data."""
     return _artist_score_stats(artist_id, users, bulk)
+
+
+def get_overall_score_stats(users, bulk, artists=None):
+    """Each user's average score across all displayed songs."""
+    return _overall_score_stats(users, bulk, artists=artists)
 
 
 def get_summary_stats(users, bulk, artists=None):

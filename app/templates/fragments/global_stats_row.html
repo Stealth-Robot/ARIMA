@@ -6,7 +6,7 @@
         style="{% if global_style %}background-color: {{ global_style.bg }}; color: {{ global_style.text }};{% endif %}">
         {% if row.scores.global_avg is not none %}{{ "%.3f"|format(row.scores.global_avg) }}{% endif %}
     </td>
-    <td class="px-2 py-1 pl-8 border border-grid-line text-primary-text"
+    <td class="px-2 py-1 pl-8 border border-grid-line overflow-hidden text-primary-text"
         style="background-color: color-mix(in srgb, var({{ gender_css[row.artist.gender_id] }}) {{ 40 if (is_subunit and row.artist.gender_id == 2) else (60 if is_subunit else 20) }}%, var(--bg-primary));">
         {% if is_subunit %}↳{% endif %} {{ row.artist.name }}
     </td>

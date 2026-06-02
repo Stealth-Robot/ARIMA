@@ -43,7 +43,25 @@
                 {{ summary.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
-            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 2px solid var(--grid-line);" rowspan="5">{{ summary.total_songs }}</td>
+            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 2px solid var(--grid-line);" rowspan="6">{{ summary.total_songs }}</td>
+        </tr>
+        {# Row 1b: Average Rating (0-5 score across all songs) #}
+        <tr class="border border-grid-line">
+            {% set overall_global_style = score_to_style(overall.global_avg) %}
+            <td class="px-2 py-1 text-right border border-grid-line overflow-hidden"
+                style="{% if overall_global_style %}background-color: {{ overall_global_style.bg }}; color: {{ overall_global_style.text }};{% endif %}">
+                {% if overall.global_avg is not none %}{{ "%.2f"|format(overall.global_avg) }}{% endif %}
+            </td>
+            <td class="px-2 py-1 font-semibold border border-grid-line overflow-hidden"
+                title="Average rating (0-5) across all your rated songs">Average Rating</td>
+            {% for u in users %}
+            {% set user_overall = overall.per_user[u.id] %}
+            {% set user_overall_style = score_to_style(user_overall) %}
+            <td class="px-1 py-1 text-center border border-grid-line"
+                style="{% if user_overall_style %}background-color: {{ user_overall_style.bg }}; color: {{ user_overall_style.text }};{% endif %}">
+                {% if user_overall is not none %}{{ "%.2f"|format(user_overall) }}{% endif %}
+            </td>
+            {% endfor %}
         </tr>
         {# Row 2: Total Rated Songs #}
         <tr class="border border-grid-line">
