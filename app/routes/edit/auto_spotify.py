@@ -72,7 +72,7 @@ def auto_spotify_start(artist_id):
 
     from app.services.spotify import (
         auto_populate_links, artist_url_from_track, _normalize_name,
-        SpotifyError)
+        SpotifyError, SpotifyRateLimited)
 
     app = current_app._get_current_object()
 
@@ -105,11 +105,19 @@ def auto_spotify_start(artist_id):
                         break
                     try:
                         cand = artist_url_from_track(turl, expected_name=artist_name)
-                    except SpotifyError:
+                    except SpotifyRateLimited:
+                        raise  # surface the cooldown; don't mask it as "nothing found"
+                    except SpotifyError as e:
+                        logger.warning(
+                            'artist_url_from_track error for %s: %s', turl, e)
                         cand = None
                     if cand:
                         resolved_url = cand
                         break
+                if not resolved_url:
+                    logger.warning(
+                        'Could not resolve artist Spotify URL from %d linked '
+                        'track(s) for "%s"', len(linked_track_urls), artist_name)
             result = auto_populate_links(
                 artist_name, songs_to_process,
                 spotify_url=resolved_url,

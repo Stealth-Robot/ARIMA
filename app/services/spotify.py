@@ -105,6 +105,7 @@ def _api_get(path_or_url):
         except ApiQueueError as e:
             raise _wrap_queue_error(e)
     if resp.status_code == 404:
+        logger.warning('Spotify API 404 (not found) for %s', resp.url)
         raise SpotifyError('Not found on Spotify')
     if resp.status_code != 200:
         body = ''
@@ -113,6 +114,8 @@ def _api_get(path_or_url):
         except Exception:
             pass
         detail = f' — {body}' if body else ''
+        logger.warning('Spotify API error %s for %s%s',
+                       resp.status_code, resp.url, detail)
         raise SpotifyError(
             f'Spotify API error: {resp.status_code}{detail} ({label})')
     _status(f'Got {label}')
@@ -249,7 +252,7 @@ def fetch_artist(url, on_progress=None, cancel=None):
             _check()
             page = _api_get(
                 f'/artists/{artist_id}/albums'
-                f'?include_groups=album,single&limit=50&offset={offset}')
+                f'?include_groups=album,single&limit=10&offset={offset}')
             items = page.get('items', [])
             albums_raw.extend(items)
             _progress(
@@ -392,7 +395,7 @@ def auto_populate_links(artist_name, songs, spotify_url=None,
                     _check()
                     page = _api_get(
                         f'/artists/{artist_id}/albums'
-                        f'?include_groups=album,single&limit=50'
+                        f'?include_groups=album,single&limit=10'
                         f'&offset={offset}')
                     items = page.get('items', [])
                     albums_raw.extend(items)
@@ -535,7 +538,7 @@ def artist_album_links(artist_spotify_id, cancel=None):
             raise _Cancelled('Cancelled')
         page = _api_get(
             f'/artists/{artist_spotify_id}/albums'
-            f'?include_groups=album,single&limit=50&offset={offset}')
+            f'?include_groups=album,single&limit=10&offset={offset}')
         items = page.get('items', [])
         for a in items:
             url = a.get('external_urls', {}).get('spotify', '')
