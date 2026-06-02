@@ -533,13 +533,6 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                            onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-complete', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
                            class="cursor-pointer"> Complete
                 </label>
-                {% if current_user.is_admin %}
-                <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
-                    <input type="checkbox" {% if child.artist.is_tracked %}checked{% endif %} autocomplete="off"
-                           onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-tracked', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
-                           class="cursor-pointer"> Tracked
-                </label>
-                {% endif %}
                 {% elif child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
                    class="p-1 text-discography-text cursor-pointer no-underline"
@@ -549,6 +542,13 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 </a>{{ spotify_link_icon(child.artist.spotify_url) }}
                 {% else %}
                 <span class="p-1">{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}
+                {% endif %}
+                {% if current_user.is_admin %}
+                <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
+                    <input type="checkbox" {% if child.artist.is_tracked %}checked{% endif %} autocomplete="off"
+                           onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-tracked', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
+                           class="cursor-pointer"> Tracked
+                </label>
                 {% endif %}
             </td>
         </tr>
