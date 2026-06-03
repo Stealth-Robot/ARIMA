@@ -1,5 +1,5 @@
-<tr{% if sotd_past %} class="sotd-past-row" style="display: none;"{% endif %}>
-    <td class="border border-grid-line text-secondary-text" style="padding: 4px 6px; width: 80px; white-space: nowrap;">{{ card.date_str }}</td>
+<tr class="sotd-row{% if sotd_past %} sotd-past-row{% endif %}" {% if sotd_past %}style="display: none;"{% endif %}>
+    <td class="sotd-date border border-grid-line text-secondary-text {% if can_hide_date %}hidden md:table-cell{% endif %}" style="padding: 4px 6px; width: 80px !important; min-width: 80px !important; white-space: nowrap;">{{ card.date_str }}</td>
     <td class="song-name-cell{% if card.song.note %} has-song-note{% endif %} border border-grid-line"
         title="{{ card.song.name | e }}" data-song-id="{{ card.song.id }}"
         {% if card.song.note %}data-song-note="{{ card.song.note | e }}"{% endif %}
