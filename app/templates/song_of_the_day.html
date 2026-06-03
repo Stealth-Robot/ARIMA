@@ -8,9 +8,9 @@
     <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
     <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
         <thead>
-            <tr>
-                <th class="py-1 px-2 text-left text-secondary-text" style="width: 80px; border: none;">Date</th>
-                <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none;"></th>
+            <tr class="sotd-row">
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 80px; min-width: 80px; border: none;">Date</th>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; min-width: 200px; max-width: 200px; border: none;">Song</th>
                 {% for u in cards[0].users %}
                 <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
                 {% endfor %}

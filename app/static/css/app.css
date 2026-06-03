@@ -54,7 +54,7 @@ table.text-xs th {
 .discography-scroll-wrapper table.text-xs tr {
     border-color: transparent;
 }
-.discography-scroll-wrapper table.text-xs td:not(.song-name-cell):not([id^="rating-"]):not(.checkbox-cell) {
+.discography-scroll-wrapper table.text-xs tr:not(.sotd-row) td:not(.song-name-cell):not([id^="rating-"]):not(.checkbox-cell) {
     border-color: transparent;
 }
 .discography-scroll-wrapper table.text-xs tr[id^="album-"] td,
@@ -459,10 +459,16 @@ textarea {
         max-width: 200px !important;
     }
 
+    .discography-scroll-wrapper .sotd-row th:first-child {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }
+
     /* Discography table: sticky song name column */
     .song-name-cell {
-        position: sticky;
-        left: 0;
+        position: sticky !important; /* override position: relative for song note */
+        left: -16px;
         z-index: 2;
         background-color: var(--bg-primary);
         max-width: 200px;
