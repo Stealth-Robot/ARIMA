@@ -73,6 +73,14 @@ def album_spotify_url(album_id):
     album.spotify_url = url
     if url == 'n/a' and old != 'n/a':
         log_change(current_user, f'Marked "{album.name}" album as not on Spotify', album=album, change_type='link')
+        # Cascade: songs in this album with no Spotify link are also not on Spotify.
+        cascaded = [s for s in album.songs if not (s.spotify_url or '').strip()]
+        for song in cascaded:
+            song.spotify_url = 'n/a'
+        if cascaded:
+            log_change(current_user,
+                       f'Marked {len(cascaded)} unlinked song(s) in "{album.name}" album as not on Spotify',
+                       album=album, change_type='link')
     elif url and url != 'n/a' and (not old or old == 'n/a'):
         log_change(current_user, f'Added Spotify link to "{album.name}" album', album=album, change_type='link')
     elif not url and old:
