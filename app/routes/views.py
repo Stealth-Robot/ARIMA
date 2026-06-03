@@ -708,6 +708,8 @@ _COLLAB_LIKE = [
     '%(w/ %', '%(w/%', '%(featuring %', '%(Feat:%',
     '% feat.%', '% feat %', '% ft.%', '% ft %',
     '%Feat. %', '%&Feat.%', '% featuring %',
+    '% duet)%', '% duet %', '%(duet %',
+    '% solo)%', '%(solo %',
 ]
 
 

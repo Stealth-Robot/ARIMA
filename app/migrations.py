@@ -441,10 +441,11 @@ def _strip_collab_markers(name):
 def _extract_collab_names(song_name):
     """Extract featured artist names from song title collab markers.
 
-    Handles three patterns:
+    Handles these patterns:
       1. (feat X) / (ft. X) / (with X) / (w/ X) at paren start
       2. (Something feat. X) — marker inside parens but not at start
       3. Title feat. X — trailing marker outside parens
+      4. (X & Y duet) / (X SOLO) — names before a trailing duet/solo keyword
     Returns a list of artist name strings (may be empty).
     """
     import re
@@ -458,10 +459,12 @@ def _extract_collab_names(song_name):
     trailing_re = re.compile(
         r'(?:^|[\s\-])\s*' + FEAT_TRAIL + r'\s*(.+?)(?:\s*\((?!.*' + FEAT_PAREN + r')|\s*$)',
         re.IGNORECASE)
+    duet_solo_re = re.compile(
+        r'[\(\[]\s*([^)\]]+?)\s+(?:duet|solo)\s*[\)\]]', re.IGNORECASE)
 
     names = []
     matched_spans = set()
-    for rx in (paren_start_re, inner_paren_re, trailing_re):
+    for rx in (paren_start_re, inner_paren_re, trailing_re, duet_solo_re):
         for m in rx.finditer(song_name):
             if m.span() in matched_spans:
                 continue
