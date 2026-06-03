@@ -257,6 +257,7 @@ def add_album_to_artist(artist_id):
         submitted_by_id=current_user.id,
         artist_id=artist_id,
         spotify_url=(data.get('spotify_url') or None),
+        note=(data.get('note') or '').strip() or None,
     )
     db.session.add(album)
     db.session.flush()
@@ -290,6 +291,7 @@ def add_album_to_artist(artist_id):
                 is_cover=song_data.get('is_cover', False),
                 spotify_url=song_data.get('spotify_url') or None,
                 youtube_url=song_data.get('youtube_url') or None,
+                note=(song_data.get('note') or '').strip() or None,
             )
             db.session.add(song)
             db.session.flush()
@@ -445,6 +447,9 @@ def album_create_song(album_id):
         is_promoted=bool(data.get('is_promoted')),
         is_remix=bool(data.get('is_remix')),
         is_cover=bool(data.get('is_cover')),
+        spotify_url=data.get('spotify_url') or None,
+        youtube_url=data.get('youtube_url') or None,
+        note=(data.get('note') or '').strip() or None,
     )
     db.session.add(song)
     db.session.flush()

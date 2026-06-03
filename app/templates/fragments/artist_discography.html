@@ -907,6 +907,9 @@ function submitConvertArtist() {
                 </div>
             </div>
 
+            <label class="block text-sm mb-1 text-primary-text">Note</label>
+            <textarea id="new-album-note" rows="2" class="w-full px-3 py-1 border rounded mb-3 text-sm border-border"></textarea>
+
             <label class="block text-sm mb-1 text-primary-text">Genres <span class="text-delete">*</span></label>
             <div id="new-album-genres" class="flex flex-wrap gap-2 mb-3 text-xs">
                 {% for g in edit_genres %}

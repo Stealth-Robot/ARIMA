@@ -909,6 +909,18 @@ function _showAddMiscSong() {
     spotStatus.style.cssText = 'font-size:11px;color:var(--text-secondary);min-height:14px;margin-bottom:2px;';
     modal.appendChild(spotStatus);
 
+    /* YouTube URL (optional) */
+    modal.appendChild(_miscLabel('YouTube URL (optional)'));
+    var ytInp = _miscInput('https://www.youtube.com/watch?v=...');
+    modal.appendChild(ytInp);
+
+    /* Note (optional) */
+    modal.appendChild(_miscLabel('Note (optional)'));
+    var noteInp = document.createElement('textarea');
+    noteInp.placeholder = 'Note';
+    noteInp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:48px;resize:vertical;';
+    modal.appendChild(noteInp);
+
     /* Misc artists */
     modal.appendChild(_miscLabel('Misc Artists *'));
     var maList = document.createElement('div');
@@ -1023,6 +1035,8 @@ function _showAddMiscSong() {
         var payload = {
             name: sName,
             spotify_url: spotUrl || null,
+            youtube_url: ytInp.value.trim() || null,
+            note: noteInp.value.trim() || null,
             misc_artists: miscArtists.map(function(a) {
                 if (a.id) return {id: a.id, is_main: a.is_main};
                 return {new: true, name: a.name, country_id: a.country_id, is_main: a.is_main};
@@ -1098,13 +1112,26 @@ function _showSpotifyImport() {
         allLabel.appendChild(document.createTextNode('Select All'));
         trackDiv.appendChild(allLabel);
         tracks.forEach(function(t, i) {
-            var label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text-primary);';
             var cb = document.createElement('input');
             cb.type = 'checkbox'; cb.checked = true; cb.dataset.idx = i;
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(t.track_number + '. ' + t.name));
-            trackDiv.appendChild(label);
+            row.appendChild(cb);
+            var nameSpan = document.createElement('span');
+            nameSpan.textContent = t.track_number + '. ' + t.name;
+            nameSpan.style.cssText = 'flex:1;min-width:70px;';
+            row.appendChild(nameSpan);
+            var yt = document.createElement('input');
+            yt.type = 'text'; yt.placeholder = 'YouTube URL';
+            yt.style.cssText = 'width:130px;font-size:11px;padding:2px 4px;border:1px solid var(--border,#ccc);border-radius:3px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+            yt.oninput = function() { t.youtube_url = yt.value.trim(); };
+            row.appendChild(yt);
+            var nt = document.createElement('input');
+            nt.type = 'text'; nt.placeholder = 'Note';
+            nt.style.cssText = 'width:110px;font-size:11px;padding:2px 4px;border:1px solid var(--border,#ccc);border-radius:3px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+            nt.oninput = function() { t.note = nt.value.trim(); };
+            row.appendChild(nt);
+            trackDiv.appendChild(row);
         });
     }
 
@@ -1186,7 +1213,7 @@ function _showSpotifyImport() {
         if (!selected.length) { alert('Select at least one track'); return; }
         importBtn.disabled = true;
         fetch('/misc/spotify-import', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
-            tracks: selected.map(function(t) { return {name: t.name, spotify_url: t.spotify_url}; }),
+            tracks: selected.map(function(t) { return {name: t.name, spotify_url: t.spotify_url, youtube_url: t.youtube_url || null, note: t.note || null}; }),
             misc_artists: miscArtists.map(function(a) { return {id: a.id, name: a.name, country_id: a.country_id, is_main: a.is_main}; }),
             genre_ids: selectedGenres,
         })}).then(function(r) { return r.json(); }).then(function(d) {
@@ -1382,6 +1409,10 @@ function _showMoveSongToArtist(event, songId, songName) {
     var newAlbumType = _miscSelect(_allAlbumTypes, 2);
     newAlbumType.style.marginTop = '4px';
     newAlbumDiv.appendChild(newAlbumType);
+    var newAlbumNote = document.createElement('textarea');
+    newAlbumNote.placeholder = 'Note (optional)';
+    newAlbumNote.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:4px;min-height:42px;resize:vertical;';
+    newAlbumDiv.appendChild(newAlbumNote);
     modal.appendChild(newAlbumDiv);
 
     albumSel.onchange = function() {
@@ -1416,7 +1447,7 @@ function _showMoveSongToArtist(event, songId, songName) {
         if (albumSel.value === '__new') {
             var an = newAlbumName.value.trim();
             if (!an) { alert('Enter album name'); return; }
-            albumPayload = {name: an, release_date: newAlbumDate.value || null, album_type_id: parseInt(newAlbumType.value)};
+            albumPayload = {name: an, release_date: newAlbumDate.value || null, album_type_id: parseInt(newAlbumType.value), note: newAlbumNote.value.trim() || null};
         } else if (albumSel.value) {
             albumPayload = {existing_id: parseInt(albumSel.value)};
         }

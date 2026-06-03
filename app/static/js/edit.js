@@ -352,7 +352,8 @@ function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
     });
 }
 
-function promptLocalUrl(btnEl, dataKey, label) {
+function promptLocalUrl(btnEl, dataKey, label, opts) {
+    opts = opts || {};
     closeUrlPopover();
     var songDiv = btnEl.closest('[id^="song-"], [id^="new-song-"]');
     var currentValue = songDiv ? (songDiv.dataset[dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();})] || '') : '';
@@ -366,11 +367,11 @@ function promptLocalUrl(btnEl, dataKey, label) {
     popover.appendChild(title);
     _makeDraggable(popover, title);
 
-    var input = document.createElement('input');
-    input.type = 'text';
+    var input = document.createElement(opts.multiline ? 'textarea' : 'input');
+    if (!opts.multiline) input.type = 'text';
     input.value = currentValue;
-    input.placeholder = 'https://...';
-    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
+    input.placeholder = opts.placeholder || 'https://...';
+    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;' + (opts.multiline ? ' min-height:60px; resize:vertical;' : '');
     popover.appendChild(input);
 
     var btnRow = document.createElement('div');
@@ -404,7 +405,7 @@ function promptLocalUrl(btnEl, dataKey, label) {
     _activeUrlPopover = popover;
 
     input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        if (e.key === 'Enter' && !opts.multiline) { e.preventDefault(); saveBtn.click(); }
         else if (e.key === 'Escape') { e.preventDefault(); closeUrlPopover(); }
     });
 }
@@ -1664,6 +1665,21 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
         miscSearchWrap.appendChild(miscCreateRow);
         form.appendChild(miscSearchWrap);
 
+        // YouTube URL
+        var ytInput = document.createElement('input');
+        ytInput.type = 'text';
+        ytInput.placeholder = 'YouTube URL';
+        ytInput.className = 'create-song-youtube';
+        ytInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
+        form.appendChild(ytInput);
+
+        // Note
+        var noteInput = document.createElement('textarea');
+        noteInput.placeholder = 'Note';
+        noteInput.className = 'create-song-note';
+        noteInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px; min-height:48px; resize:vertical;';
+        form.appendChild(noteInput);
+
         // Buttons row
         var btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex; gap:6px; justify-content:flex-end;';
@@ -1706,6 +1722,8 @@ function showAlbumSongSearch(event, albumId, artistId, span) {
                     is_promoted: form.querySelector('.create-song-promoted').checked,
                     is_remix: form.querySelector('.create-song-remix').checked,
                     is_cover: form.querySelector('.create-song-cover').checked,
+                    youtube_url: form.querySelector('.create-song-youtube').value.trim() || null,
+                    note: form.querySelector('.create-song-note').value.trim() || null,
                 }),
             }).then(function(r) {
                 if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
@@ -2756,6 +2774,8 @@ function resetAddAlbumModal() {
     if (date) { date.value = ''; date.dispatchEvent(new Event('input', {bubbles: true})); }
     var type = document.getElementById('new-album-type');
     if (type) type.selectedIndex = 0;
+    var note = document.getElementById('new-album-note');
+    if (note) note.value = '';
     document.querySelectorAll('#new-album-genres input').forEach(function(cb) { cb.checked = false; });
     var songs = document.getElementById('new-album-songs');
     if (songs) songs.innerHTML = '';
@@ -2827,6 +2847,7 @@ function addNewAlbumSong(currentArtistId) {
             '</select>' +
             '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
             '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; font-size:12px; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
         '</div>' +
         '<div style="padding: 4px 8px;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Misc artists:</span>' +
@@ -3030,6 +3051,8 @@ function submitNewAlbum(artistId) {
     var name = document.getElementById('new-album-name').value.trim();
     var date = document.getElementById('new-album-date').value;
     var typeId = parseInt(document.getElementById('new-album-type').value);
+    var noteEl = document.getElementById('new-album-note');
+    var albumNote = noteEl ? noteEl.value.trim() : '';
 
     if (!name) { showToast('Album name is required'); return; }
     if (!isRealDate(date.trim())) { showToast('A valid full release date (yyyy-mm-dd) is required'); return; }
@@ -3076,6 +3099,7 @@ function submitNewAlbum(artistId) {
         };
         if (songDiv.dataset.spotifyUrl) songEntry.spotify_url = songDiv.dataset.spotifyUrl;
         if (songDiv.dataset.youtubeUrl) songEntry.youtube_url = songDiv.dataset.youtubeUrl;
+        if (songDiv.dataset.note) songEntry.note = songDiv.dataset.note;
         songs.push(songEntry);
     });
 
@@ -3090,6 +3114,7 @@ function submitNewAlbum(artistId) {
             genre_ids: genreIds,
             songs: songs,
             spotify_url: _newAlbumSpotifyUrl || null,
+            note: albumNote || null,
         };
 
         var csrfToken = document.querySelector('meta[name="csrf-token"]');

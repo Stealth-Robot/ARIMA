@@ -759,6 +759,7 @@ def add_artist_submit():
                 submitted_by_id=current_user.id,
                 artist_id=artist.id,
                 spotify_url=(album_data.get('spotify_url') or None),
+                note=(album_data.get('note') or '').strip() or None,
             )
             db.session.add(new_album)
             db.session.flush()
@@ -789,6 +790,7 @@ def add_artist_submit():
                     is_cover=song_data.get('is_cover', False),
                     spotify_url=song_data.get('spotify_url') or None,
                     youtube_url=song_data.get('youtube_url') or None,
+                    note=(song_data.get('note') or '').strip() or None,
                 )
                 db.session.add(song_obj)
                 db.session.flush()

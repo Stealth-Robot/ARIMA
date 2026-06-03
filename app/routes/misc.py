@@ -462,6 +462,8 @@ def add_misc_song():
         is_remix=bool(data.get('is_remix')),
         is_cover=bool(data.get('is_cover')),
         spotify_url=data.get('spotify_url') or None,
+        youtube_url=data.get('youtube_url') or None,
+        note=(data.get('note') or '').strip() or None,
     )
     db.session.add(song)
     db.session.flush()
@@ -736,6 +738,7 @@ def add_misc_album():
         album_type_id=int(data.get('album_type_id', 2)),
         submitted_by_id=current_user.id,
         artist_id=None,
+        note=(data.get('note') or '').strip() or None,
     )
     db.session.add(album)
     db.session.flush()
@@ -806,6 +809,7 @@ def move_song_to_artist(song_id):
             album_type_id=int(album_data.get('album_type_id', 2)),
             submitted_by_id=current_user.id,
             artist_id=int(artists_data[0]['artist_id']),
+            note=(album_data.get('note') or '').strip() or None,
         )
         db.session.add(album)
         db.session.flush()
@@ -917,6 +921,8 @@ def spotify_import():
             name=name,
             submitted_by_id=current_user.id,
             spotify_url=t.get('spotify_url') or None,
+            youtube_url=t.get('youtube_url') or None,
+            note=(t.get('note') or '').strip() or None,
         )
         db.session.add(song)
         db.session.flush()
