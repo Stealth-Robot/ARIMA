@@ -3725,12 +3725,21 @@ function setDuplicateOverride(songId, albumId, artistId) {
 }
 
 function importAlbumFromSpotify(artistId) {
-    var urlInput = document.getElementById('spotify-album-url');
-    var btn = document.getElementById('spotify-album-import-btn');
+    _importFromSpotify(artistId, '/edit/spotify-album', 'spotify-album-url', 'spotify-album-import-btn');
+}
+
+function importPlaylistFromSpotify(artistId) {
+    _importFromSpotify(artistId, '/edit/spotify-playlist', 'spotify-playlist-url', 'spotify-playlist-import-btn');
+}
+
+function _importFromSpotify(artistId, endpoint, inputId, btnId) {
+    var urlInput = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
     if (!urlInput || !urlInput.value.trim()) return;
+    var btnLabel = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Loading...';
-    fetch('/edit/spotify-album?url=' + encodeURIComponent(urlInput.value.trim()))
+    fetch(endpoint + '?url=' + encodeURIComponent(urlInput.value.trim()))
         .then(function (r) {
             if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Import failed'); });
             return r.json();
@@ -3760,7 +3769,7 @@ function importAlbumFromSpotify(artistId) {
             validateAddAlbum();
         })
         .catch(function (e) { showToast(localizeCooldown(e.message || 'Spotify import failed')); })
-        .finally(function () { btn.disabled = false; btn.textContent = 'Import'; });
+        .finally(function () { btn.disabled = false; btn.textContent = btnLabel; });
 }
 
 

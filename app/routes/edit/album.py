@@ -618,3 +618,24 @@ def spotify_album():
         for a in Artist.query.order_by(func.lower(Artist.name)).all()
     ]
     return jsonify(data)
+
+
+@edit_bp.route('/spotify-playlist')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def spotify_playlist():
+    """Fetch playlist metadata from a Spotify URL for pre-filling the add-album form."""
+    _require_edit_mode()
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    from app.services.spotify import fetch_playlist, SpotifyError
+    try:
+        data = fetch_playlist(url)
+    except SpotifyError as e:
+        return jsonify({'error': str(e)}), 400
+    data['artists'] = [
+        {'id': a.id, 'name': a.name}
+        for a in Artist.query.order_by(func.lower(Artist.name)).all()
+    ]
+    return jsonify(data)

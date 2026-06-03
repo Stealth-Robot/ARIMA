@@ -176,6 +176,69 @@ def fetch_album(url):
     }
 
 
+_EMBED_NEXT_DATA_RE = re.compile(
+    r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', re.S)
+
+
+def fetch_playlist(url):
+    """Fetch playlist metadata + tracks from a Spotify URL for the add-album form.
+
+    The Web API refuses playlist track contents for Client-Credentials apps
+    (403 on /playlists/{id}/tracks, empty `tracks` on the playlist object), so
+    tracks are read from the public open.spotify.com embed payload instead.
+    Returns the same shape as fetch_album. Playlists have no release date or
+    album type, so those are left for the user to fill in. The embed exposes up
+    to 100 tracks.
+    """
+    import json
+    playlist_id = _parse_id(url, 'playlist')
+    embed_url = f'https://open.spotify.com/embed/playlist/{playlist_id}'
+    try:
+        resp = spotify_queue.request(
+            'GET', embed_url,
+            headers={'User-Agent': 'Mozilla/5.0'},
+            on_status=getattr(_local, 'on_status', None),
+        )
+    except ApiQueueError as e:
+        raise _wrap_queue_error(e)
+    if resp.status_code != 200:
+        raise SpotifyError(
+            'Playlist not accessible. Make sure the playlist is public.')
+    m = _EMBED_NEXT_DATA_RE.search(resp.text)
+    if not m:
+        raise SpotifyError('Could not read playlist contents from Spotify')
+    try:
+        entity = json.loads(m.group(1))['props']['pageProps']['state']['data']['entity']
+    except (KeyError, ValueError, TypeError):
+        raise SpotifyError('Could not parse playlist contents from Spotify')
+
+    tracks = []
+    for t in entity.get('trackList', []):
+        if t.get('entityType', 'track') != 'track':
+            continue
+        name = t.get('title')
+        if not name:
+            continue
+        uri = t.get('uri', '')
+        track_url = ''
+        if uri.startswith('spotify:track:'):
+            track_url = 'https://open.spotify.com/track/' + uri.rsplit(':', 1)[-1]
+        tracks.append({
+            'name': name,
+            'track_number': len(tracks) + 1,
+            'spotify_url': track_url,
+        })
+    if not tracks:
+        raise SpotifyError('No tracks found in this playlist.')
+    return {
+        'name': (entity.get('name') or entity.get('title') or '').strip(),
+        'release_date': '',
+        'album_type_id': 0,
+        'spotify_url': f'https://open.spotify.com/playlist/{playlist_id}',
+        'tracks': tracks,
+    }
+
+
 def artist_url_from_track(track_url, expected_name=None):
     """Resolve an artist's Spotify page URL from one of their track URLs.
 

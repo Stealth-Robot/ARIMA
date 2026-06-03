@@ -879,6 +879,16 @@ function submitConvertArtist() {
                 </div>
             </div>
 
+            {% if artist.gender_id == 3 %}
+            <div class="mb-3 p-2 rounded" style="border:1px dashed var(--border);">
+                <label class="block text-xs mb-1 text-secondary-text">Import playlist from Spotify</label>
+                <div class="flex gap-2">
+                    <input type="text" id="spotify-playlist-url" placeholder="https://open.spotify.com/playlist/..." class="flex-1 px-2 py-1 border rounded text-xs border-border">
+                    <button type="button" onclick="importPlaylistFromSpotify(parseInt((document.getElementById('add-album-target-artist')||{}).value||'{{ artist.id }}'))" id="spotify-playlist-import-btn" class="px-3 py-1 rounded text-xs bg-button-secondary text-primary-text">Import</button>
+                </div>
+            </div>
+            {% endif %}
+
             <label class="block text-sm mb-1 text-primary-text">Album Name <span class="text-delete">*</span></label>
             <input type="text" id="new-album-name" class="w-full px-3 py-1 border rounded mb-3 text-sm border-border">
 
