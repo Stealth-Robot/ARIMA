@@ -20,8 +20,18 @@ class User(UserMixin, db.Model):
     profile_image = db.Column(db.Text)
     home_page_image = db.Column(db.Text)
     last_updated = db.Column(db.Text)
+    spotify_user_id = db.Column(db.Text)
+    spotify_display_name = db.Column(db.Text)
+    spotify_image = db.Column(db.Text)
+    spotify_access_token = db.Column(db.Text)
+    spotify_refresh_token = db.Column(db.Text)
+    spotify_token_expires_at = db.Column(db.Integer)
 
     role = db.relationship('Role')
+
+    @property
+    def spotify_connected(self):
+        return bool(self.spotify_refresh_token)
     settings = db.relationship('UserSettings', uselist=False, back_populates='user',
                                cascade='all, delete-orphan')
     ratings = db.relationship('Rating', back_populates='user',

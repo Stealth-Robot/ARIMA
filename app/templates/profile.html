@@ -266,7 +266,7 @@
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="hide_all_spotify"
                            {% if settings.hide_all_spotify %}checked{% endif %}>
-                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-3.5 h-3.5">
+                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
                     Hide all Spotify links
                 </label>
             </div>
@@ -274,12 +274,50 @@
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="spotify_open_in_app"
                            {% if settings.spotify_open_in_app %}checked{% endif %}>
-                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-3.5 h-3.5">
+                    <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
                     Open Spotify links in desktop app
                 </label>
             </div>
         </form>
     </div>
+
+    <!-- Spotify Account -->
+    {% if not current_user.is_system_or_guest %}
+    <div class="mt-6 p-4 border rounded border-border">
+        <h2 class="font-semibold mb-3 flex items-center gap-2">
+            <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
+            Spotify Account
+        </h2>
+        {% if session.get('spotify_error') %}
+        <p class="text-sm mb-3 text-delete">{{ session.pop('spotify_error') }}</p>
+        {% elif session.get('spotify_success') %}
+        <p class="text-sm mb-3 text-edit-on">{{ session.pop('spotify_success') }}</p>
+        {% endif %}
+        {% if current_user.spotify_connected %}
+        <div class="flex items-center gap-3">
+            {% if current_user.spotify_image %}
+            <img src="{{ current_user.spotify_image }}" alt="Spotify avatar" class="w-10 h-10 rounded-full object-cover">
+            {% endif %}
+            <div class="flex-1 text-sm">
+                Connected as <strong>{{ current_user.spotify_display_name }}</strong>
+            </div>
+            <form method="POST" action="{{ url_for('profile.spotify_disconnect') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="px-4 py-2 rounded text-sm bg-delete text-button-text">Disconnect</button>
+            </form>
+        </div>
+        {% else %}
+        <p class="text-sm text-secondary-text mb-3">
+            Link your Spotify account to enable playlist and playback features.
+        </p>
+        <a href="{{ url_for('profile.spotify_connect') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded text-sm text-white no-underline" style="background-color: #1db954;">
+            <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
+            Connect Spotify
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Reset Password -->
     {% if not current_user.is_system_or_guest %}

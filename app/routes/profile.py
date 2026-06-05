@@ -222,6 +222,68 @@ def update_image():
     return redirect(url_for('profile.profile'))
 
 
+def _spotify_redirect_uri():
+    """The OAuth redirect URI — must exactly match one registered in the
+    Spotify dashboard. Prefer an explicit env override; else derive it."""
+    import os
+    return (os.environ.get('SPOTIFY_REDIRECT_URI')
+            or url_for('profile.spotify_callback', _external=True))
+
+
+@profile_bp.route('/profile/spotify/connect')
+@login_required
+def spotify_connect():
+    """Kick off the Spotify Authorization Code flow."""
+    import secrets
+    from app.services import spotify_oauth
+    if current_user.is_system_or_guest:
+        return redirect(url_for('profile.profile'))
+    if not spotify_oauth.is_configured():
+        session['spotify_error'] = 'Spotify is not configured on this server.'
+        return redirect(url_for('profile.profile'))
+    state = secrets.token_urlsafe(24)
+    session['spotify_oauth_state'] = state
+    return redirect(spotify_oauth.authorize_url(_spotify_redirect_uri(), state))
+
+
+@profile_bp.route('/spotify/callback')
+@login_required
+def spotify_callback():
+    """Handle the redirect back from Spotify, exchange code, store tokens."""
+    from app.services import spotify_oauth
+    expected_state = session.pop('spotify_oauth_state', None)
+    error = request.args.get('error')
+    if error:
+        session['spotify_error'] = f'Spotify authorization was cancelled ({error}).'
+        return redirect(url_for('profile.profile'))
+    state = request.args.get('state')
+    code = request.args.get('code')
+    if not code or not state or state != expected_state:
+        session['spotify_error'] = 'Spotify authorization failed (invalid state).'
+        return redirect(url_for('profile.profile'))
+    try:
+        token_data = spotify_oauth.exchange_code(code, _spotify_redirect_uri())
+        profile = spotify_oauth.fetch_me(token_data['access_token'])
+        spotify_oauth.store_connection(current_user, token_data, profile)
+        session['spotify_success'] = (
+            f"Connected to Spotify as {profile['display_name']}.")
+    except spotify_oauth.SpotifyOAuthError as e:
+        session['spotify_error'] = f'Could not connect to Spotify: {e}'
+    return redirect(url_for('profile.profile'))
+
+
+@profile_bp.route('/profile/spotify/disconnect', methods=['POST'])
+@login_required
+def spotify_disconnect():
+    """Unlink the user's Spotify account."""
+    from app.services import spotify_oauth
+    if current_user.is_system_or_guest:
+        return redirect(url_for('profile.profile'))
+    spotify_oauth.disconnect(current_user)
+    session['spotify_success'] = 'Disconnected from Spotify.'
+    return redirect(url_for('profile.profile'))
+
+
 @profile_bp.route('/profile/toggle-rating-mode', methods=['POST'])
 @login_required
 def toggle_rating_mode():

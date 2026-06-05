@@ -116,6 +116,19 @@ def run_startup_migrations():
                     ))
                 logger.info('Added missing user_settings column: %s', col.name)
 
+        # 1d. Add any new user columns (e.g. spotify_* OAuth fields)
+        existing_user_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('user')"))}
+        for col in User.__table__.columns:
+            if col.name not in existing_user_cols:
+                if isinstance(col.type, sqlalchemy.Boolean):
+                    db.session.execute(db.text(
+                        f'ALTER TABLE user ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT 0'))
+                elif isinstance(col.type, sqlalchemy.Integer):
+                    db.session.execute(db.text(f'ALTER TABLE user ADD COLUMN {col.name} INTEGER'))
+                else:
+                    db.session.execute(db.text(f'ALTER TABLE user ADD COLUMN {col.name} TEXT'))
+                logger.info('Added missing user column: %s', col.name)
+
         # Backfill edit_buttons: convert empty default [] to __all__ sentinel
         if 'edit_buttons' in existing_settings_cols:
             db.session.execute(db.text(
