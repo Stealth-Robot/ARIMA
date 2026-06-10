@@ -21,6 +21,37 @@ document.body.addEventListener('htmx:configRequest', function (e) {
     }
 });
 
+/* Rating cells: guard against failed/redirected saves.
+   On a 4xx/5xx htmx skips the swap but the cell keeps its optimistic value; on a
+   CSRF/session redirect the XHR follows to a full HTML page that would be swapped
+   into the <td>. Block the swap, tell the user, and reload the true cell. */
+document.body.addEventListener('htmx:beforeSwap', function (e) {
+    var target = e.detail.target;
+    if (!target || !target.id || target.id.indexOf('rating-') !== 0) return;
+    if (e.detail.shouldSwap === false) return;  // already handled (e.g. guardedAjax)
+    var xhr = e.detail.xhr;
+    if (!xhr) return;
+    var loginPage = (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1) ||
+                    (xhr.responseText && xhr.responseText.indexOf('id="login-form"') !== -1);
+    var fullPage = xhr.responseText && /<(!doctype|html)\b/i.test(xhr.responseText.slice(0, 200));
+    if (xhr.status < 400 && !loginPage && !fullPage) return;  // genuine fragment — let it swap
+    e.detail.shouldSwap = false;
+    if (loginPage || xhr.status === 401 || xhr.status === 403) {
+        showSessionExpiredToast();
+    } else {
+        showBriefToast('Failed to save — try again');
+    }
+    // Reload the authoritative cell, unless this failed request was already that reload.
+    var reqPath = (e.detail.requestConfig && e.detail.requestConfig.path) || '';
+    if (reqPath.indexOf('/rate/cell') === -1) {
+        var parts = target.id.split('-');  // rating-<songId>-<userId>
+        if (parts.length >= 3) {
+            htmx.ajax('GET', '/rate/cell?song_id=' + parts[1] + '&user_id=' + parts[2],
+                      { target: target, swap: 'outerHTML' });
+        }
+    }
+});
+
 /* CSRF helper for fetch calls */
 function _csrfHeaders(extra) {
     var h = extra || {};
