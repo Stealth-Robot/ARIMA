@@ -13,7 +13,7 @@ from app.services.dates import is_valid_release_date
 from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
-from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
+from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
 
 
 @edit_bp.route('/album/<int:album_id>/name', methods=['POST'])
@@ -137,10 +137,9 @@ def album_type(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    type_id = request.form.get('album_type_id', '').strip()
-    if not type_id:
+    type_id = request.form.get('album_type_id', type=int)
+    if type_id is None:
         abort(400)
-    type_id = int(type_id)
     album_type = db.session.get(AlbumType, type_id)
     if album_type is None:
         abort(400)
@@ -162,12 +161,14 @@ def album_genres_edit(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    raw = request.form.get('genre_ids', '').strip()
-    genre_ids = sorted([int(x) for x in raw.split(',') if x.strip()]) if raw else []
+    genre_ids = _parse_id_list(request.form.get('genre_ids', '').strip())
     current_ids = sorted([r[1] for r in db.session.execute(
         album_genres.select().where(album_genres.c.album_id == album_id)
     ).fetchall()])
-    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    genres = Genre.query.filter(Genre.id.in_(genre_ids)).all() if genre_ids else []
+    if len(genres) != len(genre_ids):
+        abort(400)
+    names = [g.genre for g in genres]
     if genre_ids == current_ids:
         return json.dumps(names), 200, {'Content-Type': 'application/json'}
     # Replace all genre associations
@@ -383,10 +384,9 @@ def album_add_song(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    song_id = request.form.get('song_id', '').strip()
-    if not song_id:
+    song_id = request.form.get('song_id', type=int)
+    if song_id is None:
         abort(400)
-    song_id = int(song_id)
     song = db.session.get(Song, song_id)
     if song is None:
         abort(400)
@@ -402,9 +402,10 @@ def album_add_song(album_id):
     db.session.add(AlbumSong(album_id=album_id, song_id=song_id, track_number=next_track))
 
     # Ensure the viewing artist is linked to this song so it appears in their discography
-    artist_id = request.form.get('artist_id', '').strip()
-    if artist_id:
-        artist_id = int(artist_id)
+    artist_id = request.form.get('artist_id', type=int)
+    if artist_id is not None:
+        if db.session.get(Artist, artist_id) is None:
+            abort(400)
         artist_link = ArtistSong.query.filter_by(artist_id=artist_id, song_id=song_id).first()
         if not artist_link:
             db.session.add(ArtistSong(artist_id=artist_id, song_id=song_id, artist_is_main=False))
@@ -462,10 +463,15 @@ def album_create_song(album_id):
 
     seen = set()
     for a in artists:
-        aid = int(a['artist_id'])
+        try:
+            aid = int(a['artist_id'])
+        except (KeyError, TypeError, ValueError):
+            abort(400)
         if aid in seen:
             continue
         seen.add(aid)
+        if db.session.get(Artist, aid) is None:
+            abort(400)
         db.session.add(ArtistSong(artist_id=aid, song_id=song.id, artist_is_main=bool(a.get('is_main'))))
 
     for ma in data.get('misc_artists') or []:
@@ -491,8 +497,8 @@ def move_song(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    song_id = int(request.form.get('song_id', 0))
-    target_song_id = int(request.form.get('target_song_id', 0))
+    song_id = request.form.get('song_id', type=int)
+    target_song_id = request.form.get('target_song_id', type=int)
     direction = request.form.get('direction', 'before')
     if not song_id or not target_song_id or song_id == target_song_id:
         abort(400)

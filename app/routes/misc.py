@@ -532,7 +532,13 @@ def edit_misc_artist(artist_id):
     if 'name' in data:
         ma.name = (data['name'] or '').strip() or ma.name
     if 'country_id' in data:
-        ma.country_id = int(data['country_id'])
+        try:
+            cid = int(data['country_id'])
+        except (TypeError, ValueError):
+            abort(400)
+        if db.session.get(Country, cid) is None:
+            abort(400)
+        ma.country_id = cid
     if ma.name != old_name:
         log_change(current_user, f'Renamed misc artist "{old_name}" to "{ma.name}"', change_type='artist')
     if ma.country_id != old_country:
@@ -843,8 +849,13 @@ def set_misc_role():
     kind = request.form.get('kind')
     if kind not in ('owner', 'maintainer'):
         abort(400)
-    user_id = request.form.get('user_id')
-    user_id = int(user_id) if user_id else None
+    raw_user_id = request.form.get('user_id', '').strip()
+    if raw_user_id:
+        user_id = request.form.get('user_id', type=int)
+        if user_id is None or db.session.get(User, user_id) is None:
+            abort(400)
+    else:
+        user_id = None
     rules = db.session.get(Rules, 1)
     if not rules:
         abort(500)

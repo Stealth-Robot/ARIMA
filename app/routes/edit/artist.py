@@ -17,7 +17,7 @@ from app.services.audit import log_change
 from app.services.submission import create_submission, _close_orphaned_submissions
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
 
-from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
+from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +79,10 @@ def artist_country(artist_id):
     artist = db.session.get(Artist, artist_id)
     if artist is None:
         abort(404)
-    country_id = request.form.get('country_id', '').strip()
-    if not country_id:
+    country_id = request.form.get('country_id', type=int)
+    if country_id is None:
         abort(400)
-    country = db.session.get(Country, int(country_id))
+    country = db.session.get(Country, country_id)
     if country is None:
         abort(400)
     if artist.country_id == country.id:
@@ -101,10 +101,10 @@ def artist_gender(artist_id):
     artist = db.session.get(Artist, artist_id)
     if artist is None:
         abort(404)
-    gender_id = request.form.get('gender_id', '').strip()
-    if not gender_id:
+    gender_id = request.form.get('gender_id', type=int)
+    if gender_id is None:
         abort(400)
-    gender = db.session.get(GroupGender, int(gender_id))
+    gender = db.session.get(GroupGender, gender_id)
     if gender is None:
         abort(400)
     if artist.gender_id == gender.id:
@@ -372,10 +372,14 @@ def artist_bulk_genres(artist_id):
     if action not in ('apply', 'remove', 'clear'):
         abort(400, description='invalid action')
 
-    raw = request.form.get('genre_ids', '').strip()
-    requested_ids = sorted({int(x) for x in raw.split(',') if x.strip()}) if raw else []
+    requested_ids = _parse_id_list(request.form.get('genre_ids', '').strip())
     if action in ('apply', 'remove') and not requested_ids:
         abort(400, description='genre_ids required for apply/remove')
+    if action == 'apply' and requested_ids:
+        from app.models.lookups import Genre
+        valid = {g.id for g in Genre.query.filter(Genre.id.in_(requested_ids)).all()}
+        if set(requested_ids) - valid:
+            abort(400, description='unknown genre id')
 
     song_ids = {r.song_id for r in ArtistSong.query.filter_by(artist_id=artist_id).all()}
     albums = []

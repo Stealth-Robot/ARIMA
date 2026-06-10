@@ -12,7 +12,7 @@ from app.services.audit import log_change
 from app.services.submission import _close_orphaned_submissions
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
-from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password
+from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
 
 
 @edit_bp.route('/song/<int:song_id>/name', methods=['POST'])
@@ -183,10 +183,9 @@ def song_move_album(song_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
-    new_album_id = request.form.get('album_id', '').strip()
-    if not new_album_id:
+    new_album_id = request.form.get('album_id', type=int)
+    if new_album_id is None:
         abort(400)
-    new_album_id = int(new_album_id)
     new_album = db.session.get(Album, new_album_id)
     if new_album is None:
         abort(400)
@@ -285,10 +284,9 @@ def add_song_to_album(song_id):
     song = db.session.get(Song, song_id)
     if song is None:
         abort(404)
-    target_album_id = request.form.get('album_id', '').strip()
-    if not target_album_id:
+    target_album_id = request.form.get('album_id', type=int)
+    if target_album_id is None:
         abort(400)
-    target_album_id = int(target_album_id)
     target_album = db.session.get(Album, target_album_id)
     if target_album is None:
         abort(400)
@@ -729,7 +727,10 @@ def merge_song(kept_song_id):
     absorbed_song_id = (data or {}).get('absorbed_song_id') or request.form.get('absorbed_song_id', type=int)
     if absorbed_song_id is None:
         abort(400)
-    absorbed_song_id = int(absorbed_song_id)
+    try:
+        absorbed_song_id = int(absorbed_song_id)
+    except (TypeError, ValueError):
+        abort(400)
     if absorbed_song_id == kept_song_id:
         return 'Cannot merge a song with itself', 400
     absorbed = db.session.get(Song, absorbed_song_id)
@@ -974,12 +975,14 @@ def song_genres_edit(song_id):
     if song is None:
         abort(404)
     from app.models.lookups import Genre
-    raw = request.form.get('genre_ids', '').strip()
-    genre_ids = sorted([int(x) for x in raw.split(',') if x.strip()]) if raw else []
+    genre_ids = _parse_id_list(request.form.get('genre_ids', '').strip())
     current_ids = sorted([r[1] for r in db.session.execute(
         song_genres.select().where(song_genres.c.song_id == song_id)
     ).fetchall()])
-    names = [g.genre for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()] if genre_ids else []
+    genres = Genre.query.filter(Genre.id.in_(genre_ids)).all() if genre_ids else []
+    if len(genres) != len(genre_ids):
+        abort(400)
+    names = [g.genre for g in genres]
     if genre_ids == current_ids:
         return json.dumps(names), 200, {'Content-Type': 'application/json'}
     db.session.execute(song_genres.delete().where(song_genres.c.song_id == song_id))

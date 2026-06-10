@@ -20,6 +20,16 @@ def _require_edit_mode():
         abort(403)
 
 
+def _parse_id_list(raw):
+    """Parse a comma-separated string of ints; abort(400) on any non-numeric token."""
+    if not raw:
+        return []
+    try:
+        return sorted({int(x) for x in raw.split(',') if x.strip()})
+    except (TypeError, ValueError):
+        abort(400)
+
+
 def _verify_password():
     """Check current user's password from form data. Returns True or False."""
     password = request.form.get('password', '')
