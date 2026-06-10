@@ -198,10 +198,6 @@ function showArtistNameEdit(event, endpoint, span) {
             newSpan.setAttribute('onclick', "showArtistNameEdit(event, '" + endpoint + "', this)");
             newSpan.textContent = data.name;
             input.replaceWith(newSpan);
-            // Update browser URL to new slug
-            if (data.slug) {
-                window.history.replaceState(null, '', '/artists/' + data.slug);
-            }
         });
     }
 

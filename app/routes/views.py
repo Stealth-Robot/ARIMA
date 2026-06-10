@@ -152,17 +152,17 @@ def view_feat_only():
     songs = _feat_only_query().order_by(func.lower(Song.name)).all()
     song_ids = [s.id for s in songs]
     artist_map = {}
-    link_slug = {}
+    link_id = {}
     if song_ids:
         rows = db.session.query(
-            ArtistSong.song_id, Artist.id, Artist.name, Artist.slug
+            ArtistSong.song_id, Artist.id, Artist.name
         ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
             ArtistSong.song_id.in_(song_ids),
             ArtistSong.artist_is_main == False,
         ).order_by(func.lower(Artist.name)).all()
-        for sid, aid, aname, aslug in rows:
+        for sid, aid, aname in rows:
             artist_map.setdefault(sid, []).append({'id': aid, 'name': aname, 'kind': 'real'})
-            link_slug.setdefault(sid, aslug)  # link song via a featured real artist
+            link_id.setdefault(sid, aid)  # link song via a featured real artist
         misc_rows = db.session.query(
             SongMiscArtist.song_id, MiscArtist.id, MiscArtist.name
         ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
@@ -174,21 +174,21 @@ def view_feat_only():
             artist_map.setdefault(sid, []).append({'id': mid, 'name': mname, 'kind': 'misc'})
             misc_song_ids.add(sid)
         # Fallback for misc-only songs: link via the album's artist
-        missing = [sid for sid in song_ids if sid not in link_slug]
+        missing = [sid for sid in song_ids if sid not in link_id]
         if missing:
-            alb_rows = db.session.query(AlbumSong.song_id, Artist.slug).join(
+            alb_rows = db.session.query(AlbumSong.song_id, Artist.id).join(
                 Album, Album.id == AlbumSong.album_id
             ).join(Artist, Artist.id == Album.artist_id).filter(
                 AlbumSong.song_id.in_(missing)
             ).all()
-            for sid, aslug in alb_rows:
-                link_slug.setdefault(sid, aslug)
+            for sid, aid in alb_rows:
+                link_id.setdefault(sid, aid)
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     items = []
     for s in songs:
-        slug = link_slug.get(s.id)
-        if slug:
-            link = f'/artists/{slug}#song-{s.id}'        # real/album artist page
+        aid = link_id.get(s.id)
+        if aid:
+            link = f'/artists/{aid}#song-{s.id}'        # real/album artist page
         elif s.id in misc_song_ids:
             link = f'/misc#song-{s.id}'                   # misc page (auto-expands)
         else:
@@ -502,7 +502,7 @@ def view_potential_duplicates():
 
     rows = db.session.query(
         Song.id, Song.name, Song.is_remix,
-        Artist.name.label('artist_name'), Artist.slug.label('artist_slug'),
+        Artist.id.label('artist_id'), Artist.name.label('artist_name'),
         Album.name.label('album_name'),
     ).join(
         ArtistSong, db.and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True)
@@ -518,7 +518,7 @@ def view_potential_duplicates():
 
     # Group by lowercase song name
     groups = {}
-    for song_id, song_name, is_remix, artist_name, artist_slug, album_name in rows:
+    for song_id, song_name, is_remix, artist_id, artist_name, album_name in rows:
         key = song_name.lower()
         if key not in groups:
             groups[key] = {'name': song_name, 'songs': [], 'pairs': []}
@@ -532,7 +532,7 @@ def view_potential_duplicates():
                 'name': song_name,
                 'is_remix': is_remix,
                 'artist_name': artist_name,
-                'artist_slug': artist_slug,
+                'artist_id': artist_id,
                 'albums': [album_name] if album_name else [],
             })
 
@@ -632,7 +632,7 @@ def view_incomplete_tabs():
         Artist.is_complete == False,
     ).order_by(Artist.name).all()
     return render_template('fragments/view_list.html', items=[
-        {'label': f'<a href="/artists/{a.slug}" style="color: var(--link);">{a.name}</a>', 'safe': True}
+        {'label': f'<a href="/artists/{a.id}" style="color: var(--link);">{a.name}</a>', 'safe': True}
         for a in artists
     ])
 
@@ -733,14 +733,14 @@ def view_collab_candidates():
         return render_template('fragments/view_collab_candidates.html', items=[])
 
     artist_rows = db.session.query(
-        ArtistSong.song_id, Artist.name, Artist.slug,
+        ArtistSong.song_id, Artist.id, Artist.name,
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
         ArtistSong.song_id.in_(song_ids),
         ArtistSong.artist_is_main == True,
     ).all()
     artist_map = {}
-    for sid, aname, aslug in artist_rows:
-        artist_map.setdefault(sid, []).append({'name': aname, 'slug': aslug})
+    for sid, aid, aname in artist_rows:
+        artist_map.setdefault(sid, []).append({'id': aid, 'name': aname})
 
     items = []
     for s in songs:

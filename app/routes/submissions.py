@@ -94,21 +94,19 @@ def _entity_url(sub, cache=None):
     """Return a URL to the entity, or None if deleted."""
     artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
 
-    def _artist_slug_url(artist):
-        if artist and artist.slug:
-            return f'/artists/{artist.slug}'
-        elif artist:
+    def _artist_url(artist):
+        if artist:
             return f'/artists/{artist.id}'
         return None
 
     eid = _int_eid(sub)
     if sub.type == 'artist':
-        return _artist_slug_url(artists.get(eid))
+        return _artist_url(artists.get(eid))
     elif sub.type == 'album':
         entity = albums.get(eid)
         if entity and entity.artist_id:
             artist = artists.get(entity.artist_id)
-            base = _artist_slug_url(artist)
+            base = _artist_url(artist)
             if base:
                 return f'{base}#album-{entity.id}'
     elif sub.type in ('song', 'rating', 'note'):
@@ -116,7 +114,7 @@ def _entity_url(sub, cache=None):
         if entity:
             artist_id = song_artist_links.get(entity.id)
             artist = artists.get(artist_id) if artist_id else None
-            base = _artist_slug_url(artist)
+            base = _artist_url(artist)
             if base:
                 return f'{base}#song-{entity.id}'
     return None
@@ -127,7 +125,7 @@ def _resolve_artist_for_submission(sub, cache=None):
     artists, albums, songs, song_artist_links = cache or ({}, {}, {}, {})
 
     def _url(artist):
-        return f'/artists/{artist.slug}' if artist.slug else f'/artists/{artist.id}'
+        return f'/artists/{artist.id}'
 
     eid = _int_eid(sub)
     if sub.type == 'artist':

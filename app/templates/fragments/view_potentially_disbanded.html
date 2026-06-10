@@ -6,7 +6,7 @@
         <button class="px-2 py-1 rounded text-xs bg-button-secondary text-primary-text border-0 cursor-pointer"
                 onclick="markInactive(this, {{ a.id }})">Mark Inactive</button>
         {% endif %}
-        <a href="/artists/{{ a.slug }}" class="text-link">{{ a.name }}</a>
+        <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link">{{ a.name }}</a>
     </li>
     {% endfor %}
 </ul>

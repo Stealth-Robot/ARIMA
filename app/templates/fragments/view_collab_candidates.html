@@ -14,13 +14,13 @@
         <tr id="collab-{{ item.song_id }}" class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-3 py-1 border border-grid-line">
                 {% if item.artists %}
-                <a href="/artists/{{ item.artists[0].slug }}#song-{{ item.song_id }}" class="text-link">{{ item.song_name }}</a>
+                <a href="{{ url_for('artists.artist_detail', artist_id=item.artists[0].id) }}#song-{{ item.song_id }}" class="text-link">{{ item.song_name }}</a>
                 {% else %}
                 {{ item.song_name }}
                 {% endif %}
             </td>
             <td class="px-3 py-1 border border-grid-line">
-                {% for a in item.artists %}{% if not loop.first %}, {% endif %}<a href="/artists/{{ a.slug }}" class="text-link">{{ a.name }}</a>{% endfor %}{% if not item.artists %}—{% endif %}
+                {% for a in item.artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link">{{ a.name }}</a>{% endfor %}{% if not item.artists %}—{% endif %}
             </td>
             <td class="px-3 py-1 border border-grid-line text-secondary-text italic">
                 {{ item.extracted_names | join(', ') or '—' }}

@@ -35,20 +35,20 @@ def artists_list():
 
 
 def _slug_url(artist):
-    """Build the canonical display URL using the artist's name."""
+    """Build the slug-alias URL from the artist's unique slug."""
     from urllib.parse import quote
-    return '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    return '/artists/' + quote(artist.slug or '', safe="() .-")
 
 
 @artists_bp.route('/artists/<int:artist_id>')
 @login_required
 def artist_detail(artist_id):
-    """ID URL → redirect to slug URL (or render with HX-Replace-Url for HTMX)."""
+    """Canonical id URL — renders directly. Never redirects to the slug."""
     artist = db.session.get(Artist, artist_id)
     if not artist:
         abort(404)
 
-    # Subunits: resolve to parent
+    # Subunits: resolve to parent (the subunit has no standalone page)
     if is_subunit(artist_id):
         from app.services.artist import get_parent
         parent = get_parent(artist_id)
@@ -57,48 +57,34 @@ def artist_detail(artist_id):
             if parent_artist:
                 artist = parent_artist
 
-    slug_url = _slug_url(artist)
-
     if request.headers.get('HX-Request'):
-        # For HTMX: render directly, replace the slug URL in the browser
-        return _render_artist(artist, htmx=True, push_url=slug_url)
-
-    return redirect(slug_url)
+        return _render_artist(artist, htmx=True,
+                              push_url=url_for('artists.artist_detail', artist_id=artist.id))
+    return _render_artist(artist, htmx=False)
 
 
 @artists_bp.route('/artists/<path:artist_slug>')
 @login_required
 def artist_detail_by_slug(artist_slug):
-    """Slug URL — canonical display route. Also handles name lookups."""
-    # Try exact name match first (avoids SQL LIKE wildcard issues with % etc.)
-    # SQLite lower() only handles ASCII, so fall back to Python comparison for non-ASCII
-    artist = Artist.query.filter(Artist.name == artist_slug).first()
-    if not artist:
-        artist = Artist.query.filter(db.func.lower(Artist.name) == artist_slug.lower()).first()
-    if not artist:
-        artist = Artist.query.filter_by(slug=artist_slug).first()
+    """Slug-alias URL — renders directly. Never redirects to the id."""
+    # Resolve by slug only (case-insensitive). Name is not a URL key.
+    artist = Artist.query.filter_by(slug=artist_slug).first()
     if not artist:
         artist = Artist.query.filter(db.func.lower(Artist.slug) == artist_slug.lower()).first()
     if not artist:
-        slug_lower = artist_slug.lower()
-        artist = next((a for a in Artist.query.all() if a.name.lower() == slug_lower), None)
-    if not artist:
         abort(404)
 
-    # Subunits: redirect to parent's slug URL
+    # Subunits: resolve to parent (the subunit has no standalone page)
     if is_subunit(artist.id):
         from app.services.artist import get_parent
         parent = get_parent(artist.id)
         if parent:
             parent_artist = db.session.get(Artist, parent.id)
             if parent_artist:
-                if request.headers.get('HX-Request'):
-                    return _render_artist(parent_artist, htmx=True, push_url=_slug_url(parent_artist))
-                return redirect(_slug_url(parent_artist))
+                artist = parent_artist
 
     if request.headers.get('HX-Request'):
-        return _render_artist(artist, htmx=True)
-
+        return _render_artist(artist, htmx=True, push_url=_slug_url(artist))
     return _render_artist(artist, htmx=False)
 
 
