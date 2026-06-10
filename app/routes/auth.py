@@ -91,6 +91,12 @@ def create_account():
     next_url = _safe_redirect_target()
     theme = _classic_theme()
 
+    # Validate username present
+    if not username:
+        return render_template('auth/login.html', theme=theme, mode='create',
+                               create_email=email, create_username=username,
+                               next=next_url, error='Username is required.')
+
     # Validate passwords match
     if password != confirm:
         return render_template('auth/login.html', theme=theme, mode='create',
@@ -101,6 +107,11 @@ def create_account():
         return render_template('auth/login.html', theme=theme, mode='create',
                                create_email=email, create_username=username,
                                next=next_url, error='Password is required.')
+
+    if len(password) < 5:
+        return render_template('auth/login.html', theme=theme, mode='create',
+                               create_email=email, create_username=username,
+                               next=next_url, error='Password must be at least 5 characters.')
 
     # Look up invited user by email
     user = User.query.filter_by(email=email).first()
