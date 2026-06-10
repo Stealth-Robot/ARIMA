@@ -8,6 +8,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = 2592000  # 30 days in seconds
     WTF_CSRF_TIME_LIMIT = None            # CSRF token valid for life of session
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
     COMPRESS_MIMETYPES = [
         'text/html', 'text/css', 'text/javascript',
         'application/javascript', 'application/json',
@@ -17,3 +19,5 @@ class Config:
 
 class ProdConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:////data/arima.db'
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True

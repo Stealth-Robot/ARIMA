@@ -221,7 +221,10 @@
                 {% if current_user.is_authenticated %}
                 <div class="border-t border-border my-1"></div>
                 <a href="{{ url_for('profile.profile') }}" class="mobile-menu-item">Profile</a>
-                <a href="{{ url_for('auth.logout') }}" class="mobile-menu-item">Logout</a>
+                <form method="post" action="{{ url_for('auth.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="mobile-menu-item w-full text-left bg-transparent border-0 cursor-pointer" style="font: inherit;">Logout</button>
+                </form>
                 {% endif %}
             </div>
         </div>
@@ -256,7 +259,10 @@
                 </a>
                 <div class="profile-dd nav-dropdown-panel">
                     <a href="{{ url_for('profile.profile') }}" class="nav-dropdown-item">Profile</a>
-                    <a href="{{ url_for('auth.logout') }}" class="nav-dropdown-item">Logout</a>
+                    <form method="post" action="{{ url_for('auth.logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="nav-dropdown-item w-full text-left bg-transparent border-0 cursor-pointer" style="font: inherit;">Logout</button>
+                    </form>
                 </div>
             </div>
             {% endif %}

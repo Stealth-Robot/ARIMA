@@ -21,6 +21,10 @@ def _safe_redirect_target():
     # Only allow relative paths (no scheme, no netloc)
     if parsed.scheme or parsed.netloc:
         return None
+    # Reject backslash and protocol-relative tricks browsers normalize to an
+    # external host (e.g. /\evil.com -> //evil.com).
+    if '\\' in target or target.startswith('//'):
+        return None
     return target
 
 
@@ -151,7 +155,7 @@ def create_account():
     return redirect(next_url or url_for('home.home'))
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     # Clear custom session keys before logout (filters, theme)
