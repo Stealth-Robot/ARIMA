@@ -214,6 +214,11 @@ def album_move_artist(album_id):
             db.session.add(ArtistSong(artist_id=target_id, song_id=sid, artist_is_main=was_main))
             moved += 1
 
+    # If the album was directly attributed to the source, move that link too —
+    # otherwise it keeps showing under the source after its songs have left.
+    if album.artist_id == source_id:
+        album.artist_id = target_id
+
     log_change(current_user,
                f'Moved {moved} songs in "{album.name}" from "{source.name}" to "{target.name}"',
                album=album)
