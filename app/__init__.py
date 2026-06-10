@@ -176,13 +176,18 @@ def create_app():
         import traceback
         from flask import request
         from werkzeug.exceptions import HTTPException
-        if isinstance(e, HTTPException) and e.code < 500:
-            raise e
+        if isinstance(e, HTTPException):
+            # Client errors (4xx) render their normal response, not a 500.
+            # Re-raising here does not re-dispatch in Flask 3.x, so return the
+            # exception's own response instead.
+            if e.code is None or e.code >= 500:
+                logger.error('Unhandled %s on %s %s:\n%s',
+                             type(e).__name__, request.method, request.path,
+                             traceback.format_exc())
+            return e.get_response()
         logger.error('Unhandled %s on %s %s:\n%s',
                      type(e).__name__, request.method, request.path,
                      traceback.format_exc())
-        if isinstance(e, HTTPException):
-            return e.get_body(), e.code
         return 'Internal Server Error', 500
 
     # 404 error page
