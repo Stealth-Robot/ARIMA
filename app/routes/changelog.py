@@ -9,6 +9,7 @@ from app.models.changelog import Changelog
 from app.models.lookups import ChangelogType
 from app.models.user import User
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
+from app.services.search import like_contains, LIKE_ESCAPE
 
 changelog_bp = Blueprint('changelog', __name__)
 
@@ -33,7 +34,7 @@ def changelog():
     ).order_by(Changelog.date.desc(), Changelog.id.desc())
 
     if search:
-        query = query.filter(Changelog.description.ilike(f'%{search}%'))
+        query = query.filter(Changelog.description.ilike(like_contains(search), escape=LIKE_ESCAPE))
     if user_ids:
         query = query.filter(Changelog.user_id.in_([int(v) for v in user_ids]))
     if include:

@@ -17,6 +17,7 @@ from app.services.submission import (
 )
 from app.cache import clear_stats_cache
 from app.services.events import publish
+from app.services.search import like_contains, LIKE_ESCAPE
 
 submissions_bp = Blueprint('submissions', __name__)
 
@@ -255,11 +256,11 @@ def submissions_page():
         query = query.filter_by(type=type_filter)
 
     if search:
-        like = f'%{search}%'
+        like = like_contains(search)
         query = query.filter(
             db.or_(
-                Submission.entity_name.ilike(like),
-                Submission.artist_name.ilike(like),
+                Submission.entity_name.ilike(like, escape=LIKE_ESCAPE),
+                Submission.artist_name.ilike(like, escape=LIKE_ESCAPE),
             )
         )
 

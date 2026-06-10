@@ -7,6 +7,7 @@ from sqlalchemy import func
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist
+from app.services.search import like_contains, LIKE_ESCAPE
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def search():
         return render_template('fragments/search_results.html',
                                artists=[], albums=[], songs=[], query=q)
 
-    like = f'%{q}%'
+    like = like_contains(q)
     terms = q.lower().split()
     term_counts = Counter(terms)
     show_hidden = request.args.get('show_hidden') == '1'
@@ -72,7 +73,7 @@ def search():
             ).all()}
 
     # --- Artists ---
-    artist_query = Artist.query.filter(Artist.name.ilike(like))
+    artist_query = Artist.query.filter(Artist.name.ilike(like, escape=LIKE_ESCAPE))
     if country_ids:
         artist_query = artist_query.filter(Artist.country_id.in_(country_ids))
     if genre_ids:
@@ -109,16 +110,16 @@ def search():
         album_fields = [Album.name, Artist.name]
         for term, count in term_counts.items():
             if count == 1:
-                t = f'%{term}%'
+                t = like_contains(term)
                 album_query = album_query.filter(
-                    db.or_(*(f.ilike(t) for f in album_fields))
+                    db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in album_fields))
                 )
             else:
                 album_query = album_query.filter(
                     _occurrences(album_fields, term) >= count
                 )
     else:
-        album_query = album_query.filter(Album.name.ilike(like))
+        album_query = album_query.filter(Album.name.ilike(like, escape=LIKE_ESCAPE))
     albums = album_query.order_by(func.lower(Album.name), func.lower(Artist.name)).distinct().all()
 
     # --- Songs ---
@@ -136,16 +137,16 @@ def search():
         song_fields = [Song.name, Artist.name, Album.name]
         for term, count in term_counts.items():
             if count == 1:
-                t = f'%{term}%'
+                t = like_contains(term)
                 song_id_q = song_id_q.filter(
-                    db.or_(*(f.ilike(t) for f in song_fields))
+                    db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in song_fields))
                 )
             else:
                 song_id_q = song_id_q.filter(
                     _occurrences(song_fields, term) >= count
                 )
     else:
-        song_id_q = song_id_q.filter(Song.name.ilike(like))
+        song_id_q = song_id_q.filter(Song.name.ilike(like, escape=LIKE_ESCAPE))
     if ost_album_ids:
         song_id_q = song_id_q.filter(db.or_(
             ~Album.id.in_(ost_album_ids),
@@ -223,9 +224,9 @@ def search():
             misc_fields = [Song.name, MiscArtist.name]
             for term, count in term_counts.items():
                 if count == 1:
-                    t = f'%{term}%'
+                    t = like_contains(term)
                     misc_song_q = misc_song_q.filter(
-                        db.or_(*(f.ilike(t) for f in misc_fields))
+                        db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in misc_fields))
                     )
                 else:
                     misc_song_q = misc_song_q.filter(
@@ -233,7 +234,8 @@ def search():
                     )
         else:
             misc_song_q = misc_song_q.filter(
-                db.or_(Song.name.ilike(like), MiscArtist.name.ilike(like))
+                db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE),
+                       MiscArtist.name.ilike(like, escape=LIKE_ESCAPE))
             )
         misc_song_rows = misc_song_q.distinct().all()
 
