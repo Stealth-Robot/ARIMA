@@ -991,7 +991,7 @@ def song_genres_edit(song_id):
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
-@edit_bp.route('/search-albums')
+@edit_bp.route('/picker/albums')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def search_albums():
@@ -1036,7 +1036,7 @@ def search_albums():
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
 
 
-@edit_bp.route('/search-songs')
+@edit_bp.route('/picker/songs')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def search_songs():

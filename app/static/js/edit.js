@@ -1198,12 +1198,12 @@ function _renderAlbumResults(albums, listContainer, onSelect) {
 }
 
 function _fetchAlbums(q, excludeId, callback) {
-    var url = '/edit/search-albums?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
+    var url = '/edit/picker/albums?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
     fetch(url, { headers: _csrfHeaders({}) }).then(function(r) { return r.json(); }).then(callback).catch(function() { callback([]); });
 }
 
 function _fetchSongs(q, excludeId, callback) {
-    var url = '/edit/search-songs?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
+    var url = '/edit/picker/songs?q=' + encodeURIComponent(q || '') + '&exclude=' + (excludeId || '');
     fetch(url, { headers: _csrfHeaders({}) }).then(function(r) { return r.json(); }).then(callback).catch(function() { callback([]); });
 }
 
