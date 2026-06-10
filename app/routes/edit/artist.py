@@ -336,6 +336,14 @@ def delete_artist(artist_id):
                     db.session.query(Album).filter_by(id=row.album_id).delete()
                     _close_orphaned_submissions('album', row.album_id, current_user)
 
+    # Delete this artist's own empty albums; otherwise the artist delete SET NULLs
+    # their artist_id and leaves them orphaned. Albums with songs are kept.
+    for album_obj in Album.query.filter_by(artist_id=artist_id).all():
+        if AlbumSong.query.filter_by(album_id=album_obj.id).count() == 0:
+            db.session.execute(album_genres.delete().where(album_genres.c.album_id == album_obj.id))
+            db.session.query(Album).filter_by(id=album_obj.id).delete()
+            _close_orphaned_submissions('album', album_obj.id, current_user)
+
     # Close orphaned submissions for the artist itself
     _close_orphaned_submissions('artist', artist_id, current_user)
 
