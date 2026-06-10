@@ -430,6 +430,20 @@ def split_song(song_id):
             note=r.note,
         ))
 
+    # Copy misc artist links
+    for ma_link in SongMiscArtist.query.filter_by(song_id=song_id).all():
+        db.session.add(SongMiscArtist(
+            song_id=clone.id,
+            misc_artist_id=ma_link.misc_artist_id,
+            artist_is_main=ma_link.artist_is_main,
+        ))
+
+    # Copy song-level genres
+    for row in db.session.execute(
+        song_genres.select().where(song_genres.c.song_id == song_id)
+    ).fetchall():
+        db.session.execute(song_genres.insert().values(song_id=clone.id, genre_id=row[1]))
+
     # Remove original from this album and attach clone
     track = link.track_number
     db.session.delete(link)
