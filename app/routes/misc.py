@@ -589,10 +589,14 @@ def merge_misc_artists():
     data = request.get_json(silent=True) or {}
     keep_id = data.get('keep_id')
     absorb_id = data.get('absorb_id')
-    if not keep_id or not absorb_id or keep_id == absorb_id:
+    if not keep_id or not absorb_id:
         abort(400)
-    keep = db.session.get(MiscArtist, int(keep_id))
-    absorb = db.session.get(MiscArtist, int(absorb_id))
+    keep_id = int(keep_id)
+    absorb_id = int(absorb_id)
+    if keep_id == absorb_id:
+        abort(400)
+    keep = db.session.get(MiscArtist, keep_id)
+    absorb = db.session.get(MiscArtist, absorb_id)
     if not keep or not absorb:
         abort(404)
     # Move all song links from absorbed to kept
