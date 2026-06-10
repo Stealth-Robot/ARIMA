@@ -230,6 +230,8 @@ def convert_artist(artist_id):
     rel_type = request.form.get('type', '').strip()
     if parent_id is None or rel_type not in ('subunit', 'soloist'):
         abort(400)
+    if parent_id == artist_id:
+        return 'Cannot make an artist a subunit or soloist of itself', 400
     parent = db.session.get(Artist, parent_id)
     if parent is None:
         abort(400)
