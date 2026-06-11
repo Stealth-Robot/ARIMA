@@ -234,9 +234,15 @@ def bulk_spotify_start():
         limit = 50
     limit = max(1, min(limit, 500))
 
+    try:
+        offset = int(request.form.get('offset', 0))
+    except (TypeError, ValueError):
+        offset = 0
+    offset = max(0, offset)
+
     artist_ids = [a.id for a in Artist.query.filter(
         db.or_(Artist.spotify_url.is_(None), Artist.spotify_url == '')
-    ).order_by(func.lower(Artist.name)).limit(limit).all()]
+    ).order_by(func.lower(Artist.name)).offset(offset).limit(limit).all()]
 
     if not artist_ids:
         return jsonify({'error': 'No artists are missing Spotify links'}), 400
