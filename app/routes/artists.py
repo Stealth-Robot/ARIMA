@@ -192,6 +192,8 @@ def _render_artist(artist, htmx=False, push_url=None):
         return resp
 
     og_song = _build_og_song(request.args.get('song'))
+    og_album_count = sum(1 for d in discography if d['album'])
+    og_song_count = sum(len(d['songs']) for d in discography)
 
     navbar = _get_filtered_navbar()
     # Ensure current artist always appears in navbar regardless of filters
@@ -210,7 +212,9 @@ def _render_artist(artist, htmx=False, push_url=None):
                            edit_genres=edit_genres, edit_album_types=edit_album_types,
                            edit_countries=edit_countries, edit_genders=edit_genders,
                            rated_filter=rated_filter,
-                           og_song=og_song)
+                           og_song=og_song,
+                           og_album_count=og_album_count,
+                           og_song_count=og_song_count)
 
 
 def _get_display_users():
@@ -239,11 +243,20 @@ def _build_og_song(song_param):
     if not genre_names:
         genre_names = [g.genre for g in song.genres]
 
+    avg, count = db.session.query(
+        func.avg(Rating.rating), func.count(Rating.rating)
+    ).filter(Rating.song_id == song.id, Rating.rating.isnot(None)).first()
+    rating_summary = None
+    if count:
+        rating_summary = 'avg %s/5 (%d rating%s)' % (
+            round(avg, 1), count, '' if count == 1 else 's')
+
     return {
         'name': song.name,
         'album': album.name if album else None,
         'release_date': album.release_date if album else None,
         'genres': genre_names,
+        'rating_summary': rating_summary,
     }
 
 

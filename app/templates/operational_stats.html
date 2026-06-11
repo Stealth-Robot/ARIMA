@@ -2,7 +2,7 @@
 
 {% block title %}A.R.I.M.A. — Operational Stats{% endblock %}
 {% block og_title %}A.R.I.M.A. - Operational Stats{% endblock %}
-{% block og_description %}App health and Railway platform statistics{% endblock %}
+{% block og_description %}{{ ops.counts.artists }} artists · {{ ops.counts.albums }} albums · {{ ops.counts.songs }} songs · {{ ops.counts.ratings }} ratings{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/uPlot.min.css') }}">

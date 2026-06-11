@@ -2,7 +2,7 @@
 
 {% block title %}A.R.I.M.A. — Global Stats{% endblock %}
 {% block og_title %}A.R.I.M.A. - Global Stats{% endblock %}
-{% block og_description %}Cross-artist scoring and averages{% endblock %}
+{% block og_description %}{{ artist_rows | length }} artist{{ 's' if artist_rows | length != 1 }}{% if overall.global_avg is not none %} · overall average {{ overall.global_avg }}/5{% endif %}{% endblock %}
 
 {% block content %}
 {% set col_global = 55 %}

@@ -2,7 +2,7 @@
 
 {% block title %}A.R.I.M.A. — Misc Artists{% endblock %}
 {% block og_title %}A.R.I.M.A. - Misc Artists{% endblock %}
-{% block og_description %}Misc artists discography and ratings{% endblock %}
+{% block og_description %}{% if misc_countries %}{{ misc_countries | sum(attribute='song_count') }} songs across {{ misc_countries | length }} {{ 'country' if misc_countries | length == 1 else 'countries' }}{% else %}Misc artists discography and ratings{% endif %}{% endblock %}
 
 {% block content %}
 <div class="mb-4 pb-9">

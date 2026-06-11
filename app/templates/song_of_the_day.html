@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% block og_title %}A.R.I.M.A. - Song of the Day{% endblock %}
+{% block og_description %}{% if og_sotd %}{{ og_sotd.date }} · {{ og_sotd.song }}{% if og_sotd.artist %} — {{ og_sotd.artist }}{% endif %}{% else %}Daily random song picks{% endif %}{% endblock %}
+
 {% block content %}
 <div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
     <h2 class="text-lg font-bold text-primary-text mb-1">Song of the Day History</h2>

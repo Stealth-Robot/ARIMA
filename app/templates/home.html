@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% block og_title %}A.R.I.M.A. - Home{% endblock %}
+{% block og_description %}{% if og_sotd %}Song of the Day: {{ og_sotd.song }}{% if og_sotd.artist %} — {{ og_sotd.artist }}{% endif %}{% else %}Music rating tracker for friends{% endif %}{% endblock %}
+
 {% block content %}
 {% if owned_artists or has_any_maintained or backlog or can_rate %}
 <div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">

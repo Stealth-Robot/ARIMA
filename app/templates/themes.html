@@ -3,7 +3,7 @@
 
 {% block title %}A.R.I.M.A. — Themes{% endblock %}
 {% block og_title %}A.R.I.M.A. - Themes{% endblock %}
-{% block og_description %}Theme browser and editor{% endblock %}
+{% block og_description %}{{ themes | length }} theme{{ 's' if themes | length != 1 }} to browse and edit{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto">

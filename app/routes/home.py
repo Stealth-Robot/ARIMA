@@ -124,6 +124,22 @@ def _build_sotd_card(entry):
                 collab_label=collab_label, date_str=entry.date)
 
 
+def _get_og_sotd():
+    """Latest Song of the Day for OG embed tags — guest-safe, no rating data, no DB writes."""
+    entry = SongOfDay.query.order_by(SongOfDay.date.desc()).first()
+    if not entry or not entry.song:
+        return None
+    as_row = ArtistSong.query.filter(
+        ArtistSong.song_id == entry.song.id, ArtistSong.artist_is_main == True
+    ).first()
+    artist = db.session.get(Artist, as_row.artist_id) if as_row else None
+    return {
+        'song': entry.song.name,
+        'artist': artist.name if artist else None,
+        'date': entry.date,
+    }
+
+
 def _get_sotd_data():
     today_entry = _ensure_sotd_through_today()
     if not today_entry:
@@ -380,7 +396,7 @@ def shuffle():
 @login_required
 def song_of_the_day():
     if not current_user.can_rate:
-        return render_template('song_of_the_day.html', cards=[])
+        return render_template('song_of_the_day.html', cards=[], og_sotd=_get_og_sotd())
     _ensure_sotd_through_today()
     entries = (SongOfDay.query
                .order_by(SongOfDay.date.desc())
@@ -390,7 +406,7 @@ def song_of_the_day():
         card = _build_sotd_card(entry)
         if card:
             cards.append(card)
-    return render_template('song_of_the_day.html', cards=cards)
+    return render_template('song_of_the_day.html', cards=cards, og_sotd=_get_og_sotd())
 
 
 @home_bp.route('/')
@@ -437,4 +453,5 @@ def home():
                            has_any_maintained=has_any_maintained,
                            can_rate=current_user.can_rate,
                            misc_owner=rules.misc_owner if rules else None,
-                           sotd_today=sotd_today, sotd_history=sotd_history)
+                           sotd_today=sotd_today, sotd_history=sotd_history,
+                           og_sotd=_get_og_sotd())
