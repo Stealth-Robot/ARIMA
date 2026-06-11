@@ -17,6 +17,7 @@ from app.models.lookups import Country, Genre, AlbumType
 from app.models.user import User
 from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
+from app.services.dates import is_valid_release_date
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -741,9 +742,12 @@ def add_misc_album():
     name = (data.get('name') or '').strip()
     if not name:
         return json.dumps({'error': 'Album name is required'}), 400, {'Content-Type': 'application/json'}
+    release_date = (data.get('release_date') or '').strip() or None
+    if release_date and not is_valid_release_date(release_date):
+        return json.dumps({'error': 'Invalid release date'}), 400, {'Content-Type': 'application/json'}
     album = Album(
         name=name,
-        release_date=data.get('release_date') or None,
+        release_date=release_date,
         album_type_id=int(data.get('album_type_id', 2)),
         submitted_by_id=current_user.id,
         artist_id=None,
@@ -812,9 +816,12 @@ def move_song_to_artist(song_id):
     if album_data.get('existing_id'):
         album = db.session.get(Album, int(album_data['existing_id']))
     elif album_data.get('name'):
+        new_release_date = (album_data.get('release_date') or '').strip() or None
+        if new_release_date and not is_valid_release_date(new_release_date):
+            return jsonify({'error': 'Invalid release date'}), 400
         album = Album(
             name=album_data['name'].strip(),
-            release_date=album_data.get('release_date') or None,
+            release_date=new_release_date,
             album_type_id=int(album_data.get('album_type_id', 2)),
             submitted_by_id=current_user.id,
             artist_id=int(artists_data[0]['artist_id']),
