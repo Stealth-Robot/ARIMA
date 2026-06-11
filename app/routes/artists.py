@@ -94,6 +94,8 @@ def _render_artist(artist, htmx=False, push_url=None):
 
     session['last_artist_id'] = artist.id
     artist_id = artist.id
+    # Per-page, non-persistent bypass of all viewing filters (?nofilter=1)
+    bypass_filters = request.args.get('nofilter') == '1'
     # Fetch children early so parent _build_discography can reuse them
     subunits, soloists = get_children(artist.id)
 
@@ -103,8 +105,11 @@ def _render_artist(artist, htmx=False, push_url=None):
         _hide_osts = getattr(current_user.settings, 'hide_osts', False) and artist.gender_id != ANIME_GENDER_ID
     else:
         _hide_osts = session.get('hide_osts', False) and artist.gender_id != ANIME_GENDER_ID
+    if bypass_filters:
+        _hide_osts = False
 
-    discography = _build_discography(artist, children=(subunits, soloists), hide_osts=_hide_osts)
+    discography = _build_discography(artist, children=(subunits, soloists), hide_osts=_hide_osts,
+                                     bypass_filters=bypass_filters)
     users = _get_display_users()
 
     # Compute last updated across artist, albums, and songs (single query)
@@ -132,13 +137,15 @@ def _render_artist(artist, htmx=False, push_url=None):
         active_country_ids = list(current_user.settings.country_ids or [])
     else:
         active_country_ids = list(session.get('country_ids') or [])
+    if bypass_filters:
+        active_country_ids = []
 
     children_sections = []
     soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
         if active_country_ids and child.country_id not in active_country_ids:
             continue
-        child_disco = _build_discography(child, hide_osts=_hide_osts)
+        child_disco = _build_discography(child, hide_osts=_hide_osts, bypass_filters=bypass_filters)
         children_sections.append({
             'artist': child,
             'discography': child_disco,
@@ -172,7 +179,7 @@ def _render_artist(artist, htmx=False, push_url=None):
         user_id=current_user.id, artist_id=artist_id).first()) if current_user.can_rate else False
 
     from app.routes.misc import get_rated_filter
-    rated_filter = get_rated_filter()
+    rated_filter = 'all' if bypass_filters else get_rated_filter()
 
     if htmx:
         resp = make_response(render_template(
@@ -186,7 +193,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             last_updated=last_updated,
             edit_genres=edit_genres, edit_album_types=edit_album_types,
             edit_countries=edit_countries, edit_genders=edit_genders,
-            rated_filter=rated_filter))
+            rated_filter=rated_filter, bypass_filters=bypass_filters))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url
         return resp
@@ -212,6 +219,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            edit_genres=edit_genres, edit_album_types=edit_album_types,
                            edit_countries=edit_countries, edit_genders=edit_genders,
                            rated_filter=rated_filter,
+                           bypass_filters=bypass_filters,
                            og_song=og_song,
                            og_album_count=og_album_count,
                            og_song_count=og_song_count)
@@ -415,7 +423,7 @@ def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_art
     return labels
 
 
-def _build_discography(artist, children=None, hide_osts=False):
+def _build_discography(artist, children=None, hide_osts=False, bypass_filters=False):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
 
@@ -434,6 +442,11 @@ def _build_discography(artist, children=None, hide_osts=False):
         include_featured = True if edit_mode else False
         include_covers = True
         album_sort_order = session.get('album_sort_order', 'desc')
+    if bypass_filters:
+        genre_ids = []
+        include_remixes = True
+        include_featured = True
+        include_covers = True
 
     from app.services.preferences import rated_remix_override_ids
     keep_remix_ids = rated_remix_override_ids(include_remixes, song_ids)

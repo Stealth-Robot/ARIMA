@@ -99,11 +99,17 @@ def _sort_misc_songs(songs_list, field, direction):
         songs_list.sort(key=lambda r: r['song'].id, reverse=asc)
 
 
-def _build_misc_shell():
+BYPASS_FILTERS = {
+    'country_ids': [], 'genre_ids': [], 'include_remixes': True,
+    'include_featured': True, 'include_covers': True, 'hide_osts': False,
+}
+
+
+def _build_misc_shell(bypass_filters=False):
     """Build lightweight page shell: country list with song counts, no song data."""
     from app.services.stats import get_display_users
 
-    filters = _get_user_filters()
+    filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
     sort_field, sort_dir = _get_misc_sort()
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
 
@@ -136,19 +142,20 @@ def _build_misc_shell():
         'navbar_artists': get_filtered_navbar(),
         'misc_sort_field': sort_field,
         'misc_sort_dir': sort_dir,
-        'rated_filter': get_rated_filter(),
-        'misc_scope_filter': get_misc_scope_filter(),
+        'rated_filter': 'all' if bypass_filters else get_rated_filter(),
+        'misc_scope_filter': 'all' if bypass_filters else get_misc_scope_filter(),
+        'bypass_filters': bypass_filters,
         'gender_css': GENDER_CSS,
         'assignable_users': User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all() if edit_mode else [],
         'rules': db.session.get(Rules, 1),
     }
 
 
-def _build_country_data(country_id):
+def _build_country_data(country_id, bypass_filters=False):
     """Build genre → songs data for a single country."""
     from app.services.stats import get_display_users
 
-    filters = _get_user_filters()
+    filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
     sort_field, sort_dir = _get_misc_sort()
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
 
@@ -303,14 +310,14 @@ def _build_country_data(country_id):
 @misc_bp.route('/misc')
 @login_required
 def misc_page():
-    data = _build_misc_shell()
+    data = _build_misc_shell(bypass_filters=request.args.get('nofilter') == '1')
     return render_template('misc.html', **data)
 
 
 @misc_bp.route('/misc/country/<int:country_id>')
 @login_required
 def misc_country(country_id):
-    data = _build_country_data(country_id)
+    data = _build_country_data(country_id, bypass_filters=request.args.get('nofilter') == '1')
     return render_template('fragments/misc_country.html', **data)
 
 

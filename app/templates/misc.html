@@ -111,6 +111,11 @@
             <option value="unrated"{% if rated_filter == 'unrated' %} selected{% endif %}>Unrated</option>
             <option value="rated"{% if rated_filter == 'rated' %} selected{% endif %}>Rated</option>
         </select>
+        <label class="text-secondary-text cursor-pointer ml-2">
+            <input type="checkbox" {% if bypass_filters %}checked{% endif %} autocomplete="off"
+                   onchange="var u=new window.URL(window.location);if(this.checked){u.searchParams.set('nofilter','1');}else{u.searchParams.delete('nofilter');}window.location=u.toString();"
+                   class="cursor-pointer"> Disable Filters
+        </label>
     </div>
 
     <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
@@ -179,6 +184,7 @@
 
 /* Collapse/expand */
 var _miscLoadedCountries = {};
+var _miscNoFilter = new URLSearchParams(window.location.search).get('nofilter') === '1' ? '?nofilter=1' : '';
 function _miscToggleCountry(cid) {
     var arrow = document.getElementById('misc-country-arrow-' + cid);
     var hiding = arrow.innerHTML === '▼';
@@ -192,7 +198,7 @@ function _miscToggleCountry(cid) {
         var loader = document.getElementById('misc-country-loader-' + cid);
         if (loader) {
             loader.style.display = '';
-            return fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
+            return fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
                 _miscApplyFilters();
             });
@@ -271,7 +277,7 @@ function _miscExpandAll() {
         if (!_miscLoadedCountries[cid]) {
             _miscLoadedCountries[cid] = true;
             loader.style.display = '';
-            fetch('/misc/country/' + cid).then(function(r) { return r.text(); }).then(function(html) {
+            fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
                 document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = ''; });
                 _miscApplyFilters();

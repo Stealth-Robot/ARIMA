@@ -324,6 +324,11 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
         <option value="unrated"{% if rated_filter == 'unrated' %} selected{% endif %}>Unrated</option>
         <option value="rated"{% if rated_filter == 'rated' %} selected{% endif %}>Rated</option>
     </select>
+    <label class="text-secondary-text cursor-pointer">
+        <input type="checkbox" {% if bypass_filters %}checked{% endif %} autocomplete="off"
+               onchange="var u=new window.URL(window.location);if(this.checked){u.searchParams.set('nofilter','1');}else{u.searchParams.delete('nofilter');}window.location=u.toString();"
+               class="cursor-pointer"> Disable Filters
+    </label>
 </div>
 
 <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
