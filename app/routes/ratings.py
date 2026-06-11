@@ -93,7 +93,7 @@ def rate():
                     old_note=old_note,
                     new_note=old_note,
                 )
-            elif note_changed:
+            if note_changed:
                 create_submission(
                     'note', song_id, current_user.id,
                     target_user_id=target_user_id,

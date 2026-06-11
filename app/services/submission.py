@@ -90,20 +90,19 @@ def reject_rating_submission(submission, reviewer, reason):
     """Reject a proxy rating or note submission — revert to old values."""
     song = db.session.get(Song, submission.entity_id)
 
-    # Revert the change
+    # Revert only the field this submission owns — a combined score+note
+    # change produces two submissions that must resolve independently
     rating = db.session.get(Rating, (submission.entity_id, submission.target_user_id))
     if submission.type == 'note':
-        # Note-only submission — only revert the note, don't touch rating
         if rating:
             rating.note = submission.old_note
-    elif submission.old_rating is None and submission.old_note is None:
-        # No prior rating existed — delete the row
-        if rating:
-            db.session.delete(rating)
+            if rating.rating is None and not rating.note:
+                db.session.delete(rating)
     elif rating:
         rating.rating = submission.old_rating
-        rating.note = submission.old_note
-    else:
+        if rating.rating is None and not rating.note:
+            db.session.delete(rating)
+    elif submission.old_rating is not None:
         # Rating row was deleted since submission was created — recreate
         db.session.add(Rating(
             song_id=submission.entity_id,
