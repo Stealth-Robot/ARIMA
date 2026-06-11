@@ -288,9 +288,12 @@ def add_album_to_artist(artist_id):
                 db.session.add(ArtistSong(artist_id=artist_id, song_id=existing_song_id, artist_is_main=False))
         else:
             # Create a new song
+            song_name = (song_data.get('name') or '').strip()
+            if not song_name:
+                abort(400)
             new_song_count += 1
             song = Song(
-                name=song_data['name'],
+                name=song_name,
                 submitted_by_id=current_user.id,
                 is_promoted=song_data.get('is_promoted', False),
                 is_remix=song_data.get('is_remix', False),

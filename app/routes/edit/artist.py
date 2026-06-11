@@ -695,6 +695,9 @@ def add_artist_submit():
             for song_data in album_data.get('songs', []):
                 if song_data.get('existing_song_id'):
                     continue
+                if not (song_data.get('name') or '').strip():
+                    errors['albums'] = 'Each song must have a name.'
+                    break
                 artists_list = song_data.get('artists', [])
                 if artists_list and not any(a.get('is_main') for a in artists_list):
                     errors['albums'] = 'Each song must have at least one main artist.'
@@ -797,7 +800,7 @@ def add_artist_submit():
                     continue
 
                 song_obj = Song(
-                    name=song_data['name'],
+                    name=(song_data.get('name') or '').strip(),
                     submitted_by_id=current_user.id,
                     is_promoted=song_data.get('is_promoted', False),
                     is_remix=song_data.get('is_remix', False),
