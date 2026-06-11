@@ -1,0 +1,120 @@
+{% if not changes %}
+<p class="text-secondary-text">No changes found.</p>
+{% else %}
+<table class="w-full text-sm border-collapse border border-grid-line">
+    <thead>
+        <tr class="bg-header-row">
+            {% if status == 'open' %}
+            <th class="px-1 py-2 border border-grid-line" style="width: 30px;"></th>
+            {% endif %}
+            <th class="text-left px-3 py-2 border border-grid-line">Type</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Song</th>
+            <th class="text-left px-3 py-2 border border-grid-line whitespace-nowrap">Changed By</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Date</th>
+            {% if status == 'history' %}
+            <th class="text-left px-3 py-2 border border-grid-line">Status</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Resolved By</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Resolved</th>
+            <th class="text-left px-3 py-2 border border-grid-line">Reason</th>
+            {% else %}
+            <th class="text-center px-3 py-2 border border-grid-line whitespace-nowrap">Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for change in changes %}
+        <tr id="proxy-change-row-{{ change.id }}" class="border border-grid-line">
+            {% if status == 'open' %}
+            <td class="text-center px-1 py-2 border border-grid-line">
+                {% if change._can_approve or change._can_reject %}
+                <input type="checkbox" class="proxy-change-checkbox" value="{{ change.id }}" data-can-approve="{{ 'true' if change._can_approve else 'false' }}" data-can-reject="{{ 'true' if change._can_reject else 'false' }}" onchange="updateBulkActions()">
+                {% else %}
+                <input type="checkbox" disabled class="cursor-not-allowed" style="opacity:0.3;">
+                {% endif %}
+            </td>
+            {% endif %}
+            <td class="px-3 py-2 border border-grid-line">
+                <span class="px-2 py-1 rounded text-xs border border-border text-white"
+                      style="background:var(--proxy-type-{{ change.type }});">
+                    {{ change.type | capitalize }}
+                </span>
+            </td>
+            <td class="px-3 py-2 border border-grid-line">
+                {% if change._song_url %}
+                <a href="{{ change._song_url }}" class="text-primary-text underline">{{ change._song_display }}</a>
+                {% else %}
+                {{ change._song_display }}
+                {% endif %}
+                {% if change.type == 'rating' %}
+                <div class="text-xs text-secondary-text mt-0.5">
+                    {{ change.old_rating if change.old_rating is not none else 'none' }} &rarr; {{ change.new_rating if change.new_rating is not none else 'none' }}
+                </div>
+                {% else %}
+                <div class="text-xs text-secondary-text mt-0.5">
+                    "{{ change.old_note or 'empty' }}" &rarr; "{{ change.new_note or 'empty' }}"
+                </div>
+                {% endif %}
+            </td>
+            <td class="px-3 py-2 border border-grid-line">
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
+                    {% if change.proposed_by %}
+                    <img src="{{ change.proposed_by.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         alt="" referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="w-6 h-6 rounded-full object-cover">
+                    <span>{{ change.proposed_by.username }}</span>
+                    {% else %}
+                    <span>Unknown</span>
+                    {% endif %}
+                </div>
+            </td>
+            <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date border border-grid-line font-mono" data-utc="{{ change.proposed_at or '' }}">
+                {{ change.proposed_at[:10] if change.proposed_at else '-' }}
+            </td>
+            {% if status == 'history' %}
+            <td class="px-3 py-2 border border-grid-line">
+                <span class="px-2 py-1 rounded text-xs text-white"
+                      style="{% if change.status == 'approved' %}background:#166534;{% else %}background:#991b1b;{% endif %}">
+                    {{ change.status | capitalize }}
+                </span>
+            </td>
+            <td class="px-3 py-2 text-xs border border-grid-line">
+                {% if change.resolved_by %}
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
+                    <img src="{{ change.resolved_by.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         alt="" referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="w-6 h-6 rounded-full object-cover">
+                    <span>{{ change.resolved_by.username }}</span>
+                </div>
+                {% else %}-{% endif %}
+            </td>
+            <td class="px-3 py-2 text-xs whitespace-nowrap changelog-date border border-grid-line font-mono" data-utc="{{ change.resolved_at or '' }}">
+                {{ change.resolved_at[:10] if change.resolved_at else '-' }}
+            </td>
+            <td class="px-3 py-2 text-xs border border-grid-line">
+                {{ change.rejection_reason or '-' }}
+            </td>
+            {% else %}
+            <td class="px-3 py-2 text-center border border-grid-line whitespace-nowrap">
+                {% if change._can_approve %}
+                <button onclick="approveChange({{ change.id }})"
+                        class="px-2 py-1 rounded text-xs bg-edit-on text-button-text border-0 cursor-pointer mr-1">
+                    Approve
+                </button>
+                {% elif change._can_reject %}
+                <span class="px-2 py-1 text-xs mr-1 inline-block" style="visibility:hidden;">Approve</span>
+                {% endif %}
+                {% if change._can_reject %}
+                <button onclick="openRejectModal({{ change.id }})"
+                        class="px-2 py-1 rounded text-xs bg-delete text-button-text border-0 cursor-pointer">
+                    Reject
+                </button>
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}

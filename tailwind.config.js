@@ -104,17 +104,12 @@ module.exports = {
         "unrated-mid-bg": "var(--unrated-mid-bg)",
         "unrated-high-bg": "var(--unrated-high-bg)",
         "unrated-text": "var(--unrated-text)",
-        // update and submission colors
+        // update type badge colors
         "feature": "var(--update-type-feature)",
         "bugfix": "var(--update-type-bugfix)",
         "style": "var(--update-type-style)",
         "perf": "var(--update-type-perf)",
         "code": "var(--update-type-code)",
-        "submission-artist": "var(--submission-type-artist)",
-        "submission-album": "var(--submission-type-album)",
-        "submission-song": "var(--submission-type-song)",
-        "submission-rating": "var(--submission-type-rating)",
-        "submission-note": "var(--submission-type-note)",
       }
     }
   }

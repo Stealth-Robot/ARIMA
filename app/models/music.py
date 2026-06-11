@@ -110,7 +110,6 @@ class Artist(db.Model):
 
     gender = db.relationship('GroupGender')
     country = db.relationship('Country')
-    submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     owner = db.relationship('User', foreign_keys=[owner_id])
     maintainer = db.relationship('User', foreign_keys=[maintainer_id])
     songs = db.relationship('Song', secondary=ArtistSong.__table__, back_populates='artists',
@@ -136,7 +135,6 @@ class Song(db.Model):
     spotify_url = db.Column(db.Text)
     youtube_url = db.Column(db.Text)
 
-    submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     artists = db.relationship('Artist', secondary=ArtistSong.__table__, back_populates='songs',
                               viewonly=True)
     albums = db.relationship('Album', secondary=AlbumSong.__table__, back_populates='songs',
@@ -160,7 +158,6 @@ class Album(db.Model):
     spotify_url = db.Column(db.Text)
 
     album_type = db.relationship('AlbumType')
-    submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     artist = db.relationship('Artist', foreign_keys=[artist_id])
     songs = db.relationship('Song', secondary=AlbumSong.__table__, back_populates='albums',
                             viewonly=True)

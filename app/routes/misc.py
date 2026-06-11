@@ -436,7 +436,6 @@ def add_misc_song():
     if not session.get('edit_mode') or not current_user.is_editor_or_admin:
         abort(403)
     from app.services.audit import log_change
-    from app.services.submission import create_submission
 
     data = request.get_json(silent=True) or {}
     song_name = (data.get('name') or '').strip()
@@ -494,7 +493,6 @@ def add_misc_song():
         db.session.execute(song_genres.insert().values(song_id=song.id, genre_id=int(gid)))
 
     log_change(current_user, f'Added "{song_name}" misc song', song=song)
-    create_submission('song', song.id, current_user.id)
     db.session.commit()
 
     return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
@@ -919,7 +917,6 @@ def spotify_import():
     if not session.get('edit_mode') or not current_user.is_editor_or_admin:
         abort(403)
     from app.services.audit import log_change
-    from app.services.submission import create_submission
 
     data = request.get_json(silent=True) or {}
     tracks = data.get('tracks', [])
@@ -965,7 +962,6 @@ def spotify_import():
         for gid in genre_ids:
             db.session.execute(song_genres.insert().values(song_id=song.id, genre_id=int(gid)))
 
-        create_submission('song', song.id, current_user.id)
         created += 1
 
     if created:

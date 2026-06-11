@@ -34,6 +34,7 @@ BASH_RULES.md
 CLAUDE.md
 docs/
 how_to_local_test.md
+how_to_browser_test.md
 
 # Flask / SQLite
 instance/

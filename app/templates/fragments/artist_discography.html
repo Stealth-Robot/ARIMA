@@ -107,7 +107,6 @@
     </span>
     {% endif %}
     {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-    <a href="/submissions?q={{ artist.name | urlencode }}" class="text-xs text-link ml-2">Submissions</a>
     <button type="button" onclick="autoPopulateSpotify({{ artist.id }})" class="text-xs ml-2 px-2 py-0.5 rounded cursor-pointer text-primary-text" style="background:var(--button-secondary); border:none;">
         <img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"> Auto-fill Spotify Links
     </button>

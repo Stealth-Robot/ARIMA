@@ -109,26 +109,15 @@
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
              onclick="_toggleNavDd(this)">
-            <a href="{{ url_for('changelog.changelog') }}" class="nav-link {% if request.endpoint in ('changelog.changelog', 'updates.updates_page', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Changelog</a>
+            <a href="{{ url_for('changelog.changelog') }}" class="nav-link {% if request.endpoint in ('changelog.changelog', 'changelog.for_me', 'updates.updates_page', 'updates.updates_timeline') %}border-b-3 border-navbar-active{% endif %}">Changelog</a>
             <div class="changelog-dd nav-dropdown-panel">
                 <a href="{{ url_for('changelog.changelog') }}" class="nav-dropdown-item">Changelog</a>
+                {% if current_user.is_authenticated and current_user.can_rate %}
+                <a href="{{ url_for('changelog.for_me') }}" class="nav-dropdown-item">For Me</a>
+                {% endif %}
                 <a href="{{ url_for('updates.updates_page') }}" class="nav-dropdown-item">Updates</a>
             </div>
         </div>
-        {% if current_user.is_authenticated and current_user.can_rate %}
-        <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
-             onmouseenter="_showNavDd(this)"
-             onmouseleave="_hideNavDd(this)"
-             onclick="_toggleNavDd(this)">
-            <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-link {% if request.endpoint in ('submissions.submissions_page', 'submissions.submissions_for_me') %}border-b-3 border-navbar-active{% endif %}">Submissions</a>
-            <div class="submissions-dd nav-dropdown-panel">
-                <a href="{{ url_for('submissions.submissions_for_me') }}" class="nav-dropdown-item">For Me</a>
-                {% if current_user.is_editor_or_admin %}
-                <a href="{{ url_for('submissions.submissions_page') }}" class="nav-dropdown-item">Data Approvals</a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
         <a class="mobile-hide nav-link {% if request.endpoint == 'rules.rules' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('rules.rules') }}">Rules</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a class="mobile-hide nav-link {% if request.endpoint == 'users.user_list' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('users.user_list') }}">Users</a>
@@ -235,19 +224,15 @@
         <a href="{{ url_for('misc.misc_page') }}" class="mobile-menu-item">Misc Artists</a>
         <div class="border-t border-border my-1"></div>
         <a href="{{ url_for('changelog.changelog') }}" class="mobile-menu-item">Changelog</a>
+        {% if current_user.is_authenticated and current_user.can_rate %}
+        <a href="{{ url_for('changelog.for_me') }}" class="mobile-menu-item">For Me</a>
+        {% endif %}
         <a href="{{ url_for('updates.updates_page') }}" class="mobile-menu-item">Updates</a>
         <a href="{{ url_for('rules.rules') }}" class="mobile-menu-item">Rules</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <div class="border-t border-border my-1"></div>
         <a href="{{ url_for('users.user_list') }}" class="mobile-menu-item">Users</a>
         <a href="{{ url_for('admin.admin_page') }}" class="mobile-menu-item">Admin</a>
-        {% endif %}
-        {% if current_user.is_authenticated and current_user.can_rate %}
-        <div class="border-t border-border my-1"></div>
-        <a href="{{ url_for('submissions.submissions_for_me') }}" class="mobile-menu-item">Submissions</a>
-        {% if current_user.is_editor_or_admin %}
-        <a href="{{ url_for('submissions.submissions_page') }}" class="mobile-menu-item">Data Approvals</a>
-        {% endif %}
         {% endif %}
         {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
         <div class="border-t border-border my-1"></div>
@@ -381,7 +366,7 @@
     <script>
     // Close navbar dropdowns and mobile menu when tapping elsewhere
     document.addEventListener('click', function(e) {
-        document.querySelectorAll('.home-dd, .stats-dd, .artists-dd, .changelog-dd, .submissions-dd, .profile-dd').forEach(function(dd) {
+        document.querySelectorAll('.home-dd, .stats-dd, .artists-dd, .changelog-dd, .profile-dd').forEach(function(dd) {
             if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
         });
         var mp = document.getElementById('mobile-menu-panel');

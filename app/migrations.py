@@ -20,34 +20,30 @@ def create_last_updated_triggers(database):
 
 
 def run_startup_migrations():
-    """Run auto-migrations on app startup. Safe to call repeatedly."""
+    """Run auto-migrations on app startup. Safe to call repeatedly.
+
+    ALL migrations live here as idempotent steps — never as standalone
+    scripts, never run manually against a database.
+    """
     try:
         from app.models.theme import Theme
         from app.models.user import User
 
         # 0. Create any missing tables
-        # Clean up submission_old if left behind by a failed migration
-        try:
-            row = db.session.execute(db.text(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='submission_old'"
-            )).fetchone()
-            if row:
-                db.session.execute(db.text('DROP TABLE IF EXISTS submission_old'))
-                logger.info('Cleaned up leftover submission_old table')
-        except Exception:
-            pass
-
         db.create_all()
 
-        # 0b. Add any new submission columns
-        from app.models.submission import Submission
-        existing_sub_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('submission')"))}
-        if existing_sub_cols:
-            for col in Submission.__table__.columns:
-                if col.name not in existing_sub_cols:
+        # 0a. One-time: replace the submission system with proxy changes
+        _migrate_submissions_to_proxy_changes()
+
+        # 0b. Add any new proxy_change columns
+        from app.models.proxy_change import ProxyChange
+        existing_pc_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('proxy_change')"))}
+        if existing_pc_cols:
+            for col in ProxyChange.__table__.columns:
+                if col.name not in existing_pc_cols:
                     col_type = 'INTEGER' if 'Integer' in str(col.type) else 'TEXT'
-                    db.session.execute(db.text(f'ALTER TABLE submission ADD COLUMN {col.name} {col_type}'))
-                    logger.info('Added missing submission column: %s', col.name)
+                    db.session.execute(db.text(f'ALTER TABLE proxy_change ADD COLUMN {col.name} {col_type}'))
+                    logger.info('Added missing proxy_change column: %s', col.name)
 
         # 1a. Add any new song columns (e.g. note)
         import sqlalchemy
@@ -226,6 +222,120 @@ def run_startup_migrations():
     except Exception:
         db.session.rollback()
         logger.exception('Startup migration failed (DB may not exist yet)')
+
+
+def _table_exists(name):
+    return db.session.execute(db.text(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=:n"
+    ), {'n': name}).fetchone() is not None
+
+
+def _table_columns(table):
+    return {row[1] for row in db.session.execute(db.text(f"PRAGMA table_info('{table}')"))}
+
+
+def _migrate_submissions_to_proxy_changes():
+    """One-time, idempotent: replace the submission system with proxy changes.
+
+    Copies rating/note rows from submission into the new proxy_change table
+    (created by db.create_all), then drops the submission table. Renames theme
+    columns submission_type_rating/_note to proxy_type_rating/_note (preserving
+    customised colours) and drops the artist/album/song badge columns. Also
+    removes v1-era submission columns that survived the original teardown:
+    changelog.submission_id/approved_by_id (table rebuild — they sit behind a
+    FK to the dropped submission table that would fail every future INSERT)
+    and artist/album/song.submission_id.
+    """
+    # 1. Copy rating/note rows from submission into proxy_change
+    if _table_exists('submission'):
+        copied = db.session.execute(db.text("""
+            INSERT INTO proxy_change (
+                id, type, song_id, song_name, artist_name,
+                target_user_id, proposed_by_id, proposed_at,
+                status, resolved_by_id, resolved_at, rejection_reason,
+                old_rating, new_rating, old_note, new_note
+            )
+            SELECT id, type, CAST(entity_id AS INTEGER), entity_name, artist_name,
+                   target_user_id, submitted_by_id, submitted_at,
+                   status, resolved_by_id, resolved_at, rejection_reason,
+                   old_rating, new_rating, old_note, new_note
+            FROM submission
+            WHERE type IN ('rating', 'note')
+        """)).rowcount
+        db.session.execute(db.text('DROP TABLE submission'))
+        db.session.execute(db.text("DELETE FROM sqlite_sequence WHERE name='submission'"))
+        max_id = db.session.execute(db.text('SELECT COALESCE(MAX(id), 0) FROM proxy_change')).scalar()
+        db.session.execute(db.text(
+            "INSERT OR REPLACE INTO sqlite_sequence (name, seq) VALUES ('proxy_change', :seq)"
+        ), {'seq': max_id})
+        logger.info('Copied %d rating/note rows into proxy_change, dropped submission table', copied)
+
+    # 2. Theme columns: rename rating/note badges, drop entity badges
+    theme_cols = _table_columns('theme')
+    for old, new in (('submission_type_rating', 'proxy_type_rating'),
+                     ('submission_type_note', 'proxy_type_note')):
+        if old not in theme_cols:
+            continue
+        if new in theme_cols:
+            db.session.execute(db.text(f'UPDATE theme SET {new} = {old}'))
+            db.session.execute(db.text(f'ALTER TABLE theme DROP COLUMN {old}'))
+        else:
+            db.session.execute(db.text(f'ALTER TABLE theme RENAME COLUMN {old} TO {new}'))
+        logger.info('Theme column %s -> %s', old, new)
+
+    for col in ('submission_type_artist', 'submission_type_album', 'submission_type_song'):
+        if col in theme_cols:
+            db.session.execute(db.text(f'ALTER TABLE theme DROP COLUMN {col}'))
+            logger.info('Dropped theme column %s', col)
+
+    # 3. Rebuild changelog without submission_id/approved_by_id if present
+    changelog_cols = _table_columns('changelog')
+    if 'submission_id' in changelog_cols or 'approved_by_id' in changelog_cols:
+        db.session.execute(db.text('PRAGMA foreign_keys=OFF'))
+        db.session.execute(db.text("""
+            CREATE TABLE changelog_new (
+                id INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                user_id INTEGER,
+                artist_id INTEGER,
+                album_id INTEGER,
+                song_id INTEGER,
+                change_type_id INTEGER REFERENCES changelog_type(id),
+                description TEXT NOT NULL,
+                description_html TEXT,
+                justification TEXT,
+                PRIMARY KEY (id),
+                FOREIGN KEY(user_id) REFERENCES user (id) ON DELETE SET NULL,
+                FOREIGN KEY(artist_id) REFERENCES artist (id) ON DELETE SET NULL,
+                FOREIGN KEY(album_id) REFERENCES album (id) ON DELETE SET NULL,
+                FOREIGN KEY(song_id) REFERENCES song (id) ON DELETE SET NULL
+            )
+        """))
+        db.session.execute(db.text("""
+            INSERT INTO changelog_new (id, date, user_id, artist_id, album_id, song_id,
+                                       change_type_id, description, description_html, justification)
+            SELECT id, date, user_id, artist_id, album_id, song_id,
+                   change_type_id, description, description_html, justification
+            FROM changelog
+        """))
+        db.session.execute(db.text('DROP TABLE changelog'))
+        db.session.execute(db.text('ALTER TABLE changelog_new RENAME TO changelog'))
+        for idx in ('ix_changelog_artist_id ON changelog (artist_id)',
+                    'ix_changelog_album_id ON changelog (album_id)',
+                    'ix_changelog_song_id ON changelog (song_id)',
+                    'ix_changelog_change_type_id ON changelog (change_type_id)'):
+            db.session.execute(db.text(f'CREATE INDEX {idx}'))
+        db.session.execute(db.text('PRAGMA foreign_keys=ON'))
+        logger.info('Rebuilt changelog table without submission_id/approved_by_id')
+
+    # 4. Drop v1-era submission_id columns from entity tables (no FK clause, plain DROP works)
+    for table in ('artist', 'album', 'song'):
+        if 'submission_id' in _table_columns(table):
+            db.session.execute(db.text(f'DROP INDEX IF EXISTS ix_{table}_submission_id'))
+            db.session.execute(db.text(f'ALTER TABLE {table} DROP COLUMN submission_id'))
+            logger.info('Dropped %s.submission_id', table)
+
+    db.session.commit()
 
 
 def _parse_misc_artists(text):

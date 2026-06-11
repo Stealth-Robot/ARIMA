@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, abort, session
-from flask_login import login_required
+from flask_login import login_required, current_user
 from markupsafe import Markup, escape
 from sqlalchemy import distinct, func
 from sqlalchemy.orm import joinedload
@@ -7,8 +7,13 @@ from sqlalchemy.orm import joinedload
 from app.extensions import db
 from app.models.changelog import Changelog
 from app.models.lookups import ChangelogType
+from app.models.music import Artist, Song, ArtistSong
+from app.models.proxy_change import ProxyChange
 from app.models.user import User
-from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
+from app.cache import clear_stats_cache
+from app.decorators import role_required, ADMIN, USER_OR_ABOVE
+from app.services.events import publish
+from app.services.proxy_change import mark_approved, reject_proxy_change
 from app.services.search import like_contains, LIKE_ESCAPE
 
 changelog_bp = Blueprint('changelog', __name__)
@@ -102,4 +107,136 @@ def delete_entry(entry_id):
         abort(404)
     db.session.delete(entry)
     db.session.commit()
+    return ''
+
+
+def _resolve_songs(changes):
+    """Batch-load songs and their main artists for display names and links."""
+    song_ids = {c.song_id for c in changes}
+    songs = {s.id: s for s in Song.query.filter(Song.id.in_(song_ids)).all()} if song_ids else {}
+
+    song_artist_links = {}
+    if song_ids:
+        links = ArtistSong.query.filter(ArtistSong.song_id.in_(song_ids), ArtistSong.artist_is_main == True).all()
+        for link in links:
+            song_artist_links[link.song_id] = link.artist_id
+
+    artist_ids = set(song_artist_links.values())
+    artists = {a.id: a for a in Artist.query.filter(Artist.id.in_(artist_ids)).all()} if artist_ids else {}
+
+    return songs, artists, song_artist_links
+
+
+def _song_display_name(change, songs, artists, song_artist_links):
+    """Resolve 'Song Name (Artist)' for a proxy change, falling back to stored names."""
+    song = songs.get(change.song_id)
+    song_name = song.name if song else (change.song_name or f'song {change.song_id}')
+    if song:
+        artist = artists.get(song_artist_links.get(song.id))
+        artist_name = artist.name if artist else change.artist_name
+    else:
+        artist_name = change.artist_name
+    return f'{song_name} ({artist_name})' if artist_name else song_name
+
+
+def _song_url(change, songs, artists, song_artist_links):
+    """Return a URL to the song's artist page, or None if deleted."""
+    song = songs.get(change.song_id)
+    if song:
+        artist = artists.get(song_artist_links.get(song.id))
+        if artist:
+            return f'/artists/{artist.id}#song-{song.id}'
+    return None
+
+
+@changelog_bp.route('/changelog/for-me')
+@login_required
+@role_required(USER_OR_ABOVE)
+def for_me():
+    """For Me page — proxy rating/note changes targeting the current user."""
+    status = request.args.get('status', 'open')
+    type_filter = request.args.get('type', '')
+    view_filter = request.args.get('view', 'for-me')
+
+    query = ProxyChange.query.options(
+        joinedload(ProxyChange.proposed_by),
+        joinedload(ProxyChange.resolved_by),
+    )
+
+    # View filter: for-me (target), by-me (proposer), all (both)
+    if view_filter == 'by-me':
+        query = query.filter(ProxyChange.proposed_by_id == current_user.id)
+    elif view_filter == 'all':
+        query = query.filter(
+            db.or_(
+                ProxyChange.target_user_id == current_user.id,
+                ProxyChange.proposed_by_id == current_user.id,
+            )
+        )
+    else:
+        query = query.filter(ProxyChange.target_user_id == current_user.id)
+
+    if status == 'open':
+        query = query.filter_by(status='open')
+        query = query.order_by(ProxyChange.proposed_at.desc(), ProxyChange.id.desc())
+    else:
+        query = query.filter(ProxyChange.status.in_(['approved', 'rejected']))
+        query = query.order_by(ProxyChange.resolved_at.desc(), ProxyChange.id.desc())
+
+    if type_filter:
+        query = query.filter_by(type=type_filter)
+
+    changes = query.all()
+    songs, artists, song_artist_links = _resolve_songs(changes)
+
+    for change in changes:
+        change._song_display = _song_display_name(change, songs, artists, song_artist_links)
+        change._song_url = _song_url(change, songs, artists, song_artist_links)
+        is_target = change.target_user_id == current_user.id
+        is_proposer = change.proposed_by_id == current_user.id
+        change._can_approve = is_target and not is_proposer
+        change._can_reject = is_target
+
+    if request.headers.get('HX-Request'):
+        return render_template('fragments/for_me_list.html', changes=changes, status=status)
+
+    return render_template('changelog_for_me.html',
+                           changes=changes, status=status,
+                           type_filter=type_filter, view_filter=view_filter)
+
+
+@changelog_bp.route('/changelog/for-me/<int:change_id>/approve', methods=['POST'])
+@login_required
+@role_required(USER_OR_ABOVE)
+def approve_proxy_change(change_id):
+    change = db.session.get(ProxyChange, change_id)
+    if not change or change.status != 'open':
+        abort(404)
+    # Only the target user can approve, and not changes they proposed themselves
+    if change.target_user_id != current_user.id or change.proposed_by_id == current_user.id:
+        abort(403)
+    mark_approved(change, current_user)
+    db.session.commit()
+    publish('proxy-change-update', {'action': 'approved', 'id': change_id})
+    return ''
+
+
+@changelog_bp.route('/changelog/for-me/<int:change_id>/reject', methods=['POST'])
+@login_required
+@role_required(USER_OR_ABOVE)
+def reject_proxy_change_route(change_id):
+    change = db.session.get(ProxyChange, change_id)
+    if not change or change.status != 'open':
+        abort(404)
+    # The target user can reject, and the proposer can withdraw their own change
+    if current_user.id not in (change.target_user_id, change.proposed_by_id):
+        abort(403)
+
+    reason = request.form.get('reason', '').strip()
+    if not reason:
+        return 'Rejection reason is required', 400
+
+    reject_proxy_change(change, current_user, reason)
+    clear_stats_cache()
+    publish('proxy-change-update', {'action': 'rejected', 'id': change_id})
     return ''

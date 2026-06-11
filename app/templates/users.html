@@ -74,7 +74,7 @@
                             onclick="openReinvite({{ u.id }}, '{{ u.email }}')">Reinvite</button>
                     <form method="POST" action="{{ url_for('users.delete', user_id=u.id) }}"
                           class="inline"
-                          onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Submitted content will survive.')">
+                          onsubmit="return confirm('Delete {{ u.username }}? Their ratings and settings will be removed. Content they added will survive.')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
                     </form>

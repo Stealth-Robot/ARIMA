@@ -8,7 +8,7 @@ from app.models.user import User
 from app.decorators import role_required, USER_OR_ABOVE
 from app.services.events import publish
 from app.services.audit import log_change
-from app.services.submission import create_submission
+from app.services.proxy_change import create_proxy_change
 from app.cache import clear_stats_cache
 
 ratings_bp = Blueprint('ratings', __name__)
@@ -82,10 +82,10 @@ def rate():
         elif note_changed:
             log_change(current_user, f'Updated note on "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
-        # Create submission for proxy changes (not self-ratings)
+        # Record proxy changes for the target user's approval (not self-ratings)
         if target_user_id != current_user.id:
             if rating_changed:
-                create_submission(
+                create_proxy_change(
                     'rating', song_id, current_user.id,
                     target_user_id=target_user_id,
                     old_rating=old_rating,
@@ -94,7 +94,7 @@ def rate():
                     new_note=old_note,
                 )
             if note_changed:
-                create_submission(
+                create_proxy_change(
                     'note', song_id, current_user.id,
                     target_user_id=target_user_id,
                     old_rating=old_rating,
@@ -147,9 +147,9 @@ def delete_rating():
                 on_behalf = f' for {target_user.username}' if target_user else f' for user {target_user_id}'
             log_change(current_user, f'Cleared rating for "{song_obj.name}" song{on_behalf}', song=song_obj, change_type='rating')
 
-        # Create submission for proxy rating deletions
+        # Record proxy rating deletions for the target user's approval
         if target_user_id != current_user.id:
-            create_submission(
+            create_proxy_change(
                 'rating', song_id, current_user.id,
                 target_user_id=target_user_id,
                 old_rating=old_rating_val,
