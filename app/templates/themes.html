@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'fragments/_credentials.html' import password_confirm with context %}
 
 {% block title %}A.R.I.M.A. — Themes{% endblock %}
 {% block og_title %}A.R.I.M.A. - Themes{% endblock %}
@@ -37,7 +38,7 @@
             <div class="flex items-center gap-2">
                 {% if data.theme.user_id == current_user.id %}
                 <button type="button" class="text-sm px-3 py-1 rounded bg-delete text-button-text border-0 cursor-pointer"
-                        onclick="document.getElementById('theme-reset-modal').style.display='flex';">
+                        onclick="document.getElementById('theme-reset-modal').style.display='flex';focusModalPassword('theme-reset-modal');">
                     Reset
                 </button>
                 {% endif %}
@@ -95,10 +96,7 @@
         <p class="text-sm mb-4 text-secondary-text">This will reset all colours in your personal theme to default.</p>
         <form method="POST" action="{{ url_for('themes.theme_reset') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" value="{{ current_user.username }}" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
-            <label class="block text-sm mb-1 text-primary-text">Enter your password to confirm</label>
-            <input type="password" name="password" required autocomplete="current-password"
-                   class="w-full px-3 py-2 border rounded mb-4 border-border">
+            {{ password_confirm() }}
             <div class="flex gap-3 justify-end">
                 <button type="button" onclick="document.getElementById('theme-reset-modal').style.display='none'"
                         class="px-4 py-2 rounded text-sm bg-button-secondary text-primary-text">

@@ -1,5 +1,6 @@
 {% set _ebtns = current_user.settings.visible_edit_buttons if current_user.settings else set(['move_album','add_album','delete','unlink','artists','merge','reorder','spotify_url','youtube_url']) %}
 {% from "fragments/spotify_macros.html" import song_spotify_icon with context %}
+{% from "fragments/_credentials.html" import password_confirm with context %}
 {% macro spotify_link_icon(url) %}{% if url and not hide_all_spotify %}{% if url == 'n/a' %}<span class="spotify-na relative inline-block align-middle" title="Not on Spotify" onclick="event.stopPropagation()" style="width:12px; height:12px; line-height:0;"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle" style="filter: grayscale(1); opacity: 0.6;"><span class="absolute" style="top:50%; left:50%; width:15px; height:2px; background:var(--delete-button, #e02424); transform: translate(-50%, -50%) rotate(-45deg); transform-origin: center; pointer-events:none; border-radius:1px;"></span></span>{% else %}<a href="{{ spotify_href(url) }}" target="{{ spotify_link_target }}" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}{% endmacro %}
 {% macro spotify_edit_btn(endpoint, url) %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}" data-reload-on-save="1" onclick="event.stopPropagation();promptUrl('{{ endpoint }}', '{{ url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endmacro %}
 <!-- Artist header -->
@@ -121,6 +122,14 @@
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
 {% if edit_mode %}
+<!-- Persistent credential form for the song-merge modal. Present (hidden) at page load
+     so password managers register the password field during their initial page scan;
+     edit.js relocates this form into the merge modal when it opens. -->
+<div id="merge-cred-home" aria-hidden="true" style="display:none;">
+    <form id="merge-cred-form">
+        {{ password_confirm(pw_id='merge-pw-input', pw_class='', required=false, show_label=false) }}
+    </form>
+</div>
 <script>
 var _allGenres = [{% for g in edit_genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allCountries = [{% for c in edit_countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
@@ -810,9 +819,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             {% endif %}
             {% endfor %}
         </select>
-        <input type="text" value="{{ current_user.username }}" autocomplete="username" class="absolute" style="opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
-        <label class="block text-sm mb-1 text-primary-text">Password</label>
-        <input type="password" id="convert-pw" autocomplete="current-password" class="w-full px-3 py-2 border rounded mb-3 text-sm border-border">
+        {{ password_confirm(pw_id='convert-pw', pw_name='', label='Password', pw_class='w-full px-3 py-2 border rounded mb-3 text-sm border-border', required=false) }}
         <div class="flex gap-2 justify-end">
             <button type="button" onclick="document.getElementById('convert-artist-modal').style.display='none'"
                     class="px-4 py-2 rounded text-sm bg-button-secondary text-primary-text">Cancel</button>
@@ -831,6 +838,7 @@ function showConvertArtist(type) {
     document.getElementById('convert-parent').value = '';
     document.getElementById('convert-pw').value = '';
     document.getElementById('convert-artist-modal').style.display = 'flex';
+    focusModalPassword('convert-artist-modal');
 }
 function submitConvertArtist() {
     var parentId = document.getElementById('convert-parent').value;
