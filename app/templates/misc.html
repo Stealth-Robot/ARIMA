@@ -750,9 +750,16 @@ function _showManageMiscArtists() {
         title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:12px;';
         modal.appendChild(title);
 
+        var controls = document.createElement('div');
+        controls.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
         var search = _miscInput('Search artists...');
-        search.style.marginBottom = '8px';
-        modal.appendChild(search);
+        search.style.flex = '1';
+        var sortSel = _miscSelect([{id:'name', name:'A-Z'}, {id:'songs', name:'Most songs'}], 'name');
+        sortSel.style.cssText += 'width:auto;font-size:12px;padding:4px 6px;';
+        sortSel.onchange = function() { renderList(search.value); };
+        controls.appendChild(search);
+        controls.appendChild(sortSel);
+        modal.appendChild(controls);
 
         var listDiv = document.createElement('div');
         listDiv.style.cssText = 'max-height:50vh;overflow-y:auto;';
@@ -769,7 +776,11 @@ function _showManageMiscArtists() {
                 var k = a.name.toLowerCase().trim();
                 dupes[k] = (dupes[k] || 0) + 1;
             });
-            artists.forEach(function(a) {
+            var sorted = artists.slice();
+            if (sortSel.value === 'songs') {
+                sorted.sort(function(x, y) { return y.song_count - x.song_count || x.name.toLowerCase().localeCompare(y.name.toLowerCase()); });
+            }
+            sorted.forEach(function(a) {
                 if (lower && a.name.toLowerCase().indexOf(lower) === -1) return;
                 var row = document.createElement('div');
                 row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--border,#eee);font-size:12px;';
