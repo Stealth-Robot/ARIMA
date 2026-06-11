@@ -945,6 +945,11 @@ def perform_song_merge(kept, absorbed, *, chosen_name=None, chosen_flags=None,
         ~DuplicateDisplayOverride.preferred_album_id.in_(final_album_ids)
     ).delete(synchronize_session=False)
 
+    # Step 3e: Repoint Song of the Day history so it survives the merge
+    db.session.execute(db.text(
+        'UPDATE song_of_day SET song_id = :kept WHERE song_id = :absorbed'
+    ), {'kept': kept_song_id, 'absorbed': absorbed_song_id})
+
     # Step 4: Delete absorbed song and all remaining references
     Rating.query.filter_by(song_id=absorbed_song_id).delete()
     ArtistSong.query.filter_by(song_id=absorbed_song_id).delete()
