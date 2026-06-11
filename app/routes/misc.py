@@ -664,13 +664,12 @@ def update_song_misc_artists(song_id):
             ))
 
     db.session.flush()
-    # If only one artist (real or misc) remains and it's featured, make it main
+    # Ensure a main remains: if the new set has no main, promote one artist.
     remaining_real = ArtistSong.query.filter_by(song_id=song_id).all()
     remaining_misc = SongMiscArtist.query.filter_by(song_id=song_id).all()
-    if len(remaining_real) + len(remaining_misc) == 1:
-        sole = remaining_real[0] if remaining_real else remaining_misc[0]
-        if not sole.artist_is_main:
-            sole.artist_is_main = True
+    has_main = any(r.artist_is_main for r in remaining_real) or any(m.artist_is_main for m in remaining_misc)
+    if not has_main and (remaining_real or remaining_misc):
+        (remaining_real[0] if remaining_real else remaining_misc[0]).artist_is_main = True
 
     log_change(current_user, f'Updated misc artists on "{song.name}"', song=song)
     db.session.commit()

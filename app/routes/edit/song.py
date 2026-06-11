@@ -551,13 +551,12 @@ def song_artist_remove(song_id, artist_id):
     artist_name_val = artist.name if artist else 'Unknown'
     db.session.delete(existing)
     db.session.flush()
-    # If only one artist (real or misc) remains and it's featured, make it main
+    # Ensure a main remains: if removal left no main, promote a remaining artist.
     remaining_real = ArtistSong.query.filter_by(song_id=song_id).all()
     remaining_misc = SongMiscArtist.query.filter_by(song_id=song_id).all()
-    if len(remaining_real) + len(remaining_misc) == 1:
-        sole = remaining_real[0] if remaining_real else remaining_misc[0]
-        if not sole.artist_is_main:
-            sole.artist_is_main = True
+    has_main = any(r.artist_is_main for r in remaining_real) or any(m.artist_is_main for m in remaining_misc)
+    if not has_main and (remaining_real or remaining_misc):
+        (remaining_real[0] if remaining_real else remaining_misc[0]).artist_is_main = True
     song.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Removed "{artist_name_val}" from "{song.name}" song', song=song)
     db.session.commit()
@@ -576,6 +575,13 @@ def song_artist_role(song_id, artist_id):
     existing = db.session.get(ArtistSong, (artist_id, song_id))
     if existing is None:
         abort(404)
+    if existing.artist_is_main:
+        other_mains = (ArtistSong.query.filter(
+                ArtistSong.song_id == song_id, ArtistSong.artist_is_main == True,
+                ArtistSong.artist_id != artist_id).count()
+            + SongMiscArtist.query.filter_by(song_id=song_id, artist_is_main=True).count())
+        if other_mains == 0:
+            return 'A song must have at least one main artist', 400
     existing.artist_is_main = not existing.artist_is_main
     artist = db.session.get(Artist, artist_id)
     artist_name_val = artist.name if artist else 'Unknown'
@@ -598,6 +604,13 @@ def song_misc_artist_role(song_id, misc_artist_id):
     existing = db.session.get(SongMiscArtist, (song_id, misc_artist_id))
     if existing is None:
         abort(404)
+    if existing.artist_is_main:
+        other_mains = (SongMiscArtist.query.filter(
+                SongMiscArtist.song_id == song_id, SongMiscArtist.artist_is_main == True,
+                SongMiscArtist.misc_artist_id != misc_artist_id).count()
+            + ArtistSong.query.filter_by(song_id=song_id, artist_is_main=True).count())
+        if other_mains == 0:
+            return 'A song must have at least one main artist', 400
     existing.artist_is_main = not existing.artist_is_main
     misc = db.session.get(MiscArtist, misc_artist_id)
     misc_name_val = misc.name if misc else 'Unknown'
