@@ -97,6 +97,7 @@ class UserSettings(db.Model):
     show_track_numbers = db.Column(db.Boolean, nullable=False, server_default='1')
     show_full_album_date = db.Column(db.Boolean, nullable=False, server_default='1')
     hide_osts = db.Column(db.Boolean, nullable=False, server_default='0')
+    search_show_hidden = db.Column(db.Boolean, nullable=False, server_default='0')
     stats_users_mobile_only = db.Column(db.Boolean, nullable=False, server_default='1')
     hide_disbanded_maintained = db.Column(db.Boolean, nullable=False, server_default='1')
     edit_buttons = db.Column(db.JSON, nullable=False, default=list, server_default='[]')

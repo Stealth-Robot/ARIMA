@@ -119,6 +119,13 @@
                 Hide OST albums (except on anime artist pages)
             </label>
         </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="search_show_hidden"
+                       {% if settings.search_show_hidden %}checked{% endif %}>
+                Show hidden songs in search by default
+            </label>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Album Sort Order</label>
             <select name="album_sort_order" class="w-full px-3 py-2 border rounded border-border">
@@ -377,6 +384,10 @@
         if (!form) return;
         form.addEventListener('change', function(e) {
             autoSave(form, e.target.name === 'theme');
+            if (e.target.name === 'search_show_hidden') {
+                var cb = document.getElementById('search-show-hidden');
+                if (cb) { cb.checked = e.target.checked; cb.defaultChecked = e.target.checked; }
+            }
         });
     });
 })();

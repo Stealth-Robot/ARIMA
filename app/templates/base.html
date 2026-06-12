@@ -198,7 +198,8 @@
     <div id="search-overlay"
          class="hidden fixed top-11 z-40" style="width: 320px;">
         <label class="flex items-center gap-1 px-2.5 py-1 text-xs bg-secondary-bg border border-border border-b-0 rounded-t cursor-pointer" style="box-shadow: 0 -2px 12px rgba(0,0,0,0.3);">
-            <input id="search-show-hidden" type="checkbox"> <span class="text-secondary-text">Show hidden songs</span>
+            {% set _search_show_hidden = current_user.settings.search_show_hidden if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings else session.get('search_show_hidden', False) %}
+            <input id="search-show-hidden" type="checkbox" autocomplete="off"{% if _search_show_hidden %} checked{% endif %}> <span class="text-secondary-text">Show hidden songs</span>
         </label>
         <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                autocomplete="off"

@@ -45,6 +45,7 @@ def profile():
             'show_track_numbers': session.get('show_track_numbers', True),
             'show_full_album_date': session.get('show_full_album_date', True),
             'hide_osts': session.get('hide_osts', False),
+            'search_show_hidden': session.get('search_show_hidden', False),
         }
     else:
         s = current_user.settings
@@ -66,6 +67,7 @@ def profile():
             'show_track_numbers': getattr(s, 'show_track_numbers', True) if s else True,
             'show_full_album_date': getattr(s, 'show_full_album_date', True) if s else True,
             'hide_osts': getattr(s, 'hide_osts', False) if s else False,
+            'search_show_hidden': getattr(s, 'search_show_hidden', False) if s else False,
             'edit_buttons': s.visible_edit_buttons if s else set(UserSettings.EDIT_BUTTON_DEFAULTS),
         }
 
@@ -96,6 +98,7 @@ def _apply_theme_settings(set_field, form):
         set_field('show_track_numbers', form.get('show_track_numbers') == 'on')
         set_field('show_full_album_date', form.get('show_full_album_date') == 'on')
         set_field('hide_osts', form.get('hide_osts') == 'on')
+        set_field('search_show_hidden', form.get('search_show_hidden') == 'on')
         val = form.get('album_sort_order')
         set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
         sbs = form.get('song_button_size', type=int)

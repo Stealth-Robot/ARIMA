@@ -387,7 +387,7 @@ function closeSearchOverlay() {
     if (results) { results.style.display = 'none'; results.innerHTML = ''; }
     if (input) { input.value = ''; input.blur(); }
     var cb = document.getElementById('search-show-hidden');
-    if (cb) cb.checked = false;
+    if (cb) cb.checked = cb.defaultChecked;
 }
 
 (function () {
