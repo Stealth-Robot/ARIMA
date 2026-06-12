@@ -110,6 +110,57 @@ def add_country():
     return redirect(url_for('admin.admin_page'))
 
 
+@admin_bp.route('/admin/delete-genre/<int:genre_id>', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def delete_genre(genre_id):
+    from app.routes.edit import _verify_password
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    genre = db.session.get(Genre, genre_id)
+    if genre is None:
+        return 'Not found', 404
+
+    # 'OST' is special-cased by name in filtering logic across the app
+    if genre.genre == 'OST':
+        return 'OST cannot be deleted', 400
+
+    from app.models.music import song_genres, album_genres
+    db.session.execute(song_genres.delete().where(song_genres.c.genre_id == genre.id))
+    db.session.execute(album_genres.delete().where(album_genres.c.genre_id == genre.id))
+    db.session.delete(genre)
+    db.session.commit()
+    clear_filter_cache()
+    from app.cache import clear_stats_cache
+    clear_stats_cache()
+    return '', 200
+
+
+@admin_bp.route('/admin/delete-country/<int:country_id>', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def delete_country(country_id):
+    from app.routes.edit import _verify_password
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    country = db.session.get(Country, country_id)
+    if country is None:
+        return 'Not found', 404
+
+    from app.models.music import Artist, MiscArtist
+    in_use = (Artist.query.filter_by(country_id=country.id).first()
+              or MiscArtist.query.filter_by(country_id=country.id).first())
+    if in_use:
+        return 'Country is still in use', 400
+
+    db.session.delete(country)
+    db.session.commit()
+    clear_filter_cache()
+    return '', 200
+
+
 @admin_bp.route('/admin/rename-genre', methods=['POST'])
 @login_required
 @role_required(ADMIN)

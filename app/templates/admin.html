@@ -11,7 +11,11 @@
         <div class="flex flex-wrap gap-2 mb-3">
             {% for g in genres %}
             {% if g.genre == 'OST' %}
-            <span class="text-xs px-2 py-1 rounded bg-secondary-bg border border-border">{{ g.genre }}</span>
+            <div class="flex items-center gap-1">
+                <span class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">{{ g.genre }}</span>
+                <button type="button" class="text-xs px-2 py-1 rounded" style="visibility:hidden;">Save</button>
+                <button type="button" class="text-xs px-2 py-1 rounded border" style="visibility:hidden;">&#10005;</button>
+            </div>
             {% else %}
             <form method="POST" action="{{ url_for('admin.rename_genre') }}" class="flex items-center gap-1">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -19,6 +23,10 @@
                 <input type="text" name="name" value="{{ g.genre }}" required
                        class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">
                 <button type="submit" class="text-xs px-2 py-1 rounded bg-button-primary text-button-text">Save</button>
+                <button type="button" title="Delete genre"
+                        onclick='showDeleteConfirm("Delete genre?", {{ g.genre | tojson }} + " will be permanently deleted and removed from all songs and albums.", "/admin/delete-genre/{{ g.id }}", true)'
+                        class="text-xs px-2 py-1 rounded border bg-secondary-bg border-border cursor-pointer"
+                        style="color:var(--delete-button, #e02424);">&#10005;</button>
             </form>
             {% endif %}
             {% endfor %}
@@ -43,6 +51,10 @@
                 <input type="text" name="name" value="{{ c.country }}" required
                        class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">
                 <button type="submit" class="text-xs px-2 py-1 rounded bg-button-primary text-button-text">Save</button>
+                <button type="button" title="Delete country"
+                        onclick='showDeleteConfirm("Delete country?", {{ c.country | tojson }} + " will be permanently deleted.", "/admin/delete-country/{{ c.id }}", true)'
+                        class="text-xs px-2 py-1 rounded border bg-secondary-bg border-border cursor-pointer"
+                        style="color:var(--delete-button, #e02424);">&#10005;</button>
             </form>
             {% endfor %}
         </div>
@@ -201,4 +213,5 @@
     });
 })();
 </script>
+{% with password_required=true %}{% include "fragments/confirm_modal.html" %}{% endwith %}
 {% endblock %}
