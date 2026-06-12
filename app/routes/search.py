@@ -212,6 +212,20 @@ def search():
         artists_str = ', '.join(song_artists.get(sid, [main_artist.name]))
         songs.append((song, album, main_artist, artists_str))
 
+    # Rank songs whose own title matches the query phrase above songs that only
+    # matched via their album/artist name (stable sort keeps A-Z within tiers).
+    q_lower = q.lower()
+
+    def _title_rank(item):
+        name = item[0].name.lower()
+        if name == q_lower:
+            return 0
+        if q_lower in name:
+            return 1
+        return 2
+
+    songs.sort(key=_title_rank)
+
     # --- Misc songs (via song_misc_artist) ---
     misc_songs = []
     try:
