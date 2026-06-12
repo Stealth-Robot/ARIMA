@@ -102,19 +102,21 @@
             </a>
             {% endif %}
             {% if arima_user %}
-            <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                  style="border: 1px solid var(--border); background: var(--bg-secondary);">
-                <span class="inline-flex items-center gap-2 text-sm">
-                    <span>🎧</span>
-                    <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
-                         referrerpolicy="no-referrer"
-                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         class="rounded-full object-cover" style="width:32px;height:32px;">
-                    <span class="font-bold">{{ arima_user.username }}</span>
-                    <span>🎧</span>
+            <a href="{{ arima_changelog_url }}" class="no-underline">
+                <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
+                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                    <span class="inline-flex items-center gap-2 text-sm">
+                        <span>🎧</span>
+                        <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
+                             referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                        <span class="font-bold">{{ arima_user.username }}</span>
+                        <span>🎧</span>
+                    </span>
+                    <span class="text-xs text-secondary-text">The ARIMA User</span>
                 </span>
-                <span class="text-xs text-secondary-text">The ARIMA User</span>
-            </span>
+            </a>
             {% endif %}
         </div>
         {% endif %}
@@ -278,19 +280,21 @@
             </a>
             {% endif %}
             {% if arima_user %}
-            <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                  style="border: 1px solid var(--border); background: var(--bg-secondary);">
-                <span class="inline-flex items-center gap-2 text-sm">
-                    <span>🎧</span>
-                    <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
-                         referrerpolicy="no-referrer"
-                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         class="rounded-full object-cover" style="width:32px;height:32px;">
-                    <span class="font-bold">{{ arima_user.username }}</span>
-                    <span>🎧</span>
+            <a href="{{ arima_changelog_url }}" class="no-underline">
+                <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
+                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                    <span class="inline-flex items-center gap-2 text-sm">
+                        <span>🎧</span>
+                        <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
+                             referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                        <span class="font-bold">{{ arima_user.username }}</span>
+                        <span>🎧</span>
+                    </span>
+                    <span class="text-xs text-secondary-text">The ARIMA User</span>
                 </span>
-                <span class="text-xs text-secondary-text">The ARIMA User</span>
-            </span>
+            </a>
             {% endif %}
         </div>
         {% endif %}

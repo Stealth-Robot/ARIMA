@@ -450,6 +450,14 @@ def home():
             users = get_display_users()
     rules = db.session.get(Rules, 1)
     arima_user = User.query.filter_by(username='Quiet').first()
+    arima_changelog_url = None
+    if arima_user:
+        from app.models.changelog import Changelog
+        from sqlalchemy import distinct
+        other_ids = sorted(r[0] for r in
+                           Changelog.query.with_entities(distinct(Changelog.user_id)).all()
+                           if r[0] and r[0] != arima_user.id)
+        arima_changelog_url = url_for('changelog.changelog', user_id=other_ids)
     return render_template('home.html', owned_artists=owned,
                            maintained_artists=maintained, backlog=backlog,
                            ratings=ratings_map, users=users,
@@ -459,5 +467,6 @@ def home():
                            can_rate=current_user.can_rate,
                            misc_owner=rules.misc_owner if rules else None,
                            arima_user=arima_user,
+                           arima_changelog_url=arima_changelog_url,
                            sotd_today=sotd_today, sotd_history=sotd_history,
                            og_sotd=_get_og_sotd())
