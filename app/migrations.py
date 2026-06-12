@@ -128,6 +128,12 @@ def run_startup_migrations():
                 """UPDATE user_settings SET edit_buttons = '["__all__"]' WHERE edit_buttons = '[]'"""
             ))
 
+        # 1e. Ensure the 'Related' artist relationship lookup row exists (id=2)
+        existing_rels = {row[0] for row in db.session.execute(db.text('SELECT id FROM artist_relationship'))}
+        if 2 not in existing_rels:
+            db.session.execute(db.text("INSERT INTO artist_relationship (id, relationship) VALUES (2, 'Related')"))
+            logger.info("Added 'Related' artist relationship lookup row")
+
         # 2. Create missing personal Theme rows (skip guest/system users with no email)
         existing_user_ids = {t.user_id for t in Theme.query.filter(Theme.user_id.isnot(None)).all()}
         missing = User.query.filter(

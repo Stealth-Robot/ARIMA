@@ -12,7 +12,7 @@ from sqlalchemy import func
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
-from app.services.artist import generate_unique_slug
+from app.services.artist import generate_unique_slug, SUBUNIT, SOLOIST, RELATED
 from app.services.audit import log_change
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
@@ -219,28 +219,48 @@ def artist_is_tracked(artist_id):
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def convert_artist(artist_id):
-    """Convert a standalone artist to a subunit or soloist of another artist."""
+    """Convert a standalone artist to a subunit or soloist of another artist,
+    or link it to another artist as a related group (symmetric)."""
     _require_edit_mode()
-    if not _verify_password():
-        return 'Incorrect password', 403
     artist = db.session.get(Artist, artist_id)
     if artist is None:
         abort(404)
     parent_id = request.form.get('parent_id', type=int)
     rel_type = request.form.get('type', '').strip()
-    if parent_id is None or rel_type not in ('subunit', 'soloist'):
+    if parent_id is None or rel_type not in ('subunit', 'soloist', 'related'):
         abort(400)
+    # Related links are lightweight and reversible — no password confirmation
+    if rel_type != 'related' and not _verify_password():
+        return 'Incorrect password', 403
     if parent_id == artist_id:
-        return 'Cannot make an artist a subunit or soloist of itself', 400
+        return 'Cannot link an artist to itself', 400
     parent = db.session.get(Artist, parent_id)
     if parent is None:
         abort(400)
+    if rel_type == 'related':
+        existing = ArtistArtist.query.filter(
+            ArtistArtist.relationship == RELATED,
+            db.or_(db.and_(ArtistArtist.artist_1 == artist_id, ArtistArtist.artist_2 == parent_id),
+                   db.and_(ArtistArtist.artist_1 == parent_id, ArtistArtist.artist_2 == artist_id))).first()
+        if existing:
+            return 'Artists are already linked as related groups', 400
+        db.session.add(ArtistArtist(artist_1=artist_id, artist_2=parent_id, relationship=RELATED))
+        now = datetime.now(timezone.utc).isoformat()
+        artist.last_updated = now
+        parent.last_updated = now
+        log_change(current_user, f'Linked "{artist.name}" and "{parent.name}" as related groups', artist=artist)
+        db.session.commit()
+        return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
     # Don't allow if artist already has children
-    existing_children = ArtistArtist.query.filter_by(artist_1=artist_id).count()
+    existing_children = ArtistArtist.query.filter(
+        ArtistArtist.artist_1 == artist_id,
+        ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).count()
     if existing_children > 0:
         return 'Artist has subunits or soloists', 400
     # Check existing relationships
-    existing_links = ArtistArtist.query.filter_by(artist_2=artist_id).all()
+    existing_links = ArtistArtist.query.filter(
+        ArtistArtist.artist_2 == artist_id,
+        ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).all()
     if rel_type == 'subunit':
         # Subunit: only one parent allowed, and can't be a soloist already
         if existing_links:
@@ -273,16 +293,27 @@ def unlink_artist(artist_id):
     parent_id = request.args.get('parent_id', type=int)
     if parent_id:
         link = ArtistArtist.query.filter_by(artist_2=artist_id, artist_1=parent_id).first()
+        if link is None:
+            # Related links are symmetric and may be stored in either direction
+            link = ArtistArtist.query.filter_by(
+                artist_1=artist_id, artist_2=parent_id, relationship=RELATED).first()
     else:
-        link = ArtistArtist.query.filter_by(artist_2=artist_id).first()
+        link = ArtistArtist.query.filter(
+            ArtistArtist.artist_2 == artist_id,
+            ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).first()
     if link is None:
         return redirect(url_for('artists.artist_detail', artist_id=artist_id))
-    parent = db.session.get(Artist, link.artist_1)
-    parent_name = parent.name if parent else 'Unknown'
-    rel_type = 'soloist' if link.relationship == 1 else 'subunit'
+    other_id = link.artist_1 if link.artist_2 == artist_id else link.artist_2
+    other = db.session.get(Artist, other_id)
+    other_name = other.name if other else 'Unknown'
+    if link.relationship == RELATED:
+        log_msg = f'Unlinked "{artist.name}" and "{other_name}" as related groups'
+    else:
+        rel_type = 'soloist' if link.relationship == SOLOIST else 'subunit'
+        log_msg = f'Unlinked "{artist.name}" as {rel_type} from "{other_name}" artist'
     db.session.delete(link)
     artist.last_updated = datetime.now(timezone.utc).isoformat()
-    log_change(current_user, f'Unlinked "{artist.name}" as {rel_type} from "{parent_name}" artist', artist=artist)
+    log_change(current_user, log_msg, artist=artist)
     db.session.commit()
     return redirect(url_for('artists.artist_detail', artist_id=artist_id))
 

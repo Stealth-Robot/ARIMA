@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist, MiscArtist
 from app.models.not_duplicate import NotDuplicate
+from app.services.artist import SUBUNIT, SOLOIST
 from app.models.not_variant import NotVariant
 from app.models.not_collab import NotCollab
 from app.services.dates import is_valid_release_date
@@ -25,7 +26,8 @@ def _misc_artist_ids():
     if not misc:
         return set()
     ids = {misc.id}
-    ids |= {r.artist_2 for r in ArtistArtist.query.filter_by(artist_1=misc.id).all()}
+    ids |= {r.artist_2 for r in ArtistArtist.query.filter(
+        ArtistArtist.artist_1 == misc.id, ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).all()}
     return ids
 
 
@@ -76,7 +78,8 @@ def views_page():
         ).count(),
         'empty_artists': db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
-            ~Artist.id.in_(db.session.query(ArtistArtist.artist_1)),
+            ~Artist.id.in_(db.session.query(ArtistArtist.artist_1).filter(
+                ArtistArtist.relationship.in_((SUBUNIT, SOLOIST)))),
         ).count(),
         'undated_albums': db.session.query(Album).filter(
             db.or_(Album.release_date.is_(None), Album.release_date == ''),
@@ -249,7 +252,8 @@ def view_empty_albums():
 def view_empty_artists():
     items = db.session.query(Artist).filter(
         ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
-        ~Artist.id.in_(db.session.query(ArtistArtist.artist_1)),
+        ~Artist.id.in_(db.session.query(ArtistArtist.artist_1).filter(
+            ArtistArtist.relationship.in_((SUBUNIT, SOLOIST)))),
     ).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={a.id} — "{a.name}"'} for a in items

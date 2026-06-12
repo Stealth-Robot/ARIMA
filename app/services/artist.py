@@ -65,6 +65,7 @@ def generate_unique_slug(name, existing_slugs):
 
 SUBUNIT = 0
 SOLOIST = 1
+RELATED = 2
 
 
 def get_children(artist_id):
@@ -101,6 +102,17 @@ def get_soloist_parents(artist_id):
         return []
     parent_ids = [rel.artist_1 for rel in rels]
     return Artist.query.filter(Artist.id.in_(parent_ids)).all()
+
+
+def get_related_artists(artist_id):
+    """Return Artists linked to this artist as related groups (symmetric, either direction)."""
+    rels = ArtistArtist.query.filter(
+        ArtistArtist.relationship == RELATED,
+        db.or_(ArtistArtist.artist_1 == artist_id, ArtistArtist.artist_2 == artist_id)).all()
+    if not rels:
+        return []
+    other_ids = {rel.artist_1 if rel.artist_2 == artist_id else rel.artist_2 for rel in rels}
+    return Artist.query.filter(Artist.id.in_(other_ids)).order_by(func.lower(Artist.name)).all()
 
 
 def get_songs_for_artist(artist_id, include_subunit_songs=True):
@@ -187,7 +199,9 @@ def get_filtered_navbar():
         country_set = set(country_ids)
         # Include parent artists if any of their children match the country
         artist_ids = {a.id for a in artists}
-        child_rels = ArtistArtist.query.filter(ArtistArtist.artist_1.in_(artist_ids)).all()
+        child_rels = ArtistArtist.query.filter(
+            ArtistArtist.artist_1.in_(artist_ids),
+            ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).all()
         child_ids_by_parent = {}
         for rel in child_rels:
             child_ids_by_parent.setdefault(rel.artist_1, []).append(rel.artist_2)
@@ -211,7 +225,9 @@ def get_filtered_navbar():
         # Include children (subunits + soloists) mapped back to their parent
         artist_ids = {a.id for a in artists}
         # Build mapping: child_id → parent artist (for artists in navbar)
-        child_rels = ArtistArtist.query.filter(ArtistArtist.artist_1.in_(artist_ids)).all()
+        child_rels = ArtistArtist.query.filter(
+            ArtistArtist.artist_1.in_(artist_ids),
+            ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).all()
         child_to_parent = {rel.artist_2: rel.artist_1 for rel in child_rels}
         all_relevant_ids = artist_ids | set(child_to_parent.keys())
 

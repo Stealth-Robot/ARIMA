@@ -9,7 +9,7 @@ from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong,
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
-from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_discography_songs, soloist_parent_map
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_related_artists, get_discography_songs, soloist_parent_map
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -132,6 +132,9 @@ def _render_artist(artist, htmx=False, push_url=None):
     # Detect soloist parents (for display on the soloist's own page)
     soloist_parents = get_soloist_parents(artist_id)
 
+    # Related groups (symmetric links, shown on both artists' pages)
+    related_artists = get_related_artists(artist_id)
+
     # Build child sections (filtered by active country filter)
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
         active_country_ids = list(current_user.settings.country_ids or [])
@@ -170,7 +173,8 @@ def _render_artist(artist, htmx=False, push_url=None):
         parent_rows = db.session.execute(db.text(
             'SELECT c.name, p.name FROM artist_artist aa '
             'JOIN artist c ON c.id = aa.artist_2 '
-            'JOIN artist p ON p.id = aa.artist_1'
+            'JOIN artist p ON p.id = aa.artist_1 '
+            'WHERE aa.relationship IN (0, 1)'
         )).fetchall()
         artist_parent_map = {r[0]: r[1] for r in parent_rows}
 
@@ -188,7 +192,8 @@ def _render_artist(artist, htmx=False, push_url=None):
             'fragments/artist_discography.html',
             artist=artist, discography=discography, users=users,
             gender_css=GENDER_CSS, children=children_sections,
-            soloist_parents=soloist_parents, all_artists=all_artists,
+            soloist_parents=soloist_parents, related_artists=related_artists,
+            all_artists=all_artists,
             all_soloist_parents=all_soloist_parents,
             artist_parent_map=artist_parent_map,
             assignable_users=assignable_users,
@@ -214,7 +219,8 @@ def _render_artist(artist, htmx=False, push_url=None):
                            navbar_artists=navbar, artist=artist,
                            discography=discography, users=users,
                            gender_css=GENDER_CSS, children=children_sections,
-                           soloist_parents=soloist_parents, all_artists=all_artists,
+                           soloist_parents=soloist_parents, related_artists=related_artists,
+                           all_artists=all_artists,
                            all_soloist_parents=all_soloist_parents,
                            artist_parent_map=artist_parent_map,
                            assignable_users=assignable_users,
