@@ -285,8 +285,14 @@ def view_incomplete_date_albums():
         Album.release_date.like('%-01-01'),
         Album.date_confirmed == False,
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(Album.release_date.desc(), func.lower(Album.name)).all()
+    ).order_by(func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
+
+    def _artist_key(a):
+        names = sorted(art['name'].lower() for art in album_artists.get(a.id, []))
+        return names[0] if names else ''
+    albums.sort(key=_artist_key)
+
     edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
                            albums=albums, album_artists=album_artists,
