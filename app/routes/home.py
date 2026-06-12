@@ -3,7 +3,7 @@ import random
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, render_template, request, session
+from flask import Blueprint, render_template, request, session, url_for
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import and_, func
@@ -82,7 +82,6 @@ def _ensure_sotd_through_today():
 
 
 def _build_sotd_card(entry):
-    from urllib.parse import quote
     from app.services.stats import get_display_users
     from app.routes.artists import _collab_labels_from_song_artists
     from app.services.artist import soloist_parent_map
@@ -107,7 +106,7 @@ def _build_sotd_card(entry):
                  .first())
     album = album_row[1] if album_row else None
 
-    artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    artist_url = url_for('artists.artist_detail', artist_id=artist.id)
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
 
@@ -345,11 +344,10 @@ def _shuffle_all_candidates():
 
 
 def _render_shuffle_card(song, artist, album):
-    from urllib.parse import quote
     from app.services.stats import get_display_users
     from app.routes.artists import _collab_labels_from_song_artists
     from app.services.artist import soloist_parent_map
-    artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    artist_url = url_for('artists.artist_detail', artist_id=artist.id)
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
     song_artists_rows = db.session.query(

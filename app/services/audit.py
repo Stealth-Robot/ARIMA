@@ -14,7 +14,7 @@ def _artist_url(artist):
     """Build URL for an artist from the object (prefers slug)."""
     if artist.slug:
         return '/artists/' + quote(artist.slug, safe="().-&+!?@*=' ")
-    return '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
+    return '/artists/' + str(artist.id)
 
 
 
