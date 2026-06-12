@@ -3,9 +3,7 @@ from datetime import datetime, timezone
 from flask import current_app
 
 from app.extensions import bcrypt
-from app.models.lookups import Country, Genre, AlbumType, GroupGender, ArtistRelationship, ChangelogType, UpdateType
-from app.models.music import Artist, ArtistArtist, Album, AlbumSong, ArtistSong, album_genres
-from app.models.user import Role, User
+from app.models.user import User
 from app.models.theme import Theme
 from app.models.rules import Rules
 
@@ -208,49 +206,7 @@ def seed(db):
     """Create seed data. Idempotent — safe to re-run."""
 
     with db.session.no_autoflush:
-        # 1. Lookup tables (no FK dependencies)
-        for id_, name in [(0, 'Admin'), (1, 'Editor'), (2, 'User'), (3, 'Viewer'), (4, 'System')]:
-            db.session.merge(Role(id=id_, role=name))
-
-        # Countries and genres are admin-managed (add/rename/delete), so only seed
-        # defaults into an empty table — never re-create rows the user has deleted.
-        if Country.query.first() is None:
-            for id_, name in [(0, 'Korean'), (1, 'Japanese'), (2, 'Canadian'), (3, 'American'), (4, 'Latin')]:
-                db.session.merge(Country(id=id_, country=name))
-
-        if Genre.query.first() is None:
-            for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (7, 'VTuber')]:
-                db.session.merge(Genre(id=id_, genre=name))
-
-        for id_, type_, desc in [
-            (0, 'Album', 'A normal album, typically longer than 30 minutes (~8+ songs)'),
-            (1, 'EP', 'A short album, typically under 30 minutes (~3-7 songs)'),
-            (2, 'Single', 'A single song released alone (sometimes with 1-2 accompanying songs)'),
-        ]:
-            db.session.merge(AlbumType(id=id_, type=type_, description=desc))
-
-        for id_, name in [(0, 'Female'), (1, 'Male'), (2, 'Mixed'), (3, 'Anime')]:
-            db.session.merge(GroupGender(id=id_, gender=name))
-
-        for id_, name in [(0, 'Subunit'), (1, 'Soloist')]:
-            db.session.merge(ArtistRelationship(id=id_, relationship=name))
-
-        for id_, name in [(0, 'Song'), (1, 'Album'), (2, 'Artist'), (3, 'Legacy'), (4, 'Rating'), (5, 'Link')]:
-            db.session.merge(ChangelogType(id=id_, type=name))
-
-        for id_, type_, desc in [
-            (1, 'Feature', 'New Feature'),
-            (2, 'Bugfix', 'Bug Fix'),
-            (3, 'Style', 'Themes And Layout Changes'),
-            (4, 'Perf.', 'Performance Improvement'),
-            (5, 'Code', 'Code-only changes, cleanup/refactors, no change for users'),
-        ]:
-            db.session.merge(UpdateType(id=id_, type=type_, description=desc))
-
-        # Flush lookups so FK references resolve
-        db.session.flush()
-
-        # 2. Reserved Users
+        # 1. Reserved Users
         db.session.merge(User(
             id=0, username='System', email=None, password=None,
             role_id=4, created_at=_now(), sort_order=None,
@@ -270,7 +226,7 @@ def seed(db):
         # Flush users so theme FK resolves
         db.session.flush()
 
-        # 3. Themes — Classic (id=0) and Dark (id=1)
+        # 2. Themes — Classic (id=0) and Dark (id=1)
         db.session.merge(Theme(id=0, name='Classic', user_id=None, **CLASSIC_THEME))
         db.session.merge(Theme(id=1, name='Dark', user_id=None, **DARK_THEME))
         db.session.flush()
@@ -279,34 +235,11 @@ def seed(db):
         _validate_theme(db.session.get(Theme, 0), 'Classic')
         _validate_theme(db.session.get(Theme, 1), 'Dark')
 
-        # 4. Rules — single row (only create if missing, don't overwrite edits)
+        # 3. Rules — single row (only create if missing, don't overwrite edits)
         if not db.session.get(Rules, 1):
             db.session.add(Rules(id=1, content='Rules have not been set yet.'))
 
         db.session.flush()
-
-        # 5. Misc. Artists country subunits — rename, clean up, and sync
-        misc = Artist.query.filter_by(name='Misc. Artists').first()
-        if misc:
-            # Remove orphan subunits (no songs) that don't match a country
-            country_names = {c.country for c in Country.query.all()}
-            all_children = Artist.query.join(
-                ArtistArtist, ArtistArtist.artist_2 == Artist.id
-            ).filter(ArtistArtist.artist_1 == misc.id).all()
-            for child in all_children:
-                # Check both short and legacy names
-                short_name = child.name.replace('Misc. Artists - ', '')
-                if short_name not in country_names and child.name not in country_names:
-                    has_songs = ArtistSong.query.filter_by(artist_id=child.id).first()
-                    if not has_songs:
-                        Album.query.filter_by(artist_id=child.id).delete()
-                        ArtistArtist.query.filter_by(artist_1=misc.id, artist_2=child.id).delete()
-                        db.session.query(Artist).filter_by(id=child.id).delete()
-                        print(f'  Removed empty subunit: {child.name}')
-
-            db.session.flush()
-
-            pass  # Misc artist stubs no longer needed — misc overhaul uses misc_artist table
 
     # Fix AUTOINCREMENT sequences so new IDs start above reserved range.
     # sqlite_sequence is auto-created by SQLite on first AUTOINCREMENT insert.
