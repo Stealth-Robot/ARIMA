@@ -26,6 +26,14 @@
                 Users ▾
             </button>
             <div id="users-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <label class="block py-0.5 text-sm- cursor-pointer">
+                    <input type="checkbox" id="users-select-all" autocomplete="off"
+                           {% if not user_ids or user_ids|length >= users|length %}checked{% endif %}
+                           onchange="toggleAllUsers(this)"
+                           class="mr-1">
+                    All
+                </label>
+                <div class="border-t border-border my-1"></div>
                 {% for u in users %}
                 <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" name="user_id" value="{{ u.id }}"
@@ -85,6 +93,17 @@
     </div>
 </div>
 <script>
+function toggleAllUsers(allCb) {
+    var cbs = document.querySelectorAll('#users-dropdown input[name="user_id"]');
+    cbs.forEach(function(cb) { cb.checked = allCb.checked; });
+    if (cbs.length) cbs[0].dispatchEvent(new Event('change'));
+}
+document.getElementById('users-dropdown').addEventListener('change', function(e) {
+    if (e.target.name !== 'user_id') return;
+    var cbs = document.querySelectorAll('#users-dropdown input[name="user_id"]');
+    document.getElementById('users-select-all').checked =
+        Array.prototype.every.call(cbs, function(c) { return c.checked; });
+});
 function toggleDropdown(id) {
     document.querySelectorAll('.filter-dropdown').forEach(function(d) {
         if (d.id !== id) d.style.display = 'none';
