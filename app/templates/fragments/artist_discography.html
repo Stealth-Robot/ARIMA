@@ -134,7 +134,7 @@ var _allGenres = [{% for g in edit_genres %}{ id: {{ g.id }}, name: {{ g.genre |
 var _allCountries = [{% for c in edit_countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allGenders = [{% for g in edit_genders %}{ id: {{ g.id }}, name: {{ g.gender | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allAlbumTypes = [{% for t in edit_album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
-var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+var _allArtists = [{% for a in all_artists %}{ id: {{ a.id }}, name: {{ a.name | tojson }}, isSoloist: {{ 'true' if a.id in all_soloist_parents else 'false' }}, soloistParentIds: {{ all_soloist_parents.get(a.id, []) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _assignableUsers = [{% for u in assignable_users %}{ id: {{ u.id }}, username: {{ u.username | tojson }}, profileImage: {{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _currentArtistId = {{ artist.id }};
 var _currentArtistCountryId = {{ artist.country_id }};
@@ -143,9 +143,9 @@ var _isAnimePage = {{ 'true' if artist.gender_id == 3 else 'false' }};
 var _artistParentMap = {{ artist_parent_map | default({}) | tojson }};
 var _childArtists = [{% for child in children %}{ id: {{ child.artist.id }}, name: {{ child.artist.name | tojson }}, isSoloist: {{ 'true' if child.is_soloist else 'false' }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _songArtists = {
-{% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% for entry in discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }}, is_soloist: {{ 'true' if a.get('is_soloist') else 'false' }}, soloist_parent_ids: {{ (a.get('soloist_parent_ids') or []) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}
-{% for child in children %}{% for entry in child.discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }} }{% if not loop.last %},{% endif %}{% endfor %}],
+{% for child in children %}{% for entry in child.discography %}{% for sid, artists in entry.song_artists.items() %}{{ sid }}: [{% for a in artists %}{ artist_id: {{ a.artist_id }}, name: {{ a.name | tojson }}, is_main: {{ 'true' if a.is_main else 'false' }}, gender_id: {{ a.gender_id or 'null' }}, is_soloist: {{ 'true' if a.get('is_soloist') else 'false' }}, soloist_parent_ids: {{ (a.get('soloist_parent_ids') or []) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}],
 {% endfor %}{% endfor %}{% endfor %}
 };
 var _songMiscArtists = {

@@ -138,6 +138,19 @@ def is_soloist(artist_id):
     return ArtistArtist.query.filter_by(artist_2=artist_id, relationship=SOLOIST).first() is not None
 
 
+def soloist_parent_map(artist_ids):
+    """Return {artist_id: [parent_ids]} for those artist_ids that are soloists."""
+    ids = list(artist_ids)
+    if not ids:
+        return {}
+    rows = ArtistArtist.query.with_entities(ArtistArtist.artist_2, ArtistArtist.artist_1).filter(
+        ArtistArtist.relationship == SOLOIST, ArtistArtist.artist_2.in_(ids)).all()
+    parents = {}
+    for child_id, parent_id in rows:
+        parents.setdefault(child_id, []).append(parent_id)
+    return parents
+
+
 def get_top_level_artists(bulk=None):
     """Get artists that should appear as standalone rows in stats/navbar.
 

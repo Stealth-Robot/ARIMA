@@ -85,6 +85,7 @@ def _build_sotd_card(entry):
     from urllib.parse import quote
     from app.services.stats import get_display_users
     from app.routes.artists import _collab_labels_from_song_artists
+    from app.services.artist import soloist_parent_map
 
     song = entry.song
     if not song:
@@ -115,7 +116,9 @@ def _build_sotd_card(entry):
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
         ArtistSong.song_id == song.id
     ).all()
-    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g}
+    solo_parents = soloist_parent_map({a for a, m, n, g in song_artists_rows})
+    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g,
+                         'is_soloist': a in solo_parents, 'soloist_parent_ids': solo_parents.get(a, [])}
                         for a, m, n, g in song_artists_rows]}
     collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
 
@@ -345,6 +348,7 @@ def _render_shuffle_card(song, artist, album):
     from urllib.parse import quote
     from app.services.stats import get_display_users
     from app.routes.artists import _collab_labels_from_song_artists
+    from app.services.artist import soloist_parent_map
     artist_url = '/artists/' + quote(artist.name, safe="().-&+!?@*=' ")
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
@@ -353,7 +357,9 @@ def _render_shuffle_card(song, artist, album):
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
         ArtistSong.song_id == song.id
     ).all()
-    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g}
+    solo_parents = soloist_parent_map({a for a, m, n, g in song_artists_rows})
+    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g,
+                         'is_soloist': a in solo_parents, 'soloist_parent_ids': solo_parents.get(a, [])}
                         for a, m, n, g in song_artists_rows]}
     collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
     return render_template('fragments/shuffle_card.html',

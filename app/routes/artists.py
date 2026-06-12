@@ -9,7 +9,7 @@ from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong,
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
-from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_discography_songs
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_discography_songs, soloist_parent_map
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -154,6 +154,7 @@ def _render_artist(artist, htmx=False, push_url=None):
 
     # Edit mode data (lightweight — heavy album/song lists are now lazy-loaded via search endpoints)
     all_artists = []
+    all_soloist_parents = {}
     artist_parent_map = {}
     edit_genres = []
     edit_album_types = []
@@ -161,6 +162,7 @@ def _render_artist(artist, htmx=False, push_url=None):
     edit_genders = []
     if session.get('edit_mode') and current_user.is_editor_or_admin:
         all_artists = Artist.query.order_by(func.lower(Artist.name)).all()
+        all_soloist_parents = soloist_parent_map([a.id for a in all_artists])
         edit_genres = Genre.query.order_by(Genre.id).all()
         edit_album_types = AlbumType.query.order_by(AlbumType.id).all()
         edit_countries = Country.query.order_by(Country.id).all()
@@ -187,6 +189,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             artist=artist, discography=discography, users=users,
             gender_css=GENDER_CSS, children=children_sections,
             soloist_parents=soloist_parents, all_artists=all_artists,
+            all_soloist_parents=all_soloist_parents,
             artist_parent_map=artist_parent_map,
             assignable_users=assignable_users,
             is_subscribed=is_subscribed,
@@ -212,6 +215,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            discography=discography, users=users,
                            gender_css=GENDER_CSS, children=children_sections,
                            soloist_parents=soloist_parents, all_artists=all_artists,
+                           all_soloist_parents=all_soloist_parents,
                            artist_parent_map=artist_parent_map,
                            assignable_users=assignable_users,
                            is_subscribed=is_subscribed,
@@ -380,38 +384,64 @@ def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_art
     If all_song_misc_artists is provided, misc artists are bucketed alongside real
     artists so they share the same (by …)/(with …)/(feat. …) groups. On anime pages
     a main misc artist is the primary singer ("by"), mirroring main real artists.
+
+    The Solo rules only apply when a soloist's parent group is itself a main credit
+    on the song: such soloists render as "(a & b Solo)" after the with-group, the
+    page artist (if one of them) is included so the same label shows on every
+    soloist's page, and the credited parent is dropped from the with-group (its
+    credit is implied by the Solo credit). A soloist whose parent is not on the
+    song is a normal artist (with/feat).
     """
     ANIME_GENDER_ID = 3
     is_anime_page = artist.gender_id == ANIME_GENDER_ID
+    def _empty():
+        return {'with': [], 'feat': [], 'by': [], 'for': [], 'solo': [],
+                'solo_parent_ids': set()}
     song_data = {}
     for sid, artists_list in all_song_artists.items():
+        d = song_data.setdefault(sid, _empty())
+        main_ids = {a['artist_id'] for a in artists_list if a['is_main']}
         for a in artists_list:
+            is_solo_credit = (a['is_main'] and a.get('is_soloist')
+                              and main_ids & set(a.get('soloist_parent_ids') or ()))
             if a['artist_id'] == artist.id:
+                if is_solo_credit:
+                    d['solo'].append(a['name'])
+                    d['solo_parent_ids'].update(a.get('soloist_parent_ids') or ())
                 continue
-            d = song_data.setdefault(sid, {'main': [], 'feat': [], 'by': [], 'for': []})
             is_other_anime = a['gender_id'] == ANIME_GENDER_ID
             if is_anime_page and not is_other_anime and a['is_main']:
                 d['by'].append(a['name'])
             elif not is_anime_page and is_other_anime:
                 d['for'].append(a['name'])
             elif a['is_main']:
-                d['main'].append(a['name'])
+                if is_solo_credit:
+                    d['solo'].append(a['name'])
+                    d['solo_parent_ids'].update(a.get('soloist_parent_ids') or ())
+                else:
+                    d['with'].append((a['artist_id'], a['name']))
             else:
                 d['feat'].append(a['name'])
     for sid, misc_list in (all_song_misc_artists or {}).items():
         for m in misc_list:
-            d = song_data.setdefault(sid, {'main': [], 'feat': [], 'by': [], 'for': []})
+            d = song_data.setdefault(sid, _empty())
             if not m['is_main']:
                 d['feat'].append(m['name'])
             elif is_anime_page:
                 d['by'].append(m['name'])
             else:
-                d['main'].append(m['name'])
+                d['with'].append((None, m['name']))
     labels = {}
     for sid, d in song_data.items():
+        solo_names = d['solo']
+        with_names = [name for aid, name in d['with']
+                      if not (solo_names and aid is not None and aid in d['solo_parent_ids'])]
         parts = []
-        if d['main']:
-            parts.append('(with ' + ', '.join(d['main']) + ')')
+        if with_names:
+            parts.append('(with ' + ', '.join(with_names) + ')')
+        if solo_names:
+            joined = solo_names[0] if len(solo_names) == 1 else ', '.join(solo_names[:-1]) + ' & ' + solo_names[-1]
+            parts.append('(' + joined + ' Solo)')
         if d['by']:
             parts.append('(by ' + ', '.join(d['by']) + ')')
         if d['for']:
@@ -570,9 +600,10 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
         ArtistSong.song_id.in_(song_ids)
     ).all()
+    solo_parents = soloist_parent_map({row[1] for row in all_song_artists_rows})
     all_song_artists = {}
     for sid, aid, is_main, aname, gid in all_song_artists_rows:
-        all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid})
+        all_song_artists.setdefault(sid, []).append({'artist_id': aid, 'name': aname, 'is_main': is_main, 'gender_id': gid, 'is_soloist': aid in solo_parents, 'soloist_parent_ids': solo_parents.get(aid, [])})
 
     # Bulk-load misc artist associations for collab labels + manage popover
     all_song_misc_rows = db.session.query(

@@ -2399,17 +2399,35 @@ function _updateCollabLabel(songId, artists) {
     var currentId = (typeof _currentArtistId !== 'undefined') ? _currentArtistId : null;
     var isAnimePage = (typeof _isAnimePage !== 'undefined') ? _isAnimePage : false;
     var ANIME_GENDER_ID = 3;
-    var others = artists.filter(function(a) { return a.artist_id !== currentId; });
-    // Bucket other artists the same way the server does
-    var mainNames = [], byNames = [], forNames = [], featNames = [];
-    others.forEach(function(a) {
+    // Bucket artists the same way the server does
+    var withEntries = [], soloNames = [], byNames = [], forNames = [], featNames = [];
+    var soloParentIds = {};
+    var mainIds = {};
+    artists.forEach(function(a) { if (a.is_main) mainIds[a.artist_id] = true; });
+    artists.forEach(function(a) {
+        // Solo rules only apply when the soloist's parent group is itself a
+        // main credit on the song; otherwise they are a normal artist.
+        var isSoloCredit = a.is_main && a.is_soloist &&
+            (a.soloist_parent_ids || []).some(function(p) { return mainIds[p]; });
+        if (a.artist_id === currentId) {
+            if (isSoloCredit) {
+                soloNames.push(a.name);
+                (a.soloist_parent_ids || []).forEach(function(p) { soloParentIds[p] = true; });
+            }
+            return;
+        }
         var isOtherAnime = a.gender_id === ANIME_GENDER_ID;
         if (isAnimePage && !isOtherAnime && a.is_main) {
             byNames.push(a.name);
         } else if (!isAnimePage && isOtherAnime) {
             forNames.push(a.name);
         } else if (a.is_main) {
-            mainNames.push(a.name);
+            if (isSoloCredit) {
+                soloNames.push(a.name);
+                (a.soloist_parent_ids || []).forEach(function(p) { soloParentIds[p] = true; });
+            } else {
+                withEntries.push({ id: a.artist_id, name: a.name });
+            }
         } else {
             featNames.push(a.name);
         }
@@ -2420,10 +2438,19 @@ function _updateCollabLabel(songId, artists) {
         // mirroring how main real artists are bucketed.
         if (!m.is_main) featNames.push(m.name);
         else if (isAnimePage) byNames.push(m.name);
-        else mainNames.push(m.name);
+        else withEntries.push({ id: null, name: m.name });
     });
+    // Credited parents of Solo-group members are dropped from "with".
+    var mainNames = withEntries.filter(function(e) {
+        return !(soloNames.length && e.id !== null && soloParentIds[e.id]);
+    }).map(function(e) { return e.name; });
     var parts = [];
     if (mainNames.length) parts.push('(with ' + mainNames.join(', ') + ')');
+    if (soloNames.length) {
+        var soloJoined = soloNames.length === 1 ? soloNames[0]
+            : soloNames.slice(0, -1).join(', ') + ' & ' + soloNames[soloNames.length - 1];
+        parts.push('(' + soloJoined + ' Solo)');
+    }
     if (byNames.length) parts.push('(by ' + byNames.join(', ') + ')');
     if (forNames.length) parts.push('(for ' + forNames.join(', ') + ')');
     if (featNames.length) parts.push('(feat. ' + featNames.join(', ') + ')');
@@ -2710,7 +2737,7 @@ function showSongArtists(event, songId, span) {
         getItems: function(q, cb) {
             var lc = q.toLowerCase();
             cb(allArtists.filter(function(a) { return !lc || a.name.toLowerCase().indexOf(lc) !== -1; })
-               .map(function(a) { return { id: a.id, name: a.name }; }));
+               .map(function(a) { return { id: a.id, name: a.name, isSoloist: a.isSoloist, soloistParentIds: a.soloistParentIds }; }));
         },
         getUsedIds: function() { return artists.map(function(a) { return a.artist_id; }); },
         onSelect: function(item) {
@@ -2720,7 +2747,7 @@ function showSongArtists(event, songId, span) {
                 body: 'artist_id=' + item.id + '&is_main=false',
             }).then(function(r) {
                 if (!r.ok) throw new Error('failed');
-                artists.push({ artist_id: item.id, name: item.name, is_main: false });
+                artists.push({ artist_id: item.id, name: item.name, is_main: false, is_soloist: !!item.isSoloist, soloist_parent_ids: item.soloistParentIds || [] });
                 _songArtists[songId] = artists;
                 renderList();
                 renderMiscList();
