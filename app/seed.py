@@ -212,11 +212,15 @@ def seed(db):
         for id_, name in [(0, 'Admin'), (1, 'Editor'), (2, 'User'), (3, 'Viewer'), (4, 'System')]:
             db.session.merge(Role(id=id_, role=name))
 
-        for id_, name in [(0, 'Korean'), (1, 'Japanese'), (2, 'Canadian'), (3, 'American'), (4, 'Latin')]:
-            db.session.merge(Country(id=id_, country=name))
+        # Countries and genres are admin-managed (add/rename/delete), so only seed
+        # defaults into an empty table — never re-create rows the user has deleted.
+        if Country.query.first() is None:
+            for id_, name in [(0, 'Korean'), (1, 'Japanese'), (2, 'Canadian'), (3, 'American'), (4, 'Latin')]:
+                db.session.merge(Country(id=id_, country=name))
 
-        for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (7, 'VTuber')]:
-            db.session.merge(Genre(id=id_, genre=name))
+        if Genre.query.first() is None:
+            for id_, name in [(0, 'Kpop'), (1, 'Jpop'), (2, 'Pop'), (3, 'Rock'), (4, 'Metal'), (5, 'Vocaloid'), (7, 'VTuber')]:
+                db.session.merge(Genre(id=id_, genre=name))
 
         for id_, type_, desc in [
             (0, 'Album', 'A normal album, typically longer than 30 minutes (~8+ songs)'),
