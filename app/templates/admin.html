@@ -122,6 +122,18 @@
     </div>
 
     <div class="mb-8">
+        <h2 class="text-lg font-bold mb-3">Globe Ratings</h2>
+        <p class="text-xs text-secondary-text mb-3">
+            Change songs Globe rated <span class="font-semibold">3/5</span> to
+            <span class="font-semibold">4/5</span>, except where his note contains
+            both "not" and "playlist" (those stay a 3). This cannot be undone.
+        </p>
+        <button type="button" id="bump-globe-btn"
+                class="text-sm px-4 py-1 rounded bg-button-primary text-button-text">Bump 3 &rarr; 4</button>
+        <span id="bump-globe-result" class="text-sm ml-3"></span>
+    </div>
+
+    <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Database</h2>
         <a href="{{ url_for('admin.replace_database') }}" class="text-sm px-4 py-1 rounded inline-block bg-delete text-button-text no-underline">
             Replace Database
@@ -210,6 +222,41 @@
                 startBtn.disabled = false;
                 inputEl.style.display = '';
             });
+    });
+})();
+
+(function () {
+    var btn = document.getElementById('bump-globe-btn');
+    if (!btn) return;
+    var resultEl = document.getElementById('bump-globe-result');
+
+    function csrf() {
+        var m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.content : '';
+    }
+
+    btn.addEventListener('click', function () {
+        showConfirm("Bump Globe's ratings",
+            "Change every song Globe rated 3/5 to 4/5? This cannot be undone.",
+            function () {
+                btn.disabled = true;
+                resultEl.textContent = 'Working...';
+                fetch('/admin/bump-globe-ratings', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrf()}
+                })
+                    .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); })
+                    .then(function (res) {
+                        if (!res.ok) { throw new Error(res.j.error || 'Failed'); }
+                        resultEl.textContent = 'Updated ' + (res.j.updated || 0) +
+                            ' ratings; skipped ' + (res.j.skipped || 0) + ' "not playlist" notes.';
+                        btn.disabled = false;
+                    })
+                    .catch(function (e) {
+                        resultEl.textContent = e.message || 'Failed';
+                        btn.disabled = false;
+                    });
+            }, 'Bump 3 → 4');
     });
 })();
 </script>

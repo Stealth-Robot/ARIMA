@@ -256,6 +256,50 @@ def replace_database():
     return redirect(url_for('home.home'))
 
 
+@admin_bp.route('/admin/bump-globe-ratings', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def bump_globe_ratings():
+    """Change user Globe's 3/5 ratings to 4/5.
+
+    A song is skipped (left at 3/5) when Globe's note for it contains both the
+    words "not" and "playlist" (whole words, case-insensitive) — those are his
+    explicit "a 3, but not a playlist add" calls and should stay a 3.
+    """
+    import re
+    from app.models.music import Rating
+    from app.models.user import User
+    from app.services.audit import log_change
+    from app.cache import clear_stats_cache
+
+    globe = User.query.filter(db.func.lower(User.username) == 'globe').first()
+    if globe is None:
+        return jsonify({'error': 'User Globe not found'}), 404
+
+    has_not = re.compile(r'\bnot\b', re.IGNORECASE)
+    has_playlist = re.compile(r'\bplaylist\b', re.IGNORECASE)
+
+    updated = 0
+    skipped = 0
+    for r in Rating.query.filter_by(user_id=globe.id, rating=3).all():
+        note = r.note or ''
+        if has_not.search(note) and has_playlist.search(note):
+            skipped += 1
+            continue
+        r.rating = 4
+        updated += 1
+
+    if updated:
+        log_change(current_user,
+                   f"Changed {updated} of Globe's song ratings from 3/5 to 4/5 "
+                   f"(skipped {skipped} \"not playlist\" notes)",
+                   change_type='rating')
+
+    db.session.commit()
+    clear_stats_cache()
+    return jsonify({'updated': updated, 'skipped': skipped})
+
+
 @admin_bp.route('/admin/bulk-spotify', methods=['POST'])
 @login_required
 @role_required(ADMIN)
