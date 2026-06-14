@@ -1989,9 +1989,10 @@ function _openMergePopover(songId, songName, span) {
     activeMergePopover = parts.popover;
 }
 
-function showMergeDiffModal(keptId, keptName, absorbedId) {
+function showMergeDiffModal(keptId, keptName, absorbedId, absorbedName, absorbedArtist, absorbedAlbum, options) {
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+    var _z = (options && options.zIndex) || 100;
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:' + _z + ';background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
     overlay.addEventListener('click', function(e) { if (e.target === overlay) _closeMergeModal(overlay); });
 
     var container = document.createElement('div');
@@ -2007,7 +2008,7 @@ function showMergeDiffModal(keptId, keptName, absorbedId) {
 
     fetch('/edit/song/' + keptId + '/merge-preview/' + absorbedId, {headers: _csrfHeaders({})})
     .then(function(r) { if (!r.ok) throw new Error('failed'); return r.json(); })
-    .then(function(data) { _buildMergeDiff(overlay, container, header, data, keptId, absorbedId); })
+    .then(function(data) { _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, options); })
     .catch(function() { header.lastChild.textContent = 'Failed to load merge data.'; });
 }
 
@@ -2030,7 +2031,8 @@ function _makeChip(text, side, active) {
     return chip;
 }
 
-function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
+function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, options) {
+    var opts = options || {};
     var k = data.kept, a = data.absorbed;
     header.lastChild.innerHTML = '<span style="color:var(--text-primary);">Kept:</span> ' + _escHtml(k.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(k.artist || '?') + ')</span> &larr; <span style="color:var(--text-primary);">Absorbed:</span> ' + _escHtml(a.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(a.artist || '?') + ')</span>';
 
@@ -2271,18 +2273,21 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
     // already attached its listeners to the password field. Relocating the form into the
     // modal and focusing the field then registers it as the focused login field
     // deterministically — no timing race, so the manager's Fill reliably targets it.
-    var credForm = document.getElementById('merge-cred-form');
-    var pwInput = document.getElementById('merge-pw-input');
-    pwInput.value = '';
-    pwInput.required = true;
-    pwInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+    var pwInput = null;
+    if (!opts.noPassword) {
+        var credForm = document.getElementById('merge-cred-form');
+        pwInput = document.getElementById('merge-pw-input');
+        pwInput.value = '';
+        pwInput.required = true;
+        pwInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
 
-    var pwLabel = document.createElement('label');
-    pwLabel.textContent = 'Enter your password to confirm';
-    pwLabel.htmlFor = 'merge-pw-input';
-    pwLabel.style.cssText = 'display:block;font-size:13px;margin-bottom:4px;color:var(--text-primary);';
-    footer.appendChild(pwLabel);
-    footer.appendChild(credForm);
+        var pwLabel = document.createElement('label');
+        pwLabel.textContent = 'Enter your password to confirm';
+        pwLabel.htmlFor = 'merge-pw-input';
+        pwLabel.style.cssText = 'display:block;font-size:13px;margin-bottom:4px;color:var(--text-primary);';
+        footer.appendChild(pwLabel);
+        footer.appendChild(credForm);
+    }
 
     var btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:12px;';
@@ -2294,18 +2299,18 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
 
     var mergeBtn = document.createElement('button');
     mergeBtn.type = 'button';
-    mergeBtn.textContent = 'Merge';
+    var mergeLabel = opts.confirmLabel || 'Merge';
+    mergeBtn.textContent = mergeLabel;
     mergeBtn.style.cssText = 'padding:8px 16px;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:var(--button-primary);color:#fff;font-weight:bold;';
 
     mergeBtn.addEventListener('click', function() {
         if (!inputs.name.value.trim()) { alert('Song name is required.'); return; }
-        if (!pwInput.value) { alert('Password is required.'); return; }
+        if (!opts.noPassword && !pwInput.value) { alert('Password is required.'); return; }
         mergeBtn.disabled = true;
         mergeBtn.textContent = 'Merging...';
 
         var payload = {
             absorbed_song_id: absorbedId,
-            password: pwInput.value,
             name: inputs.name.value.trim(),
             is_promoted: inputs.is_promoted.checked,
             is_lead: inputs.is_lead.checked,
@@ -2322,19 +2327,29 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
                 };
             })
         };
+        if (!opts.noPassword) payload.password = pwInput.value;
+        if (opts.extraPayload) {
+            for (var key in opts.extraPayload) {
+                if (opts.extraPayload.hasOwnProperty(key)) payload[key] = opts.extraPayload[key];
+            }
+        }
 
-        fetch('/edit/song/' + keptId + '/merge', {
+        fetch(opts.submitUrl || ('/edit/song/' + keptId + '/merge'), {
             method: 'POST',
             headers: _csrfHeaders({'Content-Type': 'application/json'}),
             body: JSON.stringify(payload)
         }).then(function(r) {
-            if (r.status === 403) { alert('Incorrect password.'); mergeBtn.disabled = false; mergeBtn.textContent = 'Merge'; return; }
+            if (r.status === 403 && !opts.noPassword) { alert('Incorrect password.'); mergeBtn.disabled = false; mergeBtn.textContent = mergeLabel; return; }
             if (!r.ok) throw new Error('failed');
-            window.location.reload();
+            return r.json().catch(function() { return {}; });
+        }).then(function(resp) {
+            if (resp === undefined) return;  // 403 path already handled
+            if (opts.onSuccess) { _closeMergeModal(overlay); opts.onSuccess(resp); }
+            else { window.location.reload(); }
         }).catch(function() {
             showToast('Merge failed \u2014 try again');
             mergeBtn.disabled = false;
-            mergeBtn.textContent = 'Merge';
+            mergeBtn.textContent = mergeLabel;
         });
     });
 
@@ -2346,7 +2361,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId) {
     // Focus the now-visible password field. The manager's listener is already attached
     // (the field existed at page load), so this single focus registers it as the
     // focused login field.
-    pwInput.focus();
+    if (pwInput) pwInput.focus();
 }
 
 // Focus a confirm-password modal's password field when the modal is shown. The field

@@ -572,6 +572,17 @@ def delete_misc_artist(artist_id):
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
 
 
+def _format_credit(pairs):
+    """pairs: list of (rank, name) where rank 0 = main, 1 = featured.
+    Returns 'Main1, Main2 (feat. Feat1, Feat2)'."""
+    mains = sorted(n for r, n in pairs if r == 0)
+    feats = sorted(n for r, n in pairs if r != 0)
+    s = ', '.join(mains)
+    if feats:
+        s += (' ' if s else '') + '(feat. ' + ', '.join(feats) + ')'
+    return s
+
+
 @misc_bp.route('/misc/artist-songs')
 @login_required
 def artist_songs_list():
@@ -586,9 +597,37 @@ def artist_songs_list():
     ).join(Song, Song.id == SongMiscArtist.song_id).filter(
         SongMiscArtist.misc_artist_id.in_(artist_ids)
     ).order_by(Song.name).all()
+
+    # Build a per-song artist display string (main first) covering every credit on the
+    # song — real and misc, including the misc artist being combined — so the row matches
+    # the song's full credit shown elsewhere.
+    song_ids = {r[1] for r in rows}
+    artist_map = {}
+    songs_with_album = set()
+    if song_ids:
+        for sid, name, is_main in db.session.query(
+            ArtistSong.song_id, Artist.name, ArtistSong.artist_is_main
+        ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+            ArtistSong.song_id.in_(song_ids)
+        ).all():
+            artist_map.setdefault(sid, []).append((0 if is_main else 1, name))
+        for sid, name, is_main in db.session.query(
+            SongMiscArtist.song_id, MiscArtist.name, SongMiscArtist.artist_is_main
+        ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+            SongMiscArtist.song_id.in_(song_ids)
+        ).all():
+            artist_map.setdefault(sid, []).append((0 if is_main else 1, name))
+        songs_with_album = {r[0] for r in db.session.query(AlbumSong.song_id).filter(
+            AlbumSong.song_id.in_(song_ids)
+        ).distinct().all()}
+
     result = {}
     for ma_id, song_id, song_name in rows:
-        result.setdefault(str(ma_id), []).append({'id': song_id, 'name': song_name})
+        arts = _format_credit(artist_map.get(song_id, []))
+        result.setdefault(str(ma_id), []).append({
+            'id': song_id, 'name': song_name, 'artists': arts,
+            'has_album': song_id in songs_with_album,
+        })
     return json.dumps(result), 200, {'Content-Type': 'application/json'}
 
 
@@ -624,6 +663,257 @@ def merge_misc_artists():
     log_change(current_user, f'Merged misc artist "{absorb_name}" into "{keep.name}"', change_type='artist')
     db.session.commit()
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@misc_bp.route('/misc/combine-song', methods=['POST'])
+@login_required
+def combine_misc_song():
+    """Merge one of a misc artist's songs into an existing song of a real artist.
+
+    Reuses the song-merge machinery, then drops the misc credit that the merge
+    carries onto the kept song so the misc artist isn't re-credited there. When the
+    misc artist has no songs left, it is deleted (combining it into the real artist).
+    """
+    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+        abort(403)
+    from app.services.audit import log_change
+    from app.routes.edit.song import perform_song_merge
+    data = request.get_json(silent=True) or {}
+    try:
+        misc_artist_id = int(data['misc_artist_id'])
+        real_artist_id = int(data['real_artist_id'])
+        song_id = int(data['song_id'])            # the misc song (absorbed)
+        target_song_id = int(data['target_song_id'])  # the real song (kept)
+    except (KeyError, TypeError, ValueError):
+        abort(400)
+    if song_id == target_song_id:
+        return jsonify({'error': 'Cannot merge a song into itself'}), 400
+    ma = db.session.get(MiscArtist, misc_artist_id)
+    real = db.session.get(Artist, real_artist_id)
+    if ma is None or real is None:
+        abort(404)
+    if db.session.get(SongMiscArtist, (song_id, misc_artist_id)) is None:
+        return jsonify({'error': 'Song is not linked to this misc artist'}), 400
+    if db.session.get(ArtistSong, (real_artist_id, target_song_id)) is None:
+        return jsonify({'error': 'Target song does not belong to the selected artist'}), 400
+    kept = db.session.get(Song, target_song_id)
+    absorbed = db.session.get(Song, song_id)
+    if kept is None or absorbed is None:
+        return jsonify({'error': 'Song not found'}), 400
+
+    overrides = {}
+    if 'name' in data:
+        overrides['chosen_name'] = data['name']
+    flags = {f: bool(data[f]) for f in ('is_promoted', 'is_lead', 'is_remix', 'is_cover') if f in data}
+    if flags:
+        overrides['chosen_flags'] = flags
+    urls = {f: (data[f] or None) for f in ('spotify_url', 'youtube_url') if f in data}
+    if urls:
+        overrides['chosen_urls'] = urls
+    if 'note' in data:
+        overrides['chosen_note'] = data['note'] or None
+    if 'ratings' in data:
+        overrides['chosen_ratings'] = data['ratings']
+
+    perform_song_merge(kept, absorbed, **overrides)  # commits internally
+    db.session.execute(db.text(
+        'DELETE FROM song_misc_artist WHERE song_id = :sid AND misc_artist_id = :mid'
+    ), {'sid': target_song_id, 'mid': misc_artist_id})
+
+    remaining = SongMiscArtist.query.filter_by(misc_artist_id=misc_artist_id).count()
+    deleted = False
+    if remaining == 0:
+        ma_name = ma.name
+        db.session.delete(ma)
+        log_change(current_user, f'Combined misc artist "{ma_name}" into "{real.name}"', change_type='artist')
+        deleted = True
+    db.session.commit()
+    return jsonify({'ok': True, 'deleted': deleted, 'remaining': remaining})
+
+
+@misc_bp.route('/misc/combine-targets')
+@login_required
+def combine_targets():
+    """Target-song candidates for the combine flow: songs the given real artist is on
+    (as main OR featured), each with its role and full artist credit (main first)."""
+    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+        abort(403)
+    try:
+        artist_id = int(request.args.get('artist_id'))
+    except (TypeError, ValueError):
+        abort(400)
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return json.dumps([]), 200, {'Content-Type': 'application/json'}
+
+    rows = db.session.query(Song.id, Song.name, ArtistSong.artist_is_main).join(
+        ArtistSong, ArtistSong.song_id == Song.id
+    ).filter(
+        ArtistSong.artist_id == artist_id, Song.name.ilike(f'%{q}%')
+    ).all()
+    song_ids = {r[0] for r in rows}
+
+    artist_map = {}
+    album_map = {}
+    if song_ids:
+        for sid, name, is_main in db.session.query(
+            ArtistSong.song_id, Artist.name, ArtistSong.artist_is_main
+        ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
+            ArtistSong.song_id.in_(song_ids)
+        ).all():
+            artist_map.setdefault(sid, []).append((0 if is_main else 1, name))
+        for sid, name, is_main in db.session.query(
+            SongMiscArtist.song_id, MiscArtist.name, SongMiscArtist.artist_is_main
+        ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
+            SongMiscArtist.song_id.in_(song_ids)
+        ).all():
+            artist_map.setdefault(sid, []).append((0 if is_main else 1, name))
+        for sid, aname in db.session.query(
+            AlbumSong.song_id, Album.name
+        ).join(Album, Album.id == AlbumSong.album_id).filter(
+            AlbumSong.song_id.in_(song_ids)
+        ).all():
+            album_map.setdefault(sid, aname)
+
+    results = []
+    for sid, sname, is_main in rows:
+        results.append({
+            'id': sid, 'name': sname,
+            'artists': _format_credit(artist_map.get(sid, [])),
+            'album': album_map.get(sid, ''),
+        })
+    results.sort(key=lambda r: r['name'].lower())
+    return json.dumps(results[:40]), 200, {'Content-Type': 'application/json'}
+
+
+@misc_bp.route('/misc/swap-credit', methods=['POST'])
+@login_required
+def swap_credit():
+    """Convert a song's misc-artist credit into a real ArtistSong credit for the artist
+    being combined into (preserving main/feat), then drop the misc link. If the song has
+    no album yet, an album must be selected/created. Deletes the misc artist when empty.
+    """
+    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+        abort(403)
+    from app.services.audit import log_change
+    data = request.get_json(silent=True) or {}
+    try:
+        misc_artist_id = int(data['misc_artist_id'])
+        real_artist_id = int(data['real_artist_id'])
+        song_id = int(data['song_id'])
+    except (KeyError, TypeError, ValueError):
+        abort(400)
+    ma = db.session.get(MiscArtist, misc_artist_id)
+    real = db.session.get(Artist, real_artist_id)
+    song = db.session.get(Song, song_id)
+    if ma is None or real is None or song is None:
+        abort(404)
+    link = db.session.get(SongMiscArtist, (song_id, misc_artist_id))
+    if link is None:
+        return jsonify({'error': 'Song is not linked to this misc artist'}), 400
+    is_main = link.artist_is_main
+
+    # If the song has no album yet, one must be chosen or created.
+    if AlbumSong.query.filter_by(song_id=song_id).first() is None:
+        album_data = data.get('album') or {}
+        album = None
+        if album_data.get('existing_id'):
+            album = db.session.get(Album, int(album_data['existing_id']))
+            if album is None:
+                return jsonify({'error': 'Album not found'}), 400
+        elif album_data.get('name'):
+            new_release_date = (album_data.get('release_date') or '').strip() or None
+            if new_release_date and not is_valid_release_date(new_release_date):
+                return jsonify({'error': 'Invalid release date'}), 400
+            album = Album(
+                name=album_data['name'].strip(),
+                release_date=new_release_date,
+                album_type_id=int(album_data.get('album_type_id', 2)),
+                submitted_by_id=current_user.id,
+                artist_id=real_artist_id,
+                note=(album_data.get('note') or '').strip() or None,
+            )
+            db.session.add(album)
+            db.session.flush()
+            for gid in album_data.get('genre_ids', []):
+                db.session.execute(album_genres.insert().values(album_id=album.id, genre_id=int(gid)))
+        else:
+            return jsonify({'error': 'album_required', 'needs_album': True}), 400
+        next_track = db.session.execute(db.text(
+            'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+        ), {'aid': album.id}).scalar()
+        db.session.add(AlbumSong(album_id=album.id, song_id=song_id, track_number=next_track))
+
+    # Swap the credit: add a real ArtistSong (if missing), remove the misc link.
+    if db.session.get(ArtistSong, (real_artist_id, song_id)) is None:
+        db.session.add(ArtistSong(artist_id=real_artist_id, song_id=song_id, artist_is_main=is_main))
+    db.session.execute(db.text(
+        'DELETE FROM song_misc_artist WHERE song_id = :sid AND misc_artist_id = :mid'
+    ), {'sid': song_id, 'mid': misc_artist_id})
+    db.session.flush()
+
+    # Ensure the song still has a main artist.
+    has_main = (ArtistSong.query.filter_by(song_id=song_id, artist_is_main=True).count() > 0
+                or SongMiscArtist.query.filter_by(song_id=song_id, artist_is_main=True).count() > 0)
+    if not has_main:
+        promote = db.session.get(ArtistSong, (real_artist_id, song_id))
+        if promote:
+            promote.artist_is_main = True
+
+    log_change(current_user, f'Swapped misc credit "{ma.name}" to "{real.name}" on "{song.name}"', song=song, change_type='song')
+
+    remaining = SongMiscArtist.query.filter_by(misc_artist_id=misc_artist_id).count()
+    deleted = False
+    if remaining == 0:
+        ma_name = ma.name
+        db.session.delete(ma)
+        log_change(current_user, f'Combined misc artist "{ma_name}" into "{real.name}"', change_type='artist')
+        deleted = True
+    db.session.commit()
+    return jsonify({'ok': True, 'deleted': deleted, 'remaining': remaining})
+
+
+@misc_bp.route('/misc/combine-auto-merge', methods=['POST'])
+@login_required
+def combine_auto_merge():
+    """Drop the misc artist's credit from any song where the real artist is already
+    credited — the song is already the real artist's, so there's nothing to merge.
+    Deletes the misc artist if no songs remain linked.
+    """
+    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+        abort(403)
+    from app.services.audit import log_change
+    data = request.get_json(silent=True) or {}
+    try:
+        misc_artist_id = int(data['misc_artist_id'])
+        real_artist_id = int(data['real_artist_id'])
+    except (KeyError, TypeError, ValueError):
+        abort(400)
+    ma = db.session.get(MiscArtist, misc_artist_id)
+    real = db.session.get(Artist, real_artist_id)
+    if ma is None or real is None:
+        abort(404)
+
+    overlap = [r[0] for r in db.session.query(SongMiscArtist.song_id).join(
+        ArtistSong,
+        (ArtistSong.song_id == SongMiscArtist.song_id) & (ArtistSong.artist_id == real_artist_id)
+    ).filter(SongMiscArtist.misc_artist_id == misc_artist_id).all()]
+    for sid in overlap:
+        db.session.execute(db.text(
+            'DELETE FROM song_misc_artist WHERE song_id = :sid AND misc_artist_id = :mid'
+        ), {'sid': sid, 'mid': misc_artist_id})
+    if overlap:
+        log_change(current_user, f'Dropped redundant "{ma.name}" misc credit from {len(overlap)} song(s) already credited to "{real.name}"', change_type='artist')
+
+    remaining = SongMiscArtist.query.filter_by(misc_artist_id=misc_artist_id).count()
+    deleted = False
+    if remaining == 0:
+        ma_name = ma.name
+        db.session.delete(ma)
+        log_change(current_user, f'Combined misc artist "{ma_name}" into "{real.name}"', change_type='artist')
+        deleted = True
+    db.session.commit()
+    return jsonify({'ok': True, 'auto_merged': len(overlap), 'deleted': deleted, 'remaining': remaining})
 
 
 @misc_bp.route('/misc/song/<int:song_id>/misc-artists', methods=['POST'])
