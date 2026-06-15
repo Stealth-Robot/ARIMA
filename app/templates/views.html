@@ -348,6 +348,7 @@ function resolveCollabName(event, songId, chip) {
 
 function _doLinkCollab(songId, chip, payload) {
     payload.song_id = songId;
+    payload.extracted_name = chip.dataset.name;
     fetch('/views/link-collab-artist', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/json'}),
@@ -357,6 +358,11 @@ function _doLinkCollab(songId, chip, payload) {
     }).then(function(res) {
         if (!res.ok || (res.j && res.j.error)) { alert((res.j && res.j.error) || 'Link failed'); return; }
         _closeCollabPopover();
+        if (res.j.new_title) {
+            var row = document.getElementById('collab-' + songId);
+            var nameEl = row && row.querySelector('td:first-child a, td:first-child');
+            if (nameEl) nameEl.textContent = res.j.new_title;
+        }
         chip.textContent = '✓ ' + (res.j.linked_name || chip.dataset.name) + ' (' + res.j.kind + ')';
         chip.style.background = '#16a34a';
         chip.style.color = '#fff';

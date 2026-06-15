@@ -280,3 +280,51 @@ def _extract_collab_names(song_name):
             seen.add(n.lower())
             deduped.append(n)
     return deduped
+
+
+def _tidy_title(t):
+    """Collapse the artifacts left after a name is removed from a title marker."""
+    import re
+    t = re.sub(r'[\(\[]\s*[\)\]]', '', t)     # drop now-empty () or []
+    t = re.sub(r'([\(\[])\s+', r'\1', t)      # no space just inside an open bracket
+    t = re.sub(r'\s+([\)\]])', r'\1', t)      # no space just inside a close bracket
+    t = re.sub(r'\s{2,}', ' ', t)             # collapse runs of spaces
+    t = re.sub(r'\s*[-–]\s*$', '', t)         # drop a dangling trailing dash
+    return t.strip()
+
+
+def _strip_collab_name(song_name, name):
+    """Remove one collaborator's credit from a song title's feat/with/duet/solo marker.
+
+    Mirrors the markers _extract_collab_names detects. If `name` was the only artist in
+    the marker, the whole marker is removed; if other artists are co-credited there, only
+    `name` is dropped and the rest are kept. Returns the cleaned title (unchanged if the
+    name isn't found in any marker).
+    """
+    import re
+    name = (name or '').strip()
+    if not name:
+        return song_name
+    FEAT_PAREN = r'(?:featuring|feat[.:]*|ft\.?|with|w/)'
+    FEAT_TRAIL = r'(?:featuring|feat[.:]+|feat(?=\s)|ft\.)'
+    paren_start_re = re.compile(r'[\(\[]\s*' + FEAT_PAREN + r'\s*([^)\]]+)[\)\]]', re.IGNORECASE)
+    inner_paren_re = re.compile(r'[\(\[][^)\]]*?[&\s]' + FEAT_PAREN + r'\s*([^)\]]+)[\)\]]', re.IGNORECASE)
+    trailing_re = re.compile(
+        r'(?:^|[\s\-])\s*' + FEAT_TRAIL + r'\s*(.+?)(?:\s*\((?!.*' + FEAT_PAREN + r')|\s*$)', re.IGNORECASE)
+    duet_solo_re = re.compile(r'[\(\[]\s*([^)\]]+?)\s+(?:duet|solo)\s*[\)\]]', re.IGNORECASE)
+
+    for rx in (paren_start_re, inner_paren_re, duet_solo_re, trailing_re):
+        for m in rx.finditer(song_name):
+            inner = m.group(1).strip().rstrip(')')
+            main, feat = _parse_misc_artists(inner)
+            combined = main + feat
+            if not any(c.strip().lower() == name.lower() for c in combined):
+                continue
+            remaining = [c for c in combined if c.strip().lower() != name.lower()]
+            if remaining:
+                s1, e1 = m.span(1)
+                new = song_name[:s1] + ' & '.join(remaining) + song_name[e1:]
+            else:
+                new = song_name[:m.start()] + song_name[m.end():]
+            return _tidy_title(new)
+    return song_name

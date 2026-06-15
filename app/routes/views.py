@@ -836,6 +836,16 @@ def link_collab_artist():
     else:
         abort(400)
 
+    # Always clean the title: drop just this collaborator's credit from its marker
+    # (co-credited artists in the same marker are preserved). Use the name as it
+    # appears in the title (the extracted chip), falling back to the linked name.
+    from app.migrations import _strip_collab_name
+    strip_name = (data.get('extracted_name') or linked_name or '').strip()
+    new_title = _strip_collab_name(song.name, strip_name) if strip_name else song.name
+    title_changed = new_title and new_title != song.name
+    if title_changed:
+        song.name = new_title
+
     log_change(current_user, f'Linked "{linked_name}" as a collaborator on "{song.name}"', song=song, change_type='song')
     db.session.commit()
-    return jsonify({'ok': True, 'linked_name': linked_name, 'kind': kind})
+    return jsonify({'ok': True, 'linked_name': linked_name, 'kind': kind, 'new_title': song.name})
