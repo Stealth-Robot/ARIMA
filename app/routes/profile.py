@@ -46,6 +46,7 @@ def profile():
             'show_full_album_date': session.get('show_full_album_date', True),
             'hide_osts': session.get('hide_osts', False),
             'search_show_hidden': session.get('search_show_hidden', False),
+            'search_ignore_punctuation': session.get('search_ignore_punctuation', False),
         }
     else:
         s = current_user.settings
@@ -68,6 +69,7 @@ def profile():
             'show_full_album_date': getattr(s, 'show_full_album_date', True) if s else True,
             'hide_osts': getattr(s, 'hide_osts', False) if s else False,
             'search_show_hidden': getattr(s, 'search_show_hidden', False) if s else False,
+            'search_ignore_punctuation': getattr(s, 'search_ignore_punctuation', False) if s else False,
             'edit_buttons': s.visible_edit_buttons if s else set(UserSettings.EDIT_BUTTON_DEFAULTS),
         }
 
@@ -99,6 +101,7 @@ def _apply_theme_settings(set_field, form):
         set_field('show_full_album_date', form.get('show_full_album_date') == 'on')
         set_field('hide_osts', form.get('hide_osts') == 'on')
         set_field('search_show_hidden', form.get('search_show_hidden') == 'on')
+        set_field('search_ignore_punctuation', form.get('search_ignore_punctuation') == 'on')
         val = form.get('album_sort_order')
         set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
         sbs = form.get('song_button_size', type=int)

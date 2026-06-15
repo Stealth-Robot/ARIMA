@@ -41,6 +41,12 @@ def create_app():
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.execute("PRAGMA busy_timeout=2000")
             cursor.close()
+            # SQL-callable punctuation stripper for the "ignore punctuation" search setting.
+            from app.services.search import strip_punct
+            dbapi_conn.create_function(
+                'strip_punct', 1,
+                lambda s: strip_punct(s) if s is not None else None,
+            )
 
     # User loader for Flask-Login
     @login_manager.user_loader

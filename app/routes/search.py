@@ -7,21 +7,29 @@ from sqlalchemy import func
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist
-from app.services.search import like_contains, LIKE_ESCAPE
+from app.services.search import like_contains, LIKE_ESCAPE, strip_punct, strip_punct_sql
 
 logger = logging.getLogger(__name__)
 
 search_bp = Blueprint('search', __name__)
 
 
-def _occurrences(fields, term):
+def _occurrences(fields, term, ignore_punct=False):
     """Count total occurrences of term across all fields using SQLite string math."""
     term_len = len(term)
     parts = []
     for f in fields:
-        lower_f = func.lower(func.coalesce(f, ''))
+        base = strip_punct_sql(f) if ignore_punct else f
+        lower_f = func.lower(func.coalesce(base, ''))
         parts.append((func.length(lower_f) - func.length(func.replace(lower_f, term, ''))) / term_len)
     return sum(parts)
+
+
+def _ignore_punctuation():
+    """Whether the current user's search should ignore punctuation (default off)."""
+    if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
+        return getattr(current_user.settings, 'search_ignore_punctuation', False)
+    return session.get('search_ignore_punctuation', False)
 
 
 def _get_filters():
@@ -50,8 +58,22 @@ def search():
         return render_template('fragments/search_results.html',
                                artists=[], albums=[], songs=[], query=q)
 
-    like = like_contains(q)
-    terms = q.lower().split()
+    ignore_punct = _ignore_punctuation()
+    norm_q = strip_punct(q) if ignore_punct else q
+    # Re-apply the 2-char minimum to the normalized query: stripping punctuation
+    # can shrink a query (e.g. "??" -> "" or "a." -> "a"), and an empty pattern
+    # would otherwise match the entire catalog.
+    if len(norm_q.strip()) < 2:
+        return render_template('fragments/search_results.html',
+                               artists=[], albums=[], songs=[], query=q)
+
+    def field_match(field, pattern):
+        """ilike on a column, stripping punctuation first when the setting is on."""
+        expr = strip_punct_sql(field) if ignore_punct else field
+        return expr.ilike(pattern, escape=LIKE_ESCAPE)
+
+    like = like_contains(norm_q)
+    terms = norm_q.lower().split()
     term_counts = Counter(terms)
     show_hidden = request.args.get('show_hidden') == '1'
     if show_hidden:
@@ -73,7 +95,7 @@ def search():
             ).all()}
 
     # --- Artists ---
-    artist_query = Artist.query.filter(Artist.name.ilike(like, escape=LIKE_ESCAPE))
+    artist_query = Artist.query.filter(field_match(Artist.name, like))
     if country_ids:
         artist_query = artist_query.filter(Artist.country_id.in_(country_ids))
     if genre_ids:
@@ -112,14 +134,14 @@ def search():
             if count == 1:
                 t = like_contains(term)
                 album_query = album_query.filter(
-                    db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in album_fields))
+                    db.or_(*(field_match(f, t) for f in album_fields))
                 )
             else:
                 album_query = album_query.filter(
-                    _occurrences(album_fields, term) >= count
+                    _occurrences(album_fields, term, ignore_punct) >= count
                 )
     else:
-        album_query = album_query.filter(Album.name.ilike(like, escape=LIKE_ESCAPE))
+        album_query = album_query.filter(field_match(Album.name, like))
     albums = album_query.order_by(func.lower(Album.name), func.lower(Artist.name)).distinct().all()
 
     # --- Songs ---
@@ -139,14 +161,14 @@ def search():
             if count == 1:
                 t = like_contains(term)
                 song_id_q = song_id_q.filter(
-                    db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in song_fields))
+                    db.or_(*(field_match(f, t) for f in song_fields))
                 )
             else:
                 song_id_q = song_id_q.filter(
-                    _occurrences(song_fields, term) >= count
+                    _occurrences(song_fields, term, ignore_punct) >= count
                 )
     else:
-        song_id_q = song_id_q.filter(Song.name.ilike(like, escape=LIKE_ESCAPE))
+        song_id_q = song_id_q.filter(field_match(Song.name, like))
     if ost_album_ids:
         song_id_q = song_id_q.filter(db.or_(
             ~Album.id.in_(ost_album_ids),
@@ -214,10 +236,12 @@ def search():
 
     # Rank songs whose own title matches the query phrase above songs that only
     # matched via their album/artist name (stable sort keeps A-Z within tiers).
-    q_lower = q.lower()
+    q_lower = norm_q.lower()
 
     def _title_rank(item):
         name = item[0].name.lower()
+        if ignore_punct:
+            name = strip_punct(name)
         if name == q_lower:
             return 0
         if q_lower in name:
@@ -240,16 +264,16 @@ def search():
                 if count == 1:
                     t = like_contains(term)
                     misc_song_q = misc_song_q.filter(
-                        db.or_(*(f.ilike(t, escape=LIKE_ESCAPE) for f in misc_fields))
+                        db.or_(*(field_match(f, t) for f in misc_fields))
                     )
                 else:
                     misc_song_q = misc_song_q.filter(
-                        _occurrences(misc_fields, term) >= count
+                        _occurrences(misc_fields, term, ignore_punct) >= count
                     )
         else:
             misc_song_q = misc_song_q.filter(
-                db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE),
-                       MiscArtist.name.ilike(like, escape=LIKE_ESCAPE))
+                db.or_(field_match(Song.name, like),
+                       field_match(MiscArtist.name, like))
             )
         misc_song_rows = misc_song_q.distinct().all()
 

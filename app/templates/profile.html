@@ -126,6 +126,13 @@
                 Show hidden songs in search by default
             </label>
         </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="search_ignore_punctuation"
+                       {% if settings.search_ignore_punctuation %}checked{% endif %}>
+                Ignore punctuation when searching
+            </label>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Album Sort Order</label>
             <select name="album_sort_order" class="w-full px-3 py-2 border rounded border-border">
