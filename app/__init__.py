@@ -74,6 +74,9 @@ def create_app():
             db.session.commit()
 
     # Update notification — inject latest update ID for client-side dismissal tracking
+    from app.services.artist import amp_join as _amp_join
+    flask_app.jinja_env.filters['amp_join'] = _amp_join
+
     @flask_app.context_processor
     def inject_update_notification():
         if current_user.is_authenticated and not current_user.is_system_or_guest:

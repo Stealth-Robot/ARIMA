@@ -13,6 +13,15 @@ from flask_login import current_user
 
 from sqlalchemy import func
 
+
+def amp_join(names):
+    """Join names with ', ', using ' & ' before the last when there are two or more
+    (e.g. ['A'] -> 'A', ['A','B'] -> 'A & B', ['A','B','C'] -> 'A, B & C')."""
+    names = list(names or [])
+    if len(names) <= 1:
+        return names[0] if names else ''
+    return ', '.join(names[:-1]) + ' & ' + names[-1]
+
 from app.extensions import db
 from app.models.music import Artist, ArtistArtist, ArtistSong, Song, Album, AlbumSong, album_genres
 

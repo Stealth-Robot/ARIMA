@@ -575,11 +575,12 @@ def delete_misc_artist(artist_id):
 def _format_credit(pairs):
     """pairs: list of (rank, name) where rank 0 = main, 1 = featured.
     Returns 'Main1, Main2 (feat. Feat1, Feat2)'."""
+    from app.services.artist import amp_join
     mains = sorted(n for r, n in pairs if r == 0)
     feats = sorted(n for r, n in pairs if r != 0)
-    s = ', '.join(mains)
+    s = amp_join(mains)
     if feats:
-        s += (' ' if s else '') + '(feat. ' + ', '.join(feats) + ')'
+        s += (' ' if s else '') + '(feat. ' + amp_join(feats) + ')'
     return s
 
 

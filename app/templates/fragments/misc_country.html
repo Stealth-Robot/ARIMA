@@ -45,7 +45,7 @@
         {% else %}
         {{ song.name }}
         {% endif %}
-        {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | join(', ') }})</span>{% endif %}
+        {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | amp_join }})</span>{% endif %}
         {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
         {% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}
         {% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}

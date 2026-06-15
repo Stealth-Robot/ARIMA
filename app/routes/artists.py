@@ -9,7 +9,7 @@ from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong,
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
-from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_related_artists, get_discography_songs, soloist_parent_map
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_related_artists, get_discography_songs, soloist_parent_map, amp_join
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -444,16 +444,15 @@ def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_art
                       if not (solo_names and aid is not None and aid in d['solo_parent_ids'])]
         parts = []
         if with_names:
-            parts.append('(with ' + ', '.join(with_names) + ')')
+            parts.append('(with ' + amp_join(with_names) + ')')
         if solo_names:
-            joined = solo_names[0] if len(solo_names) == 1 else ', '.join(solo_names[:-1]) + ' & ' + solo_names[-1]
-            parts.append('(' + joined + ' Solo)')
+            parts.append('(' + amp_join(solo_names) + ' Solo)')
         if d['by']:
-            parts.append('(by ' + ', '.join(d['by']) + ')')
+            parts.append('(by ' + amp_join(d['by']) + ')')
         if d['for']:
-            parts.append('(for ' + ', '.join(d['for']) + ')')
+            parts.append('(for ' + amp_join(d['for']) + ')')
         if d['feat']:
-            parts.append('(feat. ' + ', '.join(d['feat']) + ')')
+            parts.append('(feat. ' + amp_join(d['feat']) + ')')
         if parts:
             labels[sid] = ' '.join(parts)
     return labels
