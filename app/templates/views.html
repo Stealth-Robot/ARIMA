@@ -54,6 +54,8 @@ var _assignableUsers = [{% for u in assignable_users %}{ id: {{ u.id }}, usernam
 
 // Countries for the "new misc artist" option in the collab-candidate name resolver.
 var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+// Album types for the combine flow's "create album" step (shared from edit.js).
+var _allAlbumTypes = [{% for t in album_types %}{ id: {{ t.id }}, name: {{ t.type | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 
 // Inline owner/maintainer assignment for the "without a maintainer/owner" views.
 // On a real assignment the row no longer belongs in the list, so drop it and
@@ -208,6 +210,44 @@ function dismissCollab(songId) {
         }
     });
 }
+// Reload the "Duplicate misc artists" section in place (counts + rows change after
+// a combine or merge).
+function _reloadDupeMiscSection() {
+    var headers = document.querySelectorAll('h2[data-url]');
+    headers.forEach(function(h) {
+        if (h.dataset.url && h.dataset.url.indexOf('dupe-misc-artists') !== -1) {
+            var content = h.nextElementSibling;
+            fetch(h.dataset.url).then(function(r) { return r.text(); }).then(function(html) {
+                content.innerHTML = html;
+                var cnt = content.querySelector('[data-view-count]');
+                var span = h.querySelector('.view-count');
+                if (cnt && span) span.textContent = '— ' + cnt.getAttribute('data-view-count');
+            });
+        }
+    });
+}
+
+function combineMiscDupe(btn) {
+    _showCombineMiscArtist({id: parseInt(btn.dataset.mid), name: btn.dataset.mname}, _reloadDupeMiscSection);
+}
+
+function mergeMiscDupe(btn) {
+    var d = btn.dataset;
+    var keep = {id: parseInt(d.keepId), name: d.keepName, country_id: parseInt(d.keepCountry), song_count: parseInt(d.keepSongs)};
+    var absorb = {id: parseInt(d.absorbId), name: d.absorbName, country_id: parseInt(d.absorbCountry), song_count: parseInt(d.absorbSongs)};
+    // Same confirmation modal (with per-artist song lists) as the Misc page merge.
+    _showMergeConfirm([keep.id, absorb.id], [keep, absorb], function(countryId) {
+        fetch('/misc/merge-artists', {
+            method: 'POST',
+            headers: _csrfHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify({keep_id: keep.id, absorb_id: absorb.id, country_id: countryId}),
+        }).then(function(r) {
+            if (!r.ok) throw new Error();
+            _reloadDupeMiscSection();
+        }).catch(function() { alert('Merge failed — make sure edit mode is on.'); });
+    });
+}
+
 var _collabPopover = null;
 function _closeCollabPopover() { if (_collabPopover) { _collabPopover.remove(); _collabPopover = null; } }
 document.addEventListener('click', function(e) {

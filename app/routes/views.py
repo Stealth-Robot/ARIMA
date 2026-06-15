@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist, MiscArtist
-from app.models.lookups import Country
+from app.models.lookups import Country, AlbumType
 from app.models.not_duplicate import NotDuplicate
 from app.services.artist import SUBUNIT, SOLOIST
 from app.models.not_variant import NotVariant
@@ -107,7 +107,9 @@ def views_page():
         User.sort_order.isnot(None)
     ).order_by(User.sort_order).all()
     countries = Country.query.order_by(Country.country).all()
-    return render_template('views.html', counts=counts, assignable_users=assignable_users, countries=countries)
+    album_types = AlbumType.query.order_by(AlbumType.id).all()
+    return render_template('views.html', counts=counts, assignable_users=assignable_users,
+                           countries=countries, album_types=album_types)
 
 
 @views_bp.route('/views/orphan-songs')
@@ -333,7 +335,7 @@ def view_invalid_date_albums():
 def _dupe_misc_artists():
     """Misc artists whose name (case-insensitive) matches a real artist or
     another misc artist — likely duplicates that should be merged/relinked."""
-    miscs = db.session.query(MiscArtist.id, MiscArtist.name).all()
+    miscs = db.session.query(MiscArtist.id, MiscArtist.name, MiscArtist.country_id).all()
     counts = dict(db.session.query(
         SongMiscArtist.misc_artist_id, func.count(SongMiscArtist.song_id)
     ).group_by(SongMiscArtist.misc_artist_id).all())
@@ -342,20 +344,26 @@ def _dupe_misc_artists():
         real_by_name.setdefault((aname or '').strip().lower(), []).append(
             {'id': aid, 'name': aname, 'slug': aslug})
     misc_by_name = {}
-    for mid, mname in miscs:
-        misc_by_name.setdefault((mname or '').strip().lower(), []).append({'id': mid, 'name': mname})
+    for mid, mname, mcountry in miscs:
+        misc_by_name.setdefault((mname or '').strip().lower(), []).append(
+            {'id': mid, 'name': mname, 'country_id': mcountry})
 
     items = []
-    for mid, mname in miscs:
+    for mid, mname, mcountry in miscs:
         key = (mname or '').strip().lower()
         real_matches = real_by_name.get(key, [])
-        other_misc = [m for m in misc_by_name.get(key, []) if m['id'] != mid]
+        group = misc_by_name.get(key, [])
+        # List misc duplicates (and show the Merge buttons) only on the lowest-id member
+        # of each same-name group, so a pair isn't rendered from both sides.
+        is_group_lead = mid == min(m['id'] for m in group)
+        other_misc = [m for m in group if m['id'] != mid] if is_group_lead else []
         if not real_matches and not other_misc:
             continue
         items.append({
-            'id': mid, 'name': mname, 'song_count': counts.get(mid, 0),
+            'id': mid, 'name': mname, 'country_id': mcountry, 'song_count': counts.get(mid, 0),
             'real_matches': real_matches,
-            'misc_dupes': [{'name': m['name'], 'song_count': counts.get(m['id'], 0)} for m in other_misc],
+            'misc_dupes': [{'id': m['id'], 'name': m['name'], 'country_id': m['country_id'],
+                            'song_count': counts.get(m['id'], 0)} for m in other_misc],
         })
     items.sort(key=lambda x: (x['name'] or '').lower())
     return items

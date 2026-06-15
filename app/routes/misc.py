@@ -650,6 +650,11 @@ def merge_misc_artists():
     absorb = db.session.get(MiscArtist, absorb_id)
     if not keep or not absorb:
         abort(404)
+    # Optionally set the kept artist's country (chosen in the confirm modal).
+    if data.get('country_id') is not None:
+        cid = int(data['country_id'])
+        if db.session.get(Country, cid) is not None:
+            keep.country_id = cid
     # Move all song links from absorbed to kept
     links = SongMiscArtist.query.filter_by(misc_artist_id=absorb.id).all()
     for link in links:

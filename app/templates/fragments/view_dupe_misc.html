@@ -1,21 +1,49 @@
 <span data-view-count="{{ items | length }}" class="hidden"></span>
 {% if items %}
-<ul class="text-sm space-y-1">
-    {% for m in items %}
-    <li>
-        <span class="text-primary-text">"{{ m.name }}"</span>
-        <span class="text-secondary-text">(misc, {{ m.song_count }} song{{ '' if m.song_count == 1 else 's' }})</span>
-        {% if m.real_matches %}
-        <span class="text-secondary-text">— same as artist:</span>
-        {% for a in m.real_matches %}<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link no-underline">{{ a.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
-        {% endif %}
-        {% if m.misc_dupes %}
-        <span class="text-secondary-text">— also misc:</span>
-        {% for d in m.misc_dupes %}<span class="text-primary-text">"{{ d.name }}"</span> <span class="text-secondary-text">({{ d.song_count }})</span>{% if not loop.last %}, {% endif %}{% endfor %}
-        {% endif %}
-    </li>
-    {% endfor %}
-</ul>
+<table class="w-full text-sm border-collapse border border-grid-line">
+    <thead>
+        <tr class="bg-header-row">
+            <th class="text-left px-3 py-1 border border-grid-line">Misc artist</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 60px;">Songs</th>
+            <th class="text-left px-3 py-1 border border-grid-line">Matches</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 240px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in items %}
+        <tr id="dupe-misc-{{ m.id }}" class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="px-3 py-1 border border-grid-line text-primary-text">"{{ m.name }}"</td>
+            <td class="px-3 py-1 border border-grid-line text-secondary-text">{{ m.song_count }}</td>
+            <td class="px-3 py-1 border border-grid-line">
+                {% if m.real_matches %}
+                <div><span class="text-secondary-text text-xs">real artist:</span>
+                    {% for a in m.real_matches %}<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link">{{ a.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+                {% endif %}
+                {% if m.misc_dupes %}
+                <div><span class="text-secondary-text text-xs">other misc:</span>
+                    {% for d in m.misc_dupes %}<span class="text-primary-text">"{{ d.name }}"</span> <span class="text-secondary-text">({{ d.song_count }})</span>{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+                {% endif %}
+            </td>
+            <td class="px-3 py-1 border border-grid-line">
+                {% if m.real_matches %}
+                <button onclick="combineMiscDupe(this)" data-mid="{{ m.id }}" data-mname="{{ m.name }}"
+                        class="px-2 py-1 rounded text-xs border-0 cursor-pointer mr-1 mb-1"
+                        style="background: #0D9488; color: #fff;">Combine into artist…</button>
+                {% endif %}
+                {% for d in m.misc_dupes %}
+                <button onclick="mergeMiscDupe(this)"
+                        data-keep-id="{{ m.id }}" data-keep-name="{{ m.name }}" data-keep-country="{{ m.country_id }}" data-keep-songs="{{ m.song_count }}"
+                        data-absorb-id="{{ d.id }}" data-absorb-name="{{ d.name }}" data-absorb-country="{{ d.country_id }}" data-absorb-songs="{{ d.song_count }}"
+                        class="px-2 py-1 rounded text-xs border-0 cursor-pointer mr-1 mb-1"
+                        style="background: #7C3AED; color: #fff;">Merge "{{ d.name }}"</button>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
 <p class="text-sm text-secondary-text">None found.</p>
 {% endif %}
