@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, request, render_template, redirect, url_for, abort, session
 from flask_login import login_required, current_user
 
@@ -163,7 +165,12 @@ def _render_artist(artist, htmx=False, push_url=None):
     edit_album_types = []
     edit_countries = []
     edit_genders = []
-    if session.get('edit_mode') and current_user.is_editor_or_admin:
+    # Mobile has no edit-mode toggle, so editors there edit via modals that reuse the
+    # desktop handlers — which need these globals. Emit them for mobile editors too.
+    _ua = (request.user_agent.string or '').lower()
+    _is_mobile = 'mobi' in _ua or 'android' in _ua
+    emit_edit_globals = (session.get('edit_mode') or _is_mobile) and current_user.is_editor_or_admin
+    if emit_edit_globals:
         all_artists = Artist.query.order_by(func.lower(Artist.name)).all()
         all_soloist_parents = soloist_parent_map([a.id for a in all_artists])
         edit_genres = Genre.query.order_by(Genre.id).all()
@@ -201,6 +208,7 @@ def _render_artist(artist, htmx=False, push_url=None):
             last_updated=last_updated,
             edit_genres=edit_genres, edit_album_types=edit_album_types,
             edit_countries=edit_countries, edit_genders=edit_genders,
+            emit_edit_globals=emit_edit_globals,
             rated_filter=rated_filter, bypass_filters=bypass_filters))
         if push_url:
             resp.headers['HX-Push-Url'] = push_url
@@ -228,6 +236,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                            last_updated=last_updated,
                            edit_genres=edit_genres, edit_album_types=edit_album_types,
                            edit_countries=edit_countries, edit_genders=edit_genders,
+                           emit_edit_globals=emit_edit_globals,
                            rated_filter=rated_filter,
                            bypass_filters=bypass_filters,
                            og_song=og_song,
@@ -732,3 +741,131 @@ def _get_ratings_map(song_ids):
             result[r.song_id] = {}
         result[r.song_id][r.user_id] = r
     return result
+
+
+@artists_bp.route('/song/<int:song_id>/info')
+@login_required
+def song_info(song_id):
+    """Full song details for the mobile song-info popup."""
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+
+    real = db.session.query(Artist.name, ArtistSong.artist_is_main).join(
+        ArtistSong, ArtistSong.artist_id == Artist.id
+    ).filter(ArtistSong.song_id == song_id).order_by(func.lower(Artist.name)).all()
+    misc = db.session.query(MiscArtist.name, SongMiscArtist.artist_is_main).join(
+        SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
+    ).filter(SongMiscArtist.song_id == song_id).order_by(func.lower(MiscArtist.name)).all()
+
+    main_artists = [r[0] for r in real if r[1]] + [m[0] for m in misc if m[1]]
+    featured_artists = [r[0] for r in real if not r[1]] + [m[0] for m in misc if not m[1]]
+
+    albums = [{
+        'name': a.name,
+        'year': a.release_date[:4] if a.release_date else '',
+        'genres': [g.genre for g in a.genres],
+    } for a in song.albums]
+
+    return json.dumps({
+        'name': song.name,
+        'main_artists': main_artists,
+        'featured_artists': featured_artists,
+        'albums': albums,
+        'genres': [g.genre for g in song.genres],
+        'is_lead': song.is_lead,
+        'is_promoted': song.is_promoted,
+        'is_cover': song.is_cover,
+        'is_remix': song.is_remix,
+        'note': song.note or '',
+        'spotify_url': song.spotify_url or '',
+        'youtube_url': song.youtube_url or '',
+    }), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/album/<int:album_id>/songs')
+@login_required
+def album_songs(album_id):
+    """Ordered songs in an album with their flags — for the mobile album-edit modal."""
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    rows = db.session.query(Song).join(
+        AlbumSong, AlbumSong.song_id == Song.id
+    ).filter(AlbumSong.album_id == album_id).order_by(AlbumSong.track_number).all()
+    return json.dumps({
+        'album_name': album.name,
+        'release_date': album.release_date or '',
+        'album_type': album.album_type.type if album.album_type else '',
+        'album_type_id': album.album_type_id,
+        'spotify_url': album.spotify_url or '',
+        'genres': [g.genre for g in album.genres],
+        'genre_ids': [g.id for g in album.genres],
+        'songs': [{
+            'id': s.id,
+            'name': s.name,
+            'is_promoted': s.is_promoted,
+            'is_remix': s.is_remix,
+            'is_cover': s.is_cover,
+            'is_lead': s.is_lead,
+        } for s in rows],
+    }), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/lookups/genres')
+@login_required
+def lookup_genres():
+    rows = Genre.query.order_by(func.lower(Genre.genre)).all()
+    return json.dumps([{'id': g.id, 'name': g.genre} for g in rows]), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/lookups/album-types')
+@login_required
+def lookup_album_types():
+    rows = AlbumType.query.order_by(AlbumType.id).all()
+    return json.dumps([{'id': t.id, 'name': t.type} for t in rows]), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/lookups/genders')
+@login_required
+def lookup_genders():
+    rows = GroupGender.query.order_by(GroupGender.id).all()
+    return json.dumps([{'id': g.id, 'name': g.gender} for g in rows]), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/lookups/countries')
+@login_required
+def lookup_countries():
+    rows = Country.query.order_by(Country.country).all()
+    return json.dumps([{'id': c.id, 'name': c.country} for c in rows]), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/lookups/users')
+@login_required
+def lookup_users():
+    rows = User.query.filter(User.sort_order.isnot(None)).order_by(User.sort_order).all()
+    return json.dumps([{'id': u.id, 'name': u.username} for u in rows]), 200, {'Content-Type': 'application/json'}
+
+
+@artists_bp.route('/artist/<int:artist_id>/edit-info')
+@login_required
+def artist_edit_info(artist_id):
+    """Artist fields for the mobile artist-edit modal."""
+    a = db.session.get(Artist, artist_id)
+    if a is None:
+        abort(404)
+    return json.dumps({
+        'name': a.name,
+        'spotify_url': a.spotify_url or '',
+        'gender_id': a.gender_id,
+        'gender': a.gender.gender if a.gender else '',
+        'country_id': a.country_id,
+        'country': a.country.country if a.country else '',
+        'owner_id': a.owner_id,
+        'owner': a.owner.username if a.owner else '',
+        'maintainer_id': a.maintainer_id,
+        'maintainer': a.maintainer.username if a.maintainer else '',
+        'is_disbanded': a.is_disbanded,
+        'is_complete': a.is_complete,
+        'is_tracked': a.is_tracked,
+    }), 200, {'Content-Type': 'application/json'}

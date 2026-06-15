@@ -133,7 +133,7 @@
                 Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
             </button>
         </form>
-        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="inline m-0">
+        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="mobile-hide inline m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="edit-mode-btn" type="submit"
                     class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('edit_mode') %}bg-edit-on{% else %}bg-edit-off{% endif %}">
@@ -241,12 +241,6 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
                 Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
-            </button>
-        </form>
-        <form method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="m-0">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="block w-full text-left py-2.5 px-4 text-navbar-text text-base- bg-transparent border-0 cursor-pointer">
-                Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
             </button>
         </form>
         {% endif %}
@@ -381,6 +375,7 @@
     <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
     {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
     <script>
+    window._canEdit = true;
     (function() {
         var rForm = document.getElementById('rating-mode-form');
         if (rForm) {

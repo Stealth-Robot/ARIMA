@@ -503,9 +503,11 @@ textarea {
     /* Top navbar: collapse to essentials */
     .mobile-hide { display: none !important; }
     .mobile-show { display: inline !important; }
-    #mobile-menu-wrapper { display: flex !important; margin-left: 0 !important; }
+    #mobile-menu-wrapper { display: flex !important; margin-left: auto !important; }
     .search-label { display: none; }
     #search-trigger { font-size: 16px !important; padding: 4px 10px !important; margin-left: 0 !important; }
+    /* Right-justify the navbar cluster (Rating / menu / search) on mobile */
+    #rating-mode-form { margin-left: auto !important; }
 
     /* Clear the fixed artist bottom bar at the end of the scroll region */
     #main-content { padding-bottom: 48px !important; }

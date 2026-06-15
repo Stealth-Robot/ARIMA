@@ -57,6 +57,9 @@ function _csrfHeaders(extra) {
     var h = extra || {};
     var meta = document.querySelector('meta[name="csrf-token"]');
     if (meta) h['X-CSRFToken'] = meta.content;
+    // Mobile has no global edit-mode toggle; editors edit through explicit modals.
+    // Signal the trusted mobile editor UI so edit endpoints don't require edit_mode.
+    if (window._canEdit && window.innerWidth <= 768) h['X-Edit-Source'] = 'mobile';
     return h;
 }
 

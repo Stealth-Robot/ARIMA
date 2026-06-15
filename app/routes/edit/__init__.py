@@ -16,8 +16,15 @@ def _get_filters():
 
 
 def _require_edit_mode():
-    if not session.get('edit_mode'):
-        abort(403)
+    if session.get('edit_mode'):
+        return
+    # Mobile has no global edit-mode toggle; it edits through explicit per-action
+    # modals instead. Those requests carry this header. The edit endpoints are
+    # already gated by @role_required(EDITOR_OR_ADMIN), so the edit_mode session
+    # flag is only a desktop UX guard and can be satisfied by the trusted signal.
+    if request.headers.get('X-Edit-Source') == 'mobile':
+        return
+    abort(403)
 
 
 def _parse_id_list(raw):

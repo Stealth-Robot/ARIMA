@@ -11,6 +11,7 @@
         {% else %}
         {{ artist.name }}
         {% endif %}
+        {% if current_user.is_editor_or_admin %}<span class="mobile-show hidden mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:1px 7px; font-size:14px;">&#9998;</span>{% endif %}
         {{ spotify_link_icon(artist.spotify_url) }}{% if session.get('edit_mode', False) and current_user.is_editor_or_admin and 'spotify_url' in _ebtns %}{{ spotify_edit_btn('/edit/artist/' ~ artist.id ~ '/spotify-url', artist.spotify_url) }}{% endif %}{% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}<a class="text-sm font-normal edit-inline cursor-pointer text-secondary-text ml-1" title="Artist Changelog" href="/changelog?q={{ artist.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>{% endif %}
         {% if artist.is_disbanded and not (session.get('edit_mode', False) and current_user.is_editor_or_admin) %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
         {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
@@ -126,7 +127,7 @@
 {% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
-{% if edit_mode %}
+{% if edit_mode or emit_edit_globals %}
 <!-- Persistent credential form for the song-merge modal. Present (hidden) at page load
      so password managers register the password field during their initial page scan;
      edit.js relocates this form into the merge modal when it opens. -->
@@ -216,19 +217,6 @@ function toggleChildSection(e, childId) {
     _saveCollapsed(state);
 }
 function toggleAlbum(e, albumId) {
-    if (e && (e.target.tagName === 'INPUT' || e.target.closest('.edit-inline'))) return;
-    var rows = document.querySelectorAll('.album-row-' + albumId);
-    var hidden = rows.length && rows[0].style.display === 'none';
-    var state = _getCollapsed();
-    if (hidden) {
-        _expandRows('album-row', albumId);
-        delete state['album-' + albumId];
-        _reapplyChildCollapses();
-    } else {
-        _collapseRows('album-row', albumId);
-        state['album-' + albumId] = 1;
-    }
-    _saveCollapsed(state);
 }
 function expandAllAlbums() {
     var state = _getCollapsed();
