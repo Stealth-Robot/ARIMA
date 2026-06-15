@@ -2879,7 +2879,9 @@ function _importFromSpotify(artistId, endpoint, inputId, btnId) {
     var btnLabel = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Loading...';
-    fetch(endpoint + '?url=' + encodeURIComponent(urlInput.value.trim()))
+    var headers = {};
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
+    fetch(endpoint + '?url=' + encodeURIComponent(urlInput.value.trim()), { headers: headers })
         .then(function (r) {
             if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Import failed'); });
             return r.json();
