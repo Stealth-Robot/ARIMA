@@ -1,37 +1,16 @@
-{% set _ebtns = current_user.settings.visible_edit_buttons if current_user.settings else ['move_album','add_album','delete','unlink','artists','merge','reorder','spotify_url','youtube_url'] %}
 {% from "fragments/spotify_macros.html" import song_spotify_icon with context %}
 {% from "fragments/_credentials.html" import password_confirm with context %}
 {% macro spotify_link_icon(url) %}{% if url and not hide_all_spotify %}{% if url == 'n/a' %}<span class="spotify-na relative inline-block align-middle" title="Not on Spotify" onclick="event.stopPropagation()" style="width:12px; height:12px; line-height:0;"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle" style="filter: grayscale(1); opacity: 0.6;"><span class="absolute" style="top:50%; left:50%; width:15px; height:2px; background:var(--delete-button, #e02424); transform: translate(-50%, -50%) rotate(-45deg); transform-origin: center; pointer-events:none; border-radius:1px;"></span></span>{% else %}<a href="{{ spotify_href(url) }}" target="{{ spotify_link_target }}" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}{% endmacro %}
-{% macro spotify_edit_btn(endpoint, url) %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}" data-reload-on-save="1" onclick="event.stopPropagation();promptUrl('{{ endpoint }}', '{{ url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endmacro %}
 <!-- Artist header -->
 <div class="mb-3 pl-3" data-current-artist-id="{{ artist.id }}" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
     <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
-        {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-        <span class="edit-inline cursor-pointer" onclick="showArtistNameEdit(event, '/edit/artist/{{ artist.id }}/name', this)">{{ artist.name }}</span>
-        {% else %}
+        
         {{ artist.name }}
-        {% endif %}
-        {% if current_user.is_editor_or_admin %}<span class="mobile-show hidden mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:1px 7px; font-size:14px;">&#9998;</span>{% endif %}
-        {{ spotify_link_icon(artist.spotify_url) }}{% if session.get('edit_mode', False) and current_user.is_editor_or_admin and 'spotify_url' in _ebtns %}{{ spotify_edit_btn('/edit/artist/' ~ artist.id ~ '/spotify-url', artist.spotify_url) }}{% endif %}{% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}<a class="text-sm font-normal edit-inline cursor-pointer text-secondary-text ml-1" title="Artist Changelog" href="/changelog?q={{ artist.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>{% endif %}
-        {% if artist.is_disbanded and not (session.get('edit_mode', False) and current_user.is_editor_or_admin) %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
-        {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-        <span class="text-sm font-normal edit-inline cursor-pointer text-secondary-text"
-              data-gender-id="{{ artist.gender_id }}"
-              onclick="showGenderEdit(event, {{ artist.id }}, this, _allGenders, {{ artist.gender_id }})">{{ artist.gender.gender if artist.gender else 'gender' }}</span>
-        <span class="text-sm font-normal edit-inline cursor-pointer text-secondary-text"
-              data-country-id="{{ artist.country_id }}"
-              onclick="showCountryEdit(event, {{ artist.id }}, this, _allCountries, {{ artist.country_id }})">{{ artist.country.country if artist.country else 'country' }}</span>
-        <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
-            <input type="checkbox" {% if artist.is_disbanded %}checked{% endif %} autocomplete="off"
-                   onchange="var cb=this;fetch('/edit/artist/{{ artist.id }}/is-disbanded', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
-                   class="cursor-pointer"> Inactive
-        </label>
-        <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
-            <input type="checkbox" {% if artist.is_complete %}checked{% endif %} autocomplete="off"
-                   onchange='confirmCompleteTab(this, {{ artist.id }}, {{ artist.name | tojson }})'
-                   class="cursor-pointer"> Complete
-        </label>
-        {% endif %}
+        
+        {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:1px 7px; font-size:14px;">&#9998;</span>{% endif %}
+        {{ spotify_link_icon(artist.spotify_url) }}
+        {% if artist.is_disbanded %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
+        
         {% if current_user.is_admin %}
         <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
             <input type="checkbox" {% if artist.is_tracked %}checked{% endif %} autocomplete="off"
@@ -47,21 +26,17 @@
         </label>
         {% endif %}
     </h2>
-    {% set _edit = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-    {% set show_owner = not artist.is_complete and (_edit or artist.owner) %}
-    {% set show_user_fields = show_owner or _edit or artist.maintainer %}
+    {% set show_owner = not artist.is_complete and artist.owner %}
+    {% set show_user_fields = show_owner or artist.maintainer %}
     {% if show_user_fields %}
     <div class="text-xs text-secondary-text mt-0.5 flex flex-wrap items-center gap-4">
         {% if show_owner %}
         <span id="owner-span-{{ artist.id }}"
               data-owner-id="{{ artist.owner_id if artist.owner_id is not none else '' }}"
               title="Owner"
-              {% if _edit %}
-              class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
-              onclick="showArtistUserEdit(event, {{ artist.id }}, this, 'owner')"
-              {% else %}
+              
               class="inline-flex items-center gap-1 px-1"
-              {% endif %}>
+              >
             <span aria-label="Owner">👑</span>
             <span class="user-pill-content inline-flex items-center gap-1">
                 {% if artist.owner %}
@@ -77,12 +52,9 @@
         <span id="maintainer-span-{{ artist.id }}"
               data-maintainer-id="{{ artist.maintainer_id if artist.maintainer_id is not none else '' }}"
               title="Maintainer"
-              {% if _edit %}
-              class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
-              onclick="showArtistUserEdit(event, {{ artist.id }}, this, 'maintainer')"
-              {% else %}
+              
               class="inline-flex items-center gap-1 px-1"
-              {% endif %}>
+              >
             <span aria-label="Maintainer">🔧</span>
             <span class="user-pill-content inline-flex items-center gap-1">
                 {% if artist.maintainer %}
@@ -98,14 +70,12 @@
     {% endif %}
     {% if soloist_parents %}
     <span class="text-xs text-secondary-text">
-        Soloist from {% for sp in soloist_parents %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=sp.id) }}" class="text-link">{{ sp.name }}</a>{% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}<span class="cursor-pointer text-link ml-0.5" title="Unlink {{ artist.name | e }} as soloist of {{ sp.name | e }}"
-              onclick="showDeleteConfirm('Unlink from {{ sp.name | e }}?', 'This will remove {{ artist.name | e }} as a soloist of {{ sp.name | e }}. Their songs and albums will not be affected.', '/edit/artist/{{ artist.id }}/unlink?parent_id={{ sp.id }}', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=artist.id) }}')">&#128279;</span>{% endif %}{% endfor %}
+        Soloist from {% for sp in soloist_parents %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=sp.id) }}" class="text-link">{{ sp.name }}</a>{% endfor %}
     </span>
     {% endif %}
     {% if related_artists %}
     <span class="text-xs text-secondary-text">
-        Related Group {% for ra in related_artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=ra.id) }}" class="text-link">{{ ra.name }}</a>{% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}<span class="cursor-pointer text-link ml-0.5" title="Unlink {{ artist.name | e }} and {{ ra.name | e }} as related groups"
-              onclick="showDeleteConfirm('Unlink from {{ ra.name | e }}?', 'This will remove the related group link between {{ artist.name | e }} and {{ ra.name | e }}. Their songs and albums will not be affected.', '/edit/artist/{{ artist.id }}/unlink?parent_id={{ ra.id }}', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=artist.id) }}')">&#128279;</span>{% endif %}{% endfor %}
+        Related Group {% for ra in related_artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=ra.id) }}" class="text-link">{{ ra.name }}</a>{% endfor %}
     </span>
     {% endif %}
     {% if last_updated %}
@@ -113,21 +83,13 @@
         Last updated: <span class="changelog-date" data-utc="{{ last_updated }}">{{ last_updated[:10] }}</span>
     </span>
     {% endif %}
-    {% if session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-    <button type="button" onclick="autoPopulateSpotify({{ artist.id }})" class="text-xs ml-2 px-2 py-0.5 rounded cursor-pointer text-primary-text" style="background:var(--button-secondary); border:none;">
-        <img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"> Auto-fill Spotify Links
-    </button>
-    <button type="button" onclick='showBulkGenreModal({{ artist.id }}, {{ artist.name | tojson }})' class="text-xs ml-2 px-2 py-0.5 rounded cursor-pointer text-primary-text" style="background:var(--button-secondary); border:none;">
-        Manage Genres
-    </button>
-    {% endif %}
+    
 </div>
 
 {% set is_editable = current_user.can_rate %}
-{% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
-{% if edit_mode or emit_edit_globals %}
+{% if emit_edit_globals %}
 <!-- Persistent credential form for the song-merge modal. Present (hidden) at page load
      so password managers register the password field during their initial page scan;
      edit.js relocates this form into the merge modal when it opens. -->
@@ -309,7 +271,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
 <p class="text-secondary-text">No albums found.</p>
 {% else %}
 
-<div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+<div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: 20px;">
     <span class="text-secondary-text">Rated:</span>
     <select id="artist-rated-filter" onchange="_artistRatingFilterChanged()"
             class="rounded border border-border cursor-pointer"
@@ -327,7 +289,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
 
 <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
 <div class="flex gap-3 items-start">
-<table class="text-xs border-collapse border border-grid-line" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+<table class="text-xs border-collapse border border-grid-line" style="margin-left: 20px;">
     <!-- Sticky header -->
     <thead>
         <tr class="thead-sticky">
@@ -340,11 +302,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                     </span>
                 </span>
             </th>
-            {% if edit_mode %}
-            <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Remix</th>
-            <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Cover</th>
-            <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Promoted</th>
-            {% endif %}
+            
             {% for u in users %}
             <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
             {% endfor %}
@@ -371,48 +329,20 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 <span id="album-arrow-misc" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
                 Misc
             </td>
-            {% if edit_mode %}
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            {% endif %}
+            
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% else %}
         <tr id="album-{{ album.id }}" class="border border-grid-line cursor-pointer" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative album-name-cell{% if album.note %} has-album-note{% endif %}" data-album-id="{{ album.id }}"{% if album.note %} data-album-note="{{ album.note | e }}"{% endif %}>
                 <span id="album-arrow-{{ album.id }}" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
-                {% if edit_mode %}
-                <span class="cursor-pointer text-delete absolute" style="left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick='event.stopPropagation();confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
-                <span class="edit-inline cursor-pointer" onclick="event.stopPropagation();showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}{% if album.genres | selectattr('genre', 'equalto', 'OST') | list and not album.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}</span>{% if album.release_date %} <span onclick="event.stopPropagation()" class="px-1">(<span class="edit-inline cursor-pointer{% if not show_full_album_date %} album-date-hover{% endif %}" {% if not show_full_album_date %}data-full-date="{{ album.release_date }}"{% endif %} onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '{{ album.release_date }}')">{{ album.release_date if show_full_album_date else album.release_date[:4] }}</span>)</span>{% else %} <span onclick="event.stopPropagation()" class="px-1">(<span class="edit-inline cursor-pointer text-secondary-text" data-full-date="" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '')">date</span>)</span>{% endif %}
-                <span class="edit-inline cursor-pointer text-secondary-text ml-1.5" style="font-size: inherit;" title="Add song to album"
-                      onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ artist.id }}, this)">&#43;</span>
-                <span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move album songs to another artist"
-                      onclick="event.stopPropagation();showAlbumArtistMove(event, {{ album.id }}, {{ artist.id }}, this)">&#8644;</span>
-                <span class="cursor-pointer align-middle text-secondary-text ml-1" onclick="copyAnchorLink(event, 'album-{{ album.id }}')" title="Copy link to album"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span>
-                {{ spotify_link_icon(album.spotify_url) }}{% if 'spotify_url' in _ebtns %}{{ spotify_edit_btn('/edit/album/' ~ album.id ~ '/spotify-url', album.spotify_url) }}{% endif %}
-                <a class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Album Changelog" href="/changelog?q={{ album.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>
-                <div class="font-normal" style="font-size: 10px; margin-top: 1px;">
-                    <span class="edit-inline genre-edit cursor-pointer" style="{% if not album.genres %} color: var(--text-secondary);{% endif %}"
-                           data-album-id="{{ album.id }}"
-                           data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
-                           onclick="event.stopPropagation();showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
-                    — <span class="edit-inline cursor-pointer"
-                            data-album-type-id="{{ album.album_type_id }}"
-                            onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
-                </div>
-                {% else %}
+                
                 {{ album.name }}{% if album.genres | selectattr('genre', 'equalto', 'OST') | list and not album.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}{% if album.release_date %} ({% if show_full_album_date %}{{ album.release_date }}{% else %}<span class="album-date-hover" data-full-date="{{ album.release_date }}">{{ album.release_date[:4] }}</span>{% endif %}){% endif %}
                 <span class="cursor-pointer align-middle text-secondary-text ml-1" onclick="copyAnchorLink(event, 'album-{{ album.id }}')" title="Copy link to album"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span>
                 {{ spotify_link_icon(album.spotify_url) }}
-                {% endif %}
+                
             </td>
-            {% if edit_mode %}
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            {% endif %}
+            
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% endif %}
@@ -432,60 +362,17 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
-                {% if edit_mode %}
-                <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
-                {% if not is_misc and song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
-                {% if song.is_lead %}<span class="lead-star mr-1 cursor-pointer" data-song-id="{{ song.id }}" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1 cursor-pointer" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
-                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
-                {% set search_terms = song.name + ' ' + artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
-                <span class="song-links inline whitespace-nowrap"{% if not hide_all_youtube and not hide_autogen_youtube %} data-yt-search-url="https://www.youtube.com/results?search_query={{ search_terms | urlencode }}"{% endif %}>{{ song_spotify_icon(song.spotify_url) }}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %} <span class="cursor-pointer align-middle text-secondary-text" onclick="copyAnchorLink(event, 'song-{{ song.id }}')" title="Copy link to song"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span></span>
-                <span class="whitespace-nowrap block" style="font-size: {{ song_button_size }}px;">{% if not is_misc and 'move_album' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move to another album"
-                      onclick="showAlbumMove(event, {{ song.id }}, this, {{ album.id }})">&#8693;</span>{% endif %}
-                {% if not is_misc and 'add_album' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Add to another album"
-                      onclick="showAlbumAdd(event, {{ song.id }}, this, {{ album.id }})">&#43;</span>{% endif %}
-                {% if 'delete' in _ebtns %}<span class="edit-inline cursor-pointer text-delete ml-0.5" style="font-size: inherit;" title="Delete song"
-                      onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>{% endif %}
-                {% if not is_misc and 'unlink' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Remove from album"
-                      onclick='confirmRemoveFromAlbum({{ song.id }}, {{ album.id }}, {{ song.name | tojson }}, {{ album.name | tojson }}, {{ songs|length }})'>&#128279;</span>{% endif %}
-                {% if 'artists' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Manage artists"
-                      onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>{% endif %}
-                {% if 'merge' in _ebtns %}<span class="edit-inline merge-btn cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Merge with another song"
-                      data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>{% endif %}
-                {% if 'reorder' in _ebtns %}<span class="edit-inline drag-handle text-secondary-text ml-1" style="font-size: inherit; cursor: grab;" title="Drag to reorder">⠿</span>{% endif %}
-                {% if 'spotify_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endif %}
-                {% if 'youtube_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-0.5" style="font-size: inherit;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1) invert(1);"></span>{% endif %}
-                <a class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Song Changelog" href="/changelog?q={{ song.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>
-                </span>
-                {% else %}
+                
                 {{ song.name }}
                 {% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
                 <span class="song-links inline whitespace-nowrap">{{ song_spotify_icon(song.spotify_url) }}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %} <span class="cursor-pointer align-middle text-secondary-text" onclick="copyAnchorLink(event, 'song-{{ song.id }}')" title="Copy link to song"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span></span>
-                {% endif %}
+                
             </td>
 
             <!-- Is Remix / Is Cover / Is Promoted checkboxes (edit mode only) -->
-            {% if edit_mode %}
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_remix %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-remix"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-remix')">
-            </td>
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_cover %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-cover"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-cover')">
-            </td>
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-promoted"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-promoted')">
-                <span class="lead-cell-star cursor-pointer" data-song-id="{{ song.id }}" title="Toggle lead track" onclick="event.stopPropagation();toggleLeadTrack({{ song.id }}, this.closest('tr').querySelector('td:first-child'))" style="font-size: 19px; line-height: 1; color: {% if song.is_lead %}var(--lead-song){% else %}#888{% endif %};">★</span>
-            </td>
-            {% endif %}
+            
 
             <!-- Rating cells per user -->
             {% for u in users %}
@@ -519,31 +406,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             onclick="toggleChildSection(event, {{ child.artist.id }})">
             <td colspan="100" class="font-bold text-sm- text-discography-text relative p-0 pl-2">
                 <span id="child-arrow-{{ child.artist.id }}" class="collapse-arrow text-xxs">&#9660;</span>
-                {% if edit_mode %}
-                <span class="cursor-pointer text-link absolute" style="left: -32px; top: 50%; transform: translateY(-50%);" title="Unlink {{ 'soloist' if child.is_soloist else 'subunit' }}"
-                      onclick="event.stopPropagation();showDeleteConfirm('Unlink {{ child.artist.name | e }}?', 'This will remove {{ child.artist.name | e }} as a {{ 'soloist' if child.is_soloist else 'subunit' }} of {{ artist.name | e }}. Their songs and albums will not be affected.', '/edit/artist/{{ child.artist.id }}/unlink?parent_id={{ artist.id }}', true, 'Unlink', '{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}')">&#128279;</span>
-                <span class="edit-inline p-1 cursor-pointer" onclick="event.stopPropagation();showArtistNameEdit(event, '/edit/artist/{{ child.artist.id }}/name', this)">{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}{% if 'spotify_url' in _ebtns %}{{ spotify_edit_btn('/edit/artist/' ~ child.artist.id ~ '/spotify-url', child.artist.spotify_url) }}{% endif %}
-                <span class="edit-inline cursor-pointer font-normal text-2xs text-secondary-text"
-                      data-gender-id="{{ child.artist.gender_id }}"
-                      onclick="event.stopPropagation();showGenderEdit(event, {{ child.artist.id }}, this, _allGenders, {{ child.artist.gender_id }})">{{ child.artist.gender.gender if child.artist.gender else 'gender' }}</span>
-                <span class="edit-inline cursor-pointer font-normal text-2xs text-secondary-text"
-                      data-country-id="{{ child.artist.country_id }}"
-                      onclick="event.stopPropagation();showCountryEdit(event, {{ child.artist.id }}, this, _allCountries, {{ child.artist.country_id }})">{{ child.artist.country.country if child.artist.country else 'country' }}</span>
-                <span class="cursor-pointer ml-1.5 font-normal text-2xs text-secondary-text" title="Auto-fill Spotify Links"
-                      onclick="event.stopPropagation();autoPopulateSpotify({{ child.artist.id }})"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"> Auto-fill Spotify Links</span>
-                <span class="cursor-pointer ml-2 font-normal text-2xs text-secondary-text"
-                      onclick='event.stopPropagation();showBulkGenreModal({{ child.artist.id }}, {{ child.artist.name | tojson }})'>Manage Genres</span>
-                <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
-                    <input type="checkbox" {% if child.artist.is_disbanded %}checked{% endif %} autocomplete="off"
-                           onchange="var cb=this;fetch('/edit/artist/{{ child.artist.id }}/is-disbanded', {method:'POST', headers: _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'}), body:'value='+(cb.checked?'1':'0')}).then(function(r){if(!r.ok)cb.checked=!cb.checked;});"
-                           class="cursor-pointer"> Inactive
-                </label>
-                <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
-                    <input type="checkbox" {% if child.artist.is_complete %}checked{% endif %} autocomplete="off"
-                           onchange='confirmCompleteTab(this, {{ child.artist.id }}, {{ child.artist.name | tojson }})'
-                           class="cursor-pointer"> Complete
-                </label>
-                {% elif child.is_soloist %}
+                {% if child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
                    class="p-1 text-discography-text cursor-pointer no-underline"
                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"
@@ -553,6 +416,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% else %}
                 <span class="p-1">{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}
                 {% endif %}
+                {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle ml-1" title="Edit artist" onclick="event.stopPropagation();showMobileArtistEdit({{ child.artist.id }})" style="padding:1px 7px; font-size:13px;">&#9998;</span>{% endif %}
                 {% if current_user.is_admin %}
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_tracked %}checked{% endif %} autocomplete="off"
@@ -581,48 +445,20 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 <span id="album-arrow-misc-{{ child.artist.id }}" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
                 Misc
             </td>
-            {% if edit_mode %}
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            {% endif %}
+            
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% else %}
         <tr id="album-{{ album.id }}" class="child-row-{{ child.artist.id }} border border-grid-line cursor-pointer" onclick="toggleAlbum(event, {{ album.id }})">
             <td class="py-1 font-bold pl-2 pr-2 border border-grid-line bg-album-header-bg relative album-name-cell{% if album.note %} has-album-note{% endif %}" data-album-id="{{ album.id }}"{% if album.note %} data-album-note="{{ album.note | e }}"{% endif %}>
                 <span id="album-arrow-{{ album.id }}" class="collapse-arrow" style="font-size: 8px;">&#9660;</span>
-                {% if edit_mode %}
-                <span class="cursor-pointer text-delete absolute" style="left: -32px; top: 50%; transform: translateY(-50%);" title="Delete album"
-                      onclick='event.stopPropagation();confirmDeleteAlbum({{ album.id }}, {{ album.name | tojson }})'>&#10005;</span>
-                <span class="edit-inline cursor-pointer" onclick="event.stopPropagation();showInlineEdit(event, '/edit/album/{{ album.id }}/name', this)">{{ album.name }}{% if album.genres | selectattr('genre', 'equalto', 'OST') | list and not album.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}</span>{% if album.release_date %} <span onclick="event.stopPropagation()" class="px-1">(<span class="edit-inline cursor-pointer{% if not show_full_album_date %} album-date-hover{% endif %}" {% if not show_full_album_date %}data-full-date="{{ album.release_date }}"{% endif %} onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '{{ album.release_date }}')">{{ album.release_date if show_full_album_date else album.release_date[:4] }}</span>)</span>{% else %} <span onclick="event.stopPropagation()" class="px-1">(<span class="edit-inline cursor-pointer text-secondary-text" data-full-date="" onclick="event.stopPropagation();showInlineDateEdit(event, '/edit/album/{{ album.id }}/release-date', this, '')">date</span>)</span>{% endif %}
-                <span class="edit-inline cursor-pointer text-secondary-text ml-1.5" style="font-size: inherit;" title="Add song to album"
-                      onclick="event.stopPropagation();showAlbumSongSearch(event, {{ album.id }}, {{ child.artist.id }}, this)">&#43;</span>
-                <span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move album songs to another artist"
-                      onclick="event.stopPropagation();showAlbumArtistMove(event, {{ album.id }}, {{ child.artist.id }}, this)">&#8644;</span>
-                <span class="cursor-pointer align-middle text-secondary-text ml-1" onclick="copyAnchorLink(event, 'album-{{ album.id }}')" title="Copy link to album"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span>
-                {{ spotify_link_icon(album.spotify_url) }}{% if 'spotify_url' in _ebtns %}{{ spotify_edit_btn('/edit/album/' ~ album.id ~ '/spotify-url', album.spotify_url) }}{% endif %}
-                <a class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Album Changelog" href="/changelog?q={{ album.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>
-                <div class="font-normal" style="font-size: 10px; margin-top: 1px;">
-                    <span class="edit-inline genre-edit cursor-pointer" style="{% if not album.genres %} color: var(--text-secondary);{% endif %}"
-                           data-album-id="{{ album.id }}"
-                           data-genre-ids="{{ album.genres | map(attribute='id') | list | tojson }}"
-                           onclick="event.stopPropagation();showGenreEdit(event, {{ album.id }}, this, _allGenres, JSON.parse(this.dataset.genreIds))">{{ album.genres | map(attribute='genre') | join(', ') or 'genres' }}</span>
-                    — <span class="edit-inline cursor-pointer"
-                            data-album-type-id="{{ album.album_type_id }}"
-                            onclick="event.stopPropagation();showAlbumTypeEdit(event, {{ album.id }}, this, _allAlbumTypes, {{ album.album_type_id }})">{{ album.album_type.type }}</span>
-                </div>
-                {% else %}
+                
                 {{ album.name }}{% if album.genres | selectattr('genre', 'equalto', 'OST') | list and not album.name.rstrip(' !?.,:;)]\'"').endswith('OST') %} - OST{% endif %}{% if album.release_date %} ({% if show_full_album_date %}{{ album.release_date }}{% else %}<span class="album-date-hover" data-full-date="{{ album.release_date }}">{{ album.release_date[:4] }}</span>{% endif %}){% endif %}
                 <span class="cursor-pointer align-middle text-secondary-text ml-1" onclick="copyAnchorLink(event, 'album-{{ album.id }}')" title="Copy link to album"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span>
                 {{ spotify_link_icon(album.spotify_url) }}
-                {% endif %}
+                
             </td>
-            {% if edit_mode %}
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            <td class="border border-grid-line">&nbsp;</td>
-            {% endif %}
+            
             {% for u in users %}<td class="border border-grid-line">&nbsp;</td>{% endfor %}
         </tr>
         {% endif %}
@@ -641,58 +477,15 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 style="padding: 4px 8px 4px {% if show_track_numbers %}8{% else %}18{% endif %}px;
                 {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
                 {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
-                {% if edit_mode %}
-                <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
-                {% if not is_misc and song.id in entry.duplicate_songs %}<span class="duplicate-tag cursor-pointer" onclick="event.stopPropagation();setDuplicateOverride({{ song.id }}, {{ album.id }}, {{ child.artist.id }})" title="Click to show this version instead">duplicate<span class="duplicate-tooltip">Click to show this version</span></span><span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Split into independent song" onclick="event.stopPropagation();splitSong({{ song.id }}, {{ album.id }})">&#9986;</span>{% endif %}
-                {% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
-                {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
-                {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
-                <span class="song-links inline whitespace-nowrap"{% if not hide_all_youtube and not hide_autogen_youtube %} data-yt-search-url="https://www.youtube.com/results?search_query={{ search_terms | urlencode }}"{% endif %}>{{ song_spotify_icon(song.spotify_url) }}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %} <span class="cursor-pointer align-middle text-secondary-text" onclick="copyAnchorLink(event, 'song-{{ song.id }}')" title="Copy link to song"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span></span>
-                <span class="whitespace-nowrap block" style="font-size: {{ song_button_size }}px;">{% if not is_misc and 'move_album' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Move to another album"
-                      onclick="showAlbumMove(event, {{ song.id }}, this, {{ album.id }})">&#8693;</span>{% endif %}
-                {% if not is_misc and 'add_album' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Add to another album"
-                      onclick="showAlbumAdd(event, {{ song.id }}, this, {{ album.id }})">&#43;</span>{% endif %}
-                {% if 'delete' in _ebtns %}<span class="edit-inline cursor-pointer text-delete ml-0.5" style="font-size: inherit;" title="Delete song"
-                      onclick='showDeleteConfirm("Delete song?", {{ song.name | tojson }}, "/edit/song/{{ song.id }}/delete", true)'>&#10005;</span>{% endif %}
-                {% if not is_misc and 'unlink' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-0.5" style="font-size: inherit;" title="Remove from album"
-                      onclick='confirmRemoveFromAlbum({{ song.id }}, {{ album.id }}, {{ song.name | tojson }}, {{ album.name | tojson }}, {{ songs|length }})'>&#128279;</span>{% endif %}
-                {% if 'artists' in _ebtns %}<span class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Manage artists"
-                      onclick="showSongArtists(event, {{ song.id }}, this)">&#9834;</span>{% endif %}
-                {% if 'merge' in _ebtns %}<span class="edit-inline merge-btn cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Merge with another song"
-                      data-song-id="{{ song.id }}" data-song-name="{{ song.name | e }}">&#10697;</span>{% endif %}
-                {% if 'reorder' in _ebtns %}<span class="edit-inline drag-handle text-secondary-text ml-1" style="font-size: inherit; cursor: grab;" title="Drag to reorder">⠿</span>{% endif %}
-                {% if 'spotify_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-1" style="font-size: inherit;" title="{% if song.spotify_url %}Edit Spotify URL{% else %}Set Spotify URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/spotify-url', '{{ song.spotify_url or '' }}', 'Spotify URL', this, 'spotify')"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1);"></span>{% endif %}
-                {% if 'youtube_url' in _ebtns %}<span class="edit-inline cursor-pointer ml-0.5" style="font-size: inherit;" title="{% if song.youtube_url %}Edit YouTube URL{% else %}Set YouTube URL{% endif %}"
-                      onclick="event.stopPropagation();promptUrl('/edit/song/{{ song.id }}/youtube-url', '{{ song.youtube_url or '' }}', 'YouTube URL', this, 'youtube')"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-2.5 h-2.5 align-middle" style="filter: grayscale(1) invert(1);"></span>{% endif %}
-                <a class="edit-inline cursor-pointer text-secondary-text ml-1" style="font-size: inherit;" title="Song Changelog" href="/changelog?q={{ song.name | urlencode }}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128214;</a>
-                </span>
-                {% else %}
+                
                 {{ song.name }}
                 {% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + child.artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
                 <span class="song-links inline whitespace-nowrap">{{ song_spotify_icon(song.spotify_url) }}{% if not hide_all_youtube %}{% set yt_url = song.youtube_url or ('https://www.youtube.com/results?search_query=' + search_terms | urlencode) %}{% if song.youtube_url or not hide_autogen_youtube %}<a href="{{ yt_url }}" target="_blank" rel="noopener" title="{% if song.youtube_url %}YouTube{% else %}Search YouTube{% endif %}" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %} <span class="cursor-pointer align-middle text-secondary-text" onclick="copyAnchorLink(event, 'song-{{ song.id }}')" title="Copy link to song"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline w-3 h-3 align-middle"><path fill-rule="evenodd" d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" clip-rule="evenodd"/></svg></span></span>
-                {% endif %}
+                
             </td>
-            {% if edit_mode %}
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_remix %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-remix"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-remix')">
-            </td>
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_cover %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-cover"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-cover')">
-            </td>
-            <td class="checkbox-cell text-center px-1 py-1 border border-grid-line">
-                <input type="checkbox" {% if song.is_promoted %}checked{% endif %} autocomplete="off"
-                       data-song-id="{{ song.id }}" data-field="is-promoted"
-                       onchange="toggleSongFlag(this, '/edit/song/{{ song.id }}/is-promoted')">
-                <span class="lead-cell-star cursor-pointer" data-song-id="{{ song.id }}" title="Toggle lead track" onclick="event.stopPropagation();toggleLeadTrack({{ song.id }}, this.closest('tr').querySelector('td:first-child'))" style="font-size: 19px; line-height: 1; color: {% if song.is_lead %}var(--lead-song){% else %}#888{% endif %};">★</span>
-            </td>
-            {% endif %}
+            
             {% for u in users %}
             {% set r = ratings.get(song.id, {}).get(u.id) %}
             {% set cell_style = rating_cell_style(r.rating if r else None) %}
@@ -769,40 +562,10 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
 </div>
 {% endif %}
 
-{% if edit_mode %}
-<!-- Add album + Delete artist buttons (edit mode only) -->
-<div class="mt-8 mb-4 flex gap-3">
-    <button type="button" onclick="resetAddAlbumModal();document.getElementById('add-album-modal').style.display='flex'"
-            class="px-4 py-2 rounded text-sm bg-edit-on text-button-text">
-        Add Album
-    </button>
-    {% set has_children = children | length > 0 %}
-    {% set is_soloist_child = soloist_parents | length > 0 %}
-    {% set can_convert_subunit = not has_children and not is_soloist_child %}
-    {% set can_convert_soloist = not has_children %}
-    <button type="button"
-            {% if can_convert_subunit %}onclick="showConvertArtist('subunit')"{% endif %}
-            class="px-4 py-2 rounded text-sm"
-            style="background-color: {% if can_convert_subunit %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert_subunit %}var(--button-text){% else %}var(--text-secondary){% endif %}; {% if not can_convert_subunit %}cursor: not-allowed; opacity: 0.6;{% endif %}"
-            {% if not can_convert_subunit %}title="Cannot convert an artist that already has subunits, soloists, or is a soloist"{% endif %}>
-        Convert to Subunit
-    </button>
-    <button type="button"
-            {% if can_convert_soloist %}onclick="showConvertArtist('soloist')"{% endif %}
-            class="px-4 py-2 rounded text-sm"
-            style="background-color: {% if can_convert_soloist %}var(--button-primary){% else %}var(--button-secondary){% endif %}; color: {% if can_convert_soloist %}var(--button-text){% else %}var(--text-secondary){% endif %}; {% if not can_convert_soloist %}cursor: not-allowed; opacity: 0.6;{% endif %}"
-            {% if not can_convert_soloist %}title="Cannot convert an artist that already has subunits or soloists"{% endif %}>
-        {% if is_soloist_child %}Add Soloist Link{% else %}Convert to Soloist{% endif %}
-    </button>
-    <button type="button" onclick="showConvertArtist('related')"
-            class="px-4 py-2 rounded text-sm bg-button-primary text-button-text">
-        Link Related Group
-    </button>
-    <button type="button" onclick="showDeleteConfirm('Delete {{ artist.name }}?', 'This will permanently delete this artist, all their albums, songs, and ratings. This cannot be undone.', '{{ url_for('edit.delete_artist', artist_id=artist.id) }}')"
-            class="px-4 py-2 rounded text-sm bg-delete text-button-text">
-        Delete Artist
-    </button>
-</div>
+{% if current_user.is_editor_or_admin %}
+{% set is_soloist_child = soloist_parents | length > 0 %}
+<!-- Add-album / Convert / Link / Unlink / Delete are triggered from the artist edit
+     modal; the modals + scripts below stay available to editors. -->
 
 <!-- Convert to subunit/soloist + link related group modal -->
 <div id="convert-artist-modal" style="display:none; position:fixed; inset:0; z-index:100;

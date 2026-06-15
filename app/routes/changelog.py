@@ -100,8 +100,6 @@ def changelog():
 @login_required
 @role_required(ADMIN)
 def delete_entry(entry_id):
-    if not session.get('edit_mode'):
-        abort(403)
     entry = db.session.get(Changelog, entry_id)
     if entry is None:
         abort(404)

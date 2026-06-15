@@ -491,11 +491,10 @@ function _showSongGenreEditModal(event, songId, el, allGenres, currentIds) {
             var checked = popup.querySelectorAll('input:checked');
             var ids = [];
             checked.forEach(function(c) { ids.push(c.value); });
-            var t = document.querySelector('meta[name="csrf-token"]').content;
             var body = 'genre_ids=' + ids.join(',');
             fetch('/edit/song/' + songId + '/genres', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': t},
+                headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
                 body: body
             }).then(function(resp) { return resp.json(); }).then(function(names) {
                 el.textContent = names.join(', ') || 'genres';
@@ -544,9 +543,7 @@ function _miscShowUserEdit(event, span, kind) {
     var attr = kind === 'owner' ? 'ownerId' : 'maintainerId';
     var currentId = span.dataset[attr] ? parseInt(span.dataset[attr]) : null;
     function pick(uid, uname, img) {
-        var csrfToken = document.querySelector('meta[name="csrf-token"]');
-        var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+        var headers = _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'});
         fetch('/misc/set-role', {method:'POST', headers:headers, body:'kind=' + kind + '&user_id=' + (uid == null ? '' : uid)}).then(function(r) {
             if (!r.ok) throw new Error('save failed');
             span.dataset[attr] = uid == null ? '' : uid;

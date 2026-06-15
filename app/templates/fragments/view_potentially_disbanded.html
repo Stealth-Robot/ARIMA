@@ -2,7 +2,7 @@
 <ul class="text-sm space-y-1">
     {% for a in artists %}
     <li id="disbanded-row-{{ a.id }}" class="flex items-center gap-2">
-        {% if session.get('edit_mode') and current_user.is_editor_or_admin %}
+        {% if current_user.is_editor_or_admin %}
         <button class="px-2 py-1 rounded text-xs bg-button-secondary text-primary-text border-0 cursor-pointer"
                 onclick="markInactive(this, {{ a.id }})">Mark Inactive</button>
         {% endif %}

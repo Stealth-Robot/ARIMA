@@ -157,24 +157,6 @@ function toggleEmptyViews(btn) {
     if (hide) _applyHideEmpty(true);
 })();
 
-// Intercept edit mode toggle — submit via fetch, then reload to get fresh state
-(function() {
-    var form = document.getElementById('edit-mode-form');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var csrf = form.querySelector('[name=csrf_token]');
-        fetch(form.action, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'csrf_token=' + encodeURIComponent(csrf ? csrf.value : ''),
-            redirect: 'manual',
-        }).then(function() {
-            window.location.reload();
-        });
-    });
-})();
-
 function deleteOrphanAlbum(albumId, span) {
     showDeleteConfirm('Delete empty album?', 'This orphaned album will be permanently deleted.', '/edit/album/' + albumId + '/delete', true, 'Delete');
 }

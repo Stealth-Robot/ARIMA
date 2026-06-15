@@ -301,16 +301,6 @@ def toggle_rating_mode():
     return redirect(request.referrer or url_for('home.home'))
 
 
-@profile_bp.route('/profile/toggle-edit-mode', methods=['POST'])
-@login_required
-def toggle_edit_mode():
-    """Toggle edit mode for editors and admins."""
-    if not current_user.is_editor_or_admin:
-        return '', 403
-    session['edit_mode'] = not session.get('edit_mode', False)
-    return redirect(request.referrer or url_for('home.home'))
-
-
 def _get_stats_page_users():
     """Return ordered list of dicts with user info + visibility for the stats page users section."""
     if current_user.is_system_or_guest:

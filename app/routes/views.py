@@ -190,7 +190,7 @@ def view_feat_only():
             ).all()
             for sid, aid in alb_rows:
                 link_id.setdefault(sid, aid)
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     items = []
     for s in songs:
         aid = link_id.get(s.id)
@@ -214,7 +214,7 @@ def view_orphan_albums():
         ~Album.id.in_(db.session.query(AlbumSong.album_id)),
         Album.artist_id.is_(None),
     ).all()
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     result = []
     for a in items:
         name_esc = Markup.escape(a.name)
@@ -238,7 +238,7 @@ def view_empty_albums():
         Album.artist_id.isnot(None),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).all()
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     result = []
     for a in items:
         name_esc = Markup.escape(a.name)
@@ -276,7 +276,7 @@ def view_undated_albums():
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
     ).order_by(func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode, id_prefix='undated')
@@ -301,7 +301,7 @@ def view_incomplete_date_albums():
         return names[0] if names else ''
     albums.sort(key=_artist_key)
 
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode, id_prefix='incomplete',
@@ -326,7 +326,7 @@ def _invalid_date_albums():
 def view_invalid_date_albums():
     albums = _invalid_date_albums()
     album_artists = _album_artists([a.id for a in albums])
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     return render_template('fragments/view_invalid_dates.html',
                            albums=albums, album_artists=album_artists,
                            edit_mode=edit_mode)
@@ -422,7 +422,7 @@ def _variant_songs():
 @role_required(EDITOR_OR_ADMIN)
 def view_variant_songs():
     songs = _variant_songs()
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_editor_or_admin
     items = []
     for s in songs:
         artist_names = ', '.join(a.name for a in s.artists) if s.artists else 'no artist'

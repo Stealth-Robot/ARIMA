@@ -200,7 +200,7 @@
                 <tr><td colspan="{{ 1 + users|length }}" style="height: 12px; border: none;"></td></tr>
                 {% endif %}
                 <tr>
-                    <td colspan="{{ 1 + users|length }}" class="text-xs text-primary-text font-bold" style="padding: 2px 8px; border: none; border-bottom: 1px solid var(--border); background: var(--album-header-bg);">
+                    <td colspan="{{ 1 + users|length }}" class="text-xs text-primary-text font-bold album-name-cell{% if current_user.is_editor_or_admin %} cursor-pointer{% endif %}" data-album-id="{{ album.id }}" style="padding: 2px 8px; border: none; border-bottom: 1px solid var(--border); background: var(--album-header-bg);">
                         {{ album.name }}{% if album.release_date %} · {{ album.release_date[:4] }}{% endif %}
                     </td>
                 </tr>

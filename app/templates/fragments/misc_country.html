@@ -40,11 +40,7 @@
         {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
         style="padding: 4px 8px 4px 18px;
         {% if song.is_promoted %}border-left: 4px solid var(--promoted-song);{% endif %}">
-        {% if edit_mode %}
-        <span class="edit-inline cursor-pointer" onclick="showInlineEdit(event, '/edit/song/{{ song.id }}/name', this)">{{ song.name }}</span>
-        {% else %}
         {{ song.name }}
-        {% endif %}
         {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | amp_join }})</span>{% endif %}
         {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}
         {% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}

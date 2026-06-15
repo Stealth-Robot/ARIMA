@@ -71,15 +71,6 @@ def create_app():
 
     # Update last_seen on every request, stash previous value for update notification
     @flask_app.before_request
-    def _force_edit_mode_off_on_mobile():
-        # Mobile has no edit-mode toggle; editors edit via modals. Keep mobile
-        # sessions edit-off so the desktop inline edit controls never render there.
-        from flask import request
-        ua = (request.user_agent.string or '').lower()
-        if ('mobi' in ua or 'android' in ua) and session.get('edit_mode'):
-            session['edit_mode'] = False
-
-    @flask_app.before_request
     def update_last_seen():
         from datetime import datetime, timezone
         from flask import g

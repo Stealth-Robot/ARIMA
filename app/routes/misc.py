@@ -111,7 +111,7 @@ def _build_misc_shell(bypass_filters=False):
 
     filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
     sort_field, sort_dir = _get_misc_sort()
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_authenticated and current_user.is_editor_or_admin
 
     query = db.session.query(
         MiscArtist.country_id,
@@ -157,7 +157,7 @@ def _build_country_data(country_id, bypass_filters=False):
 
     filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
     sort_field, sort_dir = _get_misc_sort()
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
+    edit_mode = current_user.is_authenticated and current_user.is_editor_or_admin
 
     sma_rows = db.session.query(
         SongMiscArtist.song_id, SongMiscArtist.misc_artist_id, SongMiscArtist.artist_is_main,
@@ -253,7 +253,7 @@ def _build_country_data(country_id, bypass_filters=False):
 
     genre_data = defaultdict(list)
     for sid, song in song_map.items():
-        if not edit_mode:
+        if not bypass_filters:
             if not filters['include_remixes'] and song.is_remix and sid not in keep_remix_ids:
                 continue
             if not filters['include_covers'] and song.is_cover:
@@ -422,7 +422,8 @@ def search_misc_artists():
 @misc_bp.route('/misc/add-misc-artist', methods=['POST'])
 @login_required
 def add_misc_artist():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     data = request.get_json(silent=True) or {}
@@ -440,7 +441,8 @@ def add_misc_artist():
 @misc_bp.route('/misc/add-song', methods=['POST'])
 @login_required
 def add_misc_song():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
 
@@ -508,7 +510,8 @@ def add_misc_song():
 @misc_bp.route('/misc/manage-artists')
 @login_required
 def manage_misc_artists():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     artists = db.session.query(
         MiscArtist.id, MiscArtist.name, MiscArtist.country_id,
@@ -526,7 +529,8 @@ def manage_misc_artists():
 @misc_bp.route('/misc/edit-artist/<int:artist_id>', methods=['POST'])
 @login_required
 def edit_misc_artist(artist_id):
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     ma = db.session.get(MiscArtist, artist_id)
@@ -556,7 +560,8 @@ def edit_misc_artist(artist_id):
 @misc_bp.route('/misc/delete-artist/<int:artist_id>', methods=['POST'])
 @login_required
 def delete_misc_artist(artist_id):
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     ma = db.session.get(MiscArtist, artist_id)
@@ -587,7 +592,8 @@ def _format_credit(pairs):
 @misc_bp.route('/misc/artist-songs')
 @login_required
 def artist_songs_list():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     ids = request.args.get('ids', '')
     artist_ids = [int(x) for x in ids.split(',') if x.strip().isdigit()]
@@ -635,7 +641,8 @@ def artist_songs_list():
 @misc_bp.route('/misc/merge-artists', methods=['POST'])
 @login_required
 def merge_misc_artists():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     data = request.get_json(silent=True) or {}
@@ -680,7 +687,8 @@ def combine_misc_song():
     carries onto the kept song so the misc artist isn't re-credited there. When the
     misc artist has no songs left, it is deleted (combining it into the real artist).
     """
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     from app.routes.edit.song import perform_song_merge
@@ -742,7 +750,8 @@ def combine_misc_song():
 def combine_targets():
     """Target-song candidates for the combine flow: songs the given real artist is on
     (as main OR featured), each with its role and full artist credit (main first)."""
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     try:
         artist_id = int(request.args.get('artist_id'))
@@ -799,7 +808,8 @@ def swap_credit():
     being combined into (preserving main/feat), then drop the misc link. If the song has
     no album yet, an album must be selected/created. Deletes the misc artist when empty.
     """
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     data = request.get_json(silent=True) or {}
@@ -886,7 +896,8 @@ def combine_auto_merge():
     credited — the song is already the real artist's, so there's nothing to merge.
     Deletes the misc artist if no songs remain linked.
     """
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     data = request.get_json(silent=True) or {}
@@ -925,7 +936,8 @@ def combine_auto_merge():
 @misc_bp.route('/misc/song/<int:song_id>/misc-artists', methods=['POST'])
 @login_required
 def update_song_misc_artists(song_id):
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     song = db.session.get(Song, song_id)
@@ -982,7 +994,8 @@ def update_song_misc_artists(song_id):
 @login_required
 def get_song_artists(song_id):
     """Return current misc + real artist links for a song."""
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     misc = db.session.query(
         SongMiscArtist.misc_artist_id, MiscArtist.name, MiscArtist.country_id,
@@ -1036,7 +1049,8 @@ def search_albums():
 @misc_bp.route('/misc/add-album', methods=['POST'])
 @login_required
 def add_misc_album():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     data = request.get_json(silent=True) or {}
@@ -1067,7 +1081,8 @@ def add_misc_album():
 @login_required
 def get_album_detail(album_id):
     """Return album details for the album editor popup."""
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     album = db.session.get(Album, album_id)
     if album is None:
@@ -1086,7 +1101,8 @@ def get_album_detail(album_id):
 @misc_bp.route('/misc/song/<int:song_id>/move-to-artist', methods=['POST'])
 @login_required
 def move_song_to_artist(song_id):
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
     song = db.session.get(Song, song_id)
@@ -1151,7 +1167,8 @@ def move_song_to_artist(song_id):
 @login_required
 def set_misc_role():
     """Set misc owner or maintainer."""
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     kind = request.form.get('kind')
     if kind not in ('owner', 'maintainer'):
@@ -1177,7 +1194,8 @@ def set_misc_role():
 @misc_bp.route('/misc/spotify-track')
 @login_required
 def spotify_track():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     url = request.args.get('url', '').strip()
     if not url:
@@ -1217,7 +1235,8 @@ def search_artist_albums():
 @misc_bp.route('/misc/spotify-import', methods=['POST'])
 @login_required
 def spotify_import():
-    if not session.get('edit_mode') or not current_user.is_editor_or_admin:
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     from app.services.audit import log_change
 

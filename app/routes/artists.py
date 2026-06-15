@@ -11,7 +11,7 @@ from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong,
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.user import User
-from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_related_artists, get_discography_songs, soloist_parent_map, amp_join
+from app.services.artist import get_filtered_navbar, get_children, is_subunit, get_soloist_parents, get_related_artists, get_discography_songs, soloist_parent_map, amp_join, get_parent
 
 artists_bp = Blueprint('artists', __name__)
 
@@ -165,11 +165,10 @@ def _render_artist(artist, htmx=False, push_url=None):
     edit_album_types = []
     edit_countries = []
     edit_genders = []
-    # Mobile has no edit-mode toggle, so editors there edit via modals that reuse the
-    # desktop handlers — which need these globals. Emit them for mobile editors too.
-    _ua = (request.user_agent.string or '').lower()
-    _is_mobile = 'mobi' in _ua or 'android' in _ua
-    emit_edit_globals = (session.get('edit_mode') or _is_mobile) and current_user.is_editor_or_admin
+    # Editors edit through green-button/click modals at every viewport width, so these
+    # globals (lookup tables + the hidden merge-credential form) are always emitted for
+    # editors regardless of any edit-mode flag.
+    emit_edit_globals = current_user.is_authenticated and current_user.is_editor_or_admin
     if emit_edit_globals:
         all_artists = Artist.query.order_by(func.lower(Artist.name)).all()
         all_soloist_parents = soloist_parent_map([a.id for a in all_artists])
@@ -471,19 +470,19 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
 
-    # Get filter settings — edit mode bypasses remix/featured filters
+    # Get filter settings. "Disable Filters" (bypass_filters / nofilter=1) reveals all
+    # otherwise-hidden content so editors can reach those rows to edit them.
     from flask import session
-    edit_mode = session.get('edit_mode') and current_user.is_editor_or_admin
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
         genre_ids = list(current_user.settings.genre_ids or [])
-        include_remixes = True if edit_mode else current_user.settings.include_remixes
-        include_featured = True if edit_mode else current_user.settings.include_featured
-        include_covers = True if edit_mode else current_user.settings.include_covers
+        include_remixes = current_user.settings.include_remixes
+        include_featured = current_user.settings.include_featured
+        include_covers = current_user.settings.include_covers
         album_sort_order = current_user.settings.album_sort_order or 'desc'
     else:
         genre_ids = list(session.get('genre_ids') or [])
-        include_remixes = True if edit_mode else False
-        include_featured = True if edit_mode else False
+        include_remixes = False
+        include_featured = False
         include_covers = True
         album_sort_order = session.get('album_sort_order', 'desc')
     if bypass_filters:
@@ -530,7 +529,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
         albums = [a for a in albums if any(g.id in genre_set for g in a.genres)]
 
     # Hide OST albums (unless on an anime artist page)
-    if hide_osts and not edit_mode:
+    if hide_osts and not bypass_filters:
         albums = [a for a in albums if not any(g.genre == 'OST' for g in a.genres)]
 
     # Pre-compute main song IDs for featured filter (once, not per-album)
@@ -601,7 +600,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
                 canonical = sorted_aids[0]
         for aid in aid_list:
             if aid != canonical:
-                if edit_mode:
+                if bypass_filters:
                     duplicate_song_album.add((sid, aid))
                 else:
                     songs_by_album[aid] = [(s, tn) for s, tn in songs_by_album[aid] if s.id != sid]
@@ -655,7 +654,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
             album_songs = [(s, tn) for s, tn in album_songs
                            if s.id in main_song_ids]
 
-        if album_songs or edit_mode:
+        if album_songs or bypass_filters:
             song_obj_ids = [s.id for s, _ in album_songs]
             ratings_map = {sid: all_ratings_map.get(sid, {}) for sid in song_obj_ids}
             collab_labels = {sid: all_collab_labels[sid] for sid in song_obj_ids if sid in all_collab_labels}
@@ -854,6 +853,16 @@ def artist_edit_info(artist_id):
     a = db.session.get(Artist, artist_id)
     if a is None:
         abort(404)
+    # Relationships this artist can be unlinked from (other-artist id is passed as
+    # parent_id to /edit/artist/<id>/unlink). Covers subunit/soloist parents + related.
+    links = []
+    _sub_parent = get_parent(artist_id)
+    if _sub_parent:
+        links.append({'id': _sub_parent.id, 'name': _sub_parent.name, 'rel': 'subunit'})
+    for sp in get_soloist_parents(artist_id):
+        links.append({'id': sp.id, 'name': sp.name, 'rel': 'soloist'})
+    for ra in get_related_artists(artist_id):
+        links.append({'id': ra.id, 'name': ra.name, 'rel': 'related'})
     return json.dumps({
         'name': a.name,
         'spotify_url': a.spotify_url or '',
@@ -868,4 +877,5 @@ def artist_edit_info(artist_id):
         'is_disbanded': a.is_disbanded,
         'is_complete': a.is_complete,
         'is_tracked': a.is_tracked,
+        'links': links,
     }), 200, {'Content-Type': 'application/json'}

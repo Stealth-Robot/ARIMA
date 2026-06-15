@@ -133,20 +133,11 @@
                 Rating: {% if session.get('rating_mode', 'self') == 'all' %}All{% else %}Self{% endif %}
             </button>
         </form>
-        <form id="edit-mode-form" method="POST" action="{{ url_for('profile.toggle_edit_mode') }}" class="mobile-hide inline m-0">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button id="edit-mode-btn" type="submit"
-                    class="flex-shrink-0 border-0 text-sm- py-0.5 px-2 rounded cursor-pointer text-button-text {% if session.get('edit_mode') %}bg-edit-on{% else %}bg-edit-off{% endif %}">
-                &#9998; Edit: {% if session.get('edit_mode') %}ON{% else %}OFF{% endif %}
-            </button>
-        </form>
         <span class="nav-spacer flex-1"></span>
-        {% if session.get('edit_mode') %}
         <a id="add-artist-link" class="mobile-hide flex-shrink-0 text-sm- py-0.5 px-2 rounded bg-edit-on text-button-text no-underline" href="{{ url_for('edit.add_artist_form') }}">
             + Artist
         </a>
         <a id="views-link" class="mobile-hide nav-link {% if request.endpoint == 'views.views_page' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('views.views_page') }}">Views</a>
-        {% endif %}
         {% endif %}
 
         <!-- Mobile menu button (hidden on desktop) -->
@@ -372,6 +363,7 @@
     {% include "fragments/confirm_generic_modal.html" %}
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ratings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/edit_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
     {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
     <script>
@@ -402,61 +394,6 @@
                 });
             });
         }
-    })();
-    (function() {
-        var form = document.getElementById('edit-mode-form');
-        if (!form) return;
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var btn = document.getElementById('edit-mode-btn');
-            var csrfToken = form.querySelector('[name=csrf_token]').value;
-            fetch(form.action, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + encodeURIComponent(csrfToken), redirect: 'manual'}).then(function() {
-                var isOn = btn.textContent.indexOf('ON') !== -1;
-                var styles = getComputedStyle(document.documentElement);
-                btn.style.background = isOn ? styles.getPropertyValue('--edit-off-button') : styles.getPropertyValue('--edit-on-button');
-                btn.innerHTML = '&#9998; Edit: ' + (isOn ? 'OFF' : 'ON');
-                var addLink = document.getElementById('add-artist-link');
-                var viewsLink = document.getElementById('views-link');
-                if (isOn) {
-                    // Turning OFF
-                    if (addLink) addLink.style.display = 'none';
-                    if (viewsLink) viewsLink.style.display = 'none';
-                } else {
-                    // Turning ON
-                    if (addLink) {
-                        addLink.style.display = '';
-                    } else {
-                        addLink = document.createElement('a');
-                        addLink.id = 'add-artist-link';
-                        addLink.href = '{{ url_for("edit.add_artist_form") }}';
-                        addLink.style.cssText = 'flex-shrink:0; font-size:13px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button); color:var(--button-text); text-decoration:none;';
-                        addLink.textContent = '+ Artist';
-                        form.parentNode.insertBefore(addLink, form.nextSibling);
-                    }
-                    if (viewsLink) {
-                        viewsLink.style.display = '';
-                    } else {
-                        viewsLink = document.createElement('a');
-                        viewsLink.id = 'views-link';
-                        viewsLink.href = '{{ url_for("views.views_page") }}';
-                        viewsLink.style.cssText = 'flex-shrink:0; color:var(--navbar-text); text-decoration:none;';
-                        viewsLink.textContent = 'Views';
-                        var afterAdd = document.getElementById('add-artist-link');
-                        if (afterAdd) afterAdd.parentNode.insertBefore(viewsLink, afterAdd.nextSibling);
-                    }
-                }
-                // Refresh artist discography if on artist page
-                var disco = document.getElementById('discography');
-                if (disco) {
-                    fetch(window.location.href, { headers: { 'HX-Request': 'true' } })
-                    .then(function(r) { return r.text(); })
-                    .then(function(html) {
-                        disco.innerHTML = html;
-                        if (typeof _restoreCollapseState === 'function') _restoreCollapseState();
-                    });
-                }
-            });
-        });
     })();
     </script>
     {% endif %}

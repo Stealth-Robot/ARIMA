@@ -1,9 +1,6 @@
 <span data-view-count="{{ items | length }}" class="hidden"></span>
 {% if items %}
-{% set edit_mode = session.get('edit_mode', False) and current_user.is_editor_or_admin %}
-{% if not edit_mode %}
-<p class="text-xs text-secondary-text mb-2">Enable edit mode to assign owners.</p>
-{% endif %}
+{% set edit_mode = current_user.is_editor_or_admin %}
 <table class="w-full text-sm border-collapse border border-grid-line">
     <thead>
         <tr class="bg-header-row">

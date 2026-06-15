@@ -226,22 +226,4 @@
 
     </div>
 </div>
-<script>
-(function() {
-    var form = document.getElementById('edit-mode-form');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var csrf = form.querySelector('[name=csrf_token]');
-        fetch(form.action, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'csrf_token=' + encodeURIComponent(csrf ? csrf.value : ''),
-            redirect: 'manual',
-        }).then(function() {
-            window.location.reload();
-        });
-    });
-})();
-</script>
 {% endblock %}

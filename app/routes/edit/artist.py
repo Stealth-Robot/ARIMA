@@ -647,9 +647,7 @@ def artist_search_songs(artist_id):
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def add_artist_form():
-    """Show the Add Artist form (edit mode only)."""
-    if not session.get('edit_mode'):
-        return redirect(url_for('artists.artists_list'))
+    """Show the Add Artist form."""
     countries = Country.query.order_by(Country.id).all()
     genres = Genre.query.order_by(Genre.id).all()
     album_types = AlbumType.query.order_by(AlbumType.id).all()
@@ -896,8 +894,6 @@ def _sweep_old_jobs():
 @role_required(EDITOR_OR_ADMIN)
 def spotify_artist_start():
     """Start a Spotify artist import in the background."""
-    if not session.get('edit_mode'):
-        abort(403)
     url = request.form.get('url', '').strip()
     if not url:
         return jsonify({'error': 'No URL provided'}), 400

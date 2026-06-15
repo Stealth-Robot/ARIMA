@@ -81,7 +81,6 @@ def search():
         include_remixes, include_featured, include_covers = True, True, True
     else:
         country_ids, genre_ids, hide_osts, include_remixes, include_featured, include_covers = _get_filters()
-    edit_mode = bool(session.get('edit_mode')) and current_user.is_editor_or_admin
 
     # Pre-compute OST album IDs to exclude from results (exempt anime artists per row)
     ANIME_GENDER_ID = 3
@@ -316,7 +315,7 @@ def search():
                 misc_countries.setdefault(sid, set()).add(cid)
                 if is_main:
                     has_main[sid] = True
-            if not include_featured and not edit_mode:
+            if not include_featured and not show_hidden:
                 for sid, is_main in db.session.query(
                     ArtistSong.song_id, ArtistSong.artist_is_main
                 ).filter(ArtistSong.song_id.in_(misc_sids)).all():
@@ -329,7 +328,7 @@ def search():
             def _keep_misc(s):
                 if country_ids and not (misc_countries.get(s.id, set()) & set(country_ids)):
                     return False
-                if not edit_mode:
+                if not show_hidden:
                     if not include_remixes and s.is_remix and s.id not in keep_remix_ids:
                         return False
                     if not include_covers and s.is_cover:

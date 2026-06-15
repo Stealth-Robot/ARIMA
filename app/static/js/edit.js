@@ -132,6 +132,7 @@ function toggleLeadTrack(songId, nameCell) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = {};
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
     fetch('/edit/song/' + songId + '/is-lead', {
         method: 'POST',
         headers: headers,
@@ -188,6 +189,7 @@ function showArtistNameEdit(event, endpoint, span) {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         fetch(endpoint, { method: 'POST', headers: headers, body: 'value=' + encodeURIComponent(val) })
         .then(function(r) { if (!r.ok) { restore(); return null; } return r.json(); })
         .then(function(data) {
@@ -230,123 +232,6 @@ document.addEventListener('mousedown', function(e) {
     }
 });
 
-function promptUrl(endpoint, currentValue, label, btnEl, linkType) {
-    closeUrlPopover();
-    // Use saved value from previous edit if available
-    if (btnEl && btnEl.dataset.savedUrl !== undefined) currentValue = btnEl.dataset.savedUrl;
-    var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
-
-    var title = document.createElement('div');
-    title.textContent = label;
-    title.style.cssText = 'font-size:12px; font-weight:bold; margin-bottom:6px; color:var(--text-primary);';
-    popover.appendChild(title);
-    _makeDraggable(popover, title);
-
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.value = currentValue || '';
-    input.placeholder = 'https://...';
-    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
-    popover.appendChild(input);
-
-    if (linkType === 'spotify') {
-        var hint = document.createElement('div');
-        hint.textContent = 'Type n/a if it isn’t on Spotify.';
-        hint.style.cssText = 'font-size:10px; color:var(--text-secondary,#888); margin-top:-2px; margin-bottom:6px;';
-        popover.appendChild(hint);
-    }
-
-    var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:4px; justify-content:flex-end;';
-
-    var cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--button-secondary,#6B7280); color:var(--button-text,#fff); border:none; border-radius:3px; cursor:pointer;';
-    cancelBtn.onclick = closeUrlPopover;
-
-    var saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
-    saveBtn.onclick = function() {
-        var val = input.value.trim();
-        var csrf = document.querySelector('meta[name="csrf-token"]');
-        fetch(endpoint, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf ? csrf.content : ''},
-            body: 'value=' + encodeURIComponent(val),
-        }).then(function(r) {
-            if (!r.ok) { input.style.borderColor = 'var(--delete-button,red)'; return; }
-            // Store saved value for next edit and update the link icon
-            if (btnEl) btnEl.dataset.savedUrl = val;
-            // Artist/album header edits don't live in a song .song-links cell;
-            // reload to reflect the change rather than doing in-place DOM surgery.
-            if (btnEl && btnEl.dataset.reloadOnSave) { window.location.reload(); return; }
-            // The "not on Spotify" (n/a) state renders as a struck-through icon, not a
-            // link — in-place DOM surgery can't produce it, so reload to show it correctly
-            // (covers both setting n/a and changing away from a prior n/a).
-            if (linkType === 'spotify' &&
-                ((val && val.toLowerCase() === 'n/a') ||
-                 (currentValue && String(currentValue).toLowerCase() === 'n/a'))) {
-                window.location.reload();
-                return;
-            }
-            if (btnEl && linkType) {
-                var td = btnEl.closest('td');
-                var songLinks = td ? td.querySelector('.song-links') : null;
-                if (songLinks) {
-                    var linkEl = songLinks.querySelector(linkType === 'spotify' ? 'a[title="Spotify"]' : 'a[title="YouTube"], a[title="Search YouTube"]');
-                    if (val) {
-                        if (linkEl) {
-                            linkEl.href = val;
-                            linkEl.title = linkType === 'spotify' ? 'Spotify' : 'YouTube';
-                        } else {
-                            var a = document.createElement('a');
-                            a.href = val;
-                            a.target = '_blank';
-                            a.rel = 'noopener';
-                            a.title = linkType === 'spotify' ? 'Spotify' : 'YouTube';
-                            a.onclick = function(e) { e.stopPropagation(); };
-                            var img = document.createElement('img');
-                            img.src = '/static/img/' + linkType + '.png';
-                            img.className = 'inline w-3 h-3 align-middle';
-                            a.appendChild(img);
-                            if (linkType === 'spotify') {
-                                songLinks.insertBefore(a, songLinks.firstChild);
-                                songLinks.insertBefore(document.createTextNode(' '), a.nextSibling);
-                            } else {
-                                songLinks.appendChild(a);
-                            }
-                        }
-                    } else if (linkEl) {
-                        var fallback = linkType === 'youtube' && songLinks.dataset.ytSearchUrl;
-                        if (fallback) {
-                            linkEl.href = fallback;
-                            linkEl.title = 'Search YouTube';
-                        } else {
-                            linkEl.remove();
-                        }
-                    }
-                }
-            }
-            closeUrlPopover();
-        });
-    };
-
-    btnRow.appendChild(cancelBtn);
-    btnRow.appendChild(saveBtn);
-    popover.appendChild(btnRow);
-    popover.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-    document.body.appendChild(popover);
-    input.focus();
-    input.select();
-    _activeUrlPopover = popover;
-
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
-        else if (e.key === 'Escape') { e.preventDefault(); closeUrlPopover(); }
-    });
-}
 
 function promptLocalUrl(btnEl, dataKey, label, opts) {
     opts = opts || {};
@@ -437,6 +322,7 @@ function showInlineEdit(event, endpoint, span) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         fetch(endpoint, {
             method: 'POST',
             headers: headers,
@@ -508,6 +394,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         fetch(endpoint, {
             method: 'POST',
             headers: headers,
@@ -607,6 +494,7 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         var ids = [];
         popover.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
             ids.push(parseInt(cb.value));
@@ -670,58 +558,6 @@ function closeCountryPopover() {
     }
 }
 
-function showCountryEdit(event, artistId, span, allCountries, currentId) {
-    event.stopPropagation();
-    closeCountryPopover();
-
-    var popover = document.createElement('div');
-    popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
-
-    allCountries.forEach(function(c) {
-        var btn = document.createElement('div');
-        btn.textContent = c.name;
-        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
-        if (c.id === currentId) btn.style.fontWeight = 'bold';
-        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-        btn.addEventListener('click', function() {
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/artist/' + artistId + '/country', {
-                method: 'POST',
-                headers: headers,
-                body: 'country_id=' + c.id,
-            }).then(function(r) {
-                if (!r.ok) throw new Error('save failed');
-                return r.json();
-            }).then(function(data) {
-                span.textContent = data.country;
-                span.setAttribute('data-country-id', data.id);
-                closeCountryPopover();
-            }).catch(function() {
-                showToast('Failed to save country — try again');
-                closeCountryPopover();
-            });
-        });
-        popover.appendChild(btn);
-    });
-
-    var rect = getZoomedRect(span);
-    popover.style.left = rect.left + 'px';
-
-    document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
-    if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
-        popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
-    } else {
-        popover.style.top = rect.bottom + 2 + 'px';
-    }
-    activeCountryPopover = popover;
-}
 
 document.addEventListener('mousedown', function(e) {
     if (activeCountryPopover && !activeCountryPopover.contains(e.target)) {
@@ -808,6 +644,7 @@ function showArtistUserEdit(event, artistId, span, kind, onCommit) {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         fetch('/edit/artist/' + artistId + '/' + kind, {
             method: 'POST',
             headers: headers,
@@ -931,58 +768,6 @@ function closeAlbumTypePopover() {
     }
 }
 
-function showAlbumTypeEdit(event, albumId, span, allTypes, currentId) {
-    event.stopPropagation();
-    closeAlbumTypePopover();
-
-    var popover = document.createElement('div');
-    popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:120px;';
-
-    allTypes.forEach(function(t) {
-        var btn = document.createElement('div');
-        btn.textContent = t.name;
-        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
-        if (t.id === currentId) btn.style.fontWeight = 'bold';
-        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-        btn.addEventListener('click', function() {
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/album/' + albumId + '/type', {
-                method: 'POST',
-                headers: headers,
-                body: 'album_type_id=' + t.id,
-            }).then(function(r) {
-                if (!r.ok) throw new Error('save failed');
-                return r.json();
-            }).then(function(data) {
-                span.textContent = data.type;
-                span.setAttribute('data-album-type-id', data.id);
-                closeAlbumTypePopover();
-            }).catch(function() {
-                showToast('Failed to save album type — try again');
-                closeAlbumTypePopover();
-            });
-        });
-        popover.appendChild(btn);
-    });
-
-    var rect = getZoomedRect(span);
-    popover.style.left = rect.left + 'px';
-
-    document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
-    if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
-        popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
-    } else {
-        popover.style.top = rect.bottom + 2 + 'px';
-    }
-    activeAlbumTypePopover = popover;
-}
 
 /* Inline gender edit — pick gender popover */
 
@@ -996,66 +781,6 @@ function closeGenderPopover() {
     }
 }
 
-function showGenderEdit(event, artistId, span, allGenders, currentId) {
-    event.stopPropagation();
-    closeGenderPopover();
-
-    var popover = document.createElement('div');
-    popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; overflow-y:auto;';
-
-    allGenders.forEach(function(g) {
-        var btn = document.createElement('div');
-        btn.textContent = g.name;
-        btn.style.cssText = 'padding:3px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
-        if (g.id === currentId) btn.style.fontWeight = 'bold';
-        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-        btn.addEventListener('click', function() {
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/artist/' + artistId + '/gender', {
-                method: 'POST',
-                headers: headers,
-                body: 'gender_id=' + g.id,
-            }).then(function(r) {
-                if (!r.ok) throw new Error('save failed');
-                return r.json();
-            }).then(function(data) {
-                span.textContent = data.gender;
-                span.setAttribute('data-gender-id', data.id);
-                var cssVar = GENDER_CSS_MAP[data.id] || '--text-primary';
-                var headerDiv = span.closest('div[style*="border-left"]');
-                if (headerDiv) {
-                    headerDiv.style.borderLeftColor = 'var(' + cssVar + ')';
-                }
-                document.querySelectorAll('[data-artist-id="' + artistId + '"]').forEach(function(el) {
-                    el.style.backgroundColor = 'var(' + cssVar + ')';
-                });
-                closeGenderPopover();
-            }).catch(function() {
-                showToast('Failed to save gender — try again');
-                closeGenderPopover();
-            });
-        });
-        popover.appendChild(btn);
-    });
-
-    var rect = getZoomedRect(span);
-    popover.style.left = rect.left + 'px';
-
-    document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
-    if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
-        popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
-    } else {
-        popover.style.top = rect.bottom + 2 + 'px';
-    }
-    activeGenderPopover = popover;
-}
 
 /* Global Escape handler — closes all popovers and modals */
 document.addEventListener('keydown', function (e) {
@@ -1203,51 +928,6 @@ function _fetchSongs(q, excludeId, callback) {
     fetch(url, { headers: _csrfHeaders({}) }).then(function(r) { return r.json(); }).then(callback).catch(function() { callback([]); });
 }
 
-function showAlbumMove(event, songId, span, currentAlbumId) {
-    event.stopPropagation();
-    closeAlbumMovePopover();
-    closeAlbumArtistMovePopover();
-    closeAlbumAddPopover();
-    closeAlbumSongSearchPopover();
-
-    var parts = _createSearchPopover({
-        title: 'Move to album:',
-        placeholder: 'Search albums or artists...',
-        anchor: span,
-    });
-    var listContainer = parts.listContainer;
-    var timer;
-
-    function doSearch() {
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-            _fetchAlbums(parts.searchInput.value, currentAlbumId, function(albums) {
-                _renderAlbumResults(albums, listContainer, function(item) {
-                    fetch('/edit/song/' + songId + '/move-album', {
-                        method: 'POST',
-                        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-                        body: 'album_id=' + item.id,
-                    }).then(function(r) {
-                        if (!r.ok) throw new Error('move failed');
-                        return r.json();
-                    }).then(function() {
-                        closeAlbumMovePopover();
-                        closeAlbumArtistMovePopover();
-                        window.location.reload();
-                    }).catch(function() {
-                        showToast('Failed to move song — try again');
-                        closeAlbumMovePopover();
-                        closeAlbumArtistMovePopover();
-                    });
-                });
-            });
-        }, 150);
-    }
-
-    doSearch();
-    parts.searchInput.addEventListener('input', doSearch);
-    activeAlbumMovePopover = parts.popover;
-}
 
 /* Move album songs to another artist popover */
 
@@ -1260,101 +940,6 @@ function closeAlbumArtistMovePopover() {
     }
 }
 
-function showAlbumArtistMove(event, albumId, sourceArtistId, span) {
-    event.stopPropagation();
-    closeAlbumArtistMovePopover();
-    closeAlbumMovePopover();
-    closeAlbumAddPopover();
-
-    var children = (typeof _childArtists !== 'undefined') ? _childArtists : [];
-    var allArtists = (typeof _allArtists !== 'undefined') ? _allArtists : [];
-    var others = allArtists.filter(function(a) { return a.id !== sourceArtistId; });
-    if (!others.length) {
-        closeAlbumArtistMovePopover();
-        showToast('No other artists available');
-        return;
-    }
-
-    var pinnedIds = {};
-    children.forEach(function(c) { pinnedIds[c.id] = true; });
-    // Also pin the page artist (parent) so subunit albums can move to it
-    if (typeof _currentArtistId !== 'undefined') pinnedIds[_currentArtistId] = true;
-
-    var parts = _createSearchPopover({
-        title: 'Move songs to artist:',
-        placeholder: 'Search artists...',
-        anchor: span,
-    });
-    var listContainer = parts.listContainer;
-
-    function renderList(filter) {
-        listContainer.innerHTML = '';
-        var lc = (filter || '').toLowerCase();
-        var pinned = [];
-        var rest = [];
-        others.forEach(function(a) {
-            if (lc && a.name.toLowerCase().indexOf(lc) === -1) return;
-            if (pinnedIds[a.id]) {
-                pinned.push(a);
-            } else {
-                rest.push(a);
-            }
-        });
-
-        if (pinned.length) {
-            var header = document.createElement('div');
-            header.textContent = 'Subunits / Soloists';
-            header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            listContainer.appendChild(header);
-            pinned.forEach(function(a) { listContainer.appendChild(makeRow(a)); });
-        }
-        if (rest.length) {
-            var header2 = document.createElement('div');
-            header2.textContent = 'All Artists';
-            header2.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
-            listContainer.appendChild(header2);
-            rest.forEach(function(a) { listContainer.appendChild(makeRow(a)); });
-        }
-        if (!pinned.length && !rest.length) {
-            var empty = document.createElement('div');
-            empty.textContent = 'No matches';
-            empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
-            listContainer.appendChild(empty);
-        }
-    }
-
-    function makeRow(a) {
-        var btn = document.createElement('div');
-        btn.textContent = a.name;
-        btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
-        btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-        btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-        btn.addEventListener('click', function() {
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/album/' + albumId + '/move-artist', {
-                method: 'POST',
-                headers: headers,
-                body: 'source_artist_id=' + sourceArtistId + '&target_artist_id=' + a.id,
-            }).then(function(r) {
-                if (!r.ok) throw new Error('move failed');
-                return r.json();
-            }).then(function(data) {
-                closeAlbumArtistMovePopover();
-                window.location.reload();
-            }).catch(function() {
-                showToast('Failed to move — try again');
-                closeAlbumArtistMovePopover();
-            });
-        });
-        return btn;
-    }
-
-    renderList('');
-    parts.searchInput.addEventListener('input', function() { renderList(parts.searchInput.value); });
-    activeAlbumArtistMovePopover = parts.popover;
-}
 
 /* Add song to additional album popover */
 
@@ -1367,49 +952,6 @@ function closeAlbumAddPopover() {
     }
 }
 
-function showAlbumAdd(event, songId, span, currentAlbumId) {
-    event.stopPropagation();
-    closeAlbumAddPopover();
-    closeAlbumMovePopover();
-    closeAlbumArtistMovePopover();
-    closeAlbumSongSearchPopover();
-
-    var parts = _createSearchPopover({
-        title: 'Add to album:',
-        placeholder: 'Search albums or artists...',
-        anchor: span,
-    });
-    var listContainer = parts.listContainer;
-    var timer;
-
-    function doSearch() {
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-            _fetchAlbums(parts.searchInput.value, currentAlbumId, function(albums) {
-                _renderAlbumResults(albums, listContainer, function(item) {
-                    fetch('/edit/song/' + songId + '/add-to-album', {
-                        method: 'POST',
-                        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-                        body: 'album_id=' + item.id,
-                    }).then(function(r) {
-                        if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
-                        if (!r.ok) throw new Error('failed');
-                        return r.json();
-                    }).then(function() {
-                        closeAlbumAddPopover();
-                        window.location.reload();
-                    }).catch(function() {
-                        closeAlbumAddPopover();
-                    });
-                });
-            });
-        }, 150);
-    }
-
-    doSearch();
-    parts.searchInput.addEventListener('input', doSearch);
-    activeAlbumAddPopover = parts.popover;
-}
 
 /* Add existing song to album (search popover) */
 
@@ -1422,408 +964,6 @@ function closeAlbumSongSearchPopover() {
     }
 }
 
-function showAlbumSongSearch(event, albumId, artistId, span) {
-    event.stopPropagation();
-    closeAlbumSongSearchPopover();
-    closeAlbumMovePopover();
-    closeAlbumArtistMovePopover();
-    closeAlbumAddPopover();
-
-    var parts = _createSearchPopover({
-        title: 'Add song to album:',
-        placeholder: 'Search existing or type new song name...',
-        width: '320px',
-        maxHeight: '360px',
-        anchor: span,
-    });
-    var popover = parts.popover;
-    var title = parts.title;
-    var searchInput = parts.searchInput;
-    var listContainer = parts.listContainer;
-
-    var debounceTimer = null;
-
-    var _createSongNum = 0;
-
-    function showCreateSongForm(name) {
-        // Switch popover to creation mode
-        listContainer.innerHTML = '';
-        searchInput.style.display = 'none';
-        title.textContent = 'Create new song:';
-        popover.style.width = '380px';
-
-        _createSongNum++;
-        var sn = _createSongNum;
-
-        var form = document.createElement('div');
-
-        // Song name
-        var nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.value = name;
-        nameInput.placeholder = 'Song name';
-        nameInput.className = 'create-song-name';
-        nameInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
-        form.appendChild(nameInput);
-
-        // Checkboxes row
-        var cbRow = document.createElement('div');
-        cbRow.style.cssText = 'display:flex; gap:10px; margin-bottom:6px;';
-        cbRow.innerHTML =
-            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-promoted" style="margin-right:2px;"> Promoted</label>' +
-            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-remix" style="margin-right:2px;"> Remix</label>' +
-            '<label style="font-size:11px; cursor:pointer;"><input type="checkbox" class="create-song-cover" style="margin-right:2px;"> Cover</label>';
-        form.appendChild(cbRow);
-
-        // Artists section
-        var artistLabel = document.createElement('div');
-        artistLabel.style.cssText = 'font-size:10px; font-weight:bold; color:var(--text-secondary); margin-bottom:3px;';
-        artistLabel.textContent = 'Artists:';
-        form.appendChild(artistLabel);
-
-        var artistContainer = document.createElement('div');
-        artistContainer.id = 'create-song-artists-' + sn;
-        artistContainer.style.cssText = 'margin-bottom:4px;';
-        form.appendChild(artistContainer);
-
-        // Artist dropdown
-        var artistSelect = document.createElement('select');
-        artistSelect.style.cssText = 'font-size:11px; padding:2px 4px; border:1px solid var(--border,#ccc); border-radius:3px; margin-bottom:8px;';
-        function refreshArtistSelect() {
-            var used = [];
-            artistContainer.querySelectorAll('.create-artist-row').forEach(function(r) {
-                if (r.dataset.artistId) used.push(parseInt(r.dataset.artistId));
-            });
-            var opts = '<option value="">+ Add artist...</option>';
-            if (typeof _allArtists !== 'undefined') {
-                _allArtists.forEach(function(a) {
-                    if (used.indexOf(a.id) === -1) {
-                        opts += '<option value="' + a.id + '">' + a.name.replace(/</g, '&lt;') + '</option>';
-                    }
-                });
-            }
-            artistSelect.innerHTML = opts;
-            artistSelect.value = '';
-        }
-
-        function addArtistRow(aid, aname, isMain) {
-            var row = document.createElement('div');
-            row.className = 'create-artist-row';
-            row.dataset.artistId = aid;
-            row.style.cssText = 'display:flex; align-items:center; gap:4px; margin-bottom:2px;';
-            var nameSpan = document.createElement('span');
-            nameSpan.textContent = aname;
-            nameSpan.style.cssText = 'font-size:11px;';
-            row.appendChild(nameSpan);
-            var roleSelect = document.createElement('select');
-            roleSelect.className = 'create-artist-role';
-            roleSelect.style.cssText = 'font-size:10px; padding:1px 3px; border:1px solid var(--border,#ccc); border-radius:3px;';
-            roleSelect.innerHTML = '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
-                                   '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>';
-            row.appendChild(roleSelect);
-            if (artistContainer.children.length > 0) {
-                var removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.textContent = 'x';
-                removeBtn.style.cssText = 'font-size:10px; color:var(--delete-button,#DC2626); cursor:pointer; background:none; border:none; padding:0 2px;';
-                removeBtn.addEventListener('click', function() { row.remove(); refreshArtistSelect(); });
-                row.appendChild(removeBtn);
-            }
-            artistContainer.appendChild(row);
-            refreshArtistSelect();
-        }
-
-        artistSelect.addEventListener('change', function() {
-            var id = parseInt(artistSelect.value);
-            if (!id) return;
-            var artist = _allArtists.find(function(a) { return a.id === id; });
-            if (artist) addArtistRow(id, artist.name, false);
-        });
-        form.appendChild(artistSelect);
-
-        // Auto-add current artist as main
-        var currentName = 'Current Artist';
-        if (typeof _allArtists !== 'undefined') {
-            var found = _allArtists.find(function(a) { return a.id === artistId; });
-            if (found) currentName = found.name;
-        }
-        addArtistRow(artistId, currentName, true);
-
-        // Misc artists section
-        var miscLabel = document.createElement('div');
-        miscLabel.style.cssText = 'font-size:10px; font-weight:bold; color:var(--text-secondary); margin-top:6px; margin-bottom:3px;';
-        miscLabel.textContent = 'Misc artists:';
-        form.appendChild(miscLabel);
-        var miscContainer = document.createElement('div');
-        miscContainer.className = 'create-song-misc-artists';
-        form.appendChild(miscContainer);
-        var _createMiscArtists = [];
-        function renderCreateMiscList() {
-            miscContainer.innerHTML = '';
-            _createMiscArtists.forEach(function(m, idx) {
-                var row = document.createElement('div');
-                row.style.cssText = 'display:flex; align-items:center; gap:4px; margin-bottom:2px;';
-                var nameSpan = document.createElement('span');
-                nameSpan.textContent = m.name;
-                nameSpan.style.cssText = 'font-size:11px; flex:1;';
-                row.appendChild(nameSpan);
-                var roleSelect = document.createElement('select');
-                roleSelect.style.cssText = 'font-size:10px; padding:1px 3px; border:1px solid var(--border,#ccc); border-radius:3px;';
-                roleSelect.innerHTML = '<option value="main"' + (m.is_main ? ' selected' : '') + '>Main</option><option value="feat"' + (!m.is_main ? ' selected' : '') + '>Featured</option>';
-                roleSelect.addEventListener('change', function() { m.is_main = this.value === 'main'; });
-                row.appendChild(roleSelect);
-                var removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.textContent = 'x';
-                removeBtn.style.cssText = 'font-size:10px; color:var(--delete-button,#DC2626); cursor:pointer; background:none; border:none; padding:0 2px;';
-                removeBtn.addEventListener('click', function() { _createMiscArtists.splice(idx, 1); renderCreateMiscList(); });
-                row.appendChild(removeBtn);
-                miscContainer.appendChild(row);
-            });
-        }
-        var miscSearchWrap = document.createElement('div');
-        miscSearchWrap.style.cssText = 'position:relative; margin-bottom:8px;';
-        var miscInput = document.createElement('input');
-        miscInput.type = 'text';
-        miscInput.placeholder = '+ Add misc artist...';
-        miscInput.style.cssText = 'font-size:11px; width:100%; padding:2px 4px; border:1px solid var(--border); border-radius:3px; box-sizing:border-box;';
-        var miscResults = document.createElement('div');
-        miscResults.style.cssText = 'max-height:120px; overflow-y:auto;';
-        var miscTimer;
-        function miscRefresh() {
-            clearTimeout(miscTimer);
-            var q = miscInput.value.trim();
-            miscTimer = setTimeout(function() {
-                fetch('/misc/search-artists?q=' + encodeURIComponent(q), { headers: _csrfHeaders({}) })
-                    .then(function(r) { return r.json(); })
-                    .then(function(items) {
-                        miscResults.innerHTML = '';
-                        var usedIds = _createMiscArtists.map(function(m) { return m.misc_artist_id; });
-                        items.forEach(function(item) {
-                            if (usedIds.indexOf(item.id) !== -1) return;
-                            var row = document.createElement('div');
-                            row.textContent = item.name;
-                            row.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px;';
-                            row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
-                            row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
-                            row.addEventListener('mousedown', function(e) {
-                                e.preventDefault();
-                            });
-                            row.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                _createMiscArtists.push({ misc_artist_id: item.id, name: item.name, is_main: false });
-                                renderCreateMiscList();
-                                miscInput.value = '';
-                                miscResults.innerHTML = '';
-                            });
-                            miscResults.appendChild(row);
-                        });
-                    });
-            }, 150);
-        }
-        miscInput.addEventListener('input', miscRefresh);
-        miscInput.addEventListener('focus', miscRefresh);
-        miscSearchWrap.appendChild(miscInput);
-        miscSearchWrap.appendChild(miscResults);
-        var miscCreateRow = document.createElement('div');
-        miscCreateRow.style.cssText = 'display:flex; gap:4px; align-items:center; margin-top:2px;';
-        var miscNewBtn = document.createElement('button');
-        miscNewBtn.type = 'button';
-        miscNewBtn.textContent = '+ New';
-        miscNewBtn.style.cssText = 'font-size:10px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button,#16a34a); color:var(--button-text,#fff); border:none; cursor:pointer;';
-        var miscCountrySel = document.createElement('select');
-        miscCountrySel.style.cssText = 'font-size:10px; padding:1px 4px; border:1px solid var(--border); border-radius:3px;';
-        var countries = (typeof _allCountries !== 'undefined') ? _allCountries : [];
-        var defaultCid = (typeof _currentArtistCountryId !== 'undefined') ? _currentArtistCountryId : '';
-        countries.forEach(function(c) {
-            var opt = document.createElement('option');
-            opt.value = c.id; opt.textContent = c.name;
-            if (c.id === defaultCid) opt.selected = true;
-            miscCountrySel.appendChild(opt);
-        });
-        miscNewBtn.addEventListener('click', function() {
-            var n = miscInput.value.trim();
-            if (!n) return;
-            var cid = parseInt(miscCountrySel.value);
-            fetch('/misc/add-misc-artist', {
-                method: 'POST',
-                headers: _csrfHeaders({'Content-Type': 'application/json'}),
-                body: JSON.stringify({name: n, country_id: cid}),
-            }).then(function(r) { return r.json(); }).then(function(d) {
-                _createMiscArtists.push({ misc_artist_id: d.id, name: d.name, is_main: false });
-                renderCreateMiscList();
-                miscInput.value = '';
-                miscRefresh();
-            });
-        });
-        miscCreateRow.appendChild(miscNewBtn);
-        miscCreateRow.appendChild(miscCountrySel);
-        miscSearchWrap.appendChild(miscCreateRow);
-        form.appendChild(miscSearchWrap);
-
-        // YouTube URL
-        var ytInput = document.createElement('input');
-        ytInput.type = 'text';
-        ytInput.placeholder = 'YouTube URL';
-        ytInput.className = 'create-song-youtube';
-        ytInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;';
-        form.appendChild(ytInput);
-
-        // Note
-        var noteInput = document.createElement('textarea');
-        noteInput.placeholder = 'Note';
-        noteInput.className = 'create-song-note';
-        noteInput.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px; min-height:48px; resize:vertical;';
-        form.appendChild(noteInput);
-
-        // Buttons row
-        var btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex; gap:6px; justify-content:flex-end;';
-        var cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.textContent = 'Back';
-        cancelBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:3px; background:var(--button-secondary,#e5e7eb); color:var(--text-primary); border:none; cursor:pointer;';
-        cancelBtn.addEventListener('click', function() {
-            searchInput.style.display = '';
-            title.textContent = 'Add song to album:';
-            popover.style.width = '320px';
-            doSearch(searchInput.value.trim());
-        });
-        btnRow.appendChild(cancelBtn);
-        var submitBtn = document.createElement('button');
-        submitBtn.type = 'button';
-        submitBtn.textContent = 'Create Song';
-        submitBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:3px; background:var(--edit-on-button,#2563EB); color:var(--button-text,#fff); border:none; cursor:pointer;';
-        submitBtn.addEventListener('click', function() {
-            var songName = form.querySelector('.create-song-name').value.trim();
-            if (!songName) { showToast('Song name is required'); return; }
-            var artists = [];
-            artistContainer.querySelectorAll('.create-artist-row').forEach(function(row) {
-                var role = row.querySelector('.create-artist-role');
-                artists.push({ artist_id: parseInt(row.dataset.artistId), is_main: role.value === 'main' });
-            });
-            if (!artists.length || !artists.some(function(a) { return a.is_main; })) {
-                showToast('At least one main artist is required'); return;
-            }
-            var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var headers = { 'Content-Type': 'application/json' };
-            if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-            fetch('/edit/album/' + albumId + '/create-song', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                    name: songName,
-                    artists: artists,
-                    misc_artists: _createMiscArtists.map(function(m) { return { misc_artist_id: m.misc_artist_id, is_main: m.is_main }; }),
-                    is_promoted: form.querySelector('.create-song-promoted').checked,
-                    is_remix: form.querySelector('.create-song-remix').checked,
-                    is_cover: form.querySelector('.create-song-cover').checked,
-                    youtube_url: form.querySelector('.create-song-youtube').value.trim() || null,
-                    note: form.querySelector('.create-song-note').value.trim() || null,
-                }),
-            }).then(function(r) {
-                if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
-                if (!r.ok) throw new Error('failed');
-                return r.json();
-            }).then(function(data) {
-                closeAlbumSongSearchPopover();
-                if (data && data.song_id) window.location.hash = 'song-' + data.song_id;
-                window.location.reload();
-            }).catch(function(err) {
-                if (err && err.message !== 'bad') {
-                    showToast('Error creating song');
-                    console.error('Create song error:', err);
-                }
-            });
-        });
-        btnRow.appendChild(submitBtn);
-        form.appendChild(btnRow);
-
-        listContainer.appendChild(form);
-        nameInput.focus();
-        nameInput.select();
-    }
-
-    function doSearch(query) {
-        if (query.length < 2) {
-            listContainer.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Type at least 2 characters...</div>';
-            return;
-        }
-        fetch('/edit/album/' + albumId + '/search-songs?q=' + encodeURIComponent(query))
-            .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
-            .then(function(results) {
-                listContainer.innerHTML = '';
-                // Always show create-new option at the top
-                var createBtn = document.createElement('div');
-                createBtn.style.cssText = 'padding:4px 6px; font-size:12px; cursor:pointer; border-radius:2px; border-bottom:1px solid var(--border,#ccc); padding-bottom:6px; margin-bottom:4px;';
-                var plus = document.createElement('span');
-                plus.textContent = '+ Create "' + query + '"';
-                plus.style.cssText = 'color:var(--link,#2563EB); font-weight:bold;';
-                createBtn.appendChild(plus);
-                createBtn.addEventListener('mouseenter', function() { createBtn.style.background = _hoverBg(); });
-                createBtn.addEventListener('mouseleave', function() { createBtn.style.background = ''; });
-                createBtn.addEventListener('click', function(e) { e.stopPropagation(); showCreateSongForm(query); });
-                listContainer.appendChild(createBtn);
-                if (!results.length) {
-                    var empty = document.createElement('div');
-                    empty.textContent = 'No existing songs found';
-                    empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
-                    listContainer.appendChild(empty);
-                    return;
-                }
-                var divider = document.createElement('div');
-                divider.textContent = 'Or add existing:';
-                divider.style.cssText = 'font-size:10px; font-weight:bold; color:var(--text-secondary); padding:4px 6px 2px;';
-                listContainer.appendChild(divider);
-                results.forEach(function(item) {
-                    var btn = document.createElement('div');
-                    btn.style.cssText = 'padding:4px 6px; font-size:12px; cursor:pointer; border-radius:2px;';
-                    var nameSpan = document.createElement('span');
-                    nameSpan.textContent = item.name;
-                    btn.appendChild(nameSpan);
-                    var detailSpan = document.createElement('span');
-                    detailSpan.textContent = ' — ' + item.artist + ' / ' + item.album;
-                    detailSpan.style.cssText = 'color:var(--text-secondary); font-size:11px;';
-                    btn.appendChild(detailSpan);
-                    btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
-                    btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
-                    btn.addEventListener('click', function() {
-                        var csrfToken = document.querySelector('meta[name="csrf-token"]');
-                        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-                        if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-                        fetch('/edit/album/' + albumId + '/add-song', {
-                            method: 'POST',
-                            headers: headers,
-                            body: 'song_id=' + item.id + '&artist_id=' + (typeof _currentArtistId !== 'undefined' ? _currentArtistId : ''),
-                        }).then(function(r) {
-                            if (r.status === 400) return r.json().then(function(d) { showToast(d.error || 'Failed'); throw new Error('bad'); });
-                            if (!r.ok) throw new Error('failed');
-                            return r.json();
-                        }).then(function() {
-                            closeAlbumSongSearchPopover();
-                            window.location.hash = 'song-' + item.id;
-                            window.location.reload();
-                        }).catch(function() {
-                            closeAlbumSongSearchPopover();
-                        });
-                    });
-                    listContainer.appendChild(btn);
-                });
-            })
-            .catch(function() {
-                listContainer.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Search failed</div>';
-            });
-    }
-
-    listContainer.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Type at least 2 characters...</div>';
-
-    searchInput.addEventListener('input', function() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() { doSearch(searchInput.value.trim()); }, 600);
-    });
-
-    activeAlbumSongSearchPopover = popover;
-}
 
 document.addEventListener('mousedown', function(e) {
     if (activeAlbumMovePopover && !activeAlbumMovePopover.contains(e.target)) {
@@ -3193,6 +2333,7 @@ function submitNewAlbum(artistId) {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
 
         fetch('/edit/artist/' + artistId + '/add-album', {
             method: 'POST',
@@ -3332,52 +2473,12 @@ document.addEventListener('click', function(e) {
 
 /* Remove song from album (no password required) */
 
-function confirmRemoveFromAlbum(songId, albumId, songName, albumName, songCount) {
-    var msg = 'Remove "' + songName + '" from "' + albumName + '"?';
-    if (songCount <= 1) {
-        msg += '\n\nThis is the last song in "' + albumName + '".';
-    }
-    msg += '\n\nIf this is the song\'s only album, the song will be deleted.';
-
-    if (songCount <= 1) {
-        // Show custom confirm with delete-album checkbox
-        var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;';
-        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-        overlay.innerHTML =
-            '<div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px; width:90%; max-width:420px;">' +
-                '<p style="margin-bottom:12px;">Remove "' + escapeHtml(songName) + '" from "' + escapeHtml(albumName) + '"?</p>' +
-                '<p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">This is the last song. If this is the song\'s only album, it will be deleted.</p>' +
-                '<label style="display:block; margin-bottom:16px; font-size:13px; cursor:pointer;">' +
-                    '<input type="checkbox" id="delete-album-cb" checked style="margin-right:6px;">Also delete the empty album "' + escapeHtml(albumName) + '"' +
-                '</label>' +
-                '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
-                    '<button type="button" onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:6px 16px; border:1px solid var(--border); border-radius:4px; background:var(--bg-primary); cursor:pointer;">Cancel</button>' +
-                    '<button type="button" id="confirm-remove-btn" style="padding:6px 16px; border:none; border-radius:4px; background:var(--delete-button); color:var(--button-text); cursor:pointer;">Remove</button>' +
-                '</div>' +
-            '</div>';
-        document.body.appendChild(overlay);
-        document.getElementById('confirm-remove-btn').onclick = function() {
-            var deleteAlbum = document.getElementById('delete-album-cb').checked;
-            overlay.remove();
-            doRemoveFromAlbum(songId, albumId, deleteAlbum);
-        };
-        // Escape to close
-        function onEsc(e) {
-            if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
-        }
-        document.addEventListener('keydown', onEsc);
-        return;
-    }
-
-    if (!confirm(msg)) return;
-    doRemoveFromAlbum(songId, albumId, false);
-}
 
 function doRemoveFromAlbum(songId, albumId, deleteAlbum) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
     var body = deleteAlbum ? 'delete_album=1' : '';
     fetch('/edit/song/' + songId + '/remove-from-album/' + albumId, {
         method: 'POST',
@@ -3497,34 +2598,6 @@ var _deleteRedirectUrl = null;
 
 var _deleteOnSuccess = null;
 
-function confirmDeleteAlbum(albumId, albumName) {
-    fetch('/edit/album/' + albumId + '/delete-info')
-        .then(function(r) {
-            if (!r.ok) throw new Error('status ' + r.status);
-            return r.json();
-        })
-        .then(function(data) {
-            var msg = albumName + ' will be permanently deleted.';
-            if (data.songs_deleted > 0) {
-                msg += '\n\n' + data.songs_deleted + ' song' + (data.songs_deleted !== 1 ? 's' : '') +
-                       ' and ' + data.ratings_deleted + ' rating' + (data.ratings_deleted !== 1 ? 's' : '') +
-                       ' will also be deleted.';
-                if (data.songs_deleted < data.songs) {
-                    msg += ' ' + (data.songs - data.songs_deleted) + ' song' +
-                           (data.songs - data.songs_deleted !== 1 ? 's' : '') +
-                           ' on other albums will be kept.';
-                }
-            } else if (data.songs > 0) {
-                msg += '\n\nAll ' + data.songs + ' song' + (data.songs !== 1 ? 's' : '') +
-                       ' are on other albums and will be kept.';
-            }
-            showDeleteConfirm('Delete album?', msg, '/edit/album/' + albumId + '/delete', true);
-        })
-        .catch(function() {
-            showDeleteConfirm('Delete album?', albumName + ' will be permanently deleted.',
-                              '/edit/album/' + albumId + '/delete', true);
-        });
-}
 
 function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl, onSuccess) {
     _deleteIsAjax = !!ajax;
@@ -3550,6 +2623,7 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl, onSu
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
         var body = new URLSearchParams(new FormData(form)).toString();
         fetch(form.action, {
             method: 'POST',
@@ -3788,33 +2862,7 @@ document.addEventListener('mousedown', function (e) {
     }
 });
 
-function splitSong(songId, albumId) {
-    var csrfToken = document.querySelector('meta[name="csrf-token"]');
-    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-    if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
-    fetch('/edit/song/' + songId + '/split', {
-        method: 'POST',
-        headers: headers,
-        body: 'album_id=' + albumId,
-    }).then(function(r) {
-        if (!r.ok) throw new Error('split failed');
-        return r.json();
-    }).then(function() {
-        window.location.reload();
-    }).catch(function() {
-        showToast('Failed to split song — try again');
-    });
-}
 
-function setDuplicateOverride(songId, albumId, artistId) {
-    fetch('/edit/song/' + songId + '/duplicate-override', {
-        method: 'POST',
-        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
-        body: 'album_id=' + albumId + '&artist_id=' + artistId
-    }).then(function (r) {
-        if (r.ok) { location.reload(); }
-    });
-}
 
 function importAlbumFromSpotify(artistId) {
     _importFromSpotify(artistId, '/edit/spotify-album', 'spotify-album-url', 'spotify-album-import-btn');
@@ -4305,10 +3353,9 @@ function _miscSelect(options, selected) {
     return sel;
 }
 function _csrfJson() {
-    var h = {'Content-Type':'application/json'};
-    var m = document.querySelector('meta[name="csrf-token"]');
-    if (m) h['X-CSRFToken'] = m.content;
-    return h;
+    // _csrfHeaders also adds X-Edit-Source for editors, which mutating /misc and
+    // /edit endpoints require.
+    return _csrfHeaders({'Content-Type': 'application/json'});
 }
 
 /* ---------- autocomplete helper ---------- */
