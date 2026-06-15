@@ -231,8 +231,12 @@ function mergeMiscDupe(btn) {
 }
 
 var _collabPopover = null;
-function _closeCollabPopover() { if (_collabPopover) { _collabPopover.remove(); _collabPopover = null; } }
-document.addEventListener('click', function(e) {
+var _collabDragCleanup = null;
+function _closeCollabPopover() {
+    if (_collabDragCleanup) { _collabDragCleanup(); _collabDragCleanup = null; }
+    if (_collabPopover) { _collabPopover.remove(); _collabPopover = null; }
+}
+document.addEventListener('mousedown', function(e) {
     if (_collabPopover && !_collabPopover.contains(e.target) && !e.target.classList.contains('collab-name-chip')) _closeCollabPopover();
 });
 
@@ -242,15 +246,44 @@ function resolveCollabName(event, songId, chip) {
     var name = chip.dataset.name;
 
     var pop = document.createElement('div');
-    pop.style.cssText = 'position:absolute;z-index:1000;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.3);padding:10px;width:300px;font-size:12px;';
-    var rect = chip.getBoundingClientRect();
-    pop.style.left = (window.scrollX + rect.left) + 'px';
-    pop.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    pop.style.cssText = 'position:fixed;z-index:1000;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.3);padding:10px;width:300px;font-size:12px;';
 
     var title = document.createElement('div');
     title.textContent = 'Link "' + name + '"';
-    title.style.cssText = 'font-weight:700;margin-bottom:6px;color:var(--text-primary);';
+    title.style.cssText = 'font-weight:700;margin-bottom:6px;color:var(--text-primary);cursor:move;user-select:none;';
+    title.title = 'Drag to move';
     pop.appendChild(title);
+
+    // Drag by the title bar.
+    (function() {
+        // The page can be CSS-zoomed (theme setting): getBoundingClientRect()/clientX are
+        // post-zoom, but style.left/top apply in pre-zoom px, so convert by the zoom factor.
+        var z = parseFloat(document.documentElement.style.zoom) || 1;
+        var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+        function onDown(e) {
+            dragging = true;
+            var r = pop.getBoundingClientRect();
+            pop.style.transform = 'none';
+            ox = r.left / z; oy = r.top / z;
+            pop.style.left = ox + 'px';
+            pop.style.top = oy + 'px';
+            sx = e.clientX; sy = e.clientY;
+            e.preventDefault();
+        }
+        function onMove(e) {
+            if (!dragging) return;
+            pop.style.left = (ox + (e.clientX - sx) / z) + 'px';
+            pop.style.top = (oy + (e.clientY - sy) / z) + 'px';
+        }
+        function onUp() { dragging = false; }
+        title.addEventListener('mousedown', onDown);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        _collabDragCleanup = function() {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+    })();
 
     var current = 'misc_existing';
     var modeRow = document.createElement('div');
