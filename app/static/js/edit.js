@@ -2729,7 +2729,7 @@ function submitSongNote(songId, noteText, tdEl) {
 document.addEventListener('contextmenu', function (e) {
     var td = e.target.closest('td.song-name-cell');
     if (!td) return;
-    if (!td.querySelector('.edit-inline')) return;
+    if (!window._canEdit) return;
     showSongNoteInput(e, td);
 });
 
@@ -2742,7 +2742,7 @@ document.addEventListener('mouseover', function (e) {
 document.addEventListener('keydown', function (e) {
     if (e.key !== 'n' || !_hoveredSongCell || activeSongNote) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-    if (!_hoveredSongCell.querySelector('.edit-inline')) return;
+    if (!window._canEdit) return;
     e.preventDefault();
     showSongNoteInput(e, _hoveredSongCell);
 });
@@ -2837,7 +2837,7 @@ function submitAlbumNote(albumId, noteText, tdEl) {
 document.addEventListener('contextmenu', function (e) {
     var td = e.target.closest('td.album-name-cell');
     if (!td) return;
-    if (!td.querySelector('.edit-inline')) return;
+    if (!window._canEdit) return;
     showAlbumNoteInput(e, td);
 });
 
@@ -2850,7 +2850,7 @@ document.addEventListener('mouseover', function (e) {
 document.addEventListener('keydown', function (e) {
     if (e.key !== 'n' || !_hoveredAlbumCell || activeAlbumNote) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-    if (!_hoveredAlbumCell.querySelector('.edit-inline')) return;
+    if (!window._canEdit) return;
     e.preventDefault();
     showAlbumNoteInput(e, _hoveredAlbumCell);
 });
