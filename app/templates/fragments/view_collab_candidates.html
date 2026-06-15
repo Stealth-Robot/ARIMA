@@ -22,8 +22,10 @@
             <td class="px-3 py-1 border border-grid-line">
                 {% for a in item.artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link">{{ a.name }}</a>{% endfor %}{% if not item.artists %}—{% endif %}
             </td>
-            <td class="px-3 py-1 border border-grid-line text-secondary-text italic">
-                {{ item.extracted_names | join(', ') or '—' }}
+            <td class="px-3 py-1 border border-grid-line">
+                {% if item.extracted_names %}
+                {% for nm in item.extracted_names %}<span class="collab-name-chip inline-block rounded px-2 py-0.5 mr-1 mb-1 cursor-pointer text-xs border border-border" style="background: var(--bg-primary);" data-name="{{ nm }}" onclick="resolveCollabName(event, {{ item.song_id }}, this)">{{ nm }}</span>{% endfor %}
+                {% else %}<span class="text-secondary-text">—</span>{% endif %}
             </td>
             <td class="px-3 py-1 text-center border border-grid-line">
                 <button onclick="dismissCollab({{ item.song_id }})"

@@ -52,6 +52,9 @@
 // (showArtistUserEdit) works even though view content is fetched via innerHTML.
 var _assignableUsers = [{% for u in assignable_users %}{ id: {{ u.id }}, username: {{ u.username | tojson }}, profileImage: {{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 
+// Countries for the "new misc artist" option in the collab-candidate name resolver.
+var _allCountries = [{% for c in countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
+
 // Inline owner/maintainer assignment for the "without a maintainer/owner" views.
 // On a real assignment the row no longer belongs in the list, so drop it and
 // decrement the section count. Assigning "Unassigned" leaves the row in place.
@@ -205,6 +208,142 @@ function dismissCollab(songId) {
         }
     });
 }
+var _collabPopover = null;
+function _closeCollabPopover() { if (_collabPopover) { _collabPopover.remove(); _collabPopover = null; } }
+document.addEventListener('click', function(e) {
+    if (_collabPopover && !_collabPopover.contains(e.target) && !e.target.classList.contains('collab-name-chip')) _closeCollabPopover();
+});
+
+function resolveCollabName(event, songId, chip) {
+    event.stopPropagation();
+    _closeCollabPopover();
+    var name = chip.dataset.name;
+
+    var pop = document.createElement('div');
+    pop.style.cssText = 'position:absolute;z-index:1000;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.3);padding:10px;width:300px;font-size:12px;';
+    var rect = chip.getBoundingClientRect();
+    pop.style.left = (window.scrollX + rect.left) + 'px';
+    pop.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+
+    var title = document.createElement('div');
+    title.textContent = 'Link "' + name + '"';
+    title.style.cssText = 'font-weight:700;margin-bottom:6px;color:var(--text-primary);';
+    pop.appendChild(title);
+
+    var current = 'misc_existing';
+    var modeRow = document.createElement('div');
+    modeRow.style.cssText = 'display:flex;gap:4px;margin-bottom:8px;';
+    var modeBtns = {};
+    [['misc_existing', 'Existing misc'], ['real_existing', 'Existing artist'], ['misc_new', 'New misc']].forEach(function(m) {
+        var btn = document.createElement('button');
+        btn.textContent = m[1];
+        btn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;border:1px solid var(--border);border-radius:4px;cursor:pointer;';
+        btn.onclick = function() { current = m[0]; setMode(); };
+        modeBtns[m[0]] = btn;
+        modeRow.appendChild(btn);
+    });
+    pop.appendChild(modeRow);
+
+    var searchInp = document.createElement('input');
+    searchInp.type = 'text';
+    searchInp.value = name;
+    searchInp.style.cssText = 'width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+    pop.appendChild(searchInp);
+
+    var countrySel = document.createElement('select');
+    countrySel.style.cssText = 'width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);margin-top:6px;display:none;';
+    _allCountries.forEach(function(c) {
+        var o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name;
+        countrySel.appendChild(o);
+    });
+    pop.appendChild(countrySel);
+
+    var createBtn = document.createElement('button');
+    createBtn.textContent = 'Create & link';
+    createBtn.style.cssText = 'width:100%;margin-top:6px;padding:6px;border:none;border-radius:4px;background:#2563EB;color:#fff;cursor:pointer;display:none;';
+    createBtn.onclick = function() {
+        var nm = searchInp.value.trim();
+        if (!nm) { alert('Enter a name'); return; }
+        _doLinkCollab(songId, chip, {type: 'misc_new', name: nm, country_id: parseInt(countrySel.value)});
+    };
+    pop.appendChild(createBtn);
+
+    var results = document.createElement('div');
+    results.style.cssText = 'margin-top:6px;max-height:200px;overflow-y:auto;';
+    pop.appendChild(results);
+
+    function setMode() {
+        Object.keys(modeBtns).forEach(function(k) {
+            var on = k === current;
+            modeBtns[k].style.background = on ? '#2563EB' : 'var(--bg-primary)';
+            modeBtns[k].style.color = on ? '#fff' : 'var(--text-primary)';
+        });
+        var isNew = current === 'misc_new';
+        countrySel.style.display = isNew ? 'block' : 'none';
+        createBtn.style.display = isNew ? 'block' : 'none';
+        results.style.display = isNew ? 'none' : 'block';
+        searchInp.placeholder = isNew ? 'New misc artist name' : 'Search...';
+        if (!isNew) doSearch();
+    }
+
+    var timer = null;
+    function doSearch() {
+        clearTimeout(timer);
+        if (current === 'misc_new') return;
+        var q = searchInp.value.trim();
+        if (q.length < 1) { results.innerHTML = ''; return; }
+        timer = setTimeout(function() {
+            var url = current === 'misc_existing'
+                ? '/misc/search-artists?q=' + encodeURIComponent(q)
+                : '/misc/search-real-artists?q=' + encodeURIComponent(q);
+            fetch(url, {headers: _csrfHeaders({})}).then(function(r) { return r.json(); }).then(function(items) {
+                results.innerHTML = '';
+                if (!items.length) { results.innerHTML = '<div style="color:var(--text-secondary);padding:4px;">No matches</div>'; return; }
+                items.forEach(function(it) {
+                    var d = document.createElement('div');
+                    d.textContent = it.name;
+                    d.style.cssText = 'padding:4px 6px;cursor:pointer;border-radius:3px;color:var(--text-primary);';
+                    d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
+                    d.onmouseleave = function() { d.style.background = ''; };
+                    d.onclick = function() {
+                        if (current === 'misc_existing') _doLinkCollab(songId, chip, {type: 'misc_existing', misc_artist_id: it.id});
+                        else _doLinkCollab(songId, chip, {type: 'real_existing', artist_id: it.artist_id});
+                    };
+                    results.appendChild(d);
+                });
+            });
+        }, 200);
+    }
+    searchInp.addEventListener('input', doSearch);
+
+    document.body.appendChild(pop);
+    _collabPopover = pop;
+    setMode();
+    searchInp.focus();
+    searchInp.select();
+}
+
+function _doLinkCollab(songId, chip, payload) {
+    payload.song_id = songId;
+    fetch('/views/link-collab-artist', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/json'}),
+        body: JSON.stringify(payload),
+    }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(j) { return {ok: r.ok, j: j}; });
+    }).then(function(res) {
+        if (!res.ok || (res.j && res.j.error)) { alert((res.j && res.j.error) || 'Link failed'); return; }
+        _closeCollabPopover();
+        chip.textContent = '✓ ' + (res.j.linked_name || chip.dataset.name) + ' (' + res.j.kind + ')';
+        chip.style.background = '#16a34a';
+        chip.style.color = '#fff';
+        chip.style.cursor = 'default';
+        chip.classList.remove('collab-name-chip');
+        chip.onclick = null;
+    });
+}
+
 function markInactive(btn, artistId) {
     fetch('/edit/artist/' + artistId + '/is-disbanded', {
         method: 'POST',

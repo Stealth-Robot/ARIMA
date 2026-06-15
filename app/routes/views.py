@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 
-from flask import Blueprint, render_template, session, request, abort
+from flask import Blueprint, render_template, session, request, abort, jsonify
 from flask_login import login_required, current_user
 
 from sqlalchemy import func
@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models.music import Song, Album, Artist, ArtistSong, AlbumSong, ArtistArtist, SongMiscArtist, MiscArtist
+from app.models.lookups import Country
 from app.models.not_duplicate import NotDuplicate
 from app.services.artist import SUBUNIT, SOLOIST
 from app.models.not_variant import NotVariant
@@ -105,7 +106,8 @@ def views_page():
     assignable_users = User.query.filter(
         User.sort_order.isnot(None)
     ).order_by(User.sort_order).all()
-    return render_template('views.html', counts=counts, assignable_users=assignable_users)
+    countries = Country.query.order_by(Country.country).all()
+    return render_template('views.html', counts=counts, assignable_users=assignable_users, countries=countries)
 
 
 @views_bp.route('/views/orphan-songs')
@@ -779,3 +781,53 @@ def dismiss_collab():
     except IntegrityError:
         db.session.rollback()
     return '', 204
+
+
+@views_bp.route('/views/link-collab-artist', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def link_collab_artist():
+    """Link an extracted collab name to a song as a featured artist — as an existing
+    misc artist, an existing real artist, or a newly created misc artist."""
+    from app.services.audit import log_change
+    data = request.get_json(silent=True) or {}
+    song_id = data.get('song_id')
+    link_type = data.get('type')
+    if not song_id:
+        abort(400)
+    song = db.session.get(Song, int(song_id))
+    if song is None:
+        abort(404)
+
+    if link_type == 'misc_existing':
+        ma = db.session.get(MiscArtist, int(data['misc_artist_id'])) if data.get('misc_artist_id') else None
+        if ma is None:
+            abort(404)
+        if db.session.get(SongMiscArtist, (song.id, ma.id)) is None:
+            db.session.add(SongMiscArtist(song_id=song.id, misc_artist_id=ma.id, artist_is_main=False))
+        linked_name, kind = ma.name, 'misc'
+    elif link_type == 'real_existing':
+        artist = db.session.get(Artist, int(data['artist_id'])) if data.get('artist_id') else None
+        if artist is None:
+            abort(404)
+        if db.session.get(ArtistSong, (artist.id, song.id)) is None:
+            db.session.add(ArtistSong(artist_id=artist.id, song_id=song.id, artist_is_main=False))
+        linked_name, kind = artist.name, 'artist'
+    elif link_type == 'misc_new':
+        name = (data.get('name') or '').strip()
+        country_id = data.get('country_id')
+        if not name or country_id is None:
+            return jsonify({'error': 'Name and country are required'}), 400
+        if db.session.get(Country, int(country_id)) is None:
+            return jsonify({'error': 'Invalid country'}), 400
+        ma = MiscArtist(name=name, country_id=int(country_id))
+        db.session.add(ma)
+        db.session.flush()
+        db.session.add(SongMiscArtist(song_id=song.id, misc_artist_id=ma.id, artist_is_main=False))
+        linked_name, kind = ma.name, 'misc'
+    else:
+        abort(400)
+
+    log_change(current_user, f'Linked "{linked_name}" as a collaborator on "{song.name}"', song=song, change_type='song')
+    db.session.commit()
+    return jsonify({'ok': True, 'linked_name': linked_name, 'kind': kind})
