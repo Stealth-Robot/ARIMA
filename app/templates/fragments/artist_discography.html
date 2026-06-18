@@ -26,6 +26,11 @@
         </label>
         {% endif %}
     </h2>
+    {% if artist.alt_names %}
+    <div class="text-xs text-secondary-text">
+        AKA {% for an in artist.alt_names %}{% if not loop.first %}, {% endif %}{{ an.name }}{% endfor %}
+    </div>
+    {% endif %}
     {% set show_owner = not artist.is_complete and artist.owner %}
     {% set show_user_fields = show_owner or artist.maintainer %}
     {% if show_user_fields %}
@@ -76,11 +81,6 @@
     {% if related_artists %}
     <span class="text-xs text-secondary-text">
         Related Group {% for ra in related_artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=ra.id) }}" class="text-link">{{ ra.name }}</a>{% endfor %}
-    </span>
-    {% endif %}
-    {% if artist.alt_names %}
-    <span class="text-xs text-secondary-text">
-        AKA {% for an in artist.alt_names %}{% if not loop.first %}, {% endif %}{{ an.name }}{% endfor %}
     </span>
     {% endif %}
     {% if last_updated %}
