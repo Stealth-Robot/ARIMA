@@ -76,8 +76,14 @@ function _emLabeledInput(container, field, data) {
     if (field.type === 'textarea') inp.rows = 3; else inp.type = 'text';
     inp.value = data[field.key] || '';
     if (field.placeholder) inp.placeholder = field.placeholder;
-    inp.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:12px;';
+    inp.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;' + (field.hint ? '' : ' margin-bottom:12px;');
     container.appendChild(inp);
+    if (field.hint) {
+        var h = document.createElement('div');
+        h.textContent = field.hint;
+        h.style.cssText = 'font-size:11px; color:var(--text-secondary,#6B7280); margin-top:4px; margin-bottom:12px;';
+        container.appendChild(h);
+    }
     return inp;
 }
 
@@ -147,7 +153,7 @@ function openEditModal(config) {
     title.style.cssText = 'font-size:16px; font-weight:600; color:var(--text-primary); margin-bottom:12px; word-wrap:break-word;';
     modal.appendChild(title);
     var bodyArea = document.createElement('div');
-    bodyArea.style.cssText = 'overflow-y:auto; flex:1;';
+    bodyArea.style.cssText = 'overflow-y:auto; flex:1; padding-right:20px; margin-right:-12px; scrollbar-gutter:stable;';
     bodyArea.textContent = 'Loading…';
     modal.appendChild(bodyArea);
     var footerArea = document.createElement('div');
@@ -385,6 +391,7 @@ function artistEditConfig(artistId) {
                     if (!d) { done(null); return; }
                     done({
                         name: d.name || '', spotify_url: d.spotify_url || '',
+                        image_url: d.image_url || '',
                         gender_id: d.gender_id, gender: d.gender || '',
                         country_id: d.country_id, country: d.country || '',
                         owner_id: d.owner_id, owner: d.owner || '',
@@ -413,6 +420,7 @@ function artistEditConfig(artistId) {
             { type: 'text', key: 'name', label: 'Artist Name', endpoint: pfx + '/name' },
             { type: 'namelist', key: 'alt_names', label: 'Alternate Names', endpoint: pfx + '/alt-names' },
             { type: 'url', key: 'spotify_url', label: 'Spotify URL', placeholder: 'https://open.spotify.com/…', endpoint: pfx + '/spotify-url', errorMsg: 'Invalid URL' },
+            { type: 'url', key: 'image_url', label: 'Image URL', placeholder: 'https://…', hint: 'Cropped to a 2:3 portrait ratio (centered) and shown at 60×90. Larger images are scaled down.', endpoint: pfx + '/image-url', errorMsg: 'Invalid URL' },
             { type: 'boolean', key: 'is_disbanded', label: 'Inactive', endpoint: pfx + '/is-disbanded' },
             { type: 'boolean', key: 'is_complete', label: 'Complete', endpoint: pfx + '/is-complete' },
             { type: 'boolean', key: 'is_tracked', label: 'Tracked', endpoint: pfx + '/is-tracked' },

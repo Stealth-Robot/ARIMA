@@ -107,6 +107,7 @@ class Artist(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     maintainer_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     spotify_url = db.Column(db.Text)
+    image_url = db.Column(db.Text)
 
     gender = db.relationship('GroupGender')
     country = db.relationship('Country')

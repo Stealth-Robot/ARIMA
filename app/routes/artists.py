@@ -870,6 +870,7 @@ def artist_edit_info(artist_id):
     return json.dumps({
         'name': a.name,
         'spotify_url': a.spotify_url or '',
+        'image_url': a.image_url or '',
         'gender_id': a.gender_id,
         'gender': a.gender.gender if a.gender else '',
         'country_id': a.country_id,

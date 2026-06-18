@@ -108,6 +108,29 @@ def artist_spotify_url(artist_id):
     return url or ''
 
 
+@edit_bp.route('/artist/<int:artist_id>/image-url', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_image_url(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    old = artist.image_url
+    artist.image_url = url
+    if url and not old:
+        log_change(current_user, f'Added image to "{artist.name}"', artist=artist, change_type='link')
+    elif not url and old:
+        log_change(current_user, f'Removed image from "{artist.name}"', artist=artist, change_type='link')
+    elif url != old:
+        log_change(current_user, f'Updated image on "{artist.name}"', artist=artist, change_type='link')
+    db.session.commit()
+    return url or ''
+
+
 @edit_bp.route('/artist/<int:artist_id>/country', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
