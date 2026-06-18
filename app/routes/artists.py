@@ -699,7 +699,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
             genre_set = set(genre_ids)
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
                                if sg_map.get(sid, set()) & genre_set}
-        if hide_osts and not edit_mode:
+        if hide_osts and not bypass_filters:
             ost_sids = set()
             misc_album_rows = db.session.query(AlbumSong.song_id, Album).join(
                 Album, Album.id == AlbumSong.album_id
