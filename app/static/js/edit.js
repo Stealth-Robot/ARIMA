@@ -2952,7 +2952,7 @@ function autoSpotifyStart() {
     if (spotifyUrl) form.append('spotify_url', spotifyUrl);
     form.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
 
-    fetch('/edit/artist/' + artistId + '/auto-spotify', {method: 'POST', body: form})
+    fetch('/edit/artist/' + artistId + '/auto-spotify', {method: 'POST', headers: _csrfHeaders(), body: form})
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data.error) throw new Error(data.error);
