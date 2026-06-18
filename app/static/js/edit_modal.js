@@ -81,6 +81,53 @@ function _emLabeledInput(container, field, data) {
     return inp;
 }
 
+/* One text box per name, with add/remove buttons. data[field.key] is a string[].
+   Returns { collect } yielding the trimmed, de-duped (case-insensitive) names. */
+function _emNameListField(container, field, data) {
+    var l = document.createElement('div');
+    l.textContent = field.label;
+    l.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:4px;';
+    container.appendChild(l);
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
+    container.appendChild(wrap);
+    function addRow(name) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:6px; align-items:center;';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.value = name || ''; inp.placeholder = field.placeholder || 'Alternate name';
+        inp.className = 'namelist-name';
+        inp.style.cssText = 'flex:1; min-width:0; border:1px solid var(--border,#ccc); border-radius:6px; padding:6px 8px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+        var del = _emBtn('✕', 'secondary');
+        del.style.padding = '6px 10px';
+        del.onclick = function() { wrap.removeChild(row); };
+        row.appendChild(inp); row.appendChild(del);
+        wrap.appendChild(row);
+    }
+    (data[field.key] || []).forEach(function(n) { addRow(n); });
+    var addBtn = _emBtn('+ Add name', 'secondary');
+    addBtn.style.cssText += 'margin-bottom:12px;';
+    addBtn.onclick = function() { addRow(''); };
+    container.appendChild(addBtn);
+    return {
+        collect: function() {
+            var out = [], seen = {};
+            var rows = wrap.children;
+            for (var i = 0; i < rows.length; i++) {
+                var nm = rows[i].querySelector('.namelist-name');
+                if (!nm) continue;
+                var v = nm.value.trim();
+                if (!v) continue;
+                var key = v.toLowerCase();
+                if (seen[key]) continue;
+                seen[key] = 1;
+                out.push(v);
+            }
+            return out;
+        }
+    };
+}
+
 /* ----------------------------------------------------------------------------
    openEditModal(config) — see file header for the config schema.
    ---------------------------------------------------------------------------- */
@@ -126,6 +173,7 @@ function openEditModal(config) {
         ensure: _emEnsure,
         infoRow: _emInfoRow,
         labeledInput: _emLabeledInput,
+        nameListField: _emNameListField,
         close: closeMobileModal,
         doClose: doClose,
         reload: function() { window.location.reload(); },
@@ -148,6 +196,16 @@ function openEditModal(config) {
                 if (r.ok) { data[field.key] = v; dirty = true; }
                 else if (field.errorMsg) _emToast(field.errorMsg);
             });
+    }
+
+    function _saveNameListField(field, widget) {
+        var names = widget.collect();
+        var prev = data[field.key] || [];
+        var unchanged = names.length === prev.length && names.every(function(n, i) { return n === prev[i]; });
+        if (unchanged) return null;
+        var body = 'value=' + encodeURIComponent(names.join('\n'));
+        return fetch(field.endpoint, { method: 'POST', headers: _emHeaders(), body: body })
+            .then(function(r) { if (r.ok) { data[field.key] = names; dirty = true; } });
     }
 
     function _booleanRow(field) {
@@ -205,10 +263,12 @@ function openEditModal(config) {
     function _defaultEditBody() {
         var fields = config.fields || [];
         var valueInputs = [];
+        var nameLists = [];
         fields.forEach(function(field) {
             if (VALUE_TYPES[field.type]) valueInputs.push({ field: field, input: _emLabeledInput(bodyArea, field, data) });
+            else if (field.type === 'namelist') nameLists.push({ field: field, widget: _emNameListField(bodyArea, field, data) });
         });
-        if (valueInputs.length) {
+        if (valueInputs.length || nameLists.length) {
             var saveRow = document.createElement('div');
             saveRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px;';
             var cancelBtn = _emBtn('Cancel', 'secondary'); cancelBtn.onclick = renderInfo;
@@ -216,6 +276,7 @@ function openEditModal(config) {
             saveBtn.onclick = function() {
                 var promises = [];
                 valueInputs.forEach(function(vi) { var p = _saveValueField(vi.field, vi.input); if (p) promises.push(p); });
+                nameLists.forEach(function(nl) { var p = _saveNameListField(nl.field, nl.widget); if (p) promises.push(p); });
                 Promise.all(promises).then(renderInfo);
             };
             saveRow.appendChild(cancelBtn); saveRow.appendChild(saveBtn);
@@ -329,7 +390,7 @@ function artistEditConfig(artistId) {
                         owner_id: d.owner_id, owner: d.owner || '',
                         maintainer_id: d.maintainer_id, maintainer: d.maintainer || '',
                         is_disbanded: !!d.is_disbanded, is_complete: !!d.is_complete, is_tracked: !!d.is_tracked,
-                        alt_names_text: (d.alt_names || []).join('\n'),
+                        alt_names: d.alt_names || [],
                         links: d.links || [],
                     });
                 })
@@ -340,7 +401,7 @@ function artistEditConfig(artistId) {
             if (data.is_disbanded) flags.push('Inactive');
             if (data.is_complete) flags.push('Complete');
             if (data.is_tracked) flags.push('Tracked');
-            var altNames = (data.alt_names_text || '').split('\n').filter(function(n) { return n.trim(); });
+            var altNames = data.alt_names || [];
             return [
                 ['Gender', data.gender], ['Country', data.country],
                 ['Owner', data.owner], ['Maintainer', data.maintainer],
@@ -350,7 +411,7 @@ function artistEditConfig(artistId) {
         },
         fields: [
             { type: 'text', key: 'name', label: 'Artist Name', endpoint: pfx + '/name' },
-            { type: 'textarea', key: 'alt_names_text', label: 'Alternate Names (one per line)', endpoint: pfx + '/alt-names' },
+            { type: 'namelist', key: 'alt_names', label: 'Alternate Names', endpoint: pfx + '/alt-names' },
             { type: 'url', key: 'spotify_url', label: 'Spotify URL', placeholder: 'https://open.spotify.com/…', endpoint: pfx + '/spotify-url', errorMsg: 'Invalid URL' },
             { type: 'boolean', key: 'is_disbanded', label: 'Inactive', endpoint: pfx + '/is-disbanded' },
             { type: 'boolean', key: 'is_complete', label: 'Complete', endpoint: pfx + '/is-complete' },
@@ -407,6 +468,7 @@ function albumEditConfig(albumId, albumName) {
                         release_date: d.release_date || '', album_type: d.album_type || '',
                         album_type_id: d.album_type_id || null, spotify_url: d.spotify_url || '',
                         genres: d.genres || [], genre_ids: d.genre_ids || [], songs: d.songs || [],
+                        alt_names: d.alt_names || [],
                     });
                 })
                 .catch(function() { done(null); });
@@ -421,6 +483,9 @@ function albumEditConfig(albumId, albumName) {
                 meta.textContent = metaBits.join(' · ');
                 meta.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:10px;';
                 bodyArea.appendChild(meta);
+            }
+            if (data.alt_names && data.alt_names.length) {
+                bodyArea.appendChild(ui.infoRow('Alternate Names', data.alt_names.join(', ')));
             }
             if (data.songs.length) {
                 var listWrap = document.createElement('div');
@@ -450,6 +515,7 @@ function albumEditConfig(albumId, albumName) {
             var nameInput = ui.labeledInput(bodyArea, { label: 'Album Name', key: 'name' }, data);
             var dateInput = ui.labeledInput(bodyArea, { label: 'Release Date', key: 'release_date', placeholder: 'YYYY-MM-DD' }, data);
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/…' }, data);
+            var altWidget = ui.nameListField(bodyArea, { key: 'alt_names', label: 'Alternate Names', endpoint: pfx + '/alt-names' }, data);
 
             var saveRow = document.createElement('div');
             saveRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end; margin-bottom:6px;';
@@ -468,6 +534,13 @@ function albumEditConfig(albumId, albumName) {
                 if (spotifyInput.value.trim() !== data.spotify_url) {
                     promises.push(fetch(pfx + '/spotify-url', { method: 'POST', headers: ui.headers(), body: 'value=' + encodeURIComponent(spotifyInput.value.trim()) })
                         .then(function(r) { if (r.ok) { data.spotify_url = spotifyInput.value.trim(); ui.markDirty(); } else ui.toast('Invalid URL'); }));
+                }
+                var altNames = altWidget.collect();
+                var prevAlt = data.alt_names || [];
+                var altChanged = altNames.length !== prevAlt.length || altNames.some(function(n, i) { return n !== prevAlt[i]; });
+                if (altChanged) {
+                    promises.push(fetch(pfx + '/alt-names', { method: 'POST', headers: ui.headers(), body: 'value=' + encodeURIComponent(altNames.join('\n')) })
+                        .then(function(r) { if (r.ok) { data.alt_names = altNames; ui.markDirty(); } }));
                 }
                 Promise.all(promises).then(ui.showInfo);
             };
@@ -683,7 +756,7 @@ function songEditConfig(cell) {
                 name: seedName, note: cell.getAttribute('data-song-note') || '',
                 main_artists: [], featured_artists: [], albums: [], genres: [],
                 is_lead: false, is_promoted: false, is_cover: false, is_remix: false,
-                spotify_url: '', youtube_url: '',
+                spotify_url: '', youtube_url: '', aliases: [],
             };
             if (!songId) { done(seed); return; }
             fetch('/song/' + songId + '/info', { headers: { 'Accept': 'application/json' } })
@@ -697,6 +770,7 @@ function songEditConfig(cell) {
                         seed.is_lead = !!d.is_lead; seed.is_promoted = !!d.is_promoted;
                         seed.is_cover = !!d.is_cover; seed.is_remix = !!d.is_remix;
                         seed.note = d.note || ''; seed.spotify_url = d.spotify_url || ''; seed.youtube_url = d.youtube_url || '';
+                        seed.aliases = d.aliases || [];
                     }
                     done(seed);
                 })
@@ -726,6 +800,14 @@ function songEditConfig(cell) {
                 bodyArea.appendChild(ui.infoRow(data.albums.length > 1 ? 'Albums' : 'Album', albumWrap));
             }
             if (data.genres && data.genres.length) bodyArea.appendChild(ui.infoRow('Genres', data.genres.join(', ')));
+
+            if (data.aliases && data.aliases.length) {
+                var aliasText = data.aliases.map(function(a) {
+                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : '');
+                    return a.name + tag;
+                }).join(', ');
+                bodyArea.appendChild(ui.infoRow('Alt names', aliasText));
+            }
 
             var tags = [];
             if (data.is_lead) tags.push('Lead');
@@ -768,6 +850,53 @@ function songEditConfig(cell) {
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
             var youtubeInput = ui.labeledInput(bodyArea, { label: 'YouTube URL', key: 'youtube_url', placeholder: 'https://…' }, data);
 
+            var aliasLabel = document.createElement('div');
+            aliasLabel.textContent = 'Alternative names';
+            aliasLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+            bodyArea.appendChild(aliasLabel);
+            var aliasWrap = document.createElement('div');
+            aliasWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
+            bodyArea.appendChild(aliasWrap);
+            function addAliasRow(name, lang) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; gap:6px; align-items:center;';
+                var nameInp = document.createElement('input');
+                nameInp.type = 'text'; nameInp.value = name || ''; nameInp.placeholder = 'Alternative name';
+                nameInp.className = 'alias-name';
+                nameInp.style.cssText = 'flex:1; min-width:0; border:1px solid var(--border,#ccc); border-radius:6px; padding:6px 8px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+                var sel = document.createElement('select');
+                sel.className = 'alias-lang';
+                sel.style.cssText = 'border:1px solid var(--border,#ccc); border-radius:6px; padding:6px; font-size:13px; background:var(--bg-primary,#fff); color:var(--text-primary);';
+                [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+                    var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
+                    if (o[0] === (lang || '')) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                var del = ui.btn('✕', 'secondary');
+                del.style.padding = '6px 10px';
+                del.onclick = function() { aliasWrap.removeChild(row); };
+                row.appendChild(nameInp); row.appendChild(sel); row.appendChild(del);
+                aliasWrap.appendChild(row);
+            }
+            (data.aliases || []).forEach(function(a) { addAliasRow(a.name, a.native_lang); });
+            var addAliasBtn = ui.btn('+ Add name', 'secondary');
+            addAliasBtn.style.cssText += 'margin-bottom:14px;';
+            addAliasBtn.onclick = function() { addAliasRow('', ''); };
+            bodyArea.appendChild(addAliasBtn);
+            function collectAliases() {
+                var out = [];
+                var rows = aliasWrap.children;
+                for (var i = 0; i < rows.length; i++) {
+                    var nm = rows[i].querySelector('.alias-name');
+                    var lg = rows[i].querySelector('.alias-lang');
+                    if (!nm) continue;
+                    var v = nm.value.trim();
+                    if (!v) continue;
+                    out.push({ name: v, native_lang: lg && lg.value ? lg.value : null });
+                }
+                return out;
+            }
+
             var actionRow = document.createElement('div');
             actionRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end;';
             var clearBtn = ui.btn('Clear', 'danger');
@@ -795,7 +924,14 @@ function songEditConfig(cell) {
                 }
                 var spotifyPromise = _urlPromise('spotify-url', spotifyInput.value.trim(), data.spotify_url);
                 var youtubePromise = _urlPromise('youtube-url', youtubeInput.value.trim(), data.youtube_url);
-                Promise.all([namePromise, notePromise, spotifyPromise, youtubePromise]).then(function(results) {
+                var aliasPromise = fetch('/edit/song/' + songId + '/aliases', {
+                    method: 'POST', headers: ui.headers({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ aliases: collectAliases() })
+                }).then(function(r) {
+                    if (!r.ok) return { ok: false };
+                    return r.json().then(function(j) { return { ok: true, aliases: j }; });
+                });
+                Promise.all([namePromise, notePromise, spotifyPromise, youtubePromise, aliasPromise]).then(function(results) {
                     var savedName = results[0];
                     var savedNote = results[1] ? results[1].trim() : '';
                     if (savedName) {
@@ -808,6 +944,9 @@ function songEditConfig(cell) {
                     data.note = savedNote;
                     if (savedNote) { cell.classList.add('has-song-note'); cell.setAttribute('data-song-note', savedNote); }
                     else { cell.classList.remove('has-song-note'); cell.removeAttribute('data-song-note'); }
+                    var aliasRes = results[4];
+                    if (aliasRes.ok) data.aliases = aliasRes.aliases || [];
+                    else ui.toast('Could not save alternative names — only one native JP and one native KR allowed.');
                     var sp = results[2], yt = results[3];
                     var badUrl = (sp.changed && !sp.ok) || (yt.changed && !yt.ok);
                     Promise.all([

@@ -549,6 +549,8 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     # Bulk-load all album-song mappings for relevant songs in one query
     all_album_songs = db.session.query(AlbumSong.album_id, Song, AlbumSong.track_number).join(
         Song, Song.id == AlbumSong.song_id
+    ).options(
+        selectinload(Song.aliases)
     ).filter(
         Song.id.in_(song_ids)
     ).order_by(AlbumSong.album_id, AlbumSong.track_number).all()
@@ -779,6 +781,7 @@ def song_info(song_id):
         'note': song.note or '',
         'spotify_url': song.spotify_url or '',
         'youtube_url': song.youtube_url or '',
+        'aliases': [{'name': a.name, 'native_lang': a.native_lang} for a in song.aliases],
     }), 200, {'Content-Type': 'application/json'}
 
 
@@ -800,6 +803,7 @@ def album_songs(album_id):
         'spotify_url': album.spotify_url or '',
         'genres': [g.genre for g in album.genres],
         'genre_ids': [g.id for g in album.genres],
+        'alt_names': [n.name for n in album.alt_names],
         'songs': [{
             'id': s.id,
             'name': s.name,

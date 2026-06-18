@@ -160,6 +160,46 @@ class Song(db.Model):
     genres = db.relationship('Genre', secondary=song_genres, backref='songs')
     misc_artists = db.relationship('MiscArtist', secondary=SongMiscArtist.__table__,
                                    back_populates='songs', viewonly=True)
+    aliases = db.relationship('SongAlias', back_populates='song',
+                              order_by='SongAlias.id', cascade='all, delete-orphan')
+
+    def display_name(self, native_ja=False, native_kr=False):
+        """Title to show given a viewer's native-display toggles.
+
+        Korean wins when a song has both native names and both toggles are on.
+        Falls back to the main name when no matching native alias exists.
+        """
+        ja = kr = None
+        for a in self.aliases:
+            if a.native_lang == 'ko':
+                kr = a.name
+            elif a.native_lang == 'ja':
+                ja = a.name
+        if native_kr and kr:
+            return kr
+        if native_ja and ja:
+            return ja
+        return self.name
+
+
+class SongAlias(db.Model):
+    __tablename__ = 'song_alias'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    song_id = db.Column(db.Integer, db.ForeignKey('song.id', ondelete='CASCADE'),
+                        nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    # NULL = plain searchable alias; 'ja' = native Japanese; 'ko' = native Korean.
+    native_lang = db.Column(db.Text)
+
+    song = db.relationship('Song', back_populates='aliases')
+
+    __table_args__ = (
+        db.Index('ix_song_alias_song_id', 'song_id'),
+        db.Index('ux_song_alias_native_ja', 'song_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'ja'")),
+        db.Index('ux_song_alias_native_ko', 'song_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'ko'")),
+    )
 
 
 class Album(db.Model):
@@ -179,6 +219,23 @@ class Album(db.Model):
     songs = db.relationship('Song', secondary=AlbumSong.__table__, back_populates='albums',
                             viewonly=True)
     genres = db.relationship('Genre', secondary=album_genres, backref='albums')
+    alt_names = db.relationship('AlbumAltName', back_populates='album',
+                                order_by='AlbumAltName.id',
+                                cascade='all, delete-orphan')
+
+
+class AlbumAltName(db.Model):
+    __tablename__ = 'album_alt_name'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    album_id = db.Column(db.Integer, db.ForeignKey('album.id', ondelete='CASCADE'),
+                         nullable=False)
+    name = db.Column(db.Text, nullable=False)
+
+    album = db.relationship('Album', back_populates='alt_names')
+
+    __table_args__ = (
+        db.Index('ix_album_alt_name_album_id', 'album_id'),
+    )
 
 
 class Rating(db.Model):

@@ -101,6 +101,8 @@ class UserSettings(db.Model):
     search_ignore_punctuation = db.Column(db.Boolean, nullable=False, default=False, server_default='0')
     stats_users_mobile_only = db.Column(db.Boolean, nullable=False, server_default='1')
     hide_disbanded_maintained = db.Column(db.Boolean, nullable=False, server_default='1')
+    display_native_ja = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_native_ko = db.Column(db.Boolean, nullable=False, server_default='0')
     edit_buttons = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
 
     EDIT_BUTTON_DEFAULTS = [

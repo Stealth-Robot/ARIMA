@@ -5,7 +5,7 @@ from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres, SongAlias
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
@@ -628,6 +628,7 @@ def merge_candidates(song_id):
         abort(404)
     country_ids, genre_ids = _get_filters()
     like = f'%{song.name}%'
+    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -637,7 +638,7 @@ def merge_candidates(song_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        Song.name.ilike(like),
+        db.or_(Song.name.ilike(like), Song.id.in_(alias_ids)),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
     )
@@ -665,6 +666,7 @@ def merge_search(song_id):
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
     country_ids, genre_ids = _get_filters()
     like = f'%{q}%'
+    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -674,7 +676,7 @@ def merge_search(song_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        Song.name.ilike(like),
+        db.or_(Song.name.ilike(like), Song.id.in_(alias_ids)),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
     )
@@ -1020,6 +1022,53 @@ def song_genres_edit(song_id):
     log_change(current_user, f'Set genres of "{song.name}" song to {", ".join(names) or "none"}', song=song)
     db.session.commit()
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/song/<int:song_id>/aliases', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_aliases_edit(song_id):
+    """Replace a song's alternative names.
+
+    Aliases make songs findable by romanized/translated titles. Each alias may be
+    tagged native_lang 'ja' or 'ko' to designate it the native Japanese/Korean name
+    (at most one of each). Expects JSON: {"aliases": [{"name", "native_lang"}, ...]}.
+    """
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    payload = request.get_json(silent=True) or {}
+    seen = set()
+    aliases = []
+    used_langs = set()
+    for item in payload.get('aliases', []):
+        name = (item.get('name') or '').strip()
+        if not name:
+            continue
+        key = name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        lang = (item.get('native_lang') or '').strip().lower() or None
+        if lang not in (None, 'ja', 'ko'):
+            abort(400)
+        if lang is not None:
+            if lang in used_langs:
+                abort(400)
+            used_langs.add(lang)
+        aliases.append((name, lang))
+
+    def _key(rows):
+        return sorted((n, l) for n, l in rows)
+    current = _key((a.name, a.native_lang) for a in song.aliases)
+    if current == _key(aliases):
+        return json.dumps([{'name': n, 'native_lang': l} for n, l in aliases]), 200, {'Content-Type': 'application/json'}
+    song.aliases = [SongAlias(name=n, native_lang=l) for n, l in aliases]
+    song.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Updated alternative names for "{song.name}" song', song=song)
+    db.session.commit()
+    return json.dumps([{'name': n, 'native_lang': l} for n, l in aliases]), 200, {'Content-Type': 'application/json'}
 
 
 @edit_bp.route('/picker/albums')

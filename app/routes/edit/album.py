@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 
 from sqlalchemy import func
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist, SongAlias, AlbumAltName
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
 from app.services.dates import is_valid_release_date
@@ -181,6 +181,41 @@ def album_genres_edit(album_id):
     return json.dumps(names), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/album/<int:album_id>/alt-names', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_alt_names(album_id):
+    """Replace an album's alternate-name list (one name per line in `value`).
+
+    Alternate names exist mainly to make hard-to-search albums findable; they
+    are matched alongside the main name in the Albums search section.
+    """
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    raw = request.form.get('value', '') or ''
+    seen = set()
+    names = []
+    for line in raw.replace('\r\n', '\n').split('\n'):
+        n = line.strip()
+        if not n:
+            continue
+        key = n.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(n)
+    old = [a.name for a in album.alt_names]
+    if old == names:
+        return jsonify(alt_names=names)
+    album.alt_names = [AlbumAltName(name=n) for n in names]
+    album.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Updated alternate names for "{album.name}" album', album=album)
+    db.session.commit()
+    return jsonify(alt_names=names)
+
+
 @edit_bp.route('/album/<int:album_id>/move-artist', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
@@ -353,6 +388,7 @@ def album_search_songs(album_id):
 
     country_ids, genre_ids = _get_filters()
     like = f'%{q}%'
+    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -362,7 +398,7 @@ def album_search_songs(album_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        Song.name.ilike(like),
+        db.or_(Song.name.ilike(like), Song.id.in_(alias_ids)),
         ArtistSong.artist_is_main == True,
     )
     if country_ids:

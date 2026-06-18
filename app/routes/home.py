@@ -241,7 +241,7 @@ def _get_rating_backlog():
     for r in song_artist_rows:
         artist_by_song.setdefault(r.song_id, r.artist_id)
 
-    songs = Song.query.filter(Song.id.in_(all_song_ids)).all()
+    songs = Song.query.options(selectinload(Song.aliases)).filter(Song.id.in_(all_song_ids)).all()
 
     backlog = {}
     backlog_song_ids = set()

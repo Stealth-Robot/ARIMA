@@ -189,7 +189,7 @@ def _build_country_data(country_id, bypass_filters=False):
                 'id': maid, 'name': ma_name, 'country_id': cid, 'is_main': is_main,
             })
 
-    songs = Song.query.filter(Song.id.in_(song_ids)).all()
+    songs = Song.query.options(selectinload(Song.aliases)).filter(Song.id.in_(song_ids)).all()
     song_map = {s.id: s for s in songs}
 
     sg_rows = db.session.execute(
