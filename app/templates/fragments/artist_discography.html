@@ -802,6 +802,16 @@ function submitConvertArtist() {
             <div style="padding:24px 24px 0; flex-shrink:0;">
                 <h3 class="text-lg font-bold mb-1 text-primary-text">Review Results</h3>
                 <div id="auto-spotify-summary" class="text-sm text-secondary-text mb-3"></div>
+                <div id="auto-spotify-select-first-wrap" class="mb-3" style="display:none;">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="checkbox" id="auto-spotify-select-first" class="cursor-pointer"
+                               onchange="autoSpotifySelectFirstAll(this)">
+                        <span class="text-primary-text">Check first option on all checkboxes</span>
+                    </label>
+                    <div class="text-xs font-bold mt-1" style="color:var(--delete-button);">
+                        IF USING THIS FEATURE YOU MUST CHECK EACH ENTRY BEFORE SUBMITTING
+                    </div>
+                </div>
             </div>
 
             <div style="overflow-y:auto; padding:0 24px; flex:1; min-height:0;">

@@ -2917,14 +2917,14 @@ function _importFromSpotify(artistId, endpoint, inputId, btnId) {
 
 /* ─── Auto-populate Spotify links ─── */
 
-function autoPopulateSpotify(artistId) {
+function autoPopulateSpotify(artistId, spotifyUrl) {
     var modal = document.getElementById('auto-spotify-modal');
     if (!modal) return;
     // Reset UI
     document.getElementById('auto-spotify-input-phase').style.display = '';
     document.getElementById('auto-spotify-progress-phase').style.display = 'none';
     document.getElementById('auto-spotify-review-phase').style.display = 'none';
-    document.getElementById('auto-spotify-url').value = '';
+    document.getElementById('auto-spotify-url').value = spotifyUrl || '';
     var startBtn = document.getElementById('auto-spotify-start-btn');
     if (startBtn) { startBtn.disabled = false; startBtn.textContent = 'Start'; }
     modal.style.display = 'flex';
@@ -3109,6 +3109,25 @@ function _showAutoSpotifyResults(data) {
     // Show/hide sections
     document.getElementById('auto-spotify-link-section').style.display = matchedByLink.length ? '' : 'none';
     document.getElementById('auto-spotify-review-section').style.display = needsReview.length ? '' : 'none';
+
+    // "Check first option on all" toggle — only relevant when there are review groups
+    var selectFirstWrap = document.getElementById('auto-spotify-select-first-wrap');
+    var selectFirst = document.getElementById('auto-spotify-select-first');
+    if (selectFirst) selectFirst.checked = false;
+    if (selectFirstWrap) selectFirstWrap.style.display = needsReview.length ? '' : 'none';
+}
+
+/* Master toggle: pick the first candidate radio for every needs-review song,
+   or revert each group to "None of these" when unchecked. */
+function autoSpotifySelectFirstAll(checkbox) {
+    var blocks = document.getElementById('auto-spotify-review-list').children;
+    for (var i = 0; i < blocks.length; i++) {
+        var radios = blocks[i].querySelectorAll('.auto-spotify-review-radio');
+        if (!radios.length) continue;
+        // First radio = top candidate; last radio = the "None of these" option.
+        var target = checkbox.checked ? radios[0] : radios[radios.length - 1];
+        target.checked = true;
+    }
 }
 
 function autoSpotifyConfirm() {

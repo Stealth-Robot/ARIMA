@@ -436,7 +436,7 @@ function artistEditConfig(artistId) {
                 { label: 'Convert to soloist', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('soloist'); } },
                 { label: 'Link related group', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('related'); } },
                 { label: 'Manage genres', run: function(ctx) { closeMobileModal(); if (typeof showBulkGenreModal === 'function') showBulkGenreModal(id, ctx.data.name); } },
-                { label: 'Auto-fill Spotify', run: function() { if (typeof autoPopulateSpotify === 'function') autoPopulateSpotify(id); } },
+                { label: 'Auto-fill Spotify', run: function(ctx) { if (typeof autoPopulateSpotify === 'function') autoPopulateSpotify(id, ctx && ctx.data ? ctx.data.spotify_url : null); } },
             ];
             (data.links || []).forEach(function(lnk) {
                 acts.push({ label: 'Unlink: ' + lnk.name, kind: 'danger',
