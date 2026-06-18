@@ -3,7 +3,7 @@
 {% block title %}A.R.I.M.A. — {% if artist %}{{ artist.name }}{% else %}Artists{% endif %}{% endblock %}
 {% block og_title %}{% if og_song %}{{ og_song.name }} — {{ artist.name }}{% elif artist %}A.R.I.M.A. - {{ artist.name }}{% else %}A.R.I.M.A. - Artists{% endif %}{% endblock %}
 {% block og_image %}{% if artist and artist.image_url %}{{ artist.image_url }}{% else %}{{ super() }}{% endif %}{% endblock %}
-{% block twitter_card %}{% if artist and artist.image_url %}summary_large_image{% else %}summary{% endif %}{% endblock %}
+{% block twitter_card %}{% if og_song and artist and artist.image_url %}summary_large_image{% else %}summary{% endif %}{% endblock %}
 {% block og_description %}{% if og_song %}{% if og_song.album %}{{ og_song.album }}{% if og_song.release_date %} ({{ og_song.release_date[:4] }}){% endif %}{% endif %}{% if og_song.genres %}{% if og_song.album %} · {% endif %}{{ og_song.genres | join(', ') }}{% endif %}{% if og_song.rating_summary %}{% if og_song.album or og_song.genres %} · {% endif %}{{ og_song.rating_summary }}{% endif %}{% elif artist %}Discography and ratings for {{ artist.name }} · {{ og_album_count }} album{{ 's' if og_album_count != 1 }} · {{ og_song_count }} song{{ 's' if og_song_count != 1 }}{% else %}Artist discographies and ratings{% endif %}{% endblock %}
 
 {% block content %}
