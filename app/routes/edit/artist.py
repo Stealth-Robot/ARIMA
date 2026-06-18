@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist, ArtistAltName
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug, SUBUNIT, SOLOIST, RELATED
 from app.services.audit import log_change
@@ -42,6 +42,42 @@ def artist_name(artist_id):
     log_change(current_user, f'Renamed "{old_name}" artist to "{name}"', artist=artist)
     db.session.commit()
     return jsonify(name=name, slug=artist.slug)
+
+
+@edit_bp.route('/artist/<int:artist_id>/alt-names', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_alt_names(artist_id):
+    """Replace an artist's alternate-name list (one name per line in `value`).
+
+    Alternate names exist mainly to make hard-to-search artists findable; they
+    are matched alongside the main name in the Artists search section.
+    """
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    raw = request.form.get('value', '') or ''
+    # One name per line; trim, drop blanks, dedupe case-insensitively (keep order).
+    seen = set()
+    names = []
+    for line in raw.replace('\r\n', '\n').split('\n'):
+        n = line.strip()
+        if not n:
+            continue
+        key = n.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(n)
+    old = [a.name for a in artist.alt_names]
+    if old == names:
+        return jsonify(alt_names=names)
+    artist.alt_names = [ArtistAltName(name=n) for n in names]
+    artist.last_updated = datetime.now(timezone.utc).isoformat()
+    log_change(current_user, f'Updated alternate names for "{artist.name}"', artist=artist)
+    db.session.commit()
+    return jsonify(alt_names=names)
 
 
 @edit_bp.route('/artist/<int:artist_id>/spotify-url', methods=['POST'])

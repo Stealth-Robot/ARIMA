@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist, ArtistAltName
 from app.services.search import like_contains, LIKE_ESCAPE, strip_punct, strip_punct_sql
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,15 @@ def search():
             ).all()}
 
     # --- Artists ---
-    artist_query = Artist.query.filter(field_match(Artist.name, like))
+    # Match the main name OR any alternate name (alt names exist to make
+    # hard-to-search artists findable).
+    alt_match_ids = {row[0] for row in db.session.query(ArtistAltName.artist_id).filter(
+        field_match(ArtistAltName.name, like)).all()}
+    if alt_match_ids:
+        artist_query = Artist.query.filter(db.or_(
+            field_match(Artist.name, like), Artist.id.in_(alt_match_ids)))
+    else:
+        artist_query = Artist.query.filter(field_match(Artist.name, like))
     if country_ids:
         artist_query = artist_query.filter(Artist.country_id.in_(country_ids))
     if genre_ids:

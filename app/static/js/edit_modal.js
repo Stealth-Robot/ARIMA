@@ -329,6 +329,7 @@ function artistEditConfig(artistId) {
                         owner_id: d.owner_id, owner: d.owner || '',
                         maintainer_id: d.maintainer_id, maintainer: d.maintainer || '',
                         is_disbanded: !!d.is_disbanded, is_complete: !!d.is_complete, is_tracked: !!d.is_tracked,
+                        alt_names_text: (d.alt_names || []).join('\n'),
                         links: d.links || [],
                     });
                 })
@@ -339,14 +340,17 @@ function artistEditConfig(artistId) {
             if (data.is_disbanded) flags.push('Inactive');
             if (data.is_complete) flags.push('Complete');
             if (data.is_tracked) flags.push('Tracked');
+            var altNames = (data.alt_names_text || '').split('\n').filter(function(n) { return n.trim(); });
             return [
                 ['Gender', data.gender], ['Country', data.country],
                 ['Owner', data.owner], ['Maintainer', data.maintainer],
+                altNames.length ? ['Alternate Names', altNames.join(', ')] : null,
                 flags.length ? ['Status', flags.join(', ')] : null,
             ];
         },
         fields: [
             { type: 'text', key: 'name', label: 'Artist Name', endpoint: pfx + '/name' },
+            { type: 'textarea', key: 'alt_names_text', label: 'Alternate Names (one per line)', endpoint: pfx + '/alt-names' },
             { type: 'url', key: 'spotify_url', label: 'Spotify URL', placeholder: 'https://open.spotify.com/…', endpoint: pfx + '/spotify-url', errorMsg: 'Invalid URL' },
             { type: 'boolean', key: 'is_disbanded', label: 'Inactive', endpoint: pfx + '/is-disbanded' },
             { type: 'boolean', key: 'is_complete', label: 'Complete', endpoint: pfx + '/is-complete' },

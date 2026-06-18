@@ -116,9 +116,26 @@ class Artist(db.Model):
                             viewonly=True)
     children = db.relationship('ArtistArtist', foreign_keys='ArtistArtist.artist_1',
                                back_populates='parent')
+    alt_names = db.relationship('ArtistAltName', back_populates='artist',
+                                order_by='ArtistAltName.id',
+                                cascade='all, delete-orphan')
 
     __table_args__ = (
         db.Index('ix_artist_country_id', 'country_id'),
+    )
+
+
+class ArtistAltName(db.Model):
+    __tablename__ = 'artist_alt_name'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete='CASCADE'),
+                          nullable=False)
+    name = db.Column(db.Text, nullable=False)
+
+    artist = db.relationship('Artist', back_populates='alt_names')
+
+    __table_args__ = (
+        db.Index('ix_artist_alt_name_artist_id', 'artist_id'),
     )
 
 

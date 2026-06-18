@@ -877,5 +877,6 @@ def artist_edit_info(artist_id):
         'is_disbanded': a.is_disbanded,
         'is_complete': a.is_complete,
         'is_tracked': a.is_tracked,
+        'alt_names': [n.name for n in a.alt_names],
         'links': links,
     }), 200, {'Content-Type': 'application/json'}
