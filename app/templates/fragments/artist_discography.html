@@ -184,6 +184,25 @@ function toggleChildSection(e, childId) {
     _saveCollapsed(state);
 }
 function toggleAlbum(e, albumId) {
+    // Editors tap an editable album header to open its edit modal, so for them
+    // collapsing is the arrow's job only. Non-editors — and non-editable "Misc"
+    // rows, which have no edit modal — collapse on any header click.
+    if (e && window._canEdit && e.target && !e.target.closest('.collapse-arrow')) {
+        var cell = e.target.closest('td.album-name-cell');
+        if (cell && /^\d+$/.test(cell.getAttribute('data-album-id') || '')) return;
+    }
+    var rows = document.querySelectorAll('.album-row-' + albumId);
+    var hidden = rows.length && rows[0].style.display === 'none';
+    var state = _getCollapsed();
+    if (hidden) {
+        _expandRows('album-row', albumId);
+        delete state['album-' + albumId];
+        _reapplyChildCollapses();
+    } else {
+        _collapseRows('album-row', albumId);
+        state['album-' + albumId] = 1;
+    }
+    _saveCollapsed(state);
 }
 function expandAllAlbums() {
     var state = _getCollapsed();

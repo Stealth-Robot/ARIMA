@@ -386,7 +386,7 @@ document.addEventListener('click', function(e) {
     if (!window._canEdit) return;
     var cell = e.target.closest('td.album-name-cell');
     if (!cell) return;
-    if (e.target.closest('a, button, svg, [title="Copy link to album"]')) return;
+    if (e.target.closest('a, button, svg, .collapse-arrow, [title="Copy link to album"]')) return;
     var albumId = parseInt(cell.getAttribute('data-album-id'), 10);
     if (!albumId) return;
     var name = '';
