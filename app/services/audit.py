@@ -8,6 +8,7 @@ from markupsafe import escape
 from app.extensions import db
 from app.models.changelog import Changelog
 from app.models.music import Artist, ArtistSong, AlbumSong
+from app.services.events import publish
 
 
 def _artist_url(artist):
@@ -163,3 +164,12 @@ def log_change(user, description, artist=None, album=None, song=None, change_typ
         description=full_desc,
         description_html=full_html,
     ))
+
+    # Broadcast a real-time content event so other viewers of this artist refresh.
+    # Ratings publish their own event (carrying the rated user) from the rating
+    # routes; deletes publish explicitly from their routes since the entity is
+    # already detached here and the artist can't be resolved.
+    if resolved_artist and change_type_id != 4:
+        _event_for = {0: 'song-update', 1: 'album-update', 2: 'artist-update', 5: 'link-update'}
+        publish(_event_for.get(change_type_id, 'song-update'),
+                {'artist_id': resolved_artist.id})

@@ -1000,10 +1000,11 @@ var _tooltipSelecting = false;
     });
 })();
 
-/* Real-time rating sync via polling */
+/* Real-time sync via polling */
 (function () {
     var pollSeq = 0;
-    var POLL_INTERVAL = 10000;
+    var POLL_INTERVAL = 5000;
+    var reloadTimers = {};
 
     function handleUpdate(data) {
         var cellId = 'rating-' + data.song_id + '-' + data.user_id;
@@ -1020,6 +1021,47 @@ var _tooltipSelecting = false;
             });
     }
 
+    function viewingArtistId() {
+        var el = document.querySelector('[data-current-artist-id]');
+        return el ? parseInt(el.getAttribute('data-current-artist-id'), 10) : null;
+    }
+
+    // Collapse bursts (reorders, bulk imports) into a single refresh per key.
+    function debounceReload(key, fn) {
+        if (reloadTimers[key]) clearTimeout(reloadTimers[key]);
+        reloadTimers[key] = setTimeout(function () { delete reloadTimers[key]; fn(); }, 500);
+    }
+
+    function handleContentEvent(eventType, data) {
+        var viewing = viewingArtistId();
+        if (viewing !== null) {
+            // Artist discography page — only react to events for this artist.
+            if (!data || data.artist_id !== viewing) return;
+            if (eventType === 'artist-delete') {
+                window.location.href = '/artists';
+                return;
+            }
+            debounceReload('artist-' + viewing, function () {
+                if (window.htmx && viewingArtistId() === viewing) {
+                    htmx.ajax('GET', '/artists/' + viewing, { target: '#discography', swap: 'innerHTML' });
+                }
+            });
+            return;
+        }
+        var path = window.location.pathname;
+        if (path === '/' && eventType !== 'misc-update') {
+            // Home — refresh the edit-driven sections (owned/maintained/backlog).
+            debounceReload('home', function () {
+                if (window.htmx && document.getElementById('home-live')) {
+                    htmx.ajax('GET', '/', { target: '#home-live', swap: 'innerHTML' });
+                }
+            });
+        } else if (path === '/misc' && typeof window._miscRefreshExpanded === 'function') {
+            // Misc — re-fetch any expanded country in place.
+            debounceReload('misc', window._miscRefreshExpanded);
+        }
+    }
+
     function poll() {
         fetch('/events/poll?since=' + pollSeq)
             .then(function (r) { if (!r.ok) return null; return r.json(); })
@@ -1028,6 +1070,7 @@ var _tooltipSelecting = false;
                 pollSeq = data.seq;
                 data.events.forEach(function (e) {
                     if (e.event === 'rating-update') handleUpdate(e.data);
+                    else handleContentEvent(e.event, e.data);
                 });
             })
             .catch(function () {});

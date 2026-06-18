@@ -18,10 +18,21 @@ from app.models.user import User
 from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
 from app.services.dates import is_valid_release_date
+from app.services.events import publish
 
 misc_bp = Blueprint('misc', __name__)
 
 GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: '--gender-anime'}
+
+
+@misc_bp.after_request
+def _broadcast_misc_change(response):
+    """Broadcast a misc-update after any successful misc mutation so other
+    viewers of the misc page refresh in place. Misc-artist operations log no
+    resolvable artist, so they don't emit a content event on their own."""
+    if request.method == 'POST' and response.status_code < 400:
+        publish('misc-update', {})
+    return response
 
 
 def _get_user_filters():

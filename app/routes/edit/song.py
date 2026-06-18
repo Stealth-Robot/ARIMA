@@ -9,6 +9,7 @@ from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating,
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
+from app.services.events import publish
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
@@ -374,6 +375,8 @@ def remove_song_from_album(song_id, album_id):
             album_obj.artist_id = fallback_artist_id
 
     db.session.commit()
+    if fallback_artist_id:
+        publish('song-update', {'artist_id': fallback_artist_id})
 
     if fallback_artist_id:
         return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))
@@ -493,6 +496,8 @@ def delete_song(song_id):
 
     log_change(current_user, f'Deleted "{song_name_val}" song', change_type='song')
     db.session.commit()
+    if fallback_artist_id:
+        publish('song-update', {'artist_id': fallback_artist_id})
 
     if fallback_artist_id:
         return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))

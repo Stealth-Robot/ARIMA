@@ -458,15 +458,20 @@ def home():
                            Changelog.query.with_entities(distinct(Changelog.user_id)).all()
                            if r[0] and r[0] != arima_user.id)
         arima_changelog_url = url_for('changelog.changelog', user_id=other_ids)
-    return render_template('home.html', owned_artists=owned,
-                           maintained_artists=maintained, backlog=backlog,
-                           ratings=ratings_map, users=users,
-                           gender_css=GENDER_CSS,
-                           hide_disbanded=hide_disbanded,
-                           has_any_maintained=has_any_maintained,
-                           can_rate=current_user.can_rate,
-                           misc_owner=rules.misc_owner if rules else None,
-                           arima_user=arima_user,
-                           arima_changelog_url=arima_changelog_url,
-                           sotd_today=sotd_today, sotd_history=sotd_history,
-                           og_sotd=_get_og_sotd())
+    ctx = dict(owned_artists=owned,
+               maintained_artists=maintained, backlog=backlog,
+               ratings=ratings_map, users=users,
+               gender_css=GENDER_CSS,
+               hide_disbanded=hide_disbanded,
+               has_any_maintained=has_any_maintained,
+               can_rate=current_user.can_rate,
+               misc_owner=rules.misc_owner if rules else None,
+               arima_user=arima_user,
+               arima_changelog_url=arima_changelog_url,
+               sotd_today=sotd_today, sotd_history=sotd_history,
+               og_sotd=_get_og_sotd())
+    # In-place live refresh: the poll loop re-fetches just the edit-driven
+    # sections (owned/maintained/backlog), leaving SOTD and shuffle untouched.
+    if request.headers.get('HX-Request'):
+        return render_template('fragments/home_live.html', **ctx)
+    return render_template('home.html', **ctx)

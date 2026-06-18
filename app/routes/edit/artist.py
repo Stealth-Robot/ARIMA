@@ -14,6 +14,7 @@ from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistA
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug, SUBUNIT, SOLOIST, RELATED
 from app.services.audit import log_change
+from app.services.events import publish
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
 
@@ -418,6 +419,7 @@ def delete_artist(artist_id):
     db.session.delete(artist)
     log_change(current_user, f'Deleted "{artist_name_val}" artist with {album_count} albums, {song_count} songs, {rating_count} ratings', change_type='artist')
     db.session.commit()
+    publish('artist-delete', {'artist_id': artist_id})
 
     return redirect(url_for('artists.artists_list'))
 

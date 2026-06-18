@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist, SongAlias, AlbumAltName
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
+from app.services.events import publish
 from app.services.dates import is_valid_release_date
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -623,6 +624,7 @@ def delete_album(album_id):
         close_orphaned_proxy_changes(sid, current_user)
 
     album_name_val = album.name
+    album_artist_id = album.artist_id
     # Resolve artist name: try album.artist_id first, fall back to song's main artist
     artist_name_val = None
     if album.artist:
@@ -638,6 +640,9 @@ def delete_album(album_id):
     context = f' ({artist_name_val})' if artist_name_val else ''
     log_change(current_user, f'Deleted "{album_name_val}" album{context} ({len(song_ids)} songs)', change_type='album')
     db.session.commit()
+    _evt_artist_id = album_artist_id or fallback_artist_id
+    if _evt_artist_id:
+        publish('album-update', {'artist_id': _evt_artist_id})
 
     if fallback_artist_id:
         return redirect(url_for('artists.artist_detail', artist_id=fallback_artist_id))

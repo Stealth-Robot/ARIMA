@@ -221,6 +221,23 @@ function _miscToggleCountry(cid) {
     return Promise.resolve();
 }
 
+/* Live refresh: re-fetch every expanded+loaded country in place (triggered by
+   the poll loop when another tab/user mutates misc data). */
+window._miscRefreshExpanded = function() {
+    Object.keys(_miscLoadedCountries).forEach(function(cid) {
+        if (!_miscLoadedCountries[cid]) return;
+        var arrow = document.getElementById('misc-country-arrow-' + cid);
+        if (!arrow || arrow.innerHTML !== '▼') return;
+        var header = document.getElementById('misc-country-' + cid);
+        if (!header) return;
+        fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
+            document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.remove(); });
+            header.insertAdjacentHTML('afterend', html);
+            _miscApplyFilters();
+        });
+    });
+};
+
 function _miscIsGenreCollapsed(arrow) {
     return arrow && arrow.style.transform && arrow.style.transform.indexOf('rotate') !== -1;
 }
