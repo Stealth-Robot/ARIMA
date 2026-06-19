@@ -4,10 +4,12 @@
 <!-- Artist header -->
 <div class="mb-3 pl-3 flex items-start gap-3" data-current-artist-id="{{ artist.id }}" style="border-left: 4px solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
     {% if artist.image_url %}
+    <a href="{{ artist.image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab">
     <img src="{{ artist.image_url }}" alt="{{ artist.name }}"
          referrerpolicy="no-referrer"
          onerror="this.onerror=null;this.style.display='none';"
-         class="flex-shrink-0 rounded object-cover" style="width:60px; height:90px; object-position:center;">
+         class="rounded object-cover cursor-pointer" style="width:60px; height:90px; object-position:center;">
+    </a>
     {% endif %}
     <div class="min-w-0">
     <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
