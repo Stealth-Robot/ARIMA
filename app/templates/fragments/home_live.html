@@ -79,6 +79,7 @@
             <tr>
                 <td colspan="{{ 1 + users|length }}" class="text-xs text-primary-text font-bold album-name-cell{% if current_user.is_editor_or_admin %} cursor-pointer{% endif %}" data-album-id="{{ album.id }}" style="padding: 2px 8px; border: none; border-bottom: 1px solid var(--border); background: var(--album-header-bg);">
                     {{ album.name }}{% if album.release_date %} · {{ album.release_date[:4] }}{% endif %}
+                    <div class="text-xxs font-normal" style="opacity: 0.85;">{{ album.album_type.type }}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}</div>
                 </td>
             </tr>
             {% for song in songs %}
