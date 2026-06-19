@@ -67,8 +67,11 @@
         {% endif %}
 
         <!-- Daily bar chart (built by JS using local dates) -->
-        <div id="daily-chart-bars" class="flex items-end gap-0.75 mt-4" style="height: 80px;"></div>
-        <div id="daily-chart-labels" class="flex gap-0.75 mt-1"></div>
+        <!-- Scrolls horizontally so date labels are never truncated when there are many days. -->
+        <div class="mt-4" style="overflow-x: auto; padding-bottom: 20px;">
+            <div id="daily-chart-bars" class="flex items-end gap-0.75" style="height: 80px; min-width: 100%; width: max-content;"></div>
+            <div id="daily-chart-labels" class="flex gap-0.75 mt-1" style="min-width: 100%; width: max-content;"></div>
+        </div>
 
         <!-- Hourly bar chart (all updates, ET timezone) -->
         <div class="mt-5 pt-4 border-t border-border">
@@ -216,7 +219,7 @@ var chartTip = (function() {
             }
         });
         var col = document.createElement('div');
-        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:8px; height:100%;';
+        col.style.cssText = 'flex:1 0 36px; display:flex; flex-direction:column; justify-content:flex-end; height:100%;';
         col.appendChild(bar);
         (function(html, colEl, barEl) {
             colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
@@ -224,7 +227,7 @@ var chartTip = (function() {
         })(tipHtml, col, bar);
         barsEl.appendChild(col);
         var label = document.createElement('div');
-        label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        label.style.cssText = 'flex:1 0 36px; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; white-space:nowrap;';
         var d = new Date(key + 'T12:00:00');
         label.textContent = isNaN(d) ? key : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         labelsEl.appendChild(label);
@@ -293,7 +296,7 @@ var chartTip = (function() {
 
         var label = document.createElement('div');
         label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px;';
-        label.textContent = h % 6 === 0 ? (h12 + ampm[0]) : '';
+        label.textContent = h % 6 === 0 ? (h12 + ampm) : '';
         labelsEl.appendChild(label);
     }
 })();
