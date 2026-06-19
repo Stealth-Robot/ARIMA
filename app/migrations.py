@@ -191,17 +191,6 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
-        # 4. Seed the misc-page creator (a read-only attribution with no edit UI).
-        #    Only sets it when unset, so it reaches new environments once and never
-        #    overrides a value set later.
-        from app.models.rules import Rules
-        rules = db.session.get(Rules, 1)
-        if rules and rules.misc_creator_id is None:
-            stealth = User.query.filter(db.func.lower(User.username) == 'stealth').first()
-            if stealth:
-                rules.misc_creator_id = stealth.id
-                logger.info('Seeded misc creator = %s', stealth.username)
-
         db.session.commit()
     except Exception:
         db.session.rollback()
