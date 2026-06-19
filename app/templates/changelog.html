@@ -17,7 +17,7 @@
                hx-target="#changelog-list"
                hx-swap="innerHTML"
                hx-include="#changelog-filters"
-               class="flex-1 px-3 py-2 border rounded border-border" style="min-width: 200px;">
+               class="flex-1 px-3 py-2 border rounded border-border" style="min-width: 12.5rem;">
         <!-- Users dropdown -->
         <div class="relative inline-block">
             <button type="button" id="users-toggle"
@@ -25,7 +25,7 @@
                     class="px-3 py-2 border rounded border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Users ▾
             </button>
-            <div id="users-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="users-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);">
                 <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" id="users-select-all" autocomplete="off"
                            {% if not user_ids or user_ids|length >= users|length %}checked{% endif %}
@@ -57,7 +57,7 @@
                     class="px-3 py-2 border rounded border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} ▾
             </button>
-            <div id="include-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="include-dropdown" class="filter-dropdown absolute top-full right-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="display: none; box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);">
                 {% for t in all_types %}
                 <label class="block py-0.5 text-sm- cursor-pointer">
                     <input type="checkbox" name="include" value="{{ t.type }}"
@@ -77,7 +77,7 @@
     </div>
 
     <!-- Filter summary -->
-    <div id="filter-summary" class="text-xs mb-4 text-secondary-text p-3" style="display: flex; flex-direction: column; gap: 6px;">
+    <div id="filter-summary" class="text-xs mb-4 text-secondary-text p-3" style="display: flex; flex-direction: column; gap: 0.375rem;">
         <div class="pl-2">Showing types: {{ shown | join(', ') or 'None' }}
         {% if hidden %}<span class="ml-4">Hiding types: {{ hidden | join(', ') }}</span>{% endif %}
         </div>

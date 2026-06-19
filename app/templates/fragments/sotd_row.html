@@ -1,18 +1,18 @@
 <tr class="sotd-row{% if sotd_past %} sotd-past-row{% endif %}" {% if sotd_past %}style="display: none;"{% endif %}>
-    <td class="sotd-date border border-grid-line text-secondary-text {% if can_hide_date %}hidden md:table-cell{% endif %}" style="padding: 4px 6px; width: 80px !important; min-width: 80px !important; white-space: nowrap;">{{ card.date_str }}</td>
+    <td class="sotd-date border border-grid-line text-secondary-text {% if can_hide_date %}hidden md:table-cell{% endif %}" style="padding: 0.25rem 0.375rem; width: 5rem !important; min-width: 5rem !important; white-space: nowrap;">{{ card.date_str }}</td>
     {% set _dn = song_display_name(card.song) %}
     <td class="song-name-cell{% if card.song.note %} has-song-note{% endif %} border border-grid-line"
         title="{{ _dn | e }}" data-song-id="{{ card.song.id }}"
         {% if card.song.note %}data-song-note="{{ card.song.note | e }}"{% endif %}
-        style="padding: 4px 6px 4px 16px; width: 200px; max-width: 200px;{% if card.song.is_promoted %} border-left: 4px solid var(--promoted-song);{% endif %}">
+        style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem;{% if card.song.is_promoted %} border-left: 0.25rem solid var(--promoted-song);{% endif %}">
         <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             <a href="{{ card.artist_url }}" class="text-secondary-text italic no-underline">{{ card.artist.name }}</a>{% if card.collab_label %} <span class="text-secondary-text italic">{{ card.collab_label }}</span>{% endif %}
         </div>
         <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            <a href="{{ card.artist_url }}?song={{ card.song.id }}#song-{{ card.song.id }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if card.song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if card.song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if card.song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if card.song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
+            <a href="{{ card.artist_url }}?song={{ card.song.id }}#song-{{ card.song.id }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if card.song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 1.1875rem; line-height: 1;">★</span>{% endif %}{% if card.song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if card.song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if card.song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
         </div>
         {% if card.album %}
-        <div class="text-secondary-text" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <div class="text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             {{ card.album.name }}{% if card.album.release_date %} ({{ card.album.release_date[:4] }}){% endif %}{% if card.album.genres %} &middot; {{ card.album.genres | map(attribute='genre') | join(', ') }}{% endif %}
         </div>
         {% endif %}

@@ -6,7 +6,7 @@
 
 {% if artists %}
 <div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-artists" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
-    <span class="search-section-arrow inline-block mr-1" data-section="search-artists" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Artists
+    <span class="search-section-arrow inline-block mr-1" data-section="search-artists" style="transition: transform 0.2s; font-size: 0.5rem;">&#9660;</span>Artists
 </div>
 <div class="search-section-body" data-section="search-artists">
 {% for a in artists %}
@@ -20,7 +20,7 @@
 
 {% if albums %}
 <div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-albums" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
-    <span class="search-section-arrow inline-block mr-1" data-section="search-albums" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Albums
+    <span class="search-section-arrow inline-block mr-1" data-section="search-albums" style="transition: transform 0.2s; font-size: 0.5rem;">&#9660;</span>Albums
 </div>
 <div class="search-section-body" data-section="search-albums">
 {% for album, artist in albums %}
@@ -34,7 +34,7 @@
 
 {% if songs %}
 <div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-songs" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
-    <span class="search-section-arrow inline-block mr-1" data-section="search-songs" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Songs
+    <span class="search-section-arrow inline-block mr-1" data-section="search-songs" style="transition: transform 0.2s; font-size: 0.5rem;">&#9660;</span>Songs
 </div>
 <div class="search-section-body" data-section="search-songs">
 {% for song, album, artist, artists_str in songs %}
@@ -48,7 +48,7 @@
 
 {% if misc_songs %}
 <div class="search-section-header py-1 px-3.5 text-2xs font-semibold uppercase border-b border-border cursor-pointer select-none" data-section="search-misc" style="background-color: var(--search-section-bg); color: var(--search-section-text);">
-    <span class="search-section-arrow inline-block mr-1" data-section="search-misc" style="transition: transform 0.2s; font-size: 8px;">&#9660;</span>Misc Songs
+    <span class="search-section-arrow inline-block mr-1" data-section="search-misc" style="transition: transform 0.2s; font-size: 0.5rem;">&#9660;</span>Misc Songs
 </div>
 <div class="search-section-body" data-section="search-misc">
 {% for song, album_name, artists_str in misc_songs %}

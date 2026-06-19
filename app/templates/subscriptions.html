@@ -5,7 +5,7 @@
 {% block og_description %}Manage your artist subscriptions{% endblock %}
 
 {% block content %}
-<div class="px-4 py-6" style="max-width: 700px; margin: 0 auto;">
+<div class="px-4 py-6" style="max-width: 43.75rem; margin: 0 auto;">
 
     <div class="flex items-center gap-2 mb-2">
         <div class="flex gap-1">
@@ -18,27 +18,27 @@
         </div>
         <input type="text" id="sub-search" placeholder="Filter..." autocomplete="off"
                class="rounded text-xs border border-border"
-               style="padding: 4px 10px; background: var(--bg-secondary); color: var(--text-primary); width: 100px; margin-left: auto;"
+               style="padding: 0.25rem 0.625rem; background: var(--bg-secondary); color: var(--text-primary); width: 6.25rem; margin-left: auto;"
                oninput="_searchCards()">
     </div>
     <div class="flex items-center gap-2 mb-4">
         <select id="sub-order" onchange="_applySort()"
                 class="rounded text-xs border border-border cursor-pointer"
-                style="padding: 4px 6px; background: var(--bg-secondary); color: var(--text-primary);">
+                style="padding: 0.25rem 0.375rem; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="first">Subscribed first</option>
             <option value="last">Subscribed last</option>
             <option value="default">Subscribed default</option>
         </select>
         <select id="sub-sort" onchange="_applySort()"
                 class="rounded text-xs border border-border cursor-pointer"
-                style="padding: 4px 6px; background: var(--bg-secondary); color: var(--text-primary);">
+                style="padding: 0.25rem 0.375rem; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="name">Name</option>
             <option value="my-pct">My %</option>
             <option value="remaining">Remaining</option>
             <option value="global-pct">Global %</option>
         </select>
         <button id="sort-dir-btn" onclick="_toggleSortDir()" class="cursor-pointer rounded text-xs border-0 px-2 py-1"
-                style="background: var(--edit-off-button); color: var(--button-text); min-width: 24px;"
+                style="background: var(--edit-off-button); color: var(--button-text); min-width: 1.5rem;"
                 title="Toggle sort direction">&darr;</button>
     </div>
 
@@ -51,7 +51,7 @@
              data-my-pct="{{ row.my_pct if row.my_pct is not none else -1 }}"
              data-remaining="{{ row.my_remaining }}"
              data-global-pct="{{ row.global_pct if row.global_pct is not none else -1 }}"
-             style="background-color: var(--bg-secondary); border-left: 4px solid var({{ gender_css[a.gender_id] }});">
+             style="background-color: var(--bg-secondary); border-left: 0.25rem solid var({{ gender_css[a.gender_id] }});">
             <div class="flex items-center gap-3 px-3 py-2">
                 <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}"
                    class="font-bold text-sm text-primary-text no-underline"
@@ -72,13 +72,13 @@
                         data-subscribed="{{ 'true' if row.is_subscribed else 'false' }}">{{ '✓ Subscribed' if row.is_subscribed else 'Subscribe' }}</button>
             </div>
 
-            <div class="flex items-center gap-3 px-3 text-xs text-secondary-text" style="padding-bottom: 8px;">
+            <div class="flex items-center gap-3 px-3 text-xs text-secondary-text" style="padding-bottom: 0.5rem;">
                 {% if row.my_pct is not none and row.song_count > 0 %}
-                <div style="flex: 1; max-width: 160px; display: flex; align-items: center; gap: 6px;">
-                    <div style="flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;">
-                        <div style="height: 100%; width: {{ row.my_pct }}%; border-radius: 3px; background: {{ pct_to_colour(row.my_pct) }}; transition: width 0.3s;"></div>
+                <div style="flex: 1; max-width: 10rem; display: flex; align-items: center; gap: 0.375rem;">
+                    <div style="flex: 1; height: 0.3125rem; border-radius: 0.1875rem; background: rgba(255,255,255,0.08); overflow: hidden;">
+                        <div style="height: 100%; width: {{ row.my_pct }}%; border-radius: 0.1875rem; background: {{ pct_to_colour(row.my_pct) }}; transition: width 0.3s;"></div>
                     </div>
-                    <span style="min-width: 28px; text-align: right;">{{ row.my_pct }}%</span>
+                    <span style="min-width: 1.75rem; text-align: right;">{{ row.my_pct }}%</span>
                 </div>
                 {% endif %}
                 <span style="margin-left: auto; white-space: nowrap;">

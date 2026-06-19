@@ -9,22 +9,22 @@
 {% set col_group = 220 %}
 {% set col_user = 65 %}
 {% set table_width = col_global + col_group + users|length * col_user %}
-<div class="mx-auto flex gap-3 items-start" style="max-width: fit-content; padding-bottom: 44px;">
-<div style="width: {{ table_width }}px;">
+<div class="mx-auto flex gap-3 items-start" style="max-width: fit-content; padding-bottom: 2.75rem;">
+<div style="width: {{ table_width / 16 }}rem;">
 
 <!-- SUMMARY TABLE — overall average across all displayed songs -->
 <table class="text-xs border-collapse table-fixed w-full border border-grid-line">
     <colgroup>
-        <col style="width: {{ col_global }}px">
-        <col style="width: {{ col_group }}px">
-        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
+        <col style="width: {{ col_global / 16 }}rem">
+        <col style="width: {{ col_group / 16 }}rem">
+        {% for u in users %}<col style="width: {{ col_user / 16 }}rem">{% endfor %}
     </colgroup>
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">Global</th>
-            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">Group</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">Global</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">Group</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -50,21 +50,21 @@
 </table>
 
 <!-- gap matching the artist-stats summary/detail separation -->
-<div style="height: 12px;"></div>
+<div style="height: 0.75rem;"></div>
 
 <!-- PER-ARTIST TABLE -->
 <table class="text-xs border-collapse table-fixed w-full border border-grid-line">
     <colgroup>
-        <col style="width: {{ col_global }}px">
-        <col style="width: {{ col_group }}px">
-        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
+        <col style="width: {{ col_global / 16 }}rem">
+        <col style="width: {{ col_group / 16 }}rem">
+        {% for u in users %}<col style="width: {{ col_user / 16 }}rem">{% endfor %}
     </colgroup>
     <thead>
         <tr>
-            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">Global</th>
-            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">Group</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">Global</th>
+            <th class="px-2 py-1 text-left sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">Group</th>
             {% for u in users %}
-            <th class="px-1 py-1 text-center sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 44px; outline: 1px solid var(--grid-line);">{{ u.username }}</th>
+            <th class="px-1 py-1 text-center sticky z-10 border border-grid-line bg-header-row overflow-hidden" style="top: 2.75rem; outline: 0.0625rem solid var(--grid-line);">{{ u.username }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -101,7 +101,7 @@
 </div>
 
 <!-- Key tables — standard (if enabled) + user's key (if enabled), sticky sidebar -->
-<div class="sticky self-start" style="top: 44px;">
+<div class="sticky self-start" style="top: 2.75rem;">
     {% set my = current_user.settings if current_user.is_authenticated and current_user.settings else None %}
     {% set show_default = my.show_default_key_bool if my else True %}
     {% set is_first_table = True %}
@@ -109,7 +109,7 @@
     <table class="text-xs border-collapse border border-grid-line">
         <thead>
             <tr>
-                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 180px; outline: 1px solid var(--grid-line);">Standard</th>
+                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 11.25rem; outline: 0.0625rem solid var(--grid-line);">Standard</th>
             </tr>
         </thead>
         <tbody>
@@ -127,10 +127,10 @@
     {% set is_first_table = False %}
     {% endif %}
     {% if my and my.show_my_key_bool %}
-    <table class="text-xs border-collapse border border-grid-line" style="{% if not is_first_table %} margin-top: 8px;{% endif %}">
+    <table class="text-xs border-collapse border border-grid-line" style="{% if not is_first_table %} margin-top: 0.5rem;{% endif %}">
         <thead>
             <tr>
-                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 180px; outline: 1px solid var(--grid-line);">{{ current_user.username }}</th>
+                <th class="px-1 py-1 text-center border border-grid-line bg-primary-bg font-bold" style="width: 11.25rem; outline: 0.0625rem solid var(--grid-line);">{{ current_user.username }}</th>
             </tr>
         </thead>
         <tbody>

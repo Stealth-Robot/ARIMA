@@ -120,7 +120,7 @@
 
 <!-- Reinvite modal -->
 <div id="reinvite-modal" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background-color: var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:24px; width:100%; max-width:400px;">
+    <div style="background-color: var(--bg-secondary); border:0.0625rem solid var(--border); border-radius:0.5rem; padding:1.5rem; width:100%; max-width:25rem;">
         <h3 class="font-semibold mb-3">Reinvite User</h3>
         <form id="reinvite-form" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

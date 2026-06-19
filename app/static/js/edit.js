@@ -45,7 +45,7 @@ function updateSongPill(checkbox) {
     var cell = row ? row.querySelector('td:first-child') : null;
     if (!cell) return;
     if (meta.cls === 'promoted-tag') {
-        cell.style.borderLeft = checkbox.checked ? '4px solid var(--promoted-song)' : '1px solid var(--grid-line)';
+        cell.style.borderLeft = checkbox.checked ? '0.25rem solid var(--promoted-song)' : '0.0625rem solid var(--grid-line)';
         if (!checkbox.checked) {
             var leadStar = cell.querySelector('.lead-star');
             if (leadStar) leadStar.remove();
@@ -58,7 +58,7 @@ function updateSongPill(checkbox) {
         if (!tag) {
             tag = document.createElement('span');
             tag.className = meta.cls + ' rounded ' + meta.bg + ' text-primary-text ml-1';
-            tag.style.cssText = 'font-size: 9px; padding: 1px 5px;';
+            tag.style.cssText = 'font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;';
             tag.textContent = meta.label;
             var myIdx = SONG_PILL_ORDER.indexOf(meta.cls);
             var nextPill = null;
@@ -107,7 +107,7 @@ function _setLeadVisual(row, songId, isLead) {
         if (!star) {
             star = document.createElement('span');
             star.className = 'lead-star mr-1';
-            star.style.cssText = 'color: var(--lead-song); font-size: 19px; cursor: pointer; line-height: 1;';
+            star.style.cssText = 'color: var(--lead-song); font-size: 1.1875rem; cursor: pointer; line-height: 1;';
             star.textContent = '★';
             star.setAttribute('data-song-id', songId);
             var pill = cell.querySelector('.promoted-tag');
@@ -178,7 +178,7 @@ function showArtistNameEdit(event, endpoint, span) {
     var input = document.createElement('input');
     input.type = 'text';
     input.value = original;
-    input.style.cssText = 'border:1px solid var(--link,#2563EB); border-radius:2px; font-size:inherit; font-family:inherit; font-weight:inherit; padding:0 2px; width:' + Math.max(80, span.offsetWidth + 20) + 'px; background:var(--bg-primary); color:var(--text-primary);';
+    input.style.cssText = 'border:0.0625rem solid var(--link,#2563EB); border-radius:0.125rem; font-size:inherit; font-family:inherit; font-weight:inherit; padding:0 0.125rem; width:' + Math.max(80, span.offsetWidth + 20) + 'px; background:var(--bg-primary); color:var(--text-primary);';
     span.replaceWith(input);
     input.focus();
     input.select();
@@ -240,11 +240,11 @@ function promptLocalUrl(btnEl, dataKey, label, opts) {
     var currentValue = songDiv ? (songDiv.dataset[dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();})] || '') : '';
 
     var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed; z-index:110; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB); border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:320px; top:50%; left:50%; transform:translate(-50%,-50%);';
+    popover.style.cssText = 'position:fixed; z-index:110; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB); border-radius:0.25rem; padding:0.5rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:20rem; top:50%; left:50%; transform:translate(-50%,-50%);';
 
     var title = document.createElement('div');
     title.textContent = label;
-    title.style.cssText = 'font-size:12px; font-weight:bold; margin-bottom:6px; color:var(--text-primary);';
+    title.style.cssText = 'font-size:0.75rem; font-weight:bold; margin-bottom:0.375rem; color:var(--text-primary);';
     popover.appendChild(title);
     _makeDraggable(popover, title);
 
@@ -252,20 +252,20 @@ function promptLocalUrl(btnEl, dataKey, label, opts) {
     if (!opts.multiline) input.type = 'text';
     input.value = currentValue;
     input.placeholder = opts.placeholder || 'https://...';
-    input.style.cssText = 'width:100%; font-size:12px; padding:4px 6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:6px;' + (opts.multiline ? ' min-height:60px; resize:vertical;' : '');
+    input.style.cssText = 'width:100%; font-size:0.75rem; padding:0.25rem 0.375rem; border:0.0625rem solid var(--border,#ccc); border-radius:0.1875rem; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box; margin-bottom:0.375rem;' + (opts.multiline ? ' min-height:3.75rem; resize:vertical;' : '');
     popover.appendChild(input);
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:4px; justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex; gap:0.25rem; justify-content:flex-end;';
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--button-secondary,#6B7280); color:var(--button-text,#fff); border:none; border-radius:3px; cursor:pointer;';
+    cancelBtn.style.cssText = 'padding:0.1875rem 0.625rem; font-size:0.6875rem; background:var(--button-secondary,#6B7280); color:var(--button-text,#fff); border:none; border-radius:0.1875rem; cursor:pointer;';
     cancelBtn.onclick = closeUrlPopover;
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:3px 10px; font-size:11px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    saveBtn.style.cssText = 'padding:0.1875rem 0.625rem; font-size:0.6875rem; background:var(--link,#2563EB); color:#fff; border:none; border-radius:0.1875rem; cursor:pointer;';
     saveBtn.onclick = function() {
         var val = input.value.trim();
         var camelKey = dataKey.replace(/_([a-z])/g, function(m,c){return c.toUpperCase();});
@@ -300,9 +300,9 @@ function showInlineEdit(event, endpoint, span) {
     input.type = 'text';
     input.value = original === 'date' ? '' : original;
     input.style.cssText = `
-        border: 1px solid var(--link, #2563EB); border-radius: 2px;
+        border: 0.0625rem solid var(--link, #2563EB); border-radius: 0.125rem;
         font-size: inherit; font-family: inherit; font-weight: inherit;
-        padding: 0 2px;
+        padding: 0 0.125rem;
         width: ${Math.max(80, span.offsetWidth + 20)}px;
         background: var(--bg-primary); color: var(--text-primary);
     `;
@@ -370,10 +370,10 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
     const input = document.createElement('input');
     input.value = currentFullDate || '';
     input.style.cssText = `
-        border: 1px solid var(--link, #2563EB); border-radius: 2px;
-        font-size: inherit; padding: 0 2px;
+        border: 0.0625rem solid var(--link, #2563EB); border-radius: 0.125rem;
+        font-size: inherit; padding: 0 0.125rem;
         background: var(--bg-primary); color: var(--text-primary);
-        width: 100px;
+        width: 6.25rem;
     `;
     applyDateFormat(input);
 
@@ -458,23 +458,23 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
 
     var popover = document.createElement('div');
     popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:180px; max-height:240px; display:flex; flex-direction:column;';
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB);' +
+        'border-radius:0.25rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:11.25rem; max-height:15rem; display:flex; flex-direction:column;';
 
     var listWrap = document.createElement('div');
-    listWrap.style.cssText = 'overflow-y:auto; flex:1; padding:8px 8px 0;';
+    listWrap.style.cssText = 'overflow-y:auto; flex:1; padding:0.5rem 0.5rem 0;';
     popover.appendChild(listWrap);
 
     var selected = currentIds.slice();
 
     allGenres.forEach(function(g) {
         var label = document.createElement('label');
-        label.style.cssText = 'display:block; font-size:12px; padding:2px 0; cursor:pointer;';
+        label.style.cssText = 'display:block; font-size:0.75rem; padding:0.125rem 0; cursor:pointer;';
         var cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.value = g.id;
         cb.checked = selected.indexOf(g.id) !== -1;
-        cb.style.marginRight = '4px';
+        cb.style.marginRight = '0.25rem';
         cb.addEventListener('change', function() {
             if (this.checked) { selected.push(g.id); }
             else { selected = selected.filter(function(x) { return x !== g.id; }); }
@@ -485,11 +485,11 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
     });
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:4px; padding:6px 8px; justify-content:flex-end; flex-shrink:0; border-top:1px solid var(--border,#ccc);';
+    btnRow.style.cssText = 'display:flex; gap:0.25rem; padding:0.375rem 0.5rem; justify-content:flex-end; flex-shrink:0; border-top:0.0625rem solid var(--border,#ccc);';
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:2px 10px; font-size:12px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    saveBtn.style.cssText = 'padding:0.125rem 0.625rem; font-size:0.75rem; background:var(--link,#2563EB); color:#fff; border:none; border-radius:0.1875rem; cursor:pointer;';
     saveBtn.onclick = function() {
         var csrfToken = document.querySelector('meta[name="csrf-token"]');
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
@@ -520,7 +520,7 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:2px 10px; font-size:12px; background:#6B7280; color:#fff; border:none; border-radius:3px; cursor:pointer;';
+    cancelBtn.style.cssText = 'padding:0.125rem 0.625rem; font-size:0.75rem; background:#6B7280; color:#fff; border:none; border-radius:0.1875rem; cursor:pointer;';
     cancelBtn.onclick = closeGenrePopover;
 
     btnRow.appendChild(cancelBtn);
@@ -531,8 +531,7 @@ function showGenreEdit(event, albumId, span, allGenres, currentIds) {
     popover.style.left = rect.left + 'px';
 
     document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
+    var viewH = window.innerHeight;
     if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
         popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
     } else {
@@ -587,7 +586,7 @@ function closeArtistUserPopover() {
 
 function _renderUserRow(userId, username, imageUrl, isCurrent) {
     var row = document.createElement('div');
-    row.style.cssText = 'padding:4px 6px; font-size:12px; cursor:pointer; border-radius:2px; display:flex; align-items:center; gap:6px;';
+    row.style.cssText = 'padding:0.25rem 0.375rem; font-size:0.75rem; cursor:pointer; border-radius:0.125rem; display:flex; align-items:center; gap:0.375rem;';
     if (isCurrent) row.style.fontWeight = 'bold';
     row.addEventListener('mouseenter', function() { row.style.background = _hoverBg(); });
     row.addEventListener('mouseleave', function() { row.style.background = ''; });
@@ -595,12 +594,12 @@ function _renderUserRow(userId, username, imageUrl, isCurrent) {
         var img = document.createElement('img');
         img.src = imageUrl || '/static/img/default_image.png';
         img.referrerPolicy = 'no-referrer';
-        img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0;';
+        img.style.cssText = 'width:1.125rem;height:1.125rem;border-radius:50%;object-fit:cover;flex-shrink:0;';
         img.onerror = function() { img.onerror = null; img.src = '/static/img/default_image.png'; };
         row.appendChild(img);
     } else {
         var placeholder = document.createElement('span');
-        placeholder.style.cssText = 'width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
+        placeholder.style.cssText = 'width:1.125rem;height:1.125rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
         placeholder.textContent = '—';
         row.appendChild(placeholder);
     }
@@ -621,7 +620,7 @@ function _updateArtistUserSpan(span, userId, username, imageUrl) {
     img.src = imageUrl || '/static/img/default_image.png';
     img.referrerPolicy = 'no-referrer';
     img.className = 'rounded-full object-cover';
-    img.style.cssText = 'width:18px;height:18px;';
+    img.style.cssText = 'width:1.125rem;height:1.125rem;';
     img.onerror = function() { img.onerror = null; img.src = '/static/img/default_image.png'; };
     content.appendChild(img);
     content.appendChild(document.createTextNode(username));
@@ -633,8 +632,8 @@ function showArtistUserEdit(event, artistId, span, kind, onCommit) {
 
     var popover = document.createElement('div');
     popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:220px; max-height:320px; overflow-y:auto;';
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB);' +
+        'border-radius:0.25rem; padding:0.5rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:13.75rem; max-height:20rem; overflow-y:auto;';
 
     var currentAttr = kind === 'owner' ? 'ownerId' : (kind === 'creator' ? 'creatorId' : 'maintainerId');
     var current = span.dataset[currentAttr];
@@ -677,8 +676,7 @@ function showArtistUserEdit(event, artistId, span, kind, onCommit) {
     var rect = getZoomedRect(span);
     popover.style.left = rect.left + 'px';
     document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
+    var viewH = window.innerHeight;
     if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
         popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
     } else {
@@ -806,20 +804,20 @@ document.addEventListener('keydown', function (e) {
 function _createSearchPopover(opts) {
     var popover = document.createElement('div');
     popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:' + (opts.width || '280px') +
-        '; max-height:' + (opts.maxHeight || '320px') + '; display:flex; flex-direction:column;';
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB);' +
+        'border-radius:0.25rem; padding:0.5rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:' + (opts.width || '17.5rem') +
+        '; max-height:' + (opts.maxHeight || '20rem') + '; display:flex; flex-direction:column;';
 
     var title = document.createElement('div');
     title.textContent = opts.title || '';
-    title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
+    title.style.cssText = 'font-size:0.6875rem; font-weight:bold; margin-bottom:0.25rem; color:var(--text-secondary);';
     popover.appendChild(title);
     _makeDraggable(popover, title);
 
     var searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = opts.placeholder || 'Search...';
-    searchInput.style.cssText = 'width:100%; font-size:11px; padding:4px 6px; margin-bottom:6px; border:1px solid var(--border,#ccc); border-radius:3px; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
+    searchInput.style.cssText = 'width:100%; font-size:0.6875rem; padding:0.25rem 0.375rem; margin-bottom:0.375rem; border:0.0625rem solid var(--border,#ccc); border-radius:0.1875rem; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
     popover.appendChild(searchInput);
 
     var listContainer = document.createElement('div');
@@ -829,8 +827,7 @@ function _createSearchPopover(opts) {
     var rect = getZoomedRect(opts.anchor);
     popover.style.left = rect.left + 'px';
     document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
+    var viewH = window.innerHeight;
     var pH = parseInt(opts.maxHeight || '320', 10);
     if (rect.bottom + 2 + pH <= viewH) {
         // Fits below anchor
@@ -892,7 +889,7 @@ function _renderAlbumResults(albums, listContainer, onSelect) {
     groupOrder.forEach(function(group) {
         var header = document.createElement('div');
         header.textContent = group;
-        header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+        header.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
         listContainer.appendChild(header);
         grouped[group].sort(function(a, b) {
             if (!a.subgroup && b.subgroup) return -1;
@@ -903,7 +900,7 @@ function _renderAlbumResults(albums, listContainer, onSelect) {
         grouped[group].forEach(function(item) {
             var btn = document.createElement('div');
             btn.textContent = item.label;
-            btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
+            btn.style.cssText = 'padding:0.1875rem 0.375rem 0.1875rem 0.875rem; font-size:0.75rem; cursor:pointer; border-radius:0.125rem;';
             btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
             btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
             btn.addEventListener('click', function() { onSelect(item); });
@@ -913,7 +910,7 @@ function _renderAlbumResults(albums, listContainer, onSelect) {
     if (!groupOrder.length) {
         var empty = document.createElement('div');
         empty.textContent = 'No matches';
-        empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+        empty.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;';
         listContainer.appendChild(empty);
     }
 }
@@ -1010,8 +1007,8 @@ function _openMergePopover(songId, songName, span) {
     var parts = _createSearchPopover({
         title: 'Merge into "' + songName + '":',
         placeholder: 'Search songs...',
-        width: '340px',
-        maxHeight: '360px',
+        width: '21.25rem',
+        maxHeight: '22.5rem',
         anchor: span,
     });
     var listContainer = parts.listContainer;
@@ -1029,7 +1026,7 @@ function _openMergePopover(songId, songName, span) {
             : item.name + ' (' + item.album + ')';
         var btn = document.createElement('div');
         btn.textContent = label;
-        btn.style.cssText = 'padding:3px 6px 3px 14px; font-size:12px; cursor:pointer; border-radius:2px;';
+        btn.style.cssText = 'padding:0.1875rem 0.375rem 0.1875rem 0.875rem; font-size:0.75rem; cursor:pointer; border-radius:0.125rem;';
         btn.addEventListener('mouseenter', function() { btn.style.background = _hoverBg(); });
         btn.addEventListener('mouseleave', function() { btn.style.background = ''; });
         btn.addEventListener('click', function() {
@@ -1073,7 +1070,7 @@ function _openMergePopover(songId, songName, span) {
                     if (sameArtist.length) {
                         var h1 = document.createElement('div');
                         h1.textContent = 'Exact Matches — Same Artist';
-                        h1.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                        h1.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
                         exactContainer.appendChild(h1);
                         sameArtist.sort(sortByArtist);
                         sameArtist.forEach(function(item) {
@@ -1083,7 +1080,7 @@ function _openMergePopover(songId, songName, span) {
                     if (diffArtist.length) {
                         var h2 = document.createElement('div');
                         h2.textContent = 'Exact Matches — Different Artist';
-                        h2.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                        h2.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
                         exactContainer.appendChild(h2);
                         diffArtist.sort(sortByArtist);
                         diffArtist.forEach(function(item) {
@@ -1091,7 +1088,7 @@ function _openMergePopover(songId, songName, span) {
                         });
                     }
                     var sep = document.createElement('div');
-                    sep.style.cssText = 'border-bottom:1px solid var(--border,#ccc); margin:4px 0;';
+                    sep.style.cssText = 'border-bottom:0.0625rem solid var(--border,#ccc); margin:0.25rem 0;';
                     exactContainer.appendChild(sep);
                 }
                 groupOrder.sort(function(a, b) {
@@ -1105,7 +1102,7 @@ function _openMergePopover(songId, songName, span) {
                 groupOrder.forEach(function(group) {
                     var header = document.createElement('div');
                     header.textContent = group;
-                    header.style.cssText = 'font-size:10px; font-weight:bold; padding:4px 6px 2px; color:var(--text-secondary); text-transform:uppercase;';
+                    header.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
                     listContainer.appendChild(header);
                     grouped[group].sort(function(a, b) {
                         return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
@@ -1117,7 +1114,7 @@ function _openMergePopover(songId, songName, span) {
                 if (!exactMatches.length && !groupOrder.length) {
                     var empty = document.createElement('div');
                     empty.textContent = 'No matches';
-                    empty.style.cssText = 'font-size:11px; color:var(--text-secondary); padding:6px;';
+                    empty.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;';
                     listContainer.appendChild(empty);
                 }
             });
@@ -1136,12 +1133,12 @@ function showMergeDiffModal(keptId, keptName, absorbedId, absorbedName, absorbed
     overlay.addEventListener('click', function(e) { if (e.target === overlay) _closeMergeModal(overlay); });
 
     var container = document.createElement('div');
-    container.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;width:700px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;';
+    container.style.cssText = 'background:var(--bg-secondary);border:0.0625rem solid var(--border);border-radius:0.5rem;width:43.75rem;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;';
     overlay.appendChild(container);
 
     var header = document.createElement('div');
-    header.style.cssText = 'padding:20px 24px 12px;flex-shrink:0;';
-    header.innerHTML = '<div style="font-size:16px;font-weight:bold;color:var(--text-primary);">Merge Songs</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Loading...</div>';
+    header.style.cssText = 'padding:1.25rem 1.5rem 0.75rem;flex-shrink:0;';
+    header.innerHTML = '<div style="font-size:1rem;font-weight:bold;color:var(--text-primary);">Merge Songs</div><div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;">Loading...</div>';
     container.appendChild(header);
     // Insert at top of <body> so password managers (which cap field collection in DOM order) see the pw field despite thousands of page inputs
     document.body.insertBefore(overlay, document.body.firstChild);
@@ -1166,8 +1163,8 @@ function _makeChip(text, side, active) {
     var chip = document.createElement('span');
     chip.textContent = text || '(none)';
     chip.dataset.side = side;
-    chip.style.cssText = 'padding:2px 8px;border-radius:4px;border:1px solid var(--border);cursor:pointer;font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:inline-block;' + (text ? '' : 'color:var(--text-secondary);font-style:italic;');
-    if (active) chip.style.outline = '2px solid var(--link)';
+    chip.style.cssText = 'padding:0.125rem 0.5rem;border-radius:0.25rem;border:0.0625rem solid var(--border);cursor:pointer;font-size:0.75rem;white-space:nowrap;max-width:12.5rem;overflow:hidden;text-overflow:ellipsis;display:inline-block;' + (text ? '' : 'color:var(--text-secondary);font-style:italic;');
+    if (active) chip.style.outline = '0.125rem solid var(--link)';
     return chip;
 }
 
@@ -1177,7 +1174,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
     header.lastChild.innerHTML = '<span style="color:var(--text-primary);">Kept:</span> ' + _escHtml(k.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(k.artist || '?') + ')</span> &larr; <span style="color:var(--text-primary);">Absorbed:</span> ' + _escHtml(a.name) + ' <span style="color:var(--text-secondary);">(' + _escHtml(a.artist || '?') + ')</span>';
 
     var body = document.createElement('div');
-    body.style.cssText = 'padding:0 24px 16px;overflow-y:auto;flex:1;';
+    body.style.cssText = 'padding:0 1.5rem 1rem;overflow-y:auto;flex:1;';
     container.appendChild(body);
 
     var inputs = {};
@@ -1185,31 +1182,31 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
 
     function addTextRow(label, field, keptVal, absorbedVal, useTextarea) {
         var section = document.createElement('div');
-        section.style.cssText = 'margin-bottom:14px;';
+        section.style.cssText = 'margin-bottom:0.875rem;';
         var lbl = document.createElement('div');
         lbl.textContent = label;
-        lbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;';
+        lbl.style.cssText = 'font-size:0.6875rem;font-weight:bold;color:var(--text-secondary);margin-bottom:0.25rem;text-transform:uppercase;';
         section.appendChild(lbl);
 
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;gap:6px;align-items:' + (useTextarea ? 'flex-start' : 'center') + ';';
+        row.style.cssText = 'display:flex;gap:0.375rem;align-items:' + (useTextarea ? 'flex-start' : 'center') + ';';
 
         var defaultVal = keptVal || absorbedVal || '';
         var chipK = _makeChip(keptVal, 'kept', defaultVal === keptVal && keptVal);
         var chipA = _makeChip(absorbedVal, 'absorbed', false);
         var arrow = document.createElement('span');
         arrow.textContent = '\u2192';
-        arrow.style.cssText = 'color:var(--text-secondary);font-size:14px;flex-shrink:0;';
+        arrow.style.cssText = 'color:var(--text-secondary);font-size:0.875rem;flex-shrink:0;';
 
         var input;
         if (useTextarea) {
             input = document.createElement('textarea');
             input.rows = 3;
-            input.style.cssText = 'flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-primary);color:var(--text-primary);resize:vertical;';
+            input.style.cssText = 'flex:1;min-width:0;padding:0.25rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.25rem;font-size:0.75rem;background:var(--bg-primary);color:var(--text-primary);resize:vertical;';
         } else {
             input = document.createElement('input');
             input.type = 'text';
-            input.style.cssText = 'flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-primary);color:var(--text-primary);';
+            input.style.cssText = 'flex:1;min-width:0;padding:0.25rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.25rem;font-size:0.75rem;background:var(--bg-primary);color:var(--text-primary);';
         }
         input.value = defaultVal;
         inputs[field] = input;
@@ -1217,7 +1214,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
         function selectChip(chip, val) {
             chipK.style.outline = '';
             chipA.style.outline = '';
-            chip.style.outline = '2px solid var(--link)';
+            chip.style.outline = '0.125rem solid var(--link)';
             input.value = val || '';
         }
         chipK.addEventListener('click', function() { selectChip(chipK, keptVal); });
@@ -1226,11 +1223,11 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
         if (useTextarea && keptVal && absorbedVal && keptVal !== absorbedVal) {
             var combineChip = document.createElement('span');
             combineChip.textContent = 'Combine';
-            combineChip.style.cssText = 'padding:2px 8px;border-radius:4px;border:1px dashed var(--border);cursor:pointer;font-size:11px;color:var(--text-secondary);white-space:nowrap;';
+            combineChip.style.cssText = 'padding:0.125rem 0.5rem;border-radius:0.25rem;border:0.0625rem dashed var(--border);cursor:pointer;font-size:0.6875rem;color:var(--text-secondary);white-space:nowrap;';
             combineChip.addEventListener('click', function() {
                 chipK.style.outline = '';
                 chipA.style.outline = '';
-                combineChip.style.outline = '2px solid var(--link)';
+                combineChip.style.outline = '0.125rem solid var(--link)';
                 input.value = keptVal + '\n' + absorbedVal;
             });
             row.appendChild(chipK);
@@ -1255,31 +1252,31 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
         {field: 'is_cover', label: 'Cover'}
     ];
     var flagSection = document.createElement('div');
-    flagSection.style.cssText = 'margin-bottom:14px;';
+    flagSection.style.cssText = 'margin-bottom:0.875rem;';
     var flagLbl = document.createElement('div');
     flagLbl.textContent = 'FLAGS';
-    flagLbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;';
+    flagLbl.style.cssText = 'font-size:0.6875rem;font-weight:bold;color:var(--text-secondary);margin-bottom:0.25rem;text-transform:uppercase;';
     flagSection.appendChild(flagLbl);
     var flagGrid = document.createElement('div');
-    flagGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;';
+    flagGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;';
 
     flagFields.forEach(function(ff) {
         var cell = document.createElement('div');
         cell.style.cssText = 'text-align:center;';
         var title = document.createElement('div');
         title.textContent = ff.label;
-        title.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:4px;';
+        title.style.cssText = 'font-size:0.6875rem;color:var(--text-secondary);margin-bottom:0.25rem;';
         cell.appendChild(title);
 
         var kVal = k[ff.field], aVal = a[ff.field];
         var chipRow = document.createElement('div');
-        chipRow.style.cssText = 'display:flex;gap:4px;justify-content:center;margin-bottom:4px;';
+        chipRow.style.cssText = 'display:flex;gap:0.25rem;justify-content:center;margin-bottom:0.25rem;';
         var cK = document.createElement('span');
         cK.textContent = kVal ? 'Yes' : 'No';
-        cK.style.cssText = 'font-size:10px;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px solid var(--border);' + (kVal ? 'background:var(--promoted-song);color:#000;' : '');
+        cK.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border-radius:0.1875rem;cursor:pointer;border:0.0625rem solid var(--border);' + (kVal ? 'background:var(--promoted-song);color:#000;' : '');
         var cA = document.createElement('span');
         cA.textContent = aVal ? 'Yes' : 'No';
-        cA.style.cssText = 'font-size:10px;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px solid var(--border);' + (aVal ? 'background:var(--promoted-song);color:#000;' : '');
+        cA.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border-radius:0.1875rem;cursor:pointer;border:0.0625rem solid var(--border);' + (aVal ? 'background:var(--promoted-song);color:#000;' : '');
         chipRow.appendChild(cK);
         chipRow.appendChild(cA);
         cell.appendChild(chipRow);
@@ -1302,80 +1299,80 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
 
     if (data.ratings.length) {
         var ratSection = document.createElement('div');
-        ratSection.style.cssText = 'margin-bottom:14px;';
+        ratSection.style.cssText = 'margin-bottom:0.875rem;';
         var ratLbl = document.createElement('div');
         ratLbl.textContent = 'RATINGS';
-        ratLbl.style.cssText = 'font-size:11px;font-weight:bold;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;';
+        ratLbl.style.cssText = 'font-size:0.6875rem;font-weight:bold;color:var(--text-secondary);margin-bottom:0.375rem;text-transform:uppercase;';
         ratSection.appendChild(ratLbl);
 
         var ratTable = document.createElement('table');
-        ratTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;';
+        ratTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.75rem;';
         var thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th style="text-align:left;padding:4px 6px;color:var(--text-secondary);font-size:10px;">User</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Kept</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Absorbed</th><th style="text-align:center;padding:4px 6px;color:var(--text-secondary);font-size:10px;">Result</th></tr>';
+        thead.innerHTML = '<tr><th style="text-align:left;padding:0.25rem 0.375rem;color:var(--text-secondary);font-size:0.625rem;">User</th><th style="text-align:center;padding:0.25rem 0.375rem;color:var(--text-secondary);font-size:0.625rem;">Kept</th><th style="text-align:center;padding:0.25rem 0.375rem;color:var(--text-secondary);font-size:0.625rem;">Absorbed</th><th style="text-align:center;padding:0.25rem 0.375rem;color:var(--text-secondary);font-size:0.625rem;">Result</th></tr>';
         ratTable.appendChild(thead);
 
         var ratBody = document.createElement('tbody');
 
         data.ratings.forEach(function(r) {
             var tr = document.createElement('tr');
-            tr.style.cssText = 'border-top:1px solid var(--border);';
+            tr.style.cssText = 'border-top:0.0625rem solid var(--border);';
 
             var tdUser = document.createElement('td');
             tdUser.textContent = r.username;
-            tdUser.style.cssText = 'padding:6px;color:var(--text-primary);white-space:nowrap;';
+            tdUser.style.cssText = 'padding:0.375rem;color:var(--text-primary);white-space:nowrap;';
             tr.appendChild(tdUser);
 
             function makeRatingChip(score, note) {
                 var wrapper = document.createElement('div');
-                wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;';
+                wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0.125rem;cursor:pointer;';
                 var badge = document.createElement('span');
                 badge.textContent = score !== null && score !== undefined ? score : '-';
-                badge.style.cssText = 'padding:2px 8px;border-radius:4px;font-weight:bold;min-width:24px;text-align:center;border:1px solid var(--border);' + _ratingStyle(score);
+                badge.style.cssText = 'padding:0.125rem 0.5rem;border-radius:0.25rem;font-weight:bold;min-width:1.5rem;text-align:center;border:0.0625rem solid var(--border);' + _ratingStyle(score);
                 wrapper.appendChild(badge);
                 if (note) {
                     var noteEl = document.createElement('div');
                     noteEl.textContent = note.length > 30 ? note.substring(0, 30) + '...' : note;
                     noteEl.title = note;
-                    noteEl.style.cssText = 'font-size:10px;color:var(--text-secondary);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                    noteEl.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);max-width:7.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
                     wrapper.appendChild(noteEl);
                 }
                 return wrapper;
             }
 
             var tdKept = document.createElement('td');
-            tdKept.style.cssText = 'padding:6px;text-align:center;';
+            tdKept.style.cssText = 'padding:0.375rem;text-align:center;';
             var kChip = makeRatingChip(r.kept_rating, r.kept_note);
             tdKept.appendChild(kChip);
             tr.appendChild(tdKept);
 
             var tdAbsorbed = document.createElement('td');
-            tdAbsorbed.style.cssText = 'padding:6px;text-align:center;';
+            tdAbsorbed.style.cssText = 'padding:0.375rem;text-align:center;';
             var aChip = makeRatingChip(r.absorbed_rating, r.absorbed_note);
             tdAbsorbed.appendChild(aChip);
             tr.appendChild(tdAbsorbed);
 
             var tdResult = document.createElement('td');
-            tdResult.style.cssText = 'padding:6px;text-align:center;';
+            tdResult.style.cssText = 'padding:0.375rem;text-align:center;';
             var resultWrap = document.createElement('div');
-            resultWrap.style.cssText = 'display:flex;gap:4px;align-items:center;justify-content:center;';
+            resultWrap.style.cssText = 'display:flex;gap:0.25rem;align-items:center;justify-content:center;';
             var scoreInput = document.createElement('input');
             scoreInput.type = 'number';
             scoreInput.min = '0';
             scoreInput.max = '5';
-            scoreInput.style.cssText = 'width:42px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg-primary);color:var(--text-primary);';
+            scoreInput.style.cssText = 'width:2.625rem;padding:0.1875rem 0.25rem;border:0.0625rem solid var(--border);border-radius:0.25rem;font-size:0.75rem;text-align:center;background:var(--bg-primary);color:var(--text-primary);';
             var defaultScore = r.kept_rating !== null && r.kept_rating !== undefined ? r.kept_rating : r.absorbed_rating;
             scoreInput.value = defaultScore !== null && defaultScore !== undefined ? defaultScore : '';
 
             var noteInput = document.createElement('input');
             noteInput.type = 'text';
             noteInput.placeholder = 'note';
-            noteInput.style.cssText = 'flex:1;min-width:0;width:80px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;background:var(--bg-primary);color:var(--text-primary);';
+            noteInput.style.cssText = 'flex:1;min-width:0;width:5rem;padding:0.1875rem 0.25rem;border:0.0625rem solid var(--border);border-radius:0.25rem;font-size:0.6875rem;background:var(--bg-primary);color:var(--text-primary);';
             var defaultNote = r.kept_note !== null && r.kept_note !== undefined ? r.kept_note : r.absorbed_note;
             noteInput.value = defaultNote || '';
 
             function highlightChips(side) {
-                kChip.style.outline = side === 'kept' ? '2px solid var(--link)' : '';
-                aChip.style.outline = side === 'absorbed' ? '2px solid var(--link)' : '';
+                kChip.style.outline = side === 'kept' ? '0.125rem solid var(--link)' : '';
+                aChip.style.outline = side === 'absorbed' ? '0.125rem solid var(--link)' : '';
             }
             kChip.addEventListener('click', function() {
                 scoreInput.value = r.kept_rating !== null && r.kept_rating !== undefined ? r.kept_rating : '';
@@ -1406,7 +1403,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
     }
 
     var footer = document.createElement('div');
-    footer.style.cssText = 'padding:12px 24px 20px;border-top:1px solid var(--border);flex-shrink:0;';
+    footer.style.cssText = 'padding:0.75rem 1.5rem 1.25rem;border-top:0.0625rem solid var(--border);flex-shrink:0;';
 
     // Reuse the persistent credential form rendered in the page at load. Because it was
     // present (hidden) during the password manager's initial page scan, the manager has
@@ -1419,29 +1416,29 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
         pwInput = document.getElementById('merge-pw-input');
         pwInput.value = '';
         pwInput.required = true;
-        pwInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+        pwInput.style.cssText = 'width:100%;padding:0.5rem 0.75rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
 
         var pwLabel = document.createElement('label');
         pwLabel.textContent = 'Enter your password to confirm';
         pwLabel.htmlFor = 'merge-pw-input';
-        pwLabel.style.cssText = 'display:block;font-size:13px;margin-bottom:4px;color:var(--text-primary);';
+        pwLabel.style.cssText = 'display:block;font-size:0.8125rem;margin-bottom:0.25rem;color:var(--text-primary);';
         footer.appendChild(pwLabel);
         footer.appendChild(credForm);
     }
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:12px;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem;';
     var cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:8px 16px;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:var(--button-secondary);color:var(--text-primary);';
+    cancelBtn.style.cssText = 'padding:0.5rem 1rem;border-radius:0.25rem;font-size:0.8125rem;cursor:pointer;border:none;background:var(--button-secondary);color:var(--text-primary);';
     cancelBtn.addEventListener('click', function() { _closeMergeModal(overlay); });
 
     var mergeBtn = document.createElement('button');
     mergeBtn.type = 'button';
     var mergeLabel = opts.confirmLabel || 'Merge';
     mergeBtn.textContent = mergeLabel;
-    mergeBtn.style.cssText = 'padding:8px 16px;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:var(--button-primary);color:#fff;font-weight:bold;';
+    mergeBtn.style.cssText = 'padding:0.5rem 1rem;border-radius:0.25rem;font-size:0.8125rem;cursor:pointer;border:none;background:var(--button-primary);color:#fff;font-weight:bold;';
 
     mergeBtn.addEventListener('click', function() {
         if (!inputs.name.value.trim()) { alert('Song name is required.'); return; }
@@ -1636,12 +1633,12 @@ function showSongArtists(event, songId, span) {
 
     var popover = document.createElement('div');
     popover.style.cssText =
-        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
-        'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:260px; max-height:320px; overflow-y:auto;';
+        'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB);' +
+        'border-radius:0.25rem; padding:0.5rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:16.25rem; max-height:20rem; overflow-y:auto;';
 
     var title = document.createElement('div');
     title.textContent = 'Song artists:';
-    title.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:6px; color:var(--text-secondary);';
+    title.style.cssText = 'font-size:0.6875rem; font-weight:bold; margin-bottom:0.375rem; color:var(--text-secondary);';
     popover.appendChild(title);
     _makeDraggable(popover, title);
 
@@ -1652,16 +1649,16 @@ function showSongArtists(event, songId, span) {
         listContainer.innerHTML = '';
         artists.forEach(function(a) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0;';
+            row.style.cssText = 'display:flex; align-items:center; gap:0.375rem; padding:0.125rem 0;';
 
             var name = document.createElement('span');
             name.textContent = a.name;
-            name.style.cssText = 'font-size:12px; flex:1;';
+            name.style.cssText = 'font-size:0.75rem; flex:1;';
             row.appendChild(name);
 
             var roleBtn = document.createElement('button');
             roleBtn.textContent = a.is_main ? 'Main' : 'Feat';
-            roleBtn.style.cssText = 'font-size:10px; padding:1px 6px; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:' + (a.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (a.is_main ? '#fff' : 'var(--text-secondary)') + ';';
+            roleBtn.style.cssText = 'font-size:0.625rem; padding:0.0625rem 0.375rem; border:0.0625rem solid var(--border); border-radius:0.1875rem; cursor:pointer; background:' + (a.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (a.is_main ? '#fff' : 'var(--text-secondary)') + ';';
             roleBtn.addEventListener('click', function() {
                 fetch('/edit/song/' + songId + '/artists/' + a.artist_id + '/role', {
                     method: 'POST',
@@ -1680,7 +1677,7 @@ function showSongArtists(event, songId, span) {
             if (artists.length + miscArtists.length > 1) {
                 var removeBtn = document.createElement('button');
                 removeBtn.textContent = '\u00d7';
-                removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
+                removeBtn.style.cssText = 'font-size:0.8125rem; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 0.125rem;';
                 removeBtn.addEventListener('click', function() {
                     fetch('/edit/song/' + songId + '/artists/' + a.artist_id, {
                         method: 'DELETE',
@@ -1741,10 +1738,10 @@ function showSongArtists(event, songId, span) {
     }
 
     var miscSection = document.createElement('div');
-    miscSection.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+    miscSection.style.cssText = 'margin-top:0.375rem; border-top:0.0625rem solid var(--border); padding-top:0.375rem;';
     var miscTitle = document.createElement('div');
     miscTitle.textContent = 'Misc artists:';
-    miscTitle.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:4px; color:var(--text-secondary);';
+    miscTitle.style.cssText = 'font-size:0.6875rem; font-weight:bold; margin-bottom:0.25rem; color:var(--text-secondary);';
     miscSection.appendChild(miscTitle);
 
     var miscListContainer = document.createElement('div');
@@ -1753,14 +1750,14 @@ function showSongArtists(event, songId, span) {
         miscListContainer.innerHTML = '';
         miscArtists.forEach(function(m) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0;';
+            row.style.cssText = 'display:flex; align-items:center; gap:0.375rem; padding:0.125rem 0;';
             var name = document.createElement('span');
             name.textContent = m.name;
-            name.style.cssText = 'font-size:12px; flex:1;';
+            name.style.cssText = 'font-size:0.75rem; flex:1;';
             row.appendChild(name);
             var roleBtn = document.createElement('button');
             roleBtn.textContent = m.is_main ? 'Main' : 'Feat';
-            roleBtn.style.cssText = 'font-size:10px; padding:1px 6px; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:' + (m.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (m.is_main ? '#fff' : 'var(--text-secondary)') + ';';
+            roleBtn.style.cssText = 'font-size:0.625rem; padding:0.0625rem 0.375rem; border:0.0625rem solid var(--border); border-radius:0.1875rem; cursor:pointer; background:' + (m.is_main ? 'var(--link,#2563EB)' : 'transparent') + '; color:' + (m.is_main ? '#fff' : 'var(--text-secondary)') + ';';
             roleBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 m.is_main = !m.is_main;
@@ -1771,7 +1768,7 @@ function showSongArtists(event, songId, span) {
             if (artists.length + miscArtists.length > 1) {
                 var removeBtn = document.createElement('button');
                 removeBtn.textContent = '×';
-                removeBtn.style.cssText = 'font-size:13px; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 2px;';
+                removeBtn.style.cssText = 'font-size:0.8125rem; color:var(--delete-button,#DC2626); background:none; border:none; cursor:pointer; padding:0 0.125rem;';
                 removeBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     miscArtists = miscArtists.filter(function(x) { return x.misc_artist_id !== m.misc_artist_id; });
@@ -1793,13 +1790,13 @@ function showSongArtists(event, songId, span) {
     // opts: { placeholder, getItems(query, callback), getUsedIds(), onSelect(item) }
     function _buildSearchDropdown(opts) {
         var container = document.createElement('div');
-        container.style.cssText = 'margin-top:4px; position:relative;';
+        container.style.cssText = 'margin-top:0.25rem; position:relative;';
         var input = document.createElement('input');
         input.type = 'text';
         input.placeholder = opts.placeholder;
-        input.style.cssText = 'font-size:11px; width:100%; padding:2px 4px; border:1px solid var(--border); border-radius:3px; box-sizing:border-box;';
+        input.style.cssText = 'font-size:0.6875rem; width:100%; padding:0.125rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.1875rem; box-sizing:border-box;';
         var results = document.createElement('div');
-        results.style.cssText = 'max-height:150px; overflow-y:auto;';
+        results.style.cssText = 'max-height:9.375rem; overflow-y:auto;';
         var timer;
         function refresh() {
             clearTimeout(timer);
@@ -1812,7 +1809,7 @@ function showSongArtists(event, songId, span) {
                     if (opts.onCreate && q) {
                         var createRow = document.createElement('div');
                         createRow.textContent = '+ Create "' + q + '"';
-                        createRow.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px; color:var(--link,#2563EB); font-weight:bold;';
+                        createRow.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;';
                         createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
                         createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
                         createRow.addEventListener('mousedown', function(e) {
@@ -1828,7 +1825,7 @@ function showSongArtists(event, songId, span) {
                         if (usedIds.indexOf(item.id) !== -1) return;
                         var row = document.createElement('div');
                         row.textContent = item.name;
-                        row.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+                        row.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;';
                         row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
                         row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
                         row.addEventListener('mousedown', function(e) {
@@ -1886,7 +1883,7 @@ function showSongArtists(event, songId, span) {
 
     // Real artist dropdown
     var addRow = document.createElement('div');
-    addRow.style.cssText = 'margin-top:6px; border-top:1px solid var(--border); padding-top:6px;';
+    addRow.style.cssText = 'margin-top:0.375rem; border-top:0.0625rem solid var(--border); padding-top:0.375rem;';
     addRow.appendChild(_buildSearchDropdown({
         placeholder: '+ Add artist...',
         getItems: function(q, cb) {
@@ -1916,8 +1913,7 @@ function showSongArtists(event, songId, span) {
     popover.style.left = rect.left + 'px';
 
     document.body.appendChild(popover);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
+    var viewH = window.innerHeight;
     if (rect.bottom + 2 + popover.offsetHeight + 30 > viewH) {
         popover.style.top = Math.max(0, viewH - popover.offsetHeight - 30) + 'px';
     } else {
@@ -2052,22 +2048,22 @@ function addNewAlbumSong(currentArtistId) {
             '<label class="text-xs"><input type="checkbox" class="new-song-cover"> Cover</label>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
         '</div>' +
-        '<div class="flex items-center flex-wrap gap-2" style="padding: 4px 8px;">' +
+        '<div class="flex items-center flex-wrap gap-2" style="padding: 0.25rem 0.5rem;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Artists:</span>' +
-            '<div id="new-song-artists-' + n + '" class="flex flex-wrap gap-2" style="margin-right: 4px;"></div>' +
-            '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:150px;" onchange="onNewSongArtistChange(this,' + n + ')">' +
+            '<div id="new-song-artists-' + n + '" class="flex flex-wrap gap-2" style="margin-right: 0.25rem;"></div>' +
+            '<select class="new-song-artist-select text-xs px-1 border rounded" style="border-color:var(--border); max-width:9.375rem;" onchange="onNewSongArtistChange(this,' + n + ')">' +
                 newSongArtistOptions(n) +
             '</select>' +
-            '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer; font-size:12px; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
+            '<span style="cursor:pointer; margin-left:0.25rem;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="/static/img/spotify.png" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; font-size:0.75rem; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
         '</div>' +
-        '<div style="padding: 4px 8px;">' +
+        '<div style="padding: 0.25rem 0.5rem;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Misc artists:</span>' +
-            '<div id="new-song-misc-artists-' + n + '" class="flex flex-wrap gap-2" style="margin: 2px 0;"></div>' +
+            '<div id="new-song-misc-artists-' + n + '" class="flex flex-wrap gap-2" style="margin: 0.125rem 0;"></div>' +
             '<div style="position:relative;">' +
-                '<input type="text" class="new-song-misc-search text-xs px-1 border rounded" placeholder="+ Add misc artist..." style="border-color:var(--border); width:180px;" data-song-num="' + n + '">' +
-                '<div class="new-song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:3px; display:none; width:180px;"></div>' +
+                '<input type="text" class="new-song-misc-search text-xs px-1 border rounded" placeholder="+ Add misc artist..." style="border-color:var(--border); width:11.25rem;" data-song-num="' + n + '">' +
+                '<div class="new-song-misc-results" style="max-height:7.5rem; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border); border-radius:0.1875rem; display:none; width:11.25rem;"></div>' +
             '</div>' +
         '</div>';
     container.appendChild(row);
@@ -2122,7 +2118,7 @@ function addNewSongArtist(songNum, artistId, artistName, isMain) {
     row.className = 'flex items-center gap-1 new-song-artist-row';
     row.dataset.artistId = artistId || '';
     row.innerHTML =
-        '<span class="text-xs" style="margin-right: 4px;">' + (artistName || '').replace(/</g, '&lt;') + '</span>' +
+        '<span class="text-xs" style="margin-right: 0.25rem;">' + (artistName || '').replace(/</g, '&lt;') + '</span>' +
         '<select class="new-song-artist-role text-xs px-1 border rounded" style="border-color:var(--border);" onchange="validateAddAlbum()">' +
             '<option value="main"' + (isMain ? ' selected' : '') + '>Main</option>' +
             '<option value="feat"' + (!isMain ? ' selected' : '') + '>Featured</option>' +
@@ -2180,7 +2176,7 @@ function _initNewSongMiscSearch(songNum) {
                     filtered.forEach(function(item) {
                         var row = document.createElement('div');
                         row.textContent = item.name;
-                        row.style.cssText = 'font-size:11px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+                        row.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;';
                         row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
                         row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
                         row.addEventListener('mousedown', function(e) {
@@ -2199,13 +2195,13 @@ function _initNewSongMiscSearch(songNum) {
     input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
     // + New button with country dropdown (matches misc page pattern)
     var createRow = document.createElement('div');
-    createRow.style.cssText = 'display:flex; gap:4px; align-items:center; margin-top:2px;';
+    createRow.style.cssText = 'display:flex; gap:0.25rem; align-items:center; margin-top:0.125rem;';
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
     newBtn.textContent = '+ New';
-    newBtn.style.cssText = 'font-size:10px; padding:2px 8px; border-radius:3px; background:var(--edit-on-button,#16a34a); color:var(--button-text,#fff); border:none; cursor:pointer;';
+    newBtn.style.cssText = 'font-size:0.625rem; padding:0.125rem 0.5rem; border-radius:0.1875rem; background:var(--edit-on-button,#16a34a); color:var(--button-text,#fff); border:none; cursor:pointer;';
     var countrySel = document.createElement('select');
-    countrySel.style.cssText = 'font-size:10px; padding:1px 4px; border:1px solid var(--border); border-radius:3px;';
+    countrySel.style.cssText = 'font-size:0.625rem; padding:0.0625rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.1875rem;';
     var countries = (typeof _allCountries !== 'undefined') ? _allCountries : [];
     var defaultCid = (typeof _currentArtistCountryId !== 'undefined') ? _currentArtistCountryId : '';
     countries.forEach(function(c) {
@@ -2251,7 +2247,7 @@ function _addNewSongMiscArtist(songNum, miscId, miscName) {
     row.className = 'flex items-center gap-1 new-song-misc-row';
     row.dataset.miscArtistId = miscId;
     row.innerHTML =
-        '<span class="text-xs" style="margin-right:4px;">' + miscName.replace(/</g, '&lt;') + '</span>' +
+        '<span class="text-xs" style="margin-right:0.25rem;">' + miscName.replace(/</g, '&lt;') + '</span>' +
         '<select class="new-song-misc-role text-xs px-1 border rounded" style="border-color:var(--border);">' +
             '<option value="main">Main</option><option value="feat" selected>Featured</option>' +
         '</select>' +
@@ -2399,7 +2395,7 @@ function albumSongSearch(artistId) {
             var lastWasCurrent = null;
             songs.forEach(function(s) {
                 if (lastWasCurrent !== null && lastWasCurrent && !s.is_current_artist) {
-                    html += '<div style="border-top:1px solid var(--border); margin:2px 0;"></div>';
+                    html += '<div style="border-top:0.0625rem solid var(--border); margin:0.125rem 0;"></div>';
                 }
                 lastWasCurrent = s.is_current_artist;
                 html += '<div class="px-3 py-1 cursor-pointer album-song-result" style="' +
@@ -2435,7 +2431,7 @@ function addExistingSongToAlbum(songId, songName, artistName) {
     row.innerHTML =
         '<div class="flex gap-2 items-center">' +
             '<span class="flex-1 text-sm">' + songName.replace(/</g, '&lt;') +
-            ' <span style="color:var(--text-secondary); font-size:11px;">— ' + artistName.replace(/</g, '&lt;') + ' (existing)</span></span>' +
+            ' <span style="color:var(--text-secondary); font-size:0.6875rem;">— ' + artistName.replace(/</g, '&lt;') + ' (existing)</span></span>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
         '</div>';
     container.appendChild(row);
@@ -2657,30 +2653,30 @@ function showSongNoteInput(event, tdEl) {
     var songId = tdEl.getAttribute('data-song-id');
     var existingNote = tdEl.getAttribute('data-song-note') || '';
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,.25); width:240px;';
+    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:0.0625rem solid var(--border); border-radius:0.5rem; padding:0.75rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,.25); width:15rem;';
 
     var noteTitle = document.createElement('div');
     noteTitle.textContent = 'Song note';
-    noteTitle.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:6px; color:var(--text-secondary);';
+    noteTitle.style.cssText = 'font-size:0.6875rem; font-weight:bold; margin-bottom:0.375rem; color:var(--text-secondary);';
     overlay.appendChild(noteTitle);
     _makeDraggable(overlay, noteTitle);
 
     var textarea = document.createElement('textarea');
     textarea.value = existingNote;
-    textarea.style.cssText = 'width:100%; height:80px; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px; padding:6px; font-size:12px; font-family:inherit;';
+    textarea.style.cssText = 'width:100%; height:5rem; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:0.0625rem solid var(--border); border-radius:0.25rem; padding:0.375rem; font-size:0.75rem; font-family:inherit;';
     overlay.appendChild(textarea);
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:6px; margin-top:8px; justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex; gap:0.375rem; margin-top:0.5rem; justify-content:flex-end;';
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:12px;';
+    saveBtn.style.cssText = 'padding:0.25rem 0.75rem; border-radius:0.25rem; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:0.75rem;';
     saveBtn.onclick = function () { submitSongNote(songId, textarea.value.trim(), tdEl); };
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:12px;';
+    cancelBtn.style.cssText = 'padding:0.25rem 0.75rem; border-radius:0.25rem; border:0.0625rem solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:0.75rem;';
     cancelBtn.onclick = closeSongNoteInput;
 
     btnRow.appendChild(cancelBtn);
@@ -2765,30 +2761,30 @@ function showAlbumNoteInput(event, tdEl) {
     var albumId = tdEl.getAttribute('data-album-id');
     var existingNote = tdEl.getAttribute('data-album-note') || '';
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,.25); width:240px;';
+    overlay.style.cssText = 'position:fixed; z-index:10000; background:var(--bg-secondary); border:0.0625rem solid var(--border); border-radius:0.5rem; padding:0.75rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,.25); width:15rem;';
 
     var noteTitle = document.createElement('div');
     noteTitle.textContent = 'Album note';
-    noteTitle.style.cssText = 'font-size:11px; font-weight:bold; margin-bottom:6px; color:var(--text-secondary);';
+    noteTitle.style.cssText = 'font-size:0.6875rem; font-weight:bold; margin-bottom:0.375rem; color:var(--text-secondary);';
     overlay.appendChild(noteTitle);
     _makeDraggable(overlay, noteTitle);
 
     var textarea = document.createElement('textarea');
     textarea.value = existingNote;
-    textarea.style.cssText = 'width:100%; height:80px; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border); border-radius:4px; padding:6px; font-size:12px; font-family:inherit;';
+    textarea.style.cssText = 'width:100%; height:5rem; resize:vertical; background:var(--bg-primary); color:var(--text-primary); border:0.0625rem solid var(--border); border-radius:0.25rem; padding:0.375rem; font-size:0.75rem; font-family:inherit;';
     overlay.appendChild(textarea);
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:6px; margin-top:8px; justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex; gap:0.375rem; margin-top:0.5rem; justify-content:flex-end;';
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:12px;';
+    saveBtn.style.cssText = 'padding:0.25rem 0.75rem; border-radius:0.25rem; border:none; background:var(--edit-on-button); color:#fff; cursor:pointer; font-size:0.75rem;';
     saveBtn.onclick = function () { submitAlbumNote(albumId, textarea.value.trim(), tdEl); };
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:4px 12px; border-radius:4px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:12px;';
+    cancelBtn.style.cssText = 'padding:0.25rem 0.75rem; border-radius:0.25rem; border:0.0625rem solid var(--border); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; font-size:0.75rem;';
     cancelBtn.onclick = closeAlbumNoteInput;
 
     btnRow.appendChild(cancelBtn);
@@ -3058,7 +3054,7 @@ function _showAutoSpotifyResults(data) {
     needsReview.forEach(function (item) {
         var block = document.createElement('div');
         block.className = 'mb-3 pb-3';
-        block.style.borderBottom = '1px solid var(--border)';
+        block.style.borderBottom = '0.0625rem solid var(--border)';
 
         var title = document.createElement('div');
         title.className = 'text-sm font-semibold text-primary-text mb-1';
@@ -3216,7 +3212,7 @@ function showBulkGenreModal(artistId, artistName) {
     var container = document.getElementById('bulk-genre-checkboxes');
     container.innerHTML = (_allGenres || []).map(function(g) {
         return '<label class="text-sm" style="cursor:pointer;">' +
-               '<input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:3px;"> ' +
+               '<input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:0.1875rem;"> ' +
                g.name.replace(/</g, '&lt;') + '</label>';
     }).join('');
 
@@ -3332,7 +3328,7 @@ function bulkGenreClear() {
 /* ---------- shared modal helpers ---------- */
 function _miscBackdrop(onClose) {
     var bd = document.createElement('div');
-    bd.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+    bd.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:1rem;';
     bd.onclick = function(e) { if (e.target === bd) { bd.remove(); if (onClose) onClose(); } };
     bd.addEventListener('keydown', function(e) { if (e.key === 'Escape') { bd.remove(); if (onClose) onClose(); } });
     document.body.appendChild(bd);
@@ -3340,31 +3336,31 @@ function _miscBackdrop(onClose) {
 }
 function _miscModal(width) {
     var m = document.createElement('div');
-    m.style.cssText = 'background:var(--bg-secondary,#fff);border:1px solid var(--border,#ccc);border-radius:8px;padding:16px;width:100%;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;max-width:' + (width || 420) + 'px;';
+    m.style.cssText = 'background:var(--bg-secondary,#fff);border:0.0625rem solid var(--border,#ccc);border-radius:0.5rem;padding:1rem;width:100%;box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;max-width:' + (width || 420) + 'px;';
     return m;
 }
 function _miscInput(placeholder, val) {
     var inp = document.createElement('input');
     inp.type = 'text'; inp.placeholder = placeholder || ''; inp.value = val || '';
-    inp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;';
+    inp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;';
     return inp;
 }
 function _miscBtn(label, bg, onClick) {
     var b = document.createElement('button');
     b.textContent = label;
-    b.style.cssText = 'padding:6px 14px;font-size:12px;border:none;border-radius:4px;cursor:pointer;color:#fff;background:' + (bg || 'var(--link,#2563EB)') + ';';
+    b.style.cssText = 'padding:0.375rem 0.875rem;font-size:0.75rem;border:none;border-radius:0.25rem;cursor:pointer;color:#fff;background:' + (bg || 'var(--link,#2563EB)') + ';';
     b.onclick = onClick;
     return b;
 }
 function _miscLabel(text) {
     var l = document.createElement('div');
     l.textContent = text;
-    l.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;margin-top:10px;';
+    l.style.cssText = 'font-size:0.75rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem;margin-top:0.625rem;';
     return l;
 }
 function _miscSelect(options, selected) {
     var sel = document.createElement('select');
-    sel.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+    sel.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);';
     options.forEach(function(o) {
         var opt = document.createElement('option');
         opt.value = o.id; opt.textContent = o.name;
@@ -3382,7 +3378,7 @@ function _csrfJson() {
 /* ---------- autocomplete helper ---------- */
 function _miscAutocomplete(input, url, onSelect, minLen) {
     var list = document.createElement('div');
-    list.style.cssText = 'position:absolute;left:0;right:0;top:100%;background:var(--bg-secondary,#fff);border:1px solid var(--border,#ccc);border-radius:0 0 4px 4px;max-height:160px;overflow-y:auto;z-index:10;display:none;';
+    list.style.cssText = 'position:absolute;left:0;right:0;top:100%;background:var(--bg-secondary,#fff);border:0.0625rem solid var(--border,#ccc);border-radius:0 0 0.25rem 0.25rem;max-height:10rem;overflow-y:auto;z-index:10;display:none;';
     input.parentNode.style.position = 'relative';
     input.parentNode.appendChild(list);
     var timer = null;
@@ -3397,7 +3393,7 @@ function _miscAutocomplete(input, url, onSelect, minLen) {
                 items.forEach(function(item) {
                     var d = document.createElement('div');
                     d.textContent = item.name;
-                    d.style.cssText = 'padding:5px 8px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+                    d.style.cssText = 'padding:0.3125rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);';
                     d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
                     d.onmouseleave = function() { d.style.background = ''; };
                     d.onclick = function() { onSelect(item); input.value = ''; list.style.display = 'none'; };
@@ -3422,24 +3418,24 @@ function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10001;';
     var panel = document.createElement('div');
-    panel.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;';
+    panel.style.cssText = 'background:var(--bg-primary);border:0.0625rem solid var(--border);border-radius:0.5rem;padding:1.25rem;max-width:31.25rem;width:90%;max-height:80vh;overflow-y:auto;';
 
     var title = document.createElement('h3');
     title.textContent = 'Confirm Merge';
-    title.style.cssText = 'margin:0 0 12px;font-size:16px;color:var(--text-primary);';
+    title.style.cssText = 'margin:0 0 0.75rem;font-size:1rem;color:var(--text-primary);';
     panel.appendChild(title);
 
     var desc = document.createElement('p');
-    desc.style.cssText = 'font-size:12px;color:var(--text-secondary);margin:0 0 12px;';
+    desc.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);margin:0 0 0.75rem;';
     desc.textContent = 'Songs from all selected artists will be merged into the first one ("' + keepArtist.name + '", ' + keepArtist.song_count + ' songs). The others will be deleted.';
     panel.appendChild(desc);
 
     // Result country for the kept artist — prefilled with its current country.
     var countryRow = document.createElement('div');
-    countryRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:14px;';
+    countryRow.style.cssText = 'display:flex;align-items:center;gap:0.5rem;margin-bottom:0.875rem;';
     var countryLbl = document.createElement('span');
     countryLbl.textContent = 'Result country:';
-    countryLbl.style.cssText = 'font-size:12px;color:var(--text-secondary);white-space:nowrap;';
+    countryLbl.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;';
     var countrySel = _miscSelect(_allCountries, keepArtist.country_id);
     countrySel.style.cssText += 'flex:1;';
     countryRow.appendChild(countryLbl);
@@ -3452,10 +3448,10 @@ function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
     }
 
     var listDiv = document.createElement('div');
-    listDiv.style.cssText = 'font-size:12px;';
+    listDiv.style.cssText = 'font-size:0.75rem;';
     var loading = document.createElement('div');
     loading.textContent = 'Loading songs...';
-    loading.style.cssText = 'color:var(--text-secondary);padding:8px 0;';
+    loading.style.cssText = 'color:var(--text-secondary);padding:0.5rem 0;';
     listDiv.appendChild(loading);
     panel.appendChild(listDiv);
 
@@ -3465,12 +3461,12 @@ function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
             var artist = allArtists.find(function(a){return a.id === aid;});
             if (!artist) return;
             var section = document.createElement('div');
-            section.style.cssText = 'margin-bottom:12px;padding:8px 10px;border-radius:4px;border:1px solid var(--border);' + (idx === 0 ? 'background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);' : 'background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);');
+            section.style.cssText = 'margin-bottom:0.75rem;padding:0.5rem 0.625rem;border-radius:0.25rem;border:0.0625rem solid var(--border);' + (idx === 0 ? 'background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);' : 'background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);');
             var header = document.createElement('div');
-            header.style.cssText = 'font-weight:bold;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
+            header.style.cssText = 'font-weight:bold;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.375rem;';
             var badge = document.createElement('span');
             badge.textContent = idx === 0 ? 'KEEP' : 'MERGE';
-            badge.style.cssText = 'font-size:9px;padding:1px 5px;border-radius:3px;font-weight:bold;color:#fff;background:' + (idx === 0 ? '#22c55e' : '#ef4444') + ';';
+            badge.style.cssText = 'font-size:0.5625rem;padding:0.0625rem 0.3125rem;border-radius:0.1875rem;font-weight:bold;color:#fff;background:' + (idx === 0 ? '#22c55e' : '#ef4444') + ';';
             header.appendChild(badge);
             var nameSpan = document.createElement('span');
             nameSpan.textContent = artist.name;
@@ -3482,20 +3478,20 @@ function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
             header.appendChild(countSpan);
             var countryTag = document.createElement('span');
             countryTag.textContent = _countryName(artist.country_id);
-            countryTag.style.cssText = 'font-size:10px;color:var(--text-secondary);font-weight:normal;margin-left:auto;border:1px solid var(--border);border-radius:3px;padding:1px 6px;';
+            countryTag.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);font-weight:normal;margin-left:auto;border:0.0625rem solid var(--border);border-radius:0.1875rem;padding:0.0625rem 0.375rem;';
             header.appendChild(countryTag);
             section.appendChild(header);
             var songs = songMap[String(aid)] || [];
             if (songs.length === 0) {
                 var empty = document.createElement('div');
                 empty.textContent = 'No songs';
-                empty.style.cssText = 'color:var(--text-secondary);font-style:italic;padding-left:4px;';
+                empty.style.cssText = 'color:var(--text-secondary);font-style:italic;padding-left:0.25rem;';
                 section.appendChild(empty);
             } else {
                 songs.forEach(function(s) {
                     var songRow = document.createElement('div');
                     songRow.textContent = s.artists ? (s.name + ' — ' + s.artists) : s.name;
-                    songRow.style.cssText = 'padding:1px 0 1px 4px;color:var(--text-secondary);';
+                    songRow.style.cssText = 'padding:0.0625rem 0 0.0625rem 0.25rem;color:var(--text-secondary);';
                     section.appendChild(songRow);
                 });
             }
@@ -3504,7 +3500,7 @@ function _showMergeConfirm(selectedIds, allArtists, onConfirm) {
     });
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.875rem;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { overlay.remove(); });
     var confirmBtn = _miscBtn('Merge', '#7C3AED', function() { overlay.remove(); onConfirm(parseInt(countrySel.value)); });
     btnRow.appendChild(cancelBtn);
@@ -3524,11 +3520,11 @@ function _showCombineMiscArtist(miscArtist, onDone) {
 
     var title = document.createElement('div');
     title.textContent = 'Combine "' + miscArtist.name + '" into a real artist';
-    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;';
+    title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.375rem;';
     modal.appendChild(title);
 
     var hint = document.createElement('div');
-    hint.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:12px;';
+    hint.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.75rem;';
     hint.textContent = 'Pick the real artist, then merge each song into one of that artist’s songs. Songs you mark “not on artist page” stay on misc. The misc artist is removed once all its songs are merged.';
     modal.appendChild(hint);
 
@@ -3539,7 +3535,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
     modal.appendChild(raWrap);
 
     var songsWrap = document.createElement('div');
-    songsWrap.style.cssText = 'margin-top:12px;max-height:46vh;overflow-y:auto;';
+    songsWrap.style.cssText = 'margin-top:0.75rem;max-height:46vh;overflow-y:auto;';
     modal.appendChild(songsWrap);
 
     var realArtist = null;   // {artist_id, name}
@@ -3550,26 +3546,26 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         songsWrap.innerHTML = '';
         if (!realArtist) {
             var msg = document.createElement('div');
-            msg.style.cssText = 'font-size:12px;color:var(--text-secondary);font-style:italic;';
+            msg.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);font-style:italic;';
             msg.textContent = 'Select a real artist to begin.';
             songsWrap.appendChild(msg);
             return;
         }
         if (lastAutoMerged > 0) {
             var note = document.createElement('div');
-            note.style.cssText = 'font-size:11px;color:#0D9488;margin-bottom:6px;';
+            note.style.cssText = 'font-size:0.6875rem;color:#0D9488;margin-bottom:0.375rem;';
             note.textContent = '✓ Auto-merged ' + lastAutoMerged + ' song' + (lastAutoMerged === 1 ? '' : 's') + ' already credited to ' + realArtist.name + '.';
             songsWrap.appendChild(note);
         }
         var pending = songs.filter(function(s){ return s.state === 'pending'; }).length;
         var hdr = document.createElement('div');
-        hdr.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;';
+        hdr.style.cssText = 'font-size:0.75rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.375rem;';
         hdr.textContent = 'Songs (' + pending + ' remaining)';
         songsWrap.appendChild(hdr);
 
         songs.forEach(function(s) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 4px;border-bottom:1px solid var(--border,#eee);font-size:12px;';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.3125rem 0.25rem;border-bottom:0.0625rem solid var(--border,#eee);font-size:0.75rem;';
             var nmeta = document.createElement('div');
             nmeta.style.cssText = 'flex:1;min-width:0;';
             var nm = document.createElement('div');
@@ -3579,7 +3575,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
             if (s.artists) {
                 var art = document.createElement('div');
                 art.textContent = s.artists;
-                art.style.cssText = 'font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                art.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
                 nmeta.appendChild(art);
             }
             row.appendChild(nmeta);
@@ -3598,17 +3594,17 @@ function _showCombineMiscArtist(miscArtist, onDone) {
                 sk.style.cssText = 'color:var(--text-secondary);font-style:italic;white-space:nowrap;';
                 row.appendChild(sk);
                 var undo = _miscBtn('Undo', '#6B7280', function() { s.state = 'pending'; renderSongs(); });
-                undo.style.cssText += 'font-size:10px;padding:2px 6px;';
+                undo.style.cssText += 'font-size:0.625rem;padding:0.125rem 0.375rem;';
                 row.appendChild(undo);
             } else {
                 var mergeInto = _miscBtn('Merge into…', '#0D9488', function() { _pickTarget(s); });
-                mergeInto.style.cssText += 'font-size:11px;padding:3px 8px;';
+                mergeInto.style.cssText += 'font-size:0.6875rem;padding:0.1875rem 0.5rem;';
                 row.appendChild(mergeInto);
                 var swap = _miscBtn('Swap credit', '#2563EB', function() { _swapCredit(s); });
-                swap.style.cssText += 'font-size:11px;padding:3px 8px;';
+                swap.style.cssText += 'font-size:0.6875rem;padding:0.1875rem 0.5rem;';
                 row.appendChild(swap);
                 var skip = _miscBtn('Not on artist page', '#6B7280', function() { s.state = 'skipped'; renderSongs(); });
-                skip.style.cssText += 'font-size:11px;padding:3px 8px;';
+                skip.style.cssText += 'font-size:0.6875rem;padding:0.1875rem 0.5rem;';
                 row.appendChild(skip);
             }
             songsWrap.appendChild(row);
@@ -3621,12 +3617,12 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         pbd.appendChild(pmodal);
         var ptitle = document.createElement('div');
         ptitle.textContent = 'Merge "' + songObj.name + '" into…';
-        ptitle.style.cssText = 'font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+        ptitle.style.cssText = 'font-size:0.875rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem;';
         pmodal.appendChild(ptitle);
         var tInp = _miscInput('Search ' + realArtist.name + '’s songs...');
         pmodal.appendChild(tInp);
         var tList = document.createElement('div');
-        tList.style.cssText = 'margin-top:8px;max-height:300px;overflow-y:auto;';
+        tList.style.cssText = 'margin-top:0.5rem;max-height:18.75rem;overflow-y:auto;';
         pmodal.appendChild(tList);
 
         var timer = null;
@@ -3641,22 +3637,22 @@ function _showCombineMiscArtist(miscArtist, onDone) {
                         tList.innerHTML = '';
                         if (!items.length) {
                             var none = document.createElement('div');
-                            none.style.cssText = 'font-size:12px;color:var(--text-secondary);padding:4px;';
+                            none.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);padding:0.25rem;';
                             none.textContent = 'No matching songs for this artist';
                             tList.appendChild(none);
                             return;
                         }
                         items.forEach(function(it) {
                             var d = document.createElement('div');
-                            d.style.cssText = 'padding:6px 8px;cursor:pointer;color:var(--text-primary);border-radius:3px;';
+                            d.style.cssText = 'padding:0.375rem 0.5rem;cursor:pointer;color:var(--text-primary);border-radius:0.1875rem;';
                             var nmspan = document.createElement('div');
                             nmspan.textContent = it.name + (it.album ? ' (' + it.album + ')' : '');
-                            nmspan.style.cssText = 'font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                            nmspan.style.cssText = 'font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
                             d.appendChild(nmspan);
                             if (it.artists) {
                                 var sub = document.createElement('div');
                                 sub.textContent = it.artists;
-                                sub.style.cssText = 'font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                                sub.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
                                 d.appendChild(sub);
                             }
                             d.onmouseenter = function(){ d.style.background = 'var(--row-alternate,#f3f4f6)'; };
@@ -3726,30 +3722,30 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         abd.appendChild(amodal);
         var t = document.createElement('div');
         t.textContent = 'Album for "' + songObj.name + '"';
-        t.style.cssText = 'font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:4px;';
+        t.style.cssText = 'font-size:0.875rem;font-weight:700;color:var(--text-primary);margin-bottom:0.25rem;';
         amodal.appendChild(t);
         var sub = document.createElement('div');
         sub.textContent = 'This song has no album. Pick or create one on ' + realArtist.name + '.';
-        sub.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:10px;';
+        sub.style.cssText = 'font-size:0.6875rem;color:var(--text-secondary);margin-bottom:0.625rem;';
         amodal.appendChild(sub);
 
         var albumSel = document.createElement('select');
-        albumSel.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);';
+        albumSel.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);';
         var optNew = document.createElement('option');
         optNew.value = '__new'; optNew.textContent = '+ Create new album';
         albumSel.appendChild(optNew);
         amodal.appendChild(albumSel);
 
         var newDiv = document.createElement('div');
-        newDiv.style.cssText = 'margin-top:6px;';
+        newDiv.style.cssText = 'margin-top:0.375rem;';
         var newName = _miscInput('Album name');
         newDiv.appendChild(newName);
         var newDate = document.createElement('input');
         newDate.type = 'date';
-        newDate.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:4px;';
+        newDate.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:0.25rem;';
         newDiv.appendChild(newDate);
         var newType = _miscSelect(_allAlbumTypes, 2);
-        newType.style.marginTop = '4px';
+        newType.style.marginTop = '0.25rem';
         newDiv.appendChild(newType);
         amodal.appendChild(newDiv);
         function syncNew(){ newDiv.style.display = albumSel.value === '__new' ? 'block' : 'none'; }
@@ -3767,7 +3763,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         });
 
         var brow = document.createElement('div');
-        brow.style.cssText = 'display:flex;gap:8px;margin-top:14px;justify-content:flex-end;';
+        brow.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.875rem;justify-content:flex-end;';
         brow.appendChild(_miscBtn('Cancel', '#6B7280', function(){ abd.remove(); }));
         brow.appendChild(_miscBtn('Swap credit', '#2563EB', function() {
             var payload;
@@ -3804,7 +3800,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
 
     function _autoMergeThenLoad() {
         lastAutoMerged = 0;
-        songsWrap.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);">Loading…</div>';
+        songsWrap.innerHTML = '<div style="font-size:0.75rem;color:var(--text-secondary);">Loading…</div>';
         // Songs the real artist is already credited on aren't merged — just drop the redundant misc credit.
         fetch('/misc/combine-auto-merge', {
             method: 'POST', headers: _csrfJson(),
@@ -3822,7 +3818,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
     }
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:14px;justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.875rem;justify-content:flex-end;';
     btnRow.appendChild(_miscBtn('Close', '#6B7280', function() { bd.remove(); if (onDone) onDone(); }));
     modal.appendChild(btnRow);
 

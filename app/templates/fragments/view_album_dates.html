@@ -1,7 +1,7 @@
 {% if albums %}
 <ul class="text-sm space-y-1">
     {% for a in albums %}
-    <li id="{{ id_prefix }}-album-{{ a.id }}" style="line-height: 26px; min-height: 26px;">
+    <li id="{{ id_prefix }}-album-{{ a.id }}" style="line-height: 1.625rem; min-height: 1.625rem;">
         {% if edit_mode and show_confirm %}
         <button class="mr-1 px-2 py-1 rounded text-xs bg-button-secondary text-primary-text border-0 cursor-pointer"
                 title="Mark date as correct"

@@ -75,7 +75,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex gap-3 overflow-x-auto pb-2">
                 {% for c in billing_cycles %}
-                <div class="flex-shrink-0 border border-border rounded p-2 bg-secondary-bg" style="min-width: 150px;">
+                <div class="flex-shrink-0 border border-border rounded p-2 bg-secondary-bg" style="min-width: 9.375rem;">
                     <div class="text-xs text-secondary-text mb-1">{{ c.start.strftime('%b %d') }} – {{ c.end.strftime('%b %d, %Y') }}</div>
                     <div class="flex items-center gap-1">
                         <span class="text-sm">$</span>

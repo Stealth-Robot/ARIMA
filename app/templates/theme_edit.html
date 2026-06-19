@@ -136,7 +136,7 @@
                     <input type="text" value="{{ colours[col] or '#FFFFFF' }}" maxlength="7"
                            id="hex-{{ col }}" title="Click to copy, or type/paste a hex code"
                            class="text-xs border rounded px-1 cursor-pointer"
-                           class="font-mono text-secondary-text border-border bg-transparent" style="width: 66px;"
+                           class="font-mono text-secondary-text border-border bg-transparent" style="width: 4.125rem;"
                            onclick="if(document.activeElement!==this){navigator.clipboard.writeText(this.value).then(()=>{var o=this.value;this.value='Copied!';setTimeout(()=>this.value=o,800)})}"
                            oninput="var v=this.value.trim();if(/^#[0-9A-Fa-f]{6}$/.test(v)){var cp=this.nextElementSibling;cp.value=v;cp.dispatchEvent(new Event('input',{bubbles:true}));}">
                     <input type="color" name="{{ col }}" value="{{ colours[col] or '#FFFFFF' }}"

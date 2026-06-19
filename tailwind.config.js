@@ -24,17 +24,17 @@ module.exports = {
   theme: {
     extend: {
       spacing: {
-        '0.75': '3px',
-        '2.5': '10px',
-        '3.5': '14px',
-        '4.5': '18px',
-        '11': '44px',
+        '0.75': '0.1875rem',
+        '2.5': '0.625rem',
+        '3.5': '0.875rem',
+        '4.5': '1.125rem',
+        '11': '2.75rem',
       },
       fontSize: {
-        'xxs': ['10px', { lineHeight: '1.2' }],
-        '2xs': ['11px', { lineHeight: '1.3' }],
-        'sm-': ['13px', { lineHeight: '1.4' }],
-        'base-': ['15px', { lineHeight: '1.5' }],
+        'xxs': ['0.625rem', { lineHeight: '1.2' }],
+        '2xs': ['0.6875rem', { lineHeight: '1.3' }],
+        'sm-': ['0.8125rem', { lineHeight: '1.4' }],
+        'base-': ['0.9375rem', { lineHeight: '1.5' }],
       },
       borderWidth: {
         '3': '3px',

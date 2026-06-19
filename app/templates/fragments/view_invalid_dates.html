@@ -1,7 +1,7 @@
 {% if albums %}
 <ul class="text-sm space-y-1">
     {% for a in albums %}
-    <li id="invalid-album-{{ a.id }}" style="line-height: 26px; min-height: 26px;">
+    <li id="invalid-album-{{ a.id }}" style="line-height: 1.625rem; min-height: 1.625rem;">
         {% set link_artist_id = a.artist_id or (album_artists.get(a.id)[0].id if album_artists.get(a.id) else None) %}
         {% set album_label = '"' ~ a.name ~ '"' %}
         {% if link_artist_id %}<a href="{{ url_for('artists.artist_detail', artist_id=link_artist_id) }}#album-{{ a.id }}" class="text-link no-underline">{{ album_label }}</a>{% else %}{{ album_label }}{% endif %}

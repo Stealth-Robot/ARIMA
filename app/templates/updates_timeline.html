@@ -15,7 +15,7 @@
                     class="px-3 py-2 border rounded text-xs border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} &#9662;
             </button>
-            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);">
                 {% for t in all_types %}
                 <label class="block py-0.5 px-0 text-sm- cursor-pointer">
                     <input type="checkbox" class="type-filter-cb mr-1" value="{{ t.type }}"
@@ -38,7 +38,7 @@
     <!-- Stats banner -->
     <div class="bg-secondary-bg border border-border rounded-lg py-4 px-5 mb-6">
         <div class="flex items-center gap-4 flex-wrap">
-            <div class="font-extrabold text-primary-text leading-none" style="font-size: 28px;">{{ total }}</div>
+            <div class="font-extrabold text-primary-text leading-none" style="font-size: 1.75rem;">{{ total }}</div>
             <div class="text-sm- text-secondary-text leading-snug">
                 Update{{ 's' if total != 1 else '' }} Shipped
             </div>
@@ -48,7 +48,7 @@
                 {% if count > 0 %}
                 <div class="text-center">
                     <div class="text-xl font-bold" style="color: var(--update-type-{{ t.type | lower | replace('.', '') }});">{{ count }}</div>
-                    <div class="text-xxs text-secondary-text uppercase" style="letter-spacing: 0.5px;">{{ t.type }}</div>
+                    <div class="text-xxs text-secondary-text uppercase" style="letter-spacing: 0.03125rem;">{{ t.type }}</div>
                 </div>
                 {% endif %}
                 {% endfor %}
@@ -68,15 +68,15 @@
 
         <!-- Daily bar chart (built by JS using local dates) -->
         <!-- Scrolls horizontally so date labels are never truncated when there are many days. -->
-        <div class="mt-4" style="overflow-x: auto; padding-bottom: 15px;">
-            <div id="daily-chart-bars" class="flex items-end gap-0.75" style="height: 80px; min-width: 100%; width: max-content;"></div>
+        <div class="mt-4" style="overflow-x: auto; padding-bottom: 0.9375rem;">
+            <div id="daily-chart-bars" class="flex items-end gap-0.75" style="height: 5rem; min-width: 100%; width: max-content;"></div>
             <div id="daily-chart-labels" class="flex gap-0.75 mt-1" style="min-width: 100%; width: max-content;"></div>
         </div>
 
         <!-- Hourly bar chart (all updates, ET timezone) -->
         <div class="mt-5 pt-4 border-t border-border">
             <div class="text-2xs font-semibold text-secondary-text mb-2">Updates By Hour Of Day <span class="font-normal">(ET, All Time)</span></div>
-            <div id="hourly-chart-bars" class="flex items-end gap-0.75" style="height: 80px;"></div>
+            <div id="hourly-chart-bars" class="flex items-end gap-0.75" style="height: 5rem;"></div>
             <div id="hourly-chart-labels" class="flex gap-0.75 mt-1"></div>
         </div>
     </div>
@@ -85,14 +85,14 @@
     <div id="timeline-cards" class="hidden">
         {% for u in updates %}
         <div class="tl-card flex-shrink-0 rounded-lg overflow-hidden border border-border bg-secondary-bg" data-utc="{{ u.date }}" data-type="{{ u.type.type | lower | replace('.', '') if u.type else '' }}"
-             style="flex: 0 0 280px; scroll-snap-align: start; border-top: 3px solid var(--update-type-{{ u.type.type | lower | replace('.', '') if u.type else 'feature' }});">
+             style="flex: 0 0 17.5rem; scroll-snap-align: start; border-top: 0.1875rem solid var(--update-type-{{ u.type.type | lower | replace('.', '') if u.type else 'feature' }});">
             <div class="py-3.5 px-4">
                 <div class="flex items-center gap-2 mb-2">
                     {% if u.type %}
                     <span class="text-base">
                         {% if u.type.type == 'Feature' %}&#10024;{% elif u.type.type == 'Bugfix' %}&#128295;{% elif u.type.type == 'Style' %}&#127912;{% elif u.type.type == 'Perf.' %}&#128640;{% endif %}
                     </span>
-                    <span class="inline-block rounded-full text-2xs font-medium" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
+                    <span class="inline-block rounded-full text-2xs font-medium" style="padding: 0.0625rem 0.5rem; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }}); color: #fff;">
                         {{ u.type.type }}
                     </span>
                     {% endif %}
@@ -137,20 +137,19 @@ function formatTime(d) {
 // Custom tooltip for daily bar chart
 var chartTip = (function() {
     var el = document.createElement('div');
-    el.style.cssText = 'position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:12px; min-width:140px;';
+    el.style.cssText = 'position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s; background:var(--bg-secondary); border:0.0625rem solid var(--border); border-radius:0.5rem; padding:0.625rem 0.875rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,.25); font-size:0.75rem; min-width:8.75rem;';
     document.body.appendChild(el);
     return {
         show: function(html, colRect, barRect) {
             el.innerHTML = html;
             el.style.opacity = '1';
-            var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-            var cx = colRect.left / zoom;
-            var cw = colRect.width / zoom;
-            var bx = barRect.top / zoom;
-            var bb = barRect.bottom / zoom;
+            var cx = colRect.left;
+            var cw = colRect.width;
+            var bx = barRect.top;
+            var bb = barRect.bottom;
             var ew = el.offsetWidth;
             var eh = el.offsetHeight;
-            var vw = window.innerWidth / zoom;
+            var vw = window.innerWidth;
             var x = cx + cw/2 - ew/2;
             var y = bx - eh - 8;
             if (y < 4) y = bb + 8;
@@ -196,19 +195,19 @@ var chartTip = (function() {
         var total = 0;
         for (var t in counts) total += counts[t];
         var bar = document.createElement('div');
-        bar.style.cssText = 'height:' + Math.round(total/maxDay*100) + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
+        bar.style.cssText = 'height:' + Math.round(total/maxDay*100) + '%; display:flex; flex-direction:column; border-radius:0.1875rem; overflow:hidden; min-width:0.5rem;';
         var tipDate = friendlyDate(new Date(key + 'T12:00:00'));
         var tipRows = '';
         typeOrder.forEach(function(typ) {
             var c = counts[typ] || 0;
-            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;">'
-                + '<span style="width:8px; height:8px; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
+            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.125rem 0;">'
+                + '<span style="width:0.5rem; height:0.5rem; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
                 + '<span style="flex:1; color:var(--text-secondary);">' + typeLabels[typ] + '</span>'
-                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:24px; text-align:right;">' + c + '</span>'
+                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:1.5rem; text-align:right;">' + c + '</span>'
                 + '</div>';
         });
-        var tipHtml = '<div style="font-weight:700; margin-bottom:6px; color:var(--text-primary);">' + tipDate + '</div>'
-            + '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
+        var tipHtml = '<div style="font-weight:700; margin-bottom:0.375rem; color:var(--text-primary);">' + tipDate + '</div>'
+            + '<div style="font-size:0.6875rem; color:var(--text-secondary); margin-bottom:0.375rem;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
             + tipRows;
         typeOrder.forEach(function(typ) {
             var c = counts[typ] || 0;
@@ -219,7 +218,7 @@ var chartTip = (function() {
             }
         });
         var col = document.createElement('div');
-        col.style.cssText = 'flex:1 0 36px; display:flex; flex-direction:column; justify-content:flex-end; height:100%;';
+        col.style.cssText = 'flex:1 0 2.25rem; display:flex; flex-direction:column; justify-content:flex-end; height:100%;';
         col.appendChild(bar);
         (function(html, colEl, barEl) {
             colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
@@ -227,7 +226,7 @@ var chartTip = (function() {
         })(tipHtml, col, bar);
         barsEl.appendChild(col);
         var label = document.createElement('div');
-        label.style.cssText = 'flex:1 0 36px; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; white-space:nowrap;';
+        label.style.cssText = 'flex:1 0 2.25rem; text-align:center; font-size:0.5625rem; color:var(--text-secondary); font-family:monospace; white-space:nowrap;';
         var d = new Date(key + 'T12:00:00');
         label.textContent = isNaN(d) ? key : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         labelsEl.appendChild(label);
@@ -259,21 +258,21 @@ var chartTip = (function() {
 
         var bar = document.createElement('div');
         var pct = total > 0 ? Math.round(total / maxHour * 100) : 0;
-        bar.style.cssText = 'height:' + pct + '%; display:flex; flex-direction:column; border-radius:3px; overflow:hidden; min-width:8px;';
+        bar.style.cssText = 'height:' + pct + '%; display:flex; flex-direction:column; border-radius:0.1875rem; overflow:hidden; min-width:0.5rem;';
 
         var ampm = h >= 12 ? 'PM' : 'AM';
         var h12 = h % 12 || 12;
         var tipRows = '';
         typeOrder.forEach(function(typ) {
             var c = counts[typ] || 0;
-            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;">'
-                + '<span style="width:8px; height:8px; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
+            if (c > 0) tipRows += '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.125rem 0;">'
+                + '<span style="width:0.5rem; height:0.5rem; border-radius:50%; background:var(--update-type-' + typ + '); flex-shrink:0;"></span>'
                 + '<span style="flex:1; color:var(--text-secondary);">' + typeLabels[typ] + '</span>'
-                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:24px; text-align:right;">' + c + '</span>'
+                + '<span style="font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); min-width:1.5rem; text-align:right;">' + c + '</span>'
                 + '</div>';
         });
-        var tipHtml = '<div style="font-weight:700; margin-bottom:6px; color:var(--text-primary);">' + h12 + ' ' + ampm + ' ET</div>'
-            + '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
+        var tipHtml = '<div style="font-weight:700; margin-bottom:0.375rem; color:var(--text-primary);">' + h12 + ' ' + ampm + ' ET</div>'
+            + '<div style="font-size:0.6875rem; color:var(--text-secondary); margin-bottom:0.375rem;">' + total + ' update' + (total !== 1 ? 's' : '') + '</div>'
             + tipRows;
 
         typeOrder.forEach(function(typ) {
@@ -286,7 +285,7 @@ var chartTip = (function() {
         });
 
         var col = document.createElement('div');
-        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:8px; height:100%;';
+        col.style.cssText = 'flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:0.5rem; height:100%;';
         col.appendChild(bar);
         (function(html, colEl, barEl) {
             colEl.addEventListener('mouseenter', function() { chartTip.show(html, colEl.getBoundingClientRect(), barEl.getBoundingClientRect()); });
@@ -295,7 +294,7 @@ var chartTip = (function() {
         barsEl.appendChild(col);
 
         var label = document.createElement('div');
-        label.style.cssText = 'flex:1; text-align:center; font-size:9px; color:var(--text-secondary); font-family:monospace; min-width:8px;';
+        label.style.cssText = 'flex:1; text-align:center; font-size:0.5625rem; color:var(--text-secondary); font-family:monospace; min-width:0.5rem;';
         label.textContent = h % 6 === 0 ? (h12 + ampm) : '';
         labelsEl.appendChild(label);
     }
@@ -321,13 +320,13 @@ var chartTip = (function() {
     order.forEach(function(key) {
         var g = groups[key];
         var section = document.createElement('div');
-        section.style.cssText = 'margin-bottom: 24px;';
+        section.style.cssText = 'margin-bottom: 1.5rem;';
         var header = document.createElement('div');
-        header.style.cssText = 'font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;';
+        header.style.cssText = 'font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.625rem;';
         header.textContent = friendlyDate(g.date) + '  (' + g.cards.length + ')';
         section.appendChild(header);
         var row = document.createElement('div');
-        row.style.cssText = 'display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory;';
+        row.style.cssText = 'display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.9375rem; scroll-snap-type: x mandatory;';
         g.cards.forEach(function(card) { row.appendChild(card); });
         section.appendChild(row);
         container.appendChild(section);

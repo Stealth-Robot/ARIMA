@@ -4,7 +4,7 @@
 {% block og_description %}{% if og_sotd %}{{ og_sotd.date }} · {{ og_sotd.song }}{% if og_sotd.artist %} — {{ og_sotd.artist }}{% endif %}{% else %}Daily random song picks{% endif %}{% endblock %}
 
 {% block content %}
-<div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
+<div class="px-4 py-6" style="max-width: 56.25rem; margin: 0 auto;">
     <h2 class="text-lg font-bold text-primary-text mb-1">Song of the Day History</h2>
     <p class="text-xs text-secondary-text mb-4">Resets daily at midnight EST</p>
     {% if cards %}
@@ -12,10 +12,10 @@
     <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
         <thead>
             <tr class="sotd-row">
-                <th class="py-1 px-2 text-left text-secondary-text" style="width: 80px; min-width: 80px; border: none;">Date</th>
-                <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; min-width: 200px; max-width: 200px; border: none;">Song</th>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 5rem; min-width: 5rem; border: none;">Date</th>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 12.5rem; min-width: 12.5rem; max-width: 12.5rem; border: none;">Song</th>
                 {% for u in cards[0].users %}
-                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                 {% endfor %}
             </tr>
         </thead>

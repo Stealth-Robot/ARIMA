@@ -18,7 +18,7 @@
                 <input type="text" name="commit_id" placeholder="Commit ID" required value="{{ saved_form.get('commit_id', '') }}"
                        class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border" style="font-family: monospace;">
                 <input type="text" name="date" data-datetime-format placeholder="YYYY-MM-DD HH:MM" required value="{{ saved_form.get('date', '') }}"
-                       class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border" style="width: 160px; font-family: monospace;">
+                       class="text-xs px-3 py-1 rounded border bg-secondary-bg text-primary-text border-border" style="width: 10rem; font-family: monospace;">
                 <button type="button" id="refresh-date-btn" class="text-xs px-2 py-1 rounded border bg-secondary-bg text-secondary-text border-border cursor-pointer" title="Reset to now">&#x21bb;</button>
             </div>
             <div class="flex gap-2">
@@ -43,7 +43,7 @@
                     class="px-3 py-2 border rounded text-xs border-border bg-secondary-bg cursor-pointer whitespace-nowrap">
                 Type{% if include %} ({{ include|length }}){% endif %} &#9662;
             </button>
-            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <div id="type-filter-dropdown" class="hidden absolute top-full left-0 z-50 bg-secondary-bg border border-border rounded py-1.5 px-2.5 mt-0.5 whitespace-nowrap" style="box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);">
                 {% for t in all_types %}
                 <label class="block py-0.5 px-0 text-sm- cursor-pointer">
                     <input type="checkbox" class="type-filter-cb mr-1" value="{{ t.type }}"
@@ -62,12 +62,12 @@
     <table class="w-full text-xs updates-table border-spacing-0">
         <thead>
             <tr class="bg-header-row">
-                <th class="text-left border-b border-grid-line" style="width: 140px;">Date</th>
-                <th class="text-left border-b border-grid-line" style="width: 80px;">Type</th>
+                <th class="text-left border-b border-grid-line" style="width: 8.75rem;">Date</th>
+                <th class="text-left border-b border-grid-line" style="width: 5rem;">Type</th>
                 <th class="text-left border-b border-grid-line">Description</th>
-                <th class="text-left border-b border-grid-line" style="width: 80px;">Commit</th>
+                <th class="text-left border-b border-grid-line" style="width: 5rem;">Commit</th>
                 {% if current_user.is_admin %}
-                <th class="border-b border-grid-line" style="width: 100px;">Actions</th>
+                <th class="border-b border-grid-line" style="width: 6.25rem;">Actions</th>
                 {% endif %}
             </tr>
         </thead>
@@ -78,7 +78,7 @@
                 <td class="update-date whitespace-nowrap border-b border-grid-line" style="font-family: monospace;" data-utc="{{ u.date }}">{{ u.date[:10] if u.date else '-' }}</td>
                 <td class="border-b border-grid-line">
                     {% if u.type %}
-                    <span class="inline-block rounded-full text-2xs font-medium text-white" style="padding: 1px 8px; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }});">
+                    <span class="inline-block rounded-full text-2xs font-medium text-white" style="padding: 0.0625rem 0.5rem; background: var(--update-type-{{ u.type.type | lower | replace('.', '') }});">
                         {{ u.type.type }}
                     </span>
                     {% endif %}
@@ -239,17 +239,17 @@ function editRow(id) {
     form.method = 'POST';
     form.action = '/updates/' + id + '/edit';
     form.dataset.orig = td.innerHTML;
-    form.style.cssText = 'display:flex; flex-direction:column; gap:4px;';
+    form.style.cssText = 'display:flex; flex-direction:column; gap:0.25rem;';
     form.innerHTML = '<input type="hidden" name="csrf_token" value="' + (csrf ? csrf.content : '') + '">'
-        + '<div style="display:flex; gap:4px;">'
-        + '<input type="text" name="commit_id" value="' + commit.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="width:100px; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="Commit ID">'
-        + '<input type="text" name="date" value="' + localDate + '" class="text-xs px-2 py-1 rounded border" style="width:140px; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="YYYY-MM-DD HH:MM">'
+        + '<div style="display:flex; gap:0.25rem;">'
+        + '<input type="text" name="commit_id" value="' + commit.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="width:6.25rem; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="Commit ID">'
+        + '<input type="text" name="date" value="' + localDate + '" class="text-xs px-2 py-1 rounded border" style="width:8.75rem; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="YYYY-MM-DD HH:MM">'
         + '<select name="type_id" class="text-xs px-2 py-1 rounded border" style="background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);">' + typeOpts + '</select>'
         + '</div>'
-        + '<div style="display:flex; gap:4px;">'
+        + '<div style="display:flex; gap:0.25rem;">'
         + '<input type="text" name="description" value="' + desc.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="flex:1; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);">'
         + '<button type="submit" class="text-xs px-2 py-1 rounded" style="background:var(--button-primary); color:var(--button-text);">Save</button>'
-        + '<button type="button" class="text-xs px-2 py-1 rounded" style="background:var(--button-secondary); color:var(--text-primary); border:1px solid var(--border);" onclick="this.closest(\'form\').outerHTML=this.closest(\'form\').dataset.orig">Cancel</button>'
+        + '<button type="button" class="text-xs px-2 py-1 rounded" style="background:var(--button-secondary); color:var(--text-primary); border:0.0625rem solid var(--border);" onclick="this.closest(\'form\').outerHTML=this.closest(\'form\').dataset.orig">Cancel</button>'
         + '</div>';
     td.innerHTML = '';
     td.appendChild(form);
@@ -285,7 +285,7 @@ document.querySelectorAll('.update-date').forEach(function(td) {
                 dateTd.style.position = 'relative';
                 var badge = document.createElement('span');
                 badge.textContent = 'NEW';
-                badge.style.cssText = 'position:absolute; left:-42px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; padding:1px 6px; border-radius:3px; background:var(--delete-button); color:var(--button-text); white-space:nowrap;';
+                badge.style.cssText = 'position:absolute; left:-2.625rem; top:50%; transform:translateY(-50%); font-size:0.625rem; font-weight:700; padding:0.0625rem 0.375rem; border-radius:0.1875rem; background:var(--delete-button); color:var(--button-text); white-space:nowrap;';
                 dateTd.appendChild(badge);
             }
         }

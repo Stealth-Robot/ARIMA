@@ -40,25 +40,25 @@ function _emToast(msg) {
 function _emBtn(label, kind) {
     var b = document.createElement('button');
     b.textContent = label;
-    var base = 'padding:8px 16px; font-size:14px; border-radius:6px; cursor:pointer;';
+    var base = 'padding:0.5rem 1rem; font-size:0.875rem; border-radius:0.375rem; cursor:pointer;';
     if (kind === 'primary') b.style.cssText = base + 'background:var(--link,#2563EB); color:#fff; border:none;';
     else if (kind === 'danger') b.style.cssText = base + 'background:var(--delete-button,#DC2626); color:#fff; border:none;';
-    else b.style.cssText = base + 'background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc);';
+    else b.style.cssText = base + 'background:var(--bg-primary,#fff); color:var(--text-primary); border:0.0625rem solid var(--border,#ccc);';
     return b;
 }
 
 /* Read-only labelled value row (uppercase label / value). */
 function _emInfoRow(label, valueNode) {
     var row = document.createElement('div');
-    row.style.cssText = 'margin-bottom:10px;';
+    row.style.cssText = 'margin-bottom:0.625rem;';
     var l = document.createElement('div');
     l.textContent = label;
-    l.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:2px;';
+    l.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:0.125rem;';
     row.appendChild(l);
     if (typeof valueNode === 'string' || typeof valueNode === 'number') {
         var v = document.createElement('div');
         v.textContent = (valueNode === '' || valueNode == null) ? '—' : valueNode;
-        v.style.cssText = 'font-size:14px; color:var(--text-primary); white-space:pre-wrap; line-height:1.4; word-wrap:break-word;';
+        v.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; line-height:1.4; word-wrap:break-word;';
         row.appendChild(v);
     } else {
         row.appendChild(valueNode);
@@ -70,18 +70,18 @@ function _emInfoRow(label, valueNode) {
 function _emLabeledInput(container, field, data) {
     var l = document.createElement('div');
     l.textContent = field.label;
-    l.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:4px;';
+    l.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.25rem;';
     container.appendChild(l);
     var inp = field.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
     if (field.type === 'textarea') inp.rows = 3; else inp.type = 'text';
     inp.value = data[field.key] || '';
     if (field.placeholder) inp.placeholder = field.placeholder;
-    inp.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;' + (field.hint ? '' : ' margin-bottom:12px;');
+    inp.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;' + (field.hint ? '' : ' margin-bottom:0.75rem;');
     container.appendChild(inp);
     if (field.hint) {
         var h = document.createElement('div');
         h.textContent = field.hint;
-        h.style.cssText = 'font-size:11px; color:var(--text-secondary,#6B7280); margin-top:4px; margin-bottom:12px;';
+        h.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary,#6B7280); margin-top:0.25rem; margin-bottom:0.75rem;';
         container.appendChild(h);
     }
     return inp;
@@ -92,27 +92,27 @@ function _emLabeledInput(container, field, data) {
 function _emNameListField(container, field, data) {
     var l = document.createElement('div');
     l.textContent = field.label;
-    l.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:4px;';
+    l.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.25rem;';
     container.appendChild(l);
     var wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
+    wrap.style.cssText = 'display:flex; flex-direction:column; gap:0.375rem; margin-bottom:0.5rem;';
     container.appendChild(wrap);
     function addRow(name) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex; gap:6px; align-items:center;';
+        row.style.cssText = 'display:flex; gap:0.375rem; align-items:center;';
         var inp = document.createElement('input');
         inp.type = 'text'; inp.value = name || ''; inp.placeholder = field.placeholder || 'Alternate name';
         inp.className = 'namelist-name';
-        inp.style.cssText = 'flex:1; min-width:0; border:1px solid var(--border,#ccc); border-radius:6px; padding:6px 8px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+        inp.style.cssText = 'flex:1; min-width:0; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem 0.5rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
         var del = _emBtn('✕', 'secondary');
-        del.style.padding = '6px 10px';
+        del.style.padding = '0.375rem 0.625rem';
         del.onclick = function() { wrap.removeChild(row); };
         row.appendChild(inp); row.appendChild(del);
         wrap.appendChild(row);
     }
     (data[field.key] || []).forEach(function(n) { addRow(n); });
     var addBtn = _emBtn('+ Add name', 'secondary');
-    addBtn.style.cssText += 'margin-bottom:12px;';
+    addBtn.style.cssText += 'margin-bottom:0.75rem;';
     addBtn.onclick = function() { addRow(''); };
     container.appendChild(addBtn);
     return {
@@ -145,19 +145,19 @@ function openEditModal(config) {
     function markDirty() { dirty = true; }
 
     var backdrop = document.createElement('div');
-    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:1rem;';
     var modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:340px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border,#ccc); border-radius:0.5rem; padding:1rem; width:100%; max-width:21.25rem; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);';
 
     var title = document.createElement('div');
-    title.style.cssText = 'font-size:16px; font-weight:600; color:var(--text-primary); margin-bottom:12px; word-wrap:break-word;';
+    title.style.cssText = 'font-size:1rem; font-weight:600; color:var(--text-primary); margin-bottom:0.75rem; word-wrap:break-word;';
     modal.appendChild(title);
     var bodyArea = document.createElement('div');
-    bodyArea.style.cssText = 'overflow-y:auto; flex:1; padding-right:20px; margin-right:-12px; scrollbar-gutter:stable;';
+    bodyArea.style.cssText = 'overflow-y:auto; flex:1; padding-right:1.25rem; margin-right:-0.75rem; scrollbar-gutter:stable;';
     bodyArea.textContent = 'Loading…';
     modal.appendChild(bodyArea);
     var footerArea = document.createElement('div');
-    footerArea.style.cssText = 'margin-top:14px; flex-shrink:0;';
+    footerArea.style.cssText = 'margin-top:0.875rem; flex-shrink:0;';
     modal.appendChild(footerArea);
 
     function doClose() {
@@ -216,7 +216,7 @@ function openEditModal(config) {
 
     function _booleanRow(field) {
         var lab = document.createElement('label');
-        lab.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-primary); margin-bottom:8px; cursor:pointer;';
+        lab.style.cssText = 'display:flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--text-primary); margin-bottom:0.5rem; cursor:pointer;';
         var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!data[field.key]; cb.style.cssText = 'cursor:pointer;';
         cb.onchange = function() {
             var body = field.payload ? field.payload(cb.checked) : ('value=' + (cb.checked ? '1' : '0'));
@@ -276,7 +276,7 @@ function openEditModal(config) {
         });
         if (valueInputs.length || nameLists.length) {
             var saveRow = document.createElement('div');
-            saveRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px;';
+            saveRow.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end; margin-bottom:0.625rem;';
             var cancelBtn = _emBtn('Cancel', 'secondary'); cancelBtn.onclick = renderInfo;
             var saveBtn = _emBtn('Save', 'primary');
             saveBtn.onclick = function() {
@@ -296,7 +296,7 @@ function openEditModal(config) {
             bodyArea.appendChild(_sep());
             bodyArea.appendChild(_actionsLabel());
             var actWrap = document.createElement('div');
-            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
+            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:0.5rem;';
             bodyArea.appendChild(actWrap);
             pickerFields.forEach(function(field) { _pickerField(field, actWrap); });
             actions.forEach(function(act) { actWrap.appendChild(_actionBtn(act)); });
@@ -305,13 +305,13 @@ function openEditModal(config) {
 
     function _sep() {
         var sep = document.createElement('div');
-        sep.style.cssText = 'border-top:1px solid var(--border,#ccc); margin:8px 0 10px;';
+        sep.style.cssText = 'border-top:0.0625rem solid var(--border,#ccc); margin:0.5rem 0 0.625rem;';
         return sep;
     }
     function _actionsLabel() {
         var l = document.createElement('div');
         l.textContent = 'Actions';
-        l.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:8px;';
+        l.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:0.5rem;';
         return l;
     }
     function _actionBtn(act) {
@@ -487,7 +487,7 @@ function albumEditConfig(albumId, albumName) {
             if (metaBits.length) {
                 var meta = document.createElement('div');
                 meta.textContent = metaBits.join(' · ');
-                meta.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:10px;';
+                meta.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.625rem;';
                 bodyArea.appendChild(meta);
             }
             if (data.alt_names && data.alt_names.length) {
@@ -497,10 +497,10 @@ function albumEditConfig(albumId, albumName) {
                 var listWrap = document.createElement('div');
                 data.songs.forEach(function(song, i) {
                     var row = document.createElement('div');
-                    row.style.cssText = 'display:flex; gap:8px; font-size:14px; color:var(--text-primary); padding:3px 0; align-items:baseline;';
+                    row.style.cssText = 'display:flex; gap:0.5rem; font-size:0.875rem; color:var(--text-primary); padding:0.1875rem 0; align-items:baseline;';
                     var num = document.createElement('span');
                     num.textContent = (i + 1) + '.';
-                    num.style.cssText = 'color:var(--text-secondary,#6B7280); font-size:12px; flex-shrink:0; min-width:18px;';
+                    num.style.cssText = 'color:var(--text-secondary,#6B7280); font-size:0.75rem; flex-shrink:0; min-width:1.125rem;';
                     var tags = [];
                     if (song.is_lead) tags.push('★ lead');
                     if (song.is_promoted) tags.push('promoted');
@@ -524,7 +524,7 @@ function albumEditConfig(albumId, albumName) {
             var altWidget = ui.nameListField(bodyArea, { key: 'alt_names', label: 'Alternate Names', endpoint: pfx + '/alt-names' }, data);
 
             var saveRow = document.createElement('div');
-            saveRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end; margin-bottom:6px;';
+            saveRow.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end; margin-bottom:0.375rem;';
             var cancelBtn = ui.btn('Cancel', 'secondary'); cancelBtn.onclick = ui.showInfo;
             var saveBtn = ui.btn('Save', 'primary');
             saveBtn.onclick = function() {
@@ -584,20 +584,20 @@ function albumEditConfig(albumId, albumName) {
                 var star = document.createElement('span');
                 star.textContent = '★'; star.title = 'Lead track';
                 star.setAttribute('role', 'checkbox'); star.setAttribute('aria-checked', song.is_lead ? 'true' : 'false');
-                star.style.cssText = 'cursor:pointer; font-size:19px; line-height:1; padding:2px 4px; color:' + (song.is_lead ? 'var(--lead-song,#f5a623)' : '#888') + ';';
+                star.style.cssText = 'cursor:pointer; font-size:1.1875rem; line-height:1; padding:0.125rem 0.25rem; color:' + (song.is_lead ? 'var(--lead-song,#f5a623)' : '#888') + ';';
                 star.onclick = function() { toggleLead(song); };
                 return star;
             }
             function _chevron(glyph, enabled, onclick) {
                 var b = document.createElement('button');
                 b.innerHTML = glyph; b.disabled = !enabled;
-                b.style.cssText = 'width:28px; height:24px; line-height:1; font-size:12px; border:1px solid var(--border,#ccc); border-radius:4px; background:var(--bg-primary,#fff); color:var(--text-primary); cursor:' + (enabled ? 'pointer' : 'default') + '; opacity:' + (enabled ? '1' : '0.35') + ';';
+                b.style.cssText = 'width:1.75rem; height:1.5rem; line-height:1; font-size:0.75rem; border:0.0625rem solid var(--border,#ccc); border-radius:0.25rem; background:var(--bg-primary,#fff); color:var(--text-primary); cursor:' + (enabled ? 'pointer' : 'default') + '; opacity:' + (enabled ? '1' : '0.35') + ';';
                 if (enabled) b.onclick = onclick;
                 return b;
             }
             function _flagToggle(song, label, field) {
                 var wrap = document.createElement('label');
-                wrap.style.cssText = 'display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-primary); cursor:pointer;';
+                wrap.style.cssText = 'display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;';
                 var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!song['is_' + field]; cb.style.cssText = 'cursor:pointer;';
                 cb.onchange = function() { toggleFlag(song, field, cb); };
                 var txt = document.createElement('span'); txt.textContent = label;
@@ -609,29 +609,29 @@ function albumEditConfig(albumId, albumName) {
                 if (!songs.length) {
                     var empty = document.createElement('div');
                     empty.textContent = 'No songs in this album.';
-                    empty.style.cssText = 'font-size:13px; color:var(--text-secondary,#6B7280);';
+                    empty.style.cssText = 'font-size:0.8125rem; color:var(--text-secondary,#6B7280);';
                     container.appendChild(empty); return;
                 }
                 songs.forEach(function(song, i) {
                     var card = document.createElement('div');
-                    card.style.cssText = 'border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; margin-bottom:8px;';
+                    card.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; margin-bottom:0.5rem;';
                     var top = document.createElement('div');
-                    top.style.cssText = 'display:flex; align-items:center; gap:6px;';
+                    top.style.cssText = 'display:flex; align-items:center; gap:0.375rem;';
                     var reorderBox = document.createElement('div');
-                    reorderBox.style.cssText = 'display:flex; gap:3px; flex-shrink:0;';
+                    reorderBox.style.cssText = 'display:flex; gap:0.1875rem; flex-shrink:0;';
                     reorderBox.appendChild(_chevron('&#9650;', i > 0, function() { reorder(i, 'up'); }));
                     reorderBox.appendChild(_chevron('&#9660;', i < songs.length - 1, function() { reorder(i, 'down'); }));
                     top.appendChild(reorderBox);
                     var name = document.createElement('div');
                     name.textContent = song.name;
-                    name.style.cssText = 'flex:1; font-size:14px; font-weight:500; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+                    name.style.cssText = 'flex:1; font-size:0.875rem; font-weight:500; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
                     top.appendChild(name);
                     card.appendChild(top);
                     var flags = document.createElement('div');
-                    flags.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; padding-left:2px;';
+                    flags.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem; margin-top:0.5rem; padding-left:0.125rem;';
                     flags.appendChild(_leadStar(song));
                     var flagGroup = document.createElement('div');
-                    flagGroup.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:12px;';
+                    flagGroup.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem;';
                     flagGroup.appendChild(_flagToggle(song, 'Promoted', 'promoted'));
                     flagGroup.appendChild(_flagToggle(song, 'Remix', 'remix'));
                     flagGroup.appendChild(_flagToggle(song, 'Cover', 'cover'));
@@ -643,11 +643,11 @@ function albumEditConfig(albumId, albumName) {
 
             if (songs.length) {
                 var songsSep = document.createElement('div');
-                songsSep.style.cssText = 'border-top:1px solid var(--border,#ccc); margin:14px 0 10px;';
+                songsSep.style.cssText = 'border-top:0.0625rem solid var(--border,#ccc); margin:0.875rem 0 0.625rem;';
                 bodyArea.appendChild(songsSep);
                 var songsLabel = document.createElement('div');
                 songsLabel.textContent = 'Songs';
-                songsLabel.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:8px;';
+                songsLabel.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:0.5rem;';
                 bodyArea.appendChild(songsLabel);
                 var songsWrap = document.createElement('div');
                 bodyArea.appendChild(songsWrap);
@@ -656,14 +656,14 @@ function albumEditConfig(albumId, albumName) {
             }
 
             var sep = document.createElement('div');
-            sep.style.cssText = 'border-top:1px solid var(--border,#ccc); margin:14px 0 10px;';
+            sep.style.cssText = 'border-top:0.0625rem solid var(--border,#ccc); margin:0.875rem 0 0.625rem;';
             bodyArea.appendChild(sep);
             var actLabel = document.createElement('div');
             actLabel.textContent = 'Actions';
-            actLabel.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:8px;';
+            actLabel.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:0.5rem;';
             bodyArea.appendChild(actLabel);
             var actWrap = document.createElement('div');
-            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
+            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:0.5rem;';
             bodyArea.appendChild(actWrap);
             function _act(label, kind, fn) { var b = ui.btn(label, kind || 'secondary'); b.onclick = fn; actWrap.appendChild(b); }
 
@@ -785,7 +785,7 @@ function songEditConfig(cell) {
         renderInfoBody: function(bodyArea, data, ui) {
             var nameDiv = document.createElement('div');
             nameDiv.textContent = data.name;
-            nameDiv.style.cssText = 'font-size:16px; font-weight:600; color:var(--text-primary); line-height:1.3; word-wrap:break-word;';
+            nameDiv.style.cssText = 'font-size:1rem; font-weight:600; color:var(--text-primary); line-height:1.3; word-wrap:break-word;';
             bodyArea.appendChild(ui.infoRow('Song', nameDiv));
 
             var artistsText = (data.main_artists || []).join(', ');
@@ -796,7 +796,7 @@ function songEditConfig(cell) {
 
             if (data.albums && data.albums.length) {
                 var albumWrap = document.createElement('div');
-                albumWrap.style.cssText = 'font-size:14px; color:var(--text-primary); line-height:1.4;';
+                albumWrap.style.cssText = 'font-size:0.875rem; color:var(--text-primary); line-height:1.4;';
                 data.albums.forEach(function(al) {
                     var line = al.name;
                     if (al.year) line += ' (' + al.year + ')';
@@ -825,17 +825,17 @@ function songEditConfig(cell) {
 
             if (data.spotify_url || data.youtube_url) {
                 var links = document.createElement('div');
-                links.style.cssText = 'display:flex; gap:14px; font-size:14px;';
+                links.style.cssText = 'display:flex; gap:0.875rem; font-size:0.875rem;';
                 if (data.spotify_url && data.spotify_url !== 'n/a') {
                     var sp = document.createElement('a');
                     sp.href = data.spotify_url; sp.target = '_blank'; sp.rel = 'noopener'; sp.title = 'Spotify';
-                    sp.innerHTML = '<img src="/static/img/spotify.png" class="inline align-middle" style="width:16px;height:16px;">';
+                    sp.innerHTML = '<img src="/static/img/spotify.png" class="inline align-middle" style="width:1rem;height:1rem;">';
                     links.appendChild(sp);
                 }
                 if (data.youtube_url) {
                     var yt = document.createElement('a');
                     yt.href = data.youtube_url; yt.target = '_blank'; yt.rel = 'noopener'; yt.title = 'YouTube';
-                    yt.innerHTML = '<img src="/static/img/youtube.png" class="inline align-middle" style="width:16px;height:16px;">';
+                    yt.innerHTML = '<img src="/static/img/youtube.png" class="inline align-middle" style="width:1rem;height:1rem;">';
                     links.appendChild(yt);
                 }
                 if (links.children.length) bodyArea.appendChild(ui.infoRow('Links', links));
@@ -846,11 +846,11 @@ function songEditConfig(cell) {
 
             var noteLabel = document.createElement('div');
             noteLabel.textContent = 'Note';
-            noteLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+            noteLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
             bodyArea.appendChild(noteLabel);
             var textarea = document.createElement('textarea');
             textarea.value = data.note; textarea.rows = 3; textarea.placeholder = 'Add a note...';
-            textarea.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:14px;';
+            textarea.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:0.875rem;';
             bodyArea.appendChild(textarea);
 
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
@@ -860,10 +860,10 @@ function songEditConfig(cell) {
             // saved immediately on toggle and synced to any visible page tables/pills.
             var flagsLabel = document.createElement('div');
             flagsLabel.textContent = 'Flags';
-            flagsLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+            flagsLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
             bodyArea.appendChild(flagsLabel);
             var flagsRow = document.createElement('div');
-            flagsRow.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:14px; padding-left:2px;';
+            flagsRow.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem; margin-bottom:0.875rem; padding-left:0.125rem;';
             bodyArea.appendChild(flagsRow);
 
             function _syncFlagTable(field, checked) {
@@ -899,13 +899,13 @@ function songEditConfig(cell) {
                 var star = document.createElement('span');
                 star.textContent = '★'; star.title = 'Lead track';
                 star.setAttribute('role', 'checkbox'); star.setAttribute('aria-checked', data.is_lead ? 'true' : 'false');
-                star.style.cssText = 'cursor:pointer; font-size:19px; line-height:1; padding:2px 4px; color:' + (data.is_lead ? 'var(--lead-song,#f5a623)' : '#888') + ';';
+                star.style.cssText = 'cursor:pointer; font-size:1.1875rem; line-height:1; padding:0.125rem 0.25rem; color:' + (data.is_lead ? 'var(--lead-song,#f5a623)' : '#888') + ';';
                 star.onclick = function() { toggleLead(); };
                 return star;
             }
             function _flagToggle(label, field) {
                 var wrap = document.createElement('label');
-                wrap.style.cssText = 'display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-primary); cursor:pointer;';
+                wrap.style.cssText = 'display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;';
                 var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!data['is_' + field]; cb.style.cssText = 'cursor:pointer;';
                 cb.onchange = function() { toggleFlag(field, cb); };
                 var txt = document.createElement('span'); txt.textContent = label;
@@ -916,7 +916,7 @@ function songEditConfig(cell) {
                 flagsRow.innerHTML = '';
                 flagsRow.appendChild(_leadStar());
                 var flagGroup = document.createElement('div');
-                flagGroup.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:12px;';
+                flagGroup.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem;';
                 flagGroup.appendChild(_flagToggle('Promoted', 'promoted'));
                 flagGroup.appendChild(_flagToggle('Remix', 'remix'));
                 flagGroup.appendChild(_flagToggle('Cover', 'cover'));
@@ -926,35 +926,35 @@ function songEditConfig(cell) {
 
             var aliasLabel = document.createElement('div');
             aliasLabel.textContent = 'Alternative names';
-            aliasLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+            aliasLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
             bodyArea.appendChild(aliasLabel);
             var aliasWrap = document.createElement('div');
-            aliasWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
+            aliasWrap.style.cssText = 'display:flex; flex-direction:column; gap:0.375rem; margin-bottom:0.5rem;';
             bodyArea.appendChild(aliasWrap);
             function addAliasRow(name, lang) {
                 var row = document.createElement('div');
-                row.style.cssText = 'display:flex; gap:6px; align-items:center;';
+                row.style.cssText = 'display:flex; gap:0.375rem; align-items:center;';
                 var nameInp = document.createElement('input');
                 nameInp.type = 'text'; nameInp.value = name || ''; nameInp.placeholder = 'Alternative name';
                 nameInp.className = 'alias-name';
-                nameInp.style.cssText = 'flex:1; min-width:0; border:1px solid var(--border,#ccc); border-radius:6px; padding:6px 8px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+                nameInp.style.cssText = 'flex:1; min-width:0; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem 0.5rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
                 var sel = document.createElement('select');
                 sel.className = 'alias-lang';
-                sel.style.cssText = 'border:1px solid var(--border,#ccc); border-radius:6px; padding:6px; font-size:13px; background:var(--bg-primary,#fff); color:var(--text-primary);';
+                sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem; font-size:0.8125rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
                 [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
                     var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
                     if (o[0] === (lang || '')) opt.selected = true;
                     sel.appendChild(opt);
                 });
                 var del = ui.btn('✕', 'secondary');
-                del.style.padding = '6px 10px';
+                del.style.padding = '0.375rem 0.625rem';
                 del.onclick = function() { aliasWrap.removeChild(row); };
                 row.appendChild(nameInp); row.appendChild(sel); row.appendChild(del);
                 aliasWrap.appendChild(row);
             }
             (data.aliases || []).forEach(function(a) { addAliasRow(a.name, a.native_lang); });
             var addAliasBtn = ui.btn('+ Add name', 'secondary');
-            addAliasBtn.style.cssText += 'margin-bottom:14px;';
+            addAliasBtn.style.cssText += 'margin-bottom:0.875rem;';
             addAliasBtn.onclick = function() { addAliasRow('', ''); };
             bodyArea.appendChild(addAliasBtn);
             function collectAliases() {
@@ -972,7 +972,7 @@ function songEditConfig(cell) {
             }
 
             var actionRow = document.createElement('div');
-            actionRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end;';
+            actionRow.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
             var clearBtn = ui.btn('Clear', 'danger');
             clearBtn.onclick = function() {
                 var fd = new FormData(); fd.append('value', '');
@@ -1038,14 +1038,14 @@ function songEditConfig(cell) {
             bodyArea.appendChild(actionRow);
 
             var sep = document.createElement('div');
-            sep.style.cssText = 'border-top:1px solid var(--border,#ccc); margin:16px 0 10px;';
+            sep.style.cssText = 'border-top:0.0625rem solid var(--border,#ccc); margin:1rem 0 0.625rem;';
             bodyArea.appendChild(sep);
             var actLabel = document.createElement('div');
             actLabel.textContent = 'Actions';
-            actLabel.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:8px;';
+            actLabel.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin-bottom:0.5rem;';
             bodyArea.appendChild(actLabel);
             var actWrap = document.createElement('div');
-            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
+            actWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:0.5rem;';
             bodyArea.appendChild(actWrap);
             function _action(label, kind, onclick) { var b = ui.btn(label, kind || 'secondary'); b.onclick = onclick; actWrap.appendChild(b); }
 

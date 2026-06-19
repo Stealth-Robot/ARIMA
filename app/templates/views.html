@@ -247,11 +247,11 @@ function resolveCollabName(event, songId, chip) {
     var name = chip.dataset.name;
 
     var pop = document.createElement('div');
-    pop.style.cssText = 'position:fixed;z-index:1000;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.3);padding:10px;width:300px;font-size:12px;';
+    pop.style.cssText = 'position:fixed;z-index:1000;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--bg-secondary);border:0.0625rem solid var(--border);border-radius:0.375rem;box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);padding:0.625rem;width:18.75rem;font-size:0.75rem;';
 
     var title = document.createElement('div');
     title.textContent = 'Link "' + name + '"';
-    title.style.cssText = 'font-weight:700;margin-bottom:6px;color:var(--text-primary);cursor:move;user-select:none;';
+    title.style.cssText = 'font-weight:700;margin-bottom:0.375rem;color:var(--text-primary);cursor:move;user-select:none;';
     title.title = 'Drag to move';
     pop.appendChild(title);
 
@@ -259,13 +259,12 @@ function resolveCollabName(event, songId, chip) {
     (function() {
         // The page can be CSS-zoomed (theme setting): getBoundingClientRect()/clientX are
         // post-zoom, but style.left/top apply in pre-zoom px, so convert by the zoom factor.
-        var z = parseFloat(document.documentElement.style.zoom) || 1;
         var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
         function onDown(e) {
             dragging = true;
             var r = pop.getBoundingClientRect();
             pop.style.transform = 'none';
-            ox = r.left / z; oy = r.top / z;
+            ox = r.left; oy = r.top;
             pop.style.left = ox + 'px';
             pop.style.top = oy + 'px';
             sx = e.clientX; sy = e.clientY;
@@ -273,8 +272,8 @@ function resolveCollabName(event, songId, chip) {
         }
         function onMove(e) {
             if (!dragging) return;
-            pop.style.left = (ox + (e.clientX - sx) / z) + 'px';
-            pop.style.top = (oy + (e.clientY - sy) / z) + 'px';
+            pop.style.left = (ox + (e.clientX - sx)) + 'px';
+            pop.style.top = (oy + (e.clientY - sy)) + 'px';
         }
         function onUp() { dragging = false; }
         title.addEventListener('mousedown', onDown);
@@ -288,12 +287,12 @@ function resolveCollabName(event, songId, chip) {
 
     var current = 'misc_existing';
     var modeRow = document.createElement('div');
-    modeRow.style.cssText = 'display:flex;gap:4px;margin-bottom:8px;';
+    modeRow.style.cssText = 'display:flex;gap:0.25rem;margin-bottom:0.5rem;';
     var modeBtns = {};
     [['misc_existing', 'Existing misc'], ['real_existing', 'Existing artist'], ['misc_new', 'New misc']].forEach(function(m) {
         var btn = document.createElement('button');
         btn.textContent = m[1];
-        btn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;border:1px solid var(--border);border-radius:4px;cursor:pointer;';
+        btn.style.cssText = 'flex:1;font-size:0.625rem;padding:0.25rem 0.125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;cursor:pointer;';
         btn.onclick = function() { current = m[0]; setMode(); };
         modeBtns[m[0]] = btn;
         modeRow.appendChild(btn);
@@ -303,11 +302,11 @@ function resolveCollabName(event, songId, chip) {
     var searchInp = document.createElement('input');
     searchInp.type = 'text';
     searchInp.value = name;
-    searchInp.style.cssText = 'width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+    searchInp.style.cssText = 'width:100%;padding:0.3125rem 0.4375rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
     pop.appendChild(searchInp);
 
     var countrySel = document.createElement('select');
-    countrySel.style.cssText = 'width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);margin-top:6px;display:none;';
+    countrySel.style.cssText = 'width:100%;padding:0.3125rem 0.4375rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);margin-top:0.375rem;display:none;';
     _allCountries.forEach(function(c) {
         var o = document.createElement('option');
         o.value = c.id; o.textContent = c.name;
@@ -317,7 +316,7 @@ function resolveCollabName(event, songId, chip) {
 
     var createBtn = document.createElement('button');
     createBtn.textContent = 'Create & link';
-    createBtn.style.cssText = 'width:100%;margin-top:6px;padding:6px;border:none;border-radius:4px;background:#2563EB;color:#fff;cursor:pointer;display:none;';
+    createBtn.style.cssText = 'width:100%;margin-top:0.375rem;padding:0.375rem;border:none;border-radius:0.25rem;background:#2563EB;color:#fff;cursor:pointer;display:none;';
     createBtn.onclick = function() {
         var nm = searchInp.value.trim();
         if (!nm) { alert('Enter a name'); return; }
@@ -326,7 +325,7 @@ function resolveCollabName(event, songId, chip) {
     pop.appendChild(createBtn);
 
     var results = document.createElement('div');
-    results.style.cssText = 'margin-top:6px;max-height:200px;overflow-y:auto;';
+    results.style.cssText = 'margin-top:0.375rem;max-height:12.5rem;overflow-y:auto;';
     pop.appendChild(results);
 
     function setMode() {
@@ -355,11 +354,11 @@ function resolveCollabName(event, songId, chip) {
                 : '/misc/search-real-artists?q=' + encodeURIComponent(q);
             fetch(url, {headers: _csrfHeaders({})}).then(function(r) { return r.json(); }).then(function(items) {
                 results.innerHTML = '';
-                if (!items.length) { results.innerHTML = '<div style="color:var(--text-secondary);padding:4px;">No matches</div>'; return; }
+                if (!items.length) { results.innerHTML = '<div style="color:var(--text-secondary);padding:0.25rem;">No matches</div>'; return; }
                 items.forEach(function(it) {
                     var d = document.createElement('div');
                     d.textContent = it.name;
-                    d.style.cssText = 'padding:4px 6px;cursor:pointer;border-radius:3px;color:var(--text-primary);';
+                    d.style.cssText = 'padding:0.25rem 0.375rem;cursor:pointer;border-radius:0.1875rem;color:var(--text-primary);';
                     d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
                     d.onmouseleave = function() { d.style.background = ''; };
                     d.onclick = function() {

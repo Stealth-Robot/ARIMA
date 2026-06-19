@@ -8,22 +8,22 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/uPlot.min.css') }}">
 <style>
     /* Dual-handle range slider: two range inputs overlaid on one track */
-    .range-slider { position: relative; height: 28px; }
+    .range-slider { position: relative; height: 1.75rem; }
     .range-slider input[type=range] {
-        position: absolute; left: 0; top: 0; width: 100%; margin: 0; height: 28px;
+        position: absolute; left: 0; top: 0; width: 100%; margin: 0; height: 1.75rem;
         background: none; pointer-events: none; -webkit-appearance: none; appearance: none;
     }
     .range-slider input[type=range]::-webkit-slider-thumb {
         pointer-events: auto; -webkit-appearance: none; appearance: none;
-        width: 14px; height: 14px; border-radius: 50%;
-        background: var(--navbar-active, #22c55e); border: 2px solid var(--primary-bg, #111); cursor: pointer;
+        width: 0.875rem; height: 0.875rem; border-radius: 50%;
+        background: var(--navbar-active, #22c55e); border: 0.125rem solid var(--primary-bg, #111); cursor: pointer;
     }
     .range-slider input[type=range]::-moz-range-thumb {
-        pointer-events: auto; width: 14px; height: 14px; border-radius: 50%;
-        background: var(--navbar-active, #22c55e); border: 2px solid var(--primary-bg, #111); cursor: pointer;
+        pointer-events: auto; width: 0.875rem; height: 0.875rem; border-radius: 50%;
+        background: var(--navbar-active, #22c55e); border: 0.125rem solid var(--primary-bg, #111); cursor: pointer;
     }
     .range-slider .range-track {
-        position: absolute; left: 0; right: 0; top: 12px; height: 4px; border-radius: 2px;
+        position: absolute; left: 0; right: 0; top: 0.75rem; height: 0.25rem; border-radius: 0.125rem;
         background: var(--border, #444);
     }
     .uplot { font-family: Arial, Helvetica, sans-serif; }
@@ -31,7 +31,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="mx-auto pb-11" style="max-width: 1100px;">
+<div class="mx-auto pb-11" style="max-width: 68.75rem;">
 
     <h1 class="text-lg font-bold text-primary-text mt-4 mb-3">Operational Stats</h1>
 
@@ -87,7 +87,7 @@
     <h2 class="text-sm font-semibold text-secondary-text mb-1">Real cost per billing cycle</h2>
     <div class="flex gap-3 overflow-x-auto pb-2 mb-6">
         {% for c in billing_cycles %}
-        <div class="flex-shrink-0 border border-grid-line bg-secondary-bg rounded p-3 text-center" style="min-width: 140px;">
+        <div class="flex-shrink-0 border border-grid-line bg-secondary-bg rounded p-3 text-center" style="min-width: 8.75rem;">
             <div class="text-xs text-secondary-text mb-1">{{ c.start.strftime('%b %d') }} – {{ c.end.strftime('%b %d, %Y') }}</div>
             <div class="text-xl font-bold text-primary-text">{% if c.amount is not none %}$ {{ '%.2f'|format(c.amount) }}{% else %}—{% endif %}</div>
             <div class="text-xs text-secondary-text mt-1">billed {{ c.end.strftime('%b %d') }}</div>

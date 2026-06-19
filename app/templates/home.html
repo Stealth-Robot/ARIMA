@@ -5,12 +5,12 @@
 
 {% block content %}
 {% if owned_artists or has_any_maintained or backlog or can_rate %}
-<div class="px-4 py-6" style="max-width: 900px; margin: 0 auto;">
+<div class="px-4 py-6" style="max-width: 56.25rem; margin: 0 auto;">
     {% if can_rate and sotd_today %}
     <h2 class="text-lg font-bold text-primary-text mb-3 flex flex-wrap items-center gap-2 cursor-pointer"
         data-collapse-key="home-sotd" onclick="homeToggle(this)">
         <span class="flex flex-shrink-0 gap-2 w-full md:w-auto">
-            <span class="section-arrow text-secondary-text" style="font-size: 12px;">▼</span>
+            <span class="section-arrow text-secondary-text" style="font-size: 0.75rem;">▼</span>
             <span class="whitespace-nowrap">Song of the Day</span>
         </span>
         <span class="font-normal text-xs text-secondary-text hidden md:inline-block">{{ sotd_today.date_str }}</span>
@@ -22,10 +22,10 @@
         <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
             <thead>
                 <tr>
-                    <th class="py-1 px-2 text-left text-secondary-text hidden md:table-cell" style="width: 80px; border: none;">Date</th>
-                    <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none; padding-left: 16px;">Song</th>
+                    <th class="py-1 px-2 text-left text-secondary-text hidden md:table-cell" style="width: 5rem; border: none;">Date</th>
+                    <th class="py-1 px-2 text-left text-secondary-text" style="width: 12.5rem; max-width: 12.5rem; border: none; padding-left: 1rem;">Song</th>
                     {% for u in sotd_today.users %}
-                    <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                    <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -52,9 +52,9 @@
     {% if can_rate %}
     <div class="text-center mt-6 mb-3">
         <span id="shuffle-controls">
-            <button onclick="shuffleSong();" class="text-xs px-2 py-1 rounded cursor-pointer" style="background-color: var(--bg-secondary); color: var(--link); border: 1px solid var(--border, #ccc);">Shuffle</button>
-            <button id="shuffle-mode-toggle" onclick="toggleShuffleMode();" class="text-xs px-2 py-1 rounded cursor-pointer ml-1" style="background-color: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border, #ccc);">Subscribed</button>
-            <button id="shuffle-dismiss" onclick="dismissShuffle();" class="text-xs px-1 rounded cursor-pointer ml-1" style="background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border,#ccc);visibility:hidden;">✕</button>
+            <button onclick="shuffleSong();" class="text-xs px-2 py-1 rounded cursor-pointer" style="background-color: var(--bg-secondary); color: var(--link); border: 0.0625rem solid var(--border, #ccc);">Shuffle</button>
+            <button id="shuffle-mode-toggle" onclick="toggleShuffleMode();" class="text-xs px-2 py-1 rounded cursor-pointer ml-1" style="background-color: var(--bg-secondary); color: var(--text-secondary); border: 0.0625rem solid var(--border, #ccc);">Subscribed</button>
+            <button id="shuffle-dismiss" onclick="dismissShuffle();" class="text-xs px-1 rounded cursor-pointer ml-1" style="background:var(--bg-secondary);color:var(--text-secondary);border:0.0625rem solid var(--border,#ccc);visibility:hidden;">✕</button>
         </span>
     </div>
     <div id="shuffle-container"></div>
@@ -87,13 +87,13 @@
             {% if misc_owner %}
             <a href="{{ url_for('misc.misc_page') }}" class="no-underline">
                 <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                      style="border: 0.0625rem solid var(--border); background: var(--bg-secondary);">
                     <span class="inline-flex items-center gap-2 text-sm">
                         <span>👑</span>
                         <img src="{{ misc_owner.profile_image or url_for('static', filename='img/default_image.png') }}"
                              referrerpolicy="no-referrer"
                              onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                             class="rounded-full object-cover" style="width:2rem;height:2rem;">
                         <span class="font-bold">{{ misc_owner.username }}</span>
                         <span>👑</span>
                     </span>
@@ -104,13 +104,13 @@
             {% if arima_user %}
             <a href="{{ arima_changelog_url }}" class="no-underline">
                 <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                      style="border: 0.0625rem solid var(--border); background: var(--bg-secondary);">
                     <span class="inline-flex items-center gap-2 text-sm">
                         <span>🎧</span>
                         <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
                              referrerpolicy="no-referrer"
                              onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                             class="rounded-full object-cover" style="width:2rem;height:2rem;">
                         <span class="font-bold">{{ arima_user.username }}</span>
                         <span>🎧</span>
                     </span>
@@ -126,7 +126,7 @@
     </div>
 </div>
 {% else %}
-<div class="flex items-center justify-center" style="min-height: calc(100vh - 120px);">
+<div class="flex items-center justify-center" style="min-height: calc(100vh - 7.5rem);">
     {% if current_user.home_page_image %}
     <img src="{{ current_user.home_page_image }}" alt="Home" class="max-w-full max-h-full m-8">
     {% else %}
@@ -159,13 +159,13 @@
             {% if misc_owner %}
             <a href="{{ url_for('misc.misc_page') }}" class="no-underline">
                 <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                      style="border: 0.0625rem solid var(--border); background: var(--bg-secondary);">
                     <span class="inline-flex items-center gap-2 text-sm">
                         <span>👑</span>
                         <img src="{{ misc_owner.profile_image or url_for('static', filename='img/default_image.png') }}"
                              referrerpolicy="no-referrer"
                              onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                             class="rounded-full object-cover" style="width:2rem;height:2rem;">
                         <span class="font-bold">{{ misc_owner.username }}</span>
                         <span>👑</span>
                     </span>
@@ -176,13 +176,13 @@
             {% if arima_user %}
             <a href="{{ arima_changelog_url }}" class="no-underline">
                 <span class="inline-flex flex-col items-center gap-1 text-primary-text rounded-full px-4 py-1.5"
-                      style="border: 1px solid var(--border); background: var(--bg-secondary);">
+                      style="border: 0.0625rem solid var(--border); background: var(--bg-secondary);">
                     <span class="inline-flex items-center gap-2 text-sm">
                         <span>🎧</span>
                         <img src="{{ arima_user.profile_image or url_for('static', filename='img/default_image.png') }}"
                              referrerpolicy="no-referrer"
                              onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                             class="rounded-full object-cover" style="width:32px;height:32px;">
+                             class="rounded-full object-cover" style="width:2rem;height:2rem;">
                         <span class="font-bold">{{ arima_user.username }}</span>
                         <span>🎧</span>
                     </span>

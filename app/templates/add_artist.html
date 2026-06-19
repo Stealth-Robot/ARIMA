@@ -4,15 +4,15 @@
 
 {% block content %}
 <div id="spotify-progress-modal" class="hidden fixed inset-0 items-center justify-center" style="z-index:9999; background:rgba(0,0,0,0.5);">
-    <div class="bg-secondary-bg border border-border rounded-lg text-center" style="padding:24px 32px; min-width:320px; max-width:400px;">
-        <div id="spotify-progress-icon" class="mb-2" style="font-size:20px;">&#10227;</div>
+    <div class="bg-secondary-bg border border-border rounded-lg text-center" style="padding:1.5rem 2rem; min-width:20rem; max-width:25rem;">
+        <div id="spotify-progress-icon" class="mb-2" style="font-size:1.25rem;">&#10227;</div>
         <div id="spotify-progress-title" class="font-semibold mb-3">Importing from Spotify...</div>
         <div id="spotify-progress-msg" class="text-sm text-secondary-text mb-3">Connecting to Spotify...</div>
         <div class="rounded overflow-hidden h-2 mb-1.5" style="background:var(--border);">
             <div id="spotify-progress-bar" class="h-full" style="background:var(--link); width:0%; transition:width 0.3s ease;"></div>
         </div>
         <div id="spotify-progress-pct" class="text-xs text-secondary-text">0%</div>
-        <button id="spotify-progress-ok" type="button" onclick="document.getElementById('spotify-progress-modal').style.display='none'" class="rounded cursor-pointer mt-3 text-primary-text" style="display:none; padding:6px 24px; background:var(--button-secondary); border:none;">OK</button>
+        <button id="spotify-progress-ok" type="button" onclick="document.getElementById('spotify-progress-modal').style.display='none'" class="rounded cursor-pointer mt-3 text-primary-text" style="display:none; padding:0.375rem 1.5rem; background:var(--button-secondary); border:none;">OK</button>
     </div>
 </div>
 
@@ -32,7 +32,7 @@
     <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="mb-4 p-3 rounded" style="border:1px dashed var(--border);">
+        <div class="mb-4 p-3 rounded" style="border:0.0625rem dashed var(--border);">
             <label class="block text-sm mb-1 text-secondary-text">Import from Spotify</label>
             <div class="flex gap-2">
                 <input type="text" id="spotify-artist-url" placeholder="https://open.spotify.com/artist/..." class="flex-1 px-3 py-1 border rounded text-sm" style="border-color:var(--border);">
@@ -120,9 +120,9 @@
                                     style="background-color: var(--button-secondary);">
                                 + Existing Album
                             </button>
-                            <div id="album-search-box" class="absolute bg-secondary-bg border border-border rounded-md p-2 mt-1" style="display:none; right:0; top:100%; z-index:50; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                            <div id="album-search-box" class="absolute bg-secondary-bg border border-border rounded-md p-2 mt-1" style="display:none; right:0; top:100%; z-index:50; width:20rem; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.15);">
                                 <input type="text" id="album-search-input" placeholder="Search albums..." class="w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="albumSearchDebounce()">
-                                <div id="album-search-results" class="overflow-y-auto mt-1" style="max-height:250px;"></div>
+                                <div id="album-search-results" class="overflow-y-auto mt-1" style="max-height:15.625rem;"></div>
                             </div>
                         </div>
                         <button type="button" onclick="addAlbum()"
@@ -164,7 +164,7 @@
         <input type="hidden" name="albums_data" id="albums-data" value="{{ form_data.get('albums_json', '[]') }}">
         <input type="hidden" name="artist_spotify_url" id="artist-spotify-url" value="{{ form_data.get('artist_spotify_url', '') }}">
 
-        <div class="flex gap-3 sticky bottom-0 py-3 mt-4 bg-primary-bg z-10" style="border-top: 1px solid var(--border);">
+        <div class="flex gap-3 sticky bottom-0 py-3 mt-4 bg-primary-bg z-10" style="border-top: 0.0625rem solid var(--border);">
             <button type="submit" id="submit-btn" disabled
                     class="px-6 py-2 rounded font-semibold text-button-text"
                     style="background-color: var(--edit-on-button);">
@@ -198,38 +198,38 @@ function addAlbum() {
     div.style.borderColor = 'var(--border)';
     div.id = 'album-' + albumCount;
     div.innerHTML =
-        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">' +
             '<span style="font-weight:600;">Album ' + albumCount + '</span>' +
-            '<button type="button" onclick="removeAlbum(' + albumCount + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+            '<button type="button" onclick="removeAlbum(' + albumCount + ')" style="font-size:0.875rem; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
         '</div>' +
-        '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+        '<div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">' +
             '<div style="flex:1;">' +
-                '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
-                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-album="' + albumCount + '" data-field="name" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
             '</div>' +
-            '<div style="width:160px;">' +
-                '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
-                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+            '<div style="width:10rem;">' +
+                '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                '<input type="text" data-date-format data-album="' + albumCount + '" data-field="release_date" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem; font-family:monospace;">' +
             '</div>' +
-            '<div style="width:128px;">' +
-                '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
-                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+            '<div style="width:8rem;">' +
+                '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Type</label>' +
+                '<select data-album="' + albumCount + '" data-field="album_type_id" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
                     albumTypeOptions() +
                 '</select>' +
             '</div>' +
         '</div>' +
-        '<div style="margin-bottom:12px;">' +
-            '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
-            '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(albumCount) + '</div>' +
+        '<div style="margin-bottom:0.75rem;">' +
+            '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+            '<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">' + genreCheckboxes(albumCount) + '</div>' +
         '</div>' +
-        '<div style="margin-bottom:12px;">' +
-            '<label style="display:block; font-size:14px; margin-bottom:4px;">Note</label>' +
-            '<textarea data-album="' + albumCount + '" data-field="note" rows="2" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;"></textarea>' +
+        '<div style="margin-bottom:0.75rem;">' +
+            '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Note</label>' +
+            '<textarea data-album="' + albumCount + '" data-field="note" rows="2" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;"></textarea>' +
         '</div>' +
-        '<div style="margin-bottom:12px;">' +
-            '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
-            '<div id="songs-' + albumCount + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
-            '<button type="button" onclick="addSong(' + albumCount + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+        '<div style="margin-bottom:0.75rem;">' +
+            '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+            '<div id="songs-' + albumCount + '" style="display:flex; flex-direction:column; gap:0.5rem;"></div>' +
+            '<button type="button" onclick="addSong(' + albumCount + ')" style="margin-top:0.5rem; font-size:0.875rem; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
         '</div>';
     container.appendChild(div);
     if (typeof applyDateFormat === 'function') div.querySelectorAll('[data-date-format]').forEach(applyDateFormat);
@@ -244,7 +244,7 @@ function albumTypeOptions() {
 function genreCheckboxes(albumNum) {
     const genres = {{ genres_js | tojson }};
     return genres.map(function(g) {
-        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox" style="margin-right:3px;"> ' + g.genre + '</label>';
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-genre="' + g.id + '" class="genre-checkbox" style="margin-right:0.1875rem;"> ' + g.genre + '</label>';
     }).join('');
 }
 
@@ -253,7 +253,7 @@ function genreCheckboxes(albumNum) {
     var genres = {{ genres_js | tojson }};
     var container = document.getElementById('bulk-genre-checkboxes');
     container.innerHTML = genres.map(function(g) {
-        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:3px;"> ' + g.genre + '</label>';
+        return '<label class="text-sm" style="cursor:pointer;"><input type="checkbox" data-bulk-genre="' + g.id + '" style="margin-right:0.1875rem;"> ' + g.genre + '</label>';
     }).join('');
 })();
 
@@ -415,7 +415,7 @@ function _initSongMiscSearch(songDiv) {
                     if (showCreate) {
                         var createRow = document.createElement('div');
                         createRow.textContent = '+ Create "' + q + '"';
-                        createRow.style.cssText = 'font-size:12px; padding:2px 6px; cursor:pointer; border-radius:2px; color:var(--link,#2563EB); font-weight:bold;';
+                        createRow.style.cssText = 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;';
                         createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
                         createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
                         createRow.addEventListener('mousedown', function(e) { e.preventDefault(); _createMiscArtist(q); });
@@ -424,7 +424,7 @@ function _initSongMiscSearch(songDiv) {
                     filtered.forEach(function(item) {
                         var row = document.createElement('div');
                         row.textContent = item.name;
-                        row.style.cssText = 'font-size:12px; padding:2px 6px; cursor:pointer; border-radius:2px;';
+                        row.style.cssText = 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem;';
                         row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
                         row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
                         row.addEventListener('mousedown', function(e) {
@@ -461,11 +461,11 @@ function _addSongMiscArtist(albumNum, songNum, miscId, miscName) {
     row.className = 'flex items-center gap-1 song-misc-row';
     row.dataset.miscArtistId = miscId;
     row.innerHTML =
-        '<span style="font-size:12px; margin-right:4px;">' + miscName.replace(/</g, '&lt;') + '</span>' +
-        '<select class="song-misc-role" style="font-size:11px; padding:1px 3px; border:1px solid var(--border); border-radius:3px;">' +
+        '<span style="font-size:0.75rem; margin-right:0.25rem;">' + miscName.replace(/</g, '&lt;') + '</span>' +
+        '<select class="song-misc-role" style="font-size:0.6875rem; padding:0.0625rem 0.1875rem; border:0.0625rem solid var(--border); border-radius:0.1875rem;">' +
             '<option value="main">Main</option><option value="feat" selected>Featured</option>' +
         '</select>' +
-        '<button type="button" onclick="this.parentElement.remove()" style="font-size:12px; color:var(--delete-button); background:none; border:none; cursor:pointer;">x</button>';
+        '<button type="button" onclick="this.parentElement.remove()" style="font-size:0.75rem; color:var(--delete-button); background:none; border:none; cursor:pointer;">x</button>';
     container.appendChild(row);
 }
 
@@ -475,38 +475,38 @@ function addSong(albumNum) {
     const songNum = songCounters[albumNum];
     const container = document.getElementById('songs-' + albumNum);
     const div = document.createElement('div');
-    div.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
+    div.style.cssText = 'padding:0.5rem; border:0.0625rem solid var(--border); border-radius:0.25rem;';
     div.id = 'song-' + albumNum + '-' + songNum;
     div.innerHTML =
-        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
-            '<span class="song-num" style="font-size:14px; width:24px;">' + songNum + '.</span>' +
+        '<div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.375rem;">' +
+            '<span class="song-num" style="font-size:0.875rem; width:1.5rem;">' + songNum + '.</span>' +
             '<div style="flex:1; position:relative;">' +
-                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
-                '<div id="song-search-results-' + albumNum + '-' + songNum + '" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; max-height:200px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>' +
+                '<input type="text" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="name" placeholder="Song name (or search existing)" class="song-field" style="width:100%; padding:0.25rem 0.5rem; border:0.0625rem solid var(--border); border-radius:0.25rem; font-size:0.875rem;" oninput="songSearchDebounce(this, ' + albumNum + ', ' + songNum + ')">' +
+                '<div id="song-search-results-' + albumNum + '-' + songNum + '" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; max-height:12.5rem; overflow-y:auto; background:var(--bg-secondary); border:0.0625rem solid var(--border); border-radius:0.25rem; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.15);"></div>' +
             '</div>' +
-            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"> Promoted</label>' +
-            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"> Remix</label>' +
-            '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_cover" class="song-check" style="margin-right:3px;"> Cover</label>' +
-            '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
-            '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
-            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
+            '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_promoted" class="song-check" style="margin-right:0.1875rem;"> Promoted</label>' +
+            '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_remix" class="song-check" style="margin-right:0.1875rem;"> Remix</label>' +
+            '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + albumNum + '" data-song="' + songNum + '" data-field="is_cover" class="song-check" style="margin-right:0.1875rem;"> Cover</label>' +
+            '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:0.75rem; padding:0 0.25rem; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+            '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:0.75rem; padding:0 0.25rem; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+            '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + albumNum + '); validateForm();" style="font-size:0.875rem; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
         '</div>' +
-        '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
-            '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
-            '<div id="song-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
-            '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
+        '<div style="display:flex; align-items:center; gap:0.5rem; margin-left:1.5rem; margin-top:0.375rem;">' +
+            '<span style="font-size:0.75rem; color:var(--text-secondary);">Artists:</span>' +
+            '<div id="song-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>' +
+            '<select class="add-artist-select" style="font-size:0.75rem; padding:0.0625rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.25rem;" onchange="onArtistDropdownChange(this, ' + albumNum + ', ' + songNum + ')">' +
                 artistSelectOptions([]) +
             '</select>' +
-            '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-            '<span style="cursor:pointer; font-size:13px; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
+            '<span style="cursor:pointer; margin-left:0.25rem;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+            '<span style="cursor:pointer; font-size:0.8125rem; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
         '</div>' +
-        '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:4px;">' +
-            '<span style="font-size:12px; color:var(--text-secondary);">Misc:</span>' +
-            '<div id="song-misc-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+        '<div style="display:flex; align-items:center; gap:0.5rem; margin-left:1.5rem; margin-top:0.25rem;">' +
+            '<span style="font-size:0.75rem; color:var(--text-secondary);">Misc:</span>' +
+            '<div id="song-misc-artists-' + albumNum + '-' + songNum + '" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>' +
             '<div style="position:relative;">' +
-                '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + albumNum + '" data-song="' + songNum + '" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px; width:160px;">' +
-                '<div class="song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:4px; display:none; width:180px;"></div>' +
+                '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + albumNum + '" data-song="' + songNum + '" style="font-size:0.75rem; padding:0.0625rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.25rem; width:10rem;">' +
+                '<div class="song-misc-results" style="max-height:7.5rem; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border); border-radius:0.25rem; display:none; width:11.25rem;"></div>' +
             '</div>' +
         '</div>';
     container.appendChild(div);
@@ -536,7 +536,7 @@ function songSearch(input, albumNum, songNum) {
             results.innerHTML = '';
             songs.forEach(function(s) {
                 var item = document.createElement('div');
-                item.style.cssText = 'padding:6px 8px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--border);';
+                item.style.cssText = 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);';
                 item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
                 item.onmouseleave = function() { this.style.background = 'none'; };
                 item.innerHTML = '<span style="color:var(--text-primary);">' + s.name.replace(/</g,'&lt;') + '</span>' +
@@ -559,11 +559,11 @@ function selectExistingSong(albumNum, songNum, song) {
     // Show linked badge and clear button
     var badge = document.createElement('span');
     badge.className = 'existing-song-badge';
-    badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:3px; background:var(--button-primary); color:var(--button-text); margin-left:4px;';
+    badge.style.cssText = 'font-size:0.625rem; padding:0.0625rem 0.375rem; border-radius:0.1875rem; background:var(--button-primary); color:var(--button-text); margin-left:0.25rem;';
     badge.textContent = 'Linked: ' + song.artist + ' — ' + song.album;
     var clearBtn = document.createElement('button');
     clearBtn.type = 'button';
-    clearBtn.style.cssText = 'font-size:10px; color:var(--link); margin-left:4px; background:none; border:none; cursor:pointer;';
+    clearBtn.style.cssText = 'font-size:0.625rem; color:var(--link); margin-left:0.25rem; background:none; border:none; cursor:pointer;';
     clearBtn.textContent = 'Unlink';
     clearBtn.onclick = function() {
         delete songDiv.dataset.existingSongId;
@@ -612,20 +612,20 @@ function albumSearch() {
     var input = document.getElementById('album-search-input');
     var results = document.getElementById('album-search-results');
     var q = input.value.trim();
-    if (q.length < 2) { results.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">Type at least 2 characters...</div>'; return; }
+    if (q.length < 2) { results.innerHTML = '<div style="font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;">Type at least 2 characters...</div>'; return; }
 
     fetch('/edit/search-albums?q=' + encodeURIComponent(q))
         .then(function(r) { return r.json(); })
         .then(function(albums) {
-            if (!albums.length) { results.innerHTML = '<div style="font-size:11px; color:var(--text-secondary); padding:6px;">No albums found</div>'; return; }
+            if (!albums.length) { results.innerHTML = '<div style="font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;">No albums found</div>'; return; }
             results.innerHTML = '';
             albums.forEach(function(al) {
                 var item = document.createElement('div');
-                item.style.cssText = 'padding:6px 8px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--border);';
+                item.style.cssText = 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);';
                 item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
                 item.onmouseleave = function() { this.style.background = 'none'; };
                 item.innerHTML = '<div style="color:var(--text-primary); font-weight:500;">' + al.name.replace(/</g,'&lt;') + '</div>' +
-                    '<div style="color:var(--text-secondary); font-size:11px;">' +
+                    '<div style="color:var(--text-secondary); font-size:0.6875rem;">' +
                     (al.artist ? al.artist.replace(/</g,'&lt;') + ' · ' : '') +
                     (al.release_date || 'No date') + ' · ' + al.song_count + ' songs</div>';
                 item.onclick = function() { addExistingAlbum(al); };
@@ -944,34 +944,34 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
             div.style.borderColor = 'var(--border)';
             div.id = 'album-' + num;
             div.innerHTML =
-                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">' +
                     '<span style="font-weight:600;">Album ' + num + '</span>' +
-                    '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+                    '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:0.875rem; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
                 '</div>' +
-                '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+                '<div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">' +
                     '<div style="flex:1;">' +
-                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
-                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                        '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
                     '</div>' +
-                    '<div style="width:160px;">' +
-                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
-                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+                    '<div style="width:10rem;">' +
+                        '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                        '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem; font-family:monospace;">' +
                     '</div>' +
-                    '<div style="width:128px;">' +
-                        '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
-                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                    '<div style="width:8rem;">' +
+                        '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Type</label>' +
+                        '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
                             albumTypeOptions() +
                         '</select>' +
                     '</div>' +
                 '</div>' +
-                '<div style="margin-bottom:12px;">' +
-                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
-                    '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
+                '<div style="margin-bottom:0.75rem;">' +
+                    '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
                 '</div>' +
-                '<div style="margin-bottom:12px;">' +
-                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
-                    '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
-                    '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+                '<div style="margin-bottom:0.75rem;">' +
+                    '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                    '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:0.5rem;"></div>' +
+                    '<button type="button" onclick="addSong(' + num + ')" style="margin-top:0.5rem; font-size:0.875rem; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
                 '</div>';
             container.appendChild(div);
             if (albumData.spotify_url) div.dataset.spotifyUrl = albumData.spotify_url;
@@ -996,37 +996,37 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                 const sNum = songCounters[num];
                 const sc = document.getElementById('songs-' + num);
                 const sdiv = document.createElement('div');
-                sdiv.style.cssText = 'padding:8px; border:1px solid var(--border); border-radius:4px;';
+                sdiv.style.cssText = 'padding:0.5rem; border:0.0625rem solid var(--border); border-radius:0.25rem;';
                 sdiv.id = 'song-' + num + '-' + sNum;
                 sdiv.innerHTML =
-                    '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
-                        '<span class="song-num" style="font-size:14px; width:24px;">' + sNum + '.</span>' +
+                    '<div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.375rem;">' +
+                        '<span class="song-num" style="font-size:0.875rem; width:1.5rem;">' + sNum + '.</span>' +
                         '<div style="flex:1; position:relative;">' +
-                            '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field" style="width:100%; padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:14px;">' +
+                            '<input type="text" data-album="' + num + '" data-song="' + sNum + '" data-field="name" value="' + (songData.name || '').replace(/"/g, '&quot;') + '" placeholder="Song name" class="song-field" style="width:100%; padding:0.25rem 0.5rem; border:0.0625rem solid var(--border); border-radius:0.25rem; font-size:0.875rem;">' +
                         '</div>' +
-                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check" style="margin-right:3px;"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
-                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check" style="margin-right:3px;"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
-                        '<label style="font-size:12px; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_cover" class="song-check" style="margin-right:3px;"' + (songData.is_cover ? ' checked' : '') + '> Cover</label>' +
-                        '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
-                        '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:12px; padding:0 4px; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
-                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" style="font-size:14px; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
+                        '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_promoted" class="song-check" style="margin-right:0.1875rem;"' + (songData.is_promoted ? ' checked' : '') + '> Promoted</label>' +
+                        '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_remix" class="song-check" style="margin-right:0.1875rem;"' + (songData.is_remix ? ' checked' : '') + '> Remix</label>' +
+                        '<label style="font-size:0.75rem; white-space:nowrap; cursor:pointer;"><input type="checkbox" data-album="' + num + '" data-song="' + sNum + '" data-field="is_cover" class="song-check" style="margin-right:0.1875rem;"' + (songData.is_cover ? ' checked' : '') + '> Cover</label>' +
+                        '<button type="button" onclick="moveSong(this, \'up\')" style="font-size:0.75rem; padding:0 0.25rem; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move up">&#9650;</button>' +
+                        '<button type="button" onclick="moveSong(this, \'down\')" style="font-size:0.75rem; padding:0 0.25rem; background:none; border:none; color:var(--text-primary); cursor:pointer;" title="Move down">&#9660;</button>' +
+                        '<button type="button" onclick="this.closest(\'[id^=song-]\').remove(); renumberSongs(' + num + '); validateForm();" style="font-size:0.875rem; background:none; border:none; color:var(--delete-button); cursor:pointer;">x</button>' +
                     '</div>' +
-                    '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:6px;">' +
-                        '<span style="font-size:12px; color:var(--text-secondary);">Artists:</span>' +
-                        '<div id="song-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
-                        '<select class="add-artist-select" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
+                    '<div style="display:flex; align-items:center; gap:0.5rem; margin-left:1.5rem; margin-top:0.375rem;">' +
+                        '<span style="font-size:0.75rem; color:var(--text-secondary);">Artists:</span>' +
+                        '<div id="song-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>' +
+                        '<select class="add-artist-select" style="font-size:0.75rem; padding:0.0625rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.25rem;" onchange="onArtistDropdownChange(this, ' + num + ', ' + sNum + ')">' +
                             artistSelectOptions([]) +
                         '</select>' +
-                        '<span style="cursor:pointer; margin-left:4px;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-                        '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:12px; height:12px; filter:grayscale(1) invert(1);"></span>' +
-                        '<span style="cursor:pointer; font-size:13px; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
+                        '<span style="cursor:pointer; margin-left:0.25rem;" onclick="event.stopPropagation();promptLocalUrl(this, \'spotify_url\', \'Spotify URL\')" title="Set Spotify URL"><img src="' + _spIconUrl + '" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+                        '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="' + _ytIconUrl + '" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
+                        '<span style="cursor:pointer; font-size:0.8125rem; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
                     '</div>' +
-                    '<div style="display:flex; align-items:center; gap:8px; margin-left:24px; margin-top:4px;">' +
-                        '<span style="font-size:12px; color:var(--text-secondary);">Misc:</span>' +
-                        '<div id="song-misc-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:8px;"></div>' +
+                    '<div style="display:flex; align-items:center; gap:0.5rem; margin-left:1.5rem; margin-top:0.25rem;">' +
+                        '<span style="font-size:0.75rem; color:var(--text-secondary);">Misc:</span>' +
+                        '<div id="song-misc-artists-' + num + '-' + sNum + '" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>' +
                         '<div style="position:relative;">' +
-                            '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + num + '" data-song="' + sNum + '" style="font-size:12px; padding:1px 4px; border:1px solid var(--border); border-radius:4px; width:160px;">' +
-                            '<div class="song-misc-results" style="max-height:120px; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:1px solid var(--border); border-radius:4px; display:none; width:180px;"></div>' +
+                            '<input type="text" class="song-misc-search" placeholder="+ Add misc artist..." data-album="' + num + '" data-song="' + sNum + '" style="font-size:0.75rem; padding:0.0625rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.25rem; width:10rem;">' +
+                            '<div class="song-misc-results" style="max-height:7.5rem; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border); border-radius:0.25rem; display:none; width:11.25rem;"></div>' +
                         '</div>' +
                     '</div>';
                 if (songData.spotify_url) sdiv.dataset.spotifyUrl = songData.spotify_url;
@@ -1110,34 +1110,34 @@ function populateArtistFromSpotify(data) {
         div.style.borderColor = 'var(--border)';
         div.id = 'album-' + num;
         div.innerHTML =
-            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">' +
                 '<span style="font-weight:600;">Album ' + num + '</span>' +
-                '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:14px; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
+                '<button type="button" onclick="removeAlbum(' + num + ')" style="font-size:0.875rem; color:var(--delete-button); background:none; border:none; cursor:pointer; text-decoration:underline;">Remove</button>' +
             '</div>' +
-            '<div style="display:flex; gap:12px; margin-bottom:12px;">' +
+            '<div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">' +
                 '<div style="flex:1;">' +
-                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
-                    '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                    '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Album Name <span style="color:var(--delete-button);">*</span></label>' +
+                    '<input type="text" data-album="' + num + '" data-field="name" value="' + (albumData.name || '').replace(/"/g, '&quot;') + '" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
                 '</div>' +
-                '<div style="width:160px;">' +
-                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
-                    '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px; font-family:monospace;">' +
+                '<div style="width:10rem;">' +
+                    '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Release Date <span style="color:var(--delete-button);">*</span></label>' +
+                    '<input type="text" data-date-format data-album="' + num + '" data-field="release_date" value="' + (albumData.release_date || '') + '" placeholder="yyyy-mm-dd" maxlength="10" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem; font-family:monospace;">' +
                 '</div>' +
-                '<div style="width:128px;">' +
-                    '<label style="display:block; font-size:14px; margin-bottom:4px;">Type</label>' +
-                    '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:4px;">' +
+                '<div style="width:8rem;">' +
+                    '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Type</label>' +
+                    '<select data-album="' + num + '" data-field="album_type_id" class="album-field" style="width:100%; padding:0.5rem 0.75rem; border:0.0625rem solid var(--border); border-radius:0.25rem;">' +
                         albumTypeOptions() +
                     '</select>' +
                 '</div>' +
             '</div>' +
-            '<div style="margin-bottom:12px;">' +
-                '<label style="display:block; font-size:14px; margin-bottom:4px;">Genres <span style="color:var(--delete-button);">*</span></label>' +
-                '<div style="display:flex; gap:8px; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
+            '<div style="margin-bottom:0.75rem;">' +
+                '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Genres <span style="color:var(--delete-button);">*</span></label>' +
+                '<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">' + genreCheckboxes(num) + '</div>' +
             '</div>' +
-            '<div style="margin-bottom:12px;">' +
-                '<label style="display:block; font-size:14px; margin-bottom:4px;">Songs <span style="color:var(--delete-button);">*</span></label>' +
-                '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:8px;"></div>' +
-                '<button type="button" onclick="addSong(' + num + ')" style="margin-top:8px; font-size:14px; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
+            '<div style="margin-bottom:0.75rem;">' +
+                '<label style="display:block; font-size:0.875rem; margin-bottom:0.25rem;">Songs <span style="color:var(--delete-button);">*</span></label>' +
+                '<div id="songs-' + num + '" style="display:flex; flex-direction:column; gap:0.5rem;"></div>' +
+                '<button type="button" onclick="addSong(' + num + ')" style="margin-top:0.5rem; font-size:0.875rem; color:var(--link); background:none; border:none; cursor:pointer; text-decoration:underline;">+ Add Song</button>' +
             '</div>';
         container.appendChild(div);
         if (albumData.spotify_url) div.dataset.spotifyUrl = albumData.spotify_url;

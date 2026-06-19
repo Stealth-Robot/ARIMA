@@ -1,15 +1,5 @@
-/* Zoom-aware bounding rect — corrects for non-standard CSS zoom on html element */
 function getZoomedRect(el) {
-    var rect = el.getBoundingClientRect();
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    return {
-        top: rect.top / zoom,
-        bottom: rect.bottom / zoom,
-        left: rect.left / zoom,
-        right: rect.right / zoom,
-        width: rect.width / zoom,
-        height: rect.height / zoom,
-    };
+    return el.getBoundingClientRect();
 }
 
 /* CSRF — inject X-CSRFToken header on every HTMX request */
@@ -187,18 +177,17 @@ function _makeDraggable(popover, handle) {
     handle.style.cursor = 'grab';
     handle.addEventListener('mousedown', function(e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
-        var zoom = parseFloat(document.documentElement.style.zoom) || 1;
         var rect = popover.getBoundingClientRect();
-        var left = rect.left / zoom;
-        var top = rect.top / zoom;
+        var left = rect.left;
+        var top = rect.top;
         popover.style.transform = 'none';
         popover.style.left = left + 'px';
         popover.style.top = top + 'px';
         _popoverDrag.active = true;
         _popoverDrag.popover = popover;
         _popoverDrag.handle = handle;
-        _popoverDrag.startX = e.clientX / zoom;
-        _popoverDrag.startY = e.clientY / zoom;
+        _popoverDrag.startX = e.clientX;
+        _popoverDrag.startY = e.clientY;
         _popoverDrag.origLeft = left;
         _popoverDrag.origTop = top;
         handle.style.cursor = 'grabbing';
@@ -208,9 +197,8 @@ function _makeDraggable(popover, handle) {
 
 document.addEventListener('mousemove', function(e) {
     if (!_popoverDrag.active) return;
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    _popoverDrag.popover.style.left = (_popoverDrag.origLeft + e.clientX / zoom - _popoverDrag.startX) + 'px';
-    _popoverDrag.popover.style.top = (_popoverDrag.origTop + e.clientY / zoom - _popoverDrag.startY) + 'px';
+    _popoverDrag.popover.style.left = (_popoverDrag.origLeft + e.clientX - _popoverDrag.startX) + 'px';
+    _popoverDrag.popover.style.top = (_popoverDrag.origTop + e.clientY - _popoverDrag.startY) + 'px';
 });
 
 document.addEventListener('mouseup', function() {
@@ -230,16 +218,16 @@ function showSessionExpiredToast() {
     toast.textContent = 'Session expired \u2014 please log in again';
     toast.style.cssText = [
         'position:fixed',
-        'bottom:24px',
+        'bottom:1.5rem',
         'left:50%',
         'transform:translateX(-50%)',
         'background:#1f2937',
         'color:#fff',
-        'padding:10px 20px',
-        'border-radius:6px',
-        'font-size:14px',
+        'padding:0.625rem 1.25rem',
+        'border-radius:0.375rem',
+        'font-size:0.875rem',
         'z-index:9999',
-        'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
+        'box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.3)',
         'pointer-events:none',
     ].join(';');
     document.body.appendChild(toast);
@@ -251,16 +239,16 @@ function showBriefToast(message) {
     toast.textContent = message;
     toast.style.cssText = [
         'position:fixed',
-        'bottom:24px',
+        'bottom:1.5rem',
         'left:50%',
         'transform:translateX(-50%)',
         'background:#1f2937',
         'color:#fff',
-        'padding:10px 20px',
-        'border-radius:6px',
-        'font-size:14px',
+        'padding:0.625rem 1.25rem',
+        'border-radius:0.375rem',
+        'font-size:0.875rem',
         'z-index:9999',
-        'box-shadow:0 2px 8px rgba(0,0,0,0.3)',
+        'box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.3)',
         'pointer-events:none',
     ].join(';');
     document.body.appendChild(toast);
@@ -308,7 +296,7 @@ function copyAnchorLink(event, anchorId) {
         var ta = document.createElement('textarea');
         ta.value = url;
         ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
+        ta.style.left = '-624.9375rem';
         document.body.appendChild(ta);
         ta.select();
         try { document.execCommand('copy'); showToast('Link copied'); }
@@ -372,8 +360,7 @@ function openSearchOverlay() {
         overlay.style.top = '';
         overlay.style.bottom = '';
         overlay.style.display = 'block';
-        var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-        var viewH = window.innerHeight / zoom;
+        var viewH = window.innerHeight;
         if (rect.bottom + 4 + overlay.offsetHeight + 30 > viewH) {
             overlay.style.top = Math.max(0, viewH - overlay.offsetHeight - 30) + 'px';
         } else {
@@ -407,7 +394,7 @@ function closeSearchOverlay() {
         var q = searchInput.value.trim();
         if (q.length < 2) {
             searchResults.innerHTML = q.length === 1
-                ? '<div style="padding: 10px 14px; font-size: 13px; color: var(--text-secondary);">Type at least 2 characters to search</div>'
+                ? '<div style="padding: 0.625rem 0.875rem; font-size: 0.8125rem; color: var(--text-secondary);">Type at least 2 characters to search</div>'
                 : '';
             searchResults.style.display = q.length === 1 ? 'block' : 'none';
             return;
@@ -720,7 +707,7 @@ function _initDragScroll(el, opts) {
             if (_lastHighlight) _lastHighlight.style.outline = '';
             // Scroll into view and highlight
             match.scrollIntoView({ block: 'nearest' });
-            match.style.outline = '2px solid var(--navbar-active, #fff)';
+            match.style.outline = '0.125rem solid var(--navbar-active, #fff)';
             _lastHighlight = match;
         }
     });
@@ -919,7 +906,7 @@ document.addEventListener('htmx:afterSettle', function(e) {
         document.querySelectorAll('[data-artist-id]').forEach(function(link) {
             if (link.dataset.artistId === activeId) {
                 link.style.fontWeight = 'bold';
-                link.style.borderBottom = '2px solid var(--artist-button-text)';
+                link.style.borderBottom = '0.125rem solid var(--artist-button-text)';
             } else {
                 link.style.fontWeight = '';
                 link.style.borderBottom = '';
@@ -1094,7 +1081,7 @@ function showSubscribeConfirm(cb, artistId, data) {
 
     var box = document.createElement('div');
     box.className = 'bg-secondary-bg border border-border rounded-lg p-6';
-    box.style.cssText = 'width:380px;max-width:90vw;';
+    box.style.cssText = 'width:23.75rem;max-width:90vw;';
 
     var title = document.createElement('h3');
     title.className = 'text-lg font-bold mb-2 text-primary-text';

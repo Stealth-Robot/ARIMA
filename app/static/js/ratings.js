@@ -150,35 +150,35 @@ function showMobileRatingModal(cell, songId, targetUserId) {
 
     // Backdrop
     var backdrop = document.createElement('div');
-    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:1rem;';
 
     // Modal
     var modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border,#ccc); border-radius:0.5rem; padding:1rem; width:100%; max-width:20rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);';
 
     // Song name
     var title = document.createElement('div');
     title.textContent = songName;
-    title.style.cssText = 'font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    title.style.cssText = 'font-size:0.875rem; font-weight:600; color:var(--text-primary); margin-bottom:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
     modal.appendChild(title);
 
     // Score label
     var scoreLabel = document.createElement('div');
     scoreLabel.textContent = 'Score';
-    scoreLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+    scoreLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
     modal.appendChild(scoreLabel);
 
     // Score buttons row
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex; gap:8px; margin-bottom:14px;';
+    btnRow.style.cssText = 'display:flex; gap:0.5rem; margin-bottom:0.875rem;';
     var selectedScore = /^[0-5]$/.test(currentRating) ? currentRating : null;
 
     function makeScoreBtn(label) {
         var btn = document.createElement('button');
         btn.textContent = label;
         var isSelected = label === selectedScore;
-        btn.style.cssText = 'flex:1; padding:10px 0; font-size:16px; font-weight:600; border:2px solid ' +
-            (isSelected ? 'var(--link,#2563EB)' : 'var(--border,#ccc)') + '; border-radius:6px; cursor:pointer; background:' +
+        btn.style.cssText = 'flex:1; padding:0.625rem 0; font-size:1rem; font-weight:600; border:0.125rem solid ' +
+            (isSelected ? 'var(--link,#2563EB)' : 'var(--border,#ccc)') + '; border-radius:0.375rem; cursor:pointer; background:' +
             (isSelected ? 'var(--link,#2563EB)' : 'var(--bg-primary,#fff)') + '; color:' +
             (isSelected ? '#fff' : 'var(--text-primary)') + ';';
         btn.onclick = function() {
@@ -201,7 +201,7 @@ function showMobileRatingModal(cell, songId, targetUserId) {
     // Note label
     var noteLabel = document.createElement('div');
     noteLabel.textContent = 'Note';
-    noteLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+    noteLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
     modal.appendChild(noteLabel);
 
     // Note textarea
@@ -209,16 +209,16 @@ function showMobileRatingModal(cell, songId, targetUserId) {
     textarea.value = currentNote;
     textarea.rows = 3;
     textarea.placeholder = 'Add a note...';
-    textarea.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:8px; font-size:14px; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:14px;';
+    textarea.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:0.875rem;';
     modal.appendChild(textarea);
 
     // Action buttons
     var actionRow = document.createElement('div');
-    actionRow.style.cssText = 'display:flex; gap:8px; justify-content:flex-end;';
+    actionRow.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
 
     var clearBtn = document.createElement('button');
     clearBtn.textContent = 'Clear';
-    clearBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+    clearBtn.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:0.375rem; cursor:pointer;';
     clearBtn.onclick = function() {
         // Push undo state
         var prevText = currentRating;
@@ -242,12 +242,12 @@ function showMobileRatingModal(cell, songId, targetUserId) {
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc); border-radius:6px; cursor:pointer;';
+    cancelBtn.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; cursor:pointer;';
     cancelBtn.onclick = function() { closeMobileModal(); };
 
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+    saveBtn.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--link,#2563EB); color:#fff; border:none; border-radius:0.375rem; cursor:pointer;';
     saveBtn.onclick = function() {
         var newRating = selectedScore !== null ? parseInt(selectedScore) : null;
         var newNote = textarea.value.trim();
@@ -307,24 +307,24 @@ function showMobileNoteModal(cell) {
     var songName = _getSongNameFromRow(cell);
 
     var backdrop = document.createElement('div');
-    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:1rem;';
 
     var modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border,#ccc); border-radius:0.5rem; padding:1rem; width:100%; max-width:20rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);';
 
     var title = document.createElement('div');
     title.textContent = songName;
-    title.style.cssText = 'font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    title.style.cssText = 'font-size:0.875rem; font-weight:600; color:var(--text-primary); margin-bottom:0.625rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
     modal.appendChild(title);
 
     var noteDiv = document.createElement('div');
     noteDiv.textContent = note;
-    noteDiv.style.cssText = 'font-size:14px; color:var(--text-primary); white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow-y:auto;';
+    noteDiv.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow-y:auto;';
     modal.appendChild(noteDiv);
 
     var closeBtn = document.createElement('button');
     closeBtn.textContent = 'Close';
-    closeBtn.style.cssText = 'margin-top:14px; padding:8px 16px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc); border-radius:6px; cursor:pointer; float:right;';
+    closeBtn.style.cssText = 'margin-top:0.875rem; padding:0.5rem 1rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; cursor:pointer; float:right;';
     closeBtn.onclick = function() { closeMobileModal(); };
     modal.appendChild(closeBtn);
 
@@ -413,32 +413,32 @@ function showMobilePicker(opts) {
     var backdrop = document.createElement('div');
     backdrop.style.cssText = 'position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center;';
     var sheet = document.createElement('div');
-    sheet.style.cssText = 'background:var(--bg-secondary,#fff); border-top-left-radius:12px; border-top-right-radius:12px; width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 -4px 16px rgba(0,0,0,0.3);';
+    sheet.style.cssText = 'background:var(--bg-secondary,#fff); border-top-left-radius:0.75rem; border-top-right-radius:0.75rem; width:100%; max-width:30rem; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 -0.25rem 1rem rgba(0,0,0,0.3);';
 
     function close() { backdrop.remove(); }
     backdrop.addEventListener('click', function(e) { if (e.target === backdrop) close(); });
 
     var head = document.createElement('div');
-    head.style.cssText = 'padding:14px 16px 8px; display:flex; align-items:center; gap:8px; flex-shrink:0;';
+    head.style.cssText = 'padding:0.875rem 1rem 0.5rem; display:flex; align-items:center; gap:0.5rem; flex-shrink:0;';
     var h = document.createElement('div');
     h.textContent = opts.title || '';
-    h.style.cssText = 'font-size:15px; font-weight:600; color:var(--text-primary); flex:1;';
+    h.style.cssText = 'font-size:0.9375rem; font-weight:600; color:var(--text-primary); flex:1;';
     head.appendChild(h);
     var x = document.createElement('button');
     x.innerHTML = '&#10005;';
-    x.style.cssText = 'border:none; background:none; font-size:18px; color:var(--text-secondary,#6B7280); cursor:pointer;';
+    x.style.cssText = 'border:none; background:none; font-size:1.125rem; color:var(--text-secondary,#6B7280); cursor:pointer;';
     x.onclick = close;
     head.appendChild(x);
     sheet.appendChild(head);
 
     var body = document.createElement('div');
-    body.style.cssText = 'padding:0 16px 16px; overflow-y:auto; flex:1;';
+    body.style.cssText = 'padding:0 1rem 1rem; overflow-y:auto; flex:1;';
     sheet.appendChild(body);
 
     function _rowBtn(label) {
         var b = document.createElement('button');
         b.textContent = label;
-        b.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%; text-align:left; padding:11px 6px; font-size:14px; border:none; border-bottom:1px solid var(--border,#eee); background:none; color:var(--text-primary); cursor:pointer;';
+        b.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:0.5rem; width:100%; text-align:left; padding:0.6875rem 0.375rem; font-size:0.875rem; border:none; border-bottom:0.0625rem solid var(--border,#eee); background:none; color:var(--text-primary); cursor:pointer;';
         return b;
     }
 
@@ -446,7 +446,7 @@ function showMobilePicker(opts) {
         var input = document.createElement('input');
         input.type = 'text';
         input.placeholder = opts.placeholder || 'Search…';
-        input.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:9px; font-size:14px; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary); margin-bottom:10px;';
+        input.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary); margin-bottom:0.625rem;';
         body.appendChild(input);
         var results = document.createElement('div');
         body.appendChild(results);
@@ -462,7 +462,7 @@ function showMobilePicker(opts) {
                         var items = opts.mapItems ? opts.mapItems(data) : data;
                         results.innerHTML = '';
                         if (!items.length) {
-                            results.innerHTML = '<div style="font-size:13px;color:var(--text-secondary,#6B7280);padding:8px 0;">No matches.</div>';
+                            results.innerHTML = '<div style="font-size:0.8125rem;color:var(--text-secondary,#6B7280);padding:0.5rem 0;">No matches.</div>';
                             return;
                         }
                         items.forEach(function(it) {
@@ -479,7 +479,7 @@ function showMobilePicker(opts) {
         (opts.selectedIds || []).forEach(function(id) { selected[id] = true; });
         opts.options.forEach(function(o) {
             var lab = document.createElement('label');
-            lab.style.cssText = 'display:flex; align-items:center; gap:10px; padding:9px 6px; font-size:14px; border-bottom:1px solid var(--border,#eee); color:var(--text-primary); cursor:pointer;';
+            lab.style.cssText = 'display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.375rem; font-size:0.875rem; border-bottom:0.0625rem solid var(--border,#eee); color:var(--text-primary); cursor:pointer;';
             var cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.checked = !!selected[o.id];
@@ -492,7 +492,7 @@ function showMobilePicker(opts) {
         });
         var done = document.createElement('button');
         done.textContent = 'Done';
-        done.style.cssText = 'margin-top:12px; width:100%; padding:11px; font-size:14px; background:var(--link,#2563EB); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+        done.style.cssText = 'margin-top:0.75rem; width:100%; padding:0.6875rem; font-size:0.875rem; background:var(--link,#2563EB); color:#fff; border:none; border-radius:0.375rem; cursor:pointer;';
         done.onclick = function() { close(); opts.onDone(Object.keys(selected).map(Number)); };
         body.appendChild(done);
     } else { // 'select'
@@ -517,22 +517,22 @@ function showMobilePicker(opts) {
 /* Shared mobile password-confirm — for destructive edits (delete/merge). */
 function showMobilePassword(opts) {
     var backdrop = document.createElement('div');
-    backdrop.style.cssText = 'position:fixed; inset:0; z-index:310; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:16px;';
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:310; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:1rem;';
     var modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:1px solid var(--border,#ccc); border-radius:8px; padding:16px; width:100%; max-width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+    modal.style.cssText = 'background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border,#ccc); border-radius:0.5rem; padding:1rem; width:100%; max-width:20rem; box-shadow:0 0.25rem 1rem rgba(0,0,0,0.3);';
 
     function close() { backdrop.remove(); }
 
     if (opts.title) {
         var t = document.createElement('div');
         t.textContent = opts.title;
-        t.style.cssText = 'font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px;';
+        t.style.cssText = 'font-size:0.9375rem; font-weight:600; color:var(--text-primary); margin-bottom:0.375rem;';
         modal.appendChild(t);
     }
     if (opts.message) {
         var m = document.createElement('div');
         m.textContent = opts.message;
-        m.style.cssText = 'font-size:13px; color:var(--text-secondary,#6B7280); margin-bottom:10px; white-space:pre-line;';
+        m.style.cssText = 'font-size:0.8125rem; color:var(--text-secondary,#6B7280); margin-bottom:0.625rem; white-space:pre-line;';
         modal.appendChild(m);
     }
 
@@ -540,22 +540,22 @@ function showMobilePassword(opts) {
     input.type = 'password';
     input.placeholder = 'Password';
     input.autocomplete = 'current-password';
-    input.style.cssText = 'width:100%; border:1px solid var(--border,#ccc); border-radius:6px; padding:9px; font-size:14px; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary); margin-bottom:6px;';
+    input.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary); margin-bottom:0.375rem;';
     modal.appendChild(input);
 
     var err = document.createElement('div');
-    err.style.cssText = 'font-size:12px; color:var(--delete-button,#DC2626); min-height:16px; margin-bottom:8px;';
+    err.style.cssText = 'font-size:0.75rem; color:var(--delete-button,#DC2626); min-height:1rem; margin-bottom:0.5rem;';
     modal.appendChild(err);
 
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex; gap:8px; justify-content:flex-end;';
+    row.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
     var cancel = document.createElement('button');
     cancel.textContent = 'Cancel';
-    cancel.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--bg-primary,#fff); color:var(--text-primary); border:1px solid var(--border,#ccc); border-radius:6px; cursor:pointer;';
+    cancel.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; cursor:pointer;';
     cancel.onclick = close;
     var confirm = document.createElement('button');
     confirm.textContent = opts.confirmLabel || 'Confirm';
-    confirm.style.cssText = 'padding:8px 16px; font-size:14px; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:6px; cursor:pointer;';
+    confirm.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:0.375rem; cursor:pointer;';
     confirm.onclick = function() {
         if (!input.value) { err.textContent = 'Enter your password.'; return; }
         err.textContent = '';
@@ -608,7 +608,7 @@ function showRatingInput(event, songId, targetUserId) {
     input.maxLength = 1;
     input.value = currentValue;
     input.style.cssText = `
-        width: 100%; height: 100%; border: none; outline: 2px solid var(--link, #2563EB);
+        width: 100%; height: 100%; border: none; outline: 0.125rem solid var(--link, #2563EB);
         text-align: center; font-size: inherit; font-family: inherit;
         background: transparent; padding: 0; margin: 0; box-sizing: border-box;
     `;
@@ -766,16 +766,16 @@ function showNoteInput(cell, songId) {
 
     const overlay = document.createElement('div');
     overlay.style.cssText = `
-        position: fixed; z-index: 50; background: var(--bg-secondary, #fff); border: 2px solid var(--link, #2563EB);
-        border-radius: 4px; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        width: 240px;
+        position: fixed; z-index: 50; background: var(--bg-secondary, #fff); border: 0.125rem solid var(--link, #2563EB);
+        border-radius: 0.25rem; padding: 0.375rem; box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.2);
+        width: 15rem;
     `;
 
     // Song name label
     const label = document.createElement('div');
     label.textContent = songName || 'Note';
     label.style.cssText = `
-        font-size: 11px; font-weight: 600; color: var(--text-secondary, #6B7280); margin-bottom: 4px;
+        font-size: 0.6875rem; font-weight: 600; color: var(--text-secondary, #6B7280); margin-bottom: 0.25rem;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     `;
     overlay.appendChild(label);
@@ -785,37 +785,37 @@ function showNoteInput(cell, songId) {
     textarea.value = existingNote;
     textarea.rows = 3;
     textarea.style.cssText = `
-        width: 100%; border: 1px solid var(--border, #ccc); border-radius: 3px; padding: 4px;
-        font-size: 13px; font-family: inherit; resize: vertical;
+        width: 100%; border: 0.0625rem solid var(--border, #ccc); border-radius: 0.1875rem; padding: 0.25rem;
+        font-size: 0.8125rem; font-family: inherit; resize: vertical;
         background: var(--bg-primary, #fff); color: var(--text-primary, #000);
         box-sizing: border-box;
     `;
     textarea.placeholder = 'Add a note...';
 
     const btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end;';
+    btnRow.style.cssText = 'display: flex; gap: 0.25rem; margin-top: 0.25rem; justify-content: flex-end;';
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
     saveBtn.style.cssText = `
-        padding: 2px 10px; font-size: 12px; background: var(--link, #2563EB);
-        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+        padding: 0.125rem 0.625rem; font-size: 0.75rem; background: var(--link, #2563EB);
+        color: #fff; border: none; border-radius: 0.1875rem; cursor: pointer;
     `;
     saveBtn.onclick = () => submitNote(cell, songId, textarea.value.trim());
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
     cancelBtn.style.cssText = `
-        padding: 2px 10px; font-size: 12px; background: #6B7280;
-        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+        padding: 0.125rem 0.625rem; font-size: 0.75rem; background: #6B7280;
+        color: #fff; border: none; border-radius: 0.1875rem; cursor: pointer;
     `;
     cancelBtn.onclick = () => closeNoteInput();
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
     deleteBtn.style.cssText = `
-        padding: 2px 10px; font-size: 12px; background: var(--delete-button,#DC2626);
-        color: #fff; border: none; border-radius: 3px; cursor: pointer;
+        padding: 0.125rem 0.625rem; font-size: 0.75rem; background: var(--delete-button,#DC2626);
+        color: #fff; border: none; border-radius: 0.1875rem; cursor: pointer;
     `;
     deleteBtn.onclick = () => submitNote(cell, songId, '');
 
@@ -836,8 +836,7 @@ function showNoteInput(cell, songId) {
     }
 
     document.body.appendChild(overlay);
-    var zoom = parseFloat(document.documentElement.style.zoom) || 1;
-    var viewH = window.innerHeight / zoom;
+    var viewH = window.innerHeight;
     overlay.style.top = Math.max(0, Math.min(rect.top, viewH - overlay.offsetHeight - 35)) + 'px';
     textarea.focus();
     activeNote = { overlay, cell };

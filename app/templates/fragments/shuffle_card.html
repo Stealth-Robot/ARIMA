@@ -3,9 +3,9 @@
     <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
         <thead>
             <tr>
-                <th class="py-1 px-2 text-left text-secondary-text" style="width: 200px; max-width: 200px; border: none;"></th>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 12.5rem; max-width: 12.5rem; border: none;"></th>
                 {% for u in users %}
-                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -15,14 +15,14 @@
                 <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line"
                     title="{{ _dn | e }}" data-song-id="{{ song.id }}"
                     {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
-                    style="padding: 4px 6px 4px 16px; width: 200px; max-width: 200px;{% if song.is_promoted %} border-left: 4px solid var(--promoted-song);{% endif %}">
+                    style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem;{% if song.is_promoted %} border-left: 0.25rem solid var(--promoted-song);{% endif %}">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         <a href="{{ artist_url }}" class="text-secondary-text italic no-underline">{{ artist.name }}</a>{% if collab_label %} <span class="text-secondary-text italic">{{ collab_label }}</span>{% endif %}
                     </div>
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <a href="{{ artist_url }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 19px; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 9px; padding: 1px 5px;">remix</span>{% endif %}
+                        <a href="{{ artist_url }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 1.1875rem; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
                     </div>
-                    <div class="text-secondary-text" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div class="text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}
                     </div>
                 </td>

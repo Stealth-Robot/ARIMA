@@ -2,11 +2,11 @@
 <div class="filter-multiselect flex-shrink-0 relative" data-field="{{ field }}" data-label="{{ label }}">
     <button type="button" onclick="toggleFilterPanel(this)"
             class="filter-trigger cursor-pointer {{ trigger_class }}">
-        <span class="filter-label">{{ label }}</span> <span style="font-size:10px;">&#9662;</span>
+        <span class="filter-label">{{ label }}</span> <span style="font-size:0.625rem;">&#9662;</span>
     </button>
     <div class="filter-panel hidden bg-secondary-bg border border-border rounded z-50"
-         style="position:fixed; min-width:180px; max-height:320px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.3); padding:4px 0;">
-        <div class="flex items-center justify-between px-3 pb-1 border-b border-border" style="margin-bottom:4px;">
+         style="position:fixed; min-width:11.25rem; max-height:20rem; overflow-y:auto; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3); padding:0.25rem 0;">
+        <div class="flex items-center justify-between px-3 pb-1 border-b border-border" style="margin-bottom:0.25rem;">
             <span class="text-xs text-secondary-text">{{ label }}</span>
             <button type="button" onclick="clearFilterPanel(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
         </div>
@@ -20,7 +20,7 @@
 </div>
 {%- endmacro -%}
 <!DOCTYPE html>
-<html lang="en" style="zoom: 1.2;">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,7 +69,7 @@
 </head>
 <body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar -->
-    <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 10px; padding: 0 12px; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
+    <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 0.625rem; padding: 0 0.75rem; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
         <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('home.home') }}" style="display:none;">Home</a>
         <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug', 'misc.misc_page') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('artists.artists_list') }}" style="display:none;">Artists</a>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
@@ -170,7 +170,7 @@
                     <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
                          referrerpolicy="no-referrer"
                          onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         style="width: 22px; height: 22px;" class="rounded-full object-cover flex-shrink-0">
+                         style="width: 1.375rem; height: 1.375rem;" class="rounded-full object-cover flex-shrink-0">
                     <span>{{ current_user.username }}</span>
                 </a>
                 <div class="profile-dd nav-dropdown-panel">
@@ -187,22 +187,22 @@
 
     <!-- Search overlay (outside nav, positioned by JS near trigger button) -->
     <div id="search-overlay"
-         class="hidden fixed top-11 z-40" style="width: 320px;">
-        <label class="flex items-center gap-1 px-2.5 py-1 text-xs bg-secondary-bg border border-border border-b-0 rounded-t cursor-pointer" style="box-shadow: 0 -2px 12px rgba(0,0,0,0.3);">
+         class="hidden fixed top-11 z-40" style="width: 20rem;">
+        <label class="flex items-center gap-1 px-2.5 py-1 text-xs bg-secondary-bg border border-border border-b-0 rounded-t cursor-pointer" style="box-shadow: 0 -0.125rem 0.75rem rgba(0,0,0,0.3);">
             {% set _search_show_hidden = current_user.settings.search_show_hidden if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings else session.get('search_show_hidden', False) %}
             <input id="search-show-hidden" type="checkbox" autocomplete="off"{% if _search_show_hidden %} checked{% endif %}> <span class="text-secondary-text">Show hidden songs</span>
         </label>
         <input id="global-search" type="text" placeholder="Search artists, albums, songs..."
                autocomplete="off"
-               class="px-2.5 py-1.5 bg-secondary-bg text-primary-text border border-border text-sm rounded-none w-full" style="box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+               class="px-2.5 py-1.5 bg-secondary-bg text-primary-text border border-border text-sm rounded-none w-full" style="box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.3);">
         <div id="search-results"
              class="hidden overflow-y-auto bg-secondary-bg border border-border border-t-0"
-             style="max-height: 400px; border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+             style="max-height: 25rem; border-radius: 0 0 0.25rem 0.25rem; box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.3);">
         </div>
     </div>
 
     <!-- Mobile menu panel (outside nav so the navbar's scroll container / stacking context can't clip or cover it) -->
-    <div id="mobile-menu-panel" class="fixed bg-navbar-bg border border-border rounded-md z-50 py-2" style="display:none; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px; max-height:calc(100vh - 60px); overflow-y:auto; -webkit-overflow-scrolling:touch;">
+    <div id="mobile-menu-panel" class="fixed bg-navbar-bg border border-border rounded-md z-50 py-2" style="display:none; box-shadow:0 0.25rem 1rem rgba(0,0,0,0.4); min-width:12.5rem; max-height:calc(100vh - 3.75rem); overflow-y:auto; -webkit-overflow-scrolling:touch;">
         <a href="{{ url_for('home.home') }}" class="mobile-menu-item">Home</a>
         <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="mobile-menu-item">Subscriptions</a>
         <a href="{{ url_for('home.song_of_the_day') }}" class="mobile-menu-item">Song of the Day</a>
@@ -241,7 +241,7 @@
                 trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
                 panel_side='left') }}
         </div>
-        <div class="px-4" style="padding-top:4px; padding-bottom:8px;">
+        <div class="px-4" style="padding-top:0.25rem; padding-bottom:0.5rem;">
             {{ filter_multiselect('genre_ids', 'Genre', genres, 'genre', current_genre_ids,
                 trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
                 panel_side='left') }}
@@ -262,10 +262,10 @@
     <!-- Flash messages (error category only) -->
     {% with messages = get_flashed_messages(with_categories=true, category_filter=['error']) %}
     {% if messages %}
-    <div class="fixed z-50" style="top:50px; left:50%; transform:translateX(-50%); width:auto; max-width:500px;">
+    <div class="fixed z-50" style="top:3.125rem; left:50%; transform:translateX(-50%); width:auto; max-width:31.25rem;">
         {% for category, message in messages %}
         <div class="py-2.5 px-6 mb-1.5 rounded-md text-sm- bg-delete text-button-text cursor-pointer"
-             style="box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+             style="box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.3);"
              onclick="this.remove()">
             {{ message }}
         </div>
@@ -280,10 +280,10 @@
     </main>
 
     {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
-    <div id="update-notification" onclick="dismissUpdate()" class="hidden fixed z-50 bg-edit-on text-button-text rounded-lg text-sm- cursor-pointer" style="bottom:20px; right:20px; padding:12px 28px 12px 18px; box-shadow:0 4px 12px rgba(0,0,0,0.3); max-width:320px; line-height:1.5;">
+    <div id="update-notification" onclick="dismissUpdate()" class="hidden fixed z-50 bg-edit-on text-button-text rounded-lg text-sm- cursor-pointer" style="bottom:1.25rem; right:1.25rem; padding:0.75rem 1.75rem 0.75rem 1.125rem; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3); max-width:20rem; line-height:1.5;">
         <div class="font-bold mb-1">A new update to ARIMA was deployed!</div>
         <div>Check the <a href="{{ url_for('updates.updates_page') }}" class="text-button-text underline font-bold">Updates</a> tab for details</div>
-        <button onclick="dismissUpdate()" class="absolute bg-transparent border-0 text-button-text cursor-pointer text-sm" style="top:4px; right:4px; padding:4px 6px;">&times;</button>
+        <button onclick="dismissUpdate()" class="absolute bg-transparent border-0 text-button-text cursor-pointer text-sm" style="top:0.25rem; right:0.25rem; padding:0.25rem 0.375rem;">&times;</button>
     </div>
     <script>
     var _latestUpdateId = {{ latest_update_id or 0 }};
@@ -321,11 +321,10 @@
     function _positionNavDd(trigger) {
         var dd = trigger.querySelector('.nav-dropdown-panel');
         if (!dd) return dd;
-        var z = parseFloat(document.documentElement.style.zoom) || 1;
         var a = trigger.querySelector('a');
         var r = a.getBoundingClientRect();
-        dd.style.top = (r.bottom / z) + 'px';
-        dd.style.left = (r.left / z) + 'px';
+        dd.style.top = (r.bottom) + 'px';
+        dd.style.left = (r.left) + 'px';
         return dd;
     }
     function _showNavDd(trigger) {
@@ -346,7 +345,7 @@
     <script>
     if (localStorage.getItem('is_hamburger') === 'true') {
         var _hb = document.getElementById('hamburger-btn');
-        if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:22px; height:22px; border-radius:2px;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
+        if (_hb) { _hb.innerHTML = '<img src="{{ url_for("static", filename="img/hamburger.png") }}" style="width:1.375rem; height:1.375rem; border-radius:0.125rem;">'; _hb.style.top = '0'; _hb.style.left = '0'; }
     }
     </script>
     <script>

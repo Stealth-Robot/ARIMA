@@ -13,15 +13,15 @@
 {% set table_width = col_global + col_group + users|length * col_user + col_song %}
 
 <div class="mx-auto pb-11" style="max-width: fit-content;">
-<div style="width: {{ table_width }}px;">
+<div style="width: {{ table_width / 16 }}rem;">
 
 <!-- TOP SUMMARY TABLE — always shows % data, unaffected by mode toggle -->
 <table class="text-xs border-collapse table-fixed w-full border border-grid-line">
     <colgroup>
-        <col style="width: {{ col_global }}px">
-        <col style="width: {{ col_group }}px">
-        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
-        <col style="width: {{ col_song }}px">
+        <col style="width: {{ col_global / 16 }}rem">
+        <col style="width: {{ col_group / 16 }}rem">
+        {% for u in users %}<col style="width: {{ col_user / 16 }}rem">{% endfor %}
+        <col style="width: {{ col_song / 16 }}rem">
     </colgroup>
     <thead>
         <tr>
@@ -43,7 +43,7 @@
                 {{ summary.per_user[u.id].pct_rated }}
             </td>
             {% endfor %}
-            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 2px solid var(--grid-line);" rowspan="6">{{ summary.total_songs }}</td>
+            <td class="px-1 py-1 text-center font-bold text-lg" style="border: 0.125rem solid var(--grid-line);" rowspan="6">{{ summary.total_songs }}</td>
         </tr>
         {# Row 1b: Average Rating (0-5 score across all songs) #}
         <tr class="border border-grid-line">
@@ -88,7 +88,7 @@
             {% endfor %}
         </tr>
         {# Row 5: SGC (80%) #}
-        <tr style="border: 3px solid var(--grid-line);">
+        <tr style="border: 0.1875rem solid var(--grid-line);">
             <td class="px-2 py-1 text-right border border-grid-line">{{ summary.global.avg_scored_group_count_80 }}</td>
             <td class="px-2 py-1 font-semibold border border-grid-line"
                 title="Count of artists where you've rated 80%+ of their songs">Scored Group Count (80%+)</td>
@@ -116,10 +116,10 @@
 <!-- BOTTOM DETAIL TABLE — user columns toggle, Song Count always far right -->
 <table class="text-xs border-collapse table-fixed w-full border border-grid-line">
     <colgroup>
-        <col style="width: {{ col_global }}px">
-        <col style="width: {{ col_group }}px">
-        {% for u in users %}<col style="width: {{ col_user }}px">{% endfor %}
-        <col style="width: {{ col_song }}px">
+        <col style="width: {{ col_global / 16 }}rem">
+        <col style="width: {{ col_group / 16 }}rem">
+        {% for u in users %}<col style="width: {{ col_user / 16 }}rem">{% endfor %}
+        <col style="width: {{ col_song / 16 }}rem">
     </colgroup>
     <thead>
         <tr>
@@ -144,7 +144,7 @@
                 {{ stats.global_avg_pct }}
             </td>
             {# Global avg unrated (set 2) #}
-            <td class="py-1 col-set2 hidden border border-grid-line text-right" style="padding-right: 14px;">
+            <td class="py-1 col-set2 hidden border border-grid-line text-right" style="padding-right: 0.875rem;">
                 {{ stats.global_avg_unrated }}
             </td>
             {# Artist name #}

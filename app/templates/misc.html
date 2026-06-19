@@ -8,13 +8,13 @@
 {% block content %}
 <div class="mb-4 pb-9">
     <!-- Page header -->
-    <div class="mb-3 pl-3 flex items-start gap-3" style="border-left: 4px solid var(--gender-mixed);">
+    <div class="mb-3 pl-3 flex items-start gap-3" style="border-left: 0.25rem solid var(--gender-mixed);">
         {% if rules and rules.misc_image_url %}
         <a href="{{ rules.misc_image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab">
         <img src="{{ rules.misc_image_url }}" alt="Misc Artists"
              referrerpolicy="no-referrer"
              onerror="this.onerror=null;this.style.display='none';"
-             class="rounded object-cover" style="width:60px; height:90px; object-position:center;">
+             class="rounded object-cover" style="width:3.75rem; height:5.625rem; object-position:center;">
         </a>
         {% endif %}
         <div class="min-w-0">
@@ -45,7 +45,7 @@
                     <img src="{{ rules.misc_owner.profile_image or url_for('static', filename='img/default_image.png') }}"
                          referrerpolicy="no-referrer"
                          onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                         class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">
                     {{ rules.misc_owner.username }}
                     {% else %}—{% endif %}
                 </span>
@@ -67,7 +67,7 @@
                     <img src="{{ rules.misc_maintainer.profile_image or url_for('static', filename='img/default_image.png') }}"
                          referrerpolicy="no-referrer"
                          onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                         class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">
                     {{ rules.misc_maintainer.username }}
                     {% else %}—{% endif %}
                 </span>
@@ -84,7 +84,7 @@
                     <img src="{{ rules.misc_creator.profile_image or url_for('static', filename='img/default_image.png') }}"
                          referrerpolicy="no-referrer"
                          onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
-                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                         class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">
                     {{ rules.misc_creator.username }}
                     {% else %}—{% endif %}
                 </span>
@@ -113,23 +113,23 @@
     </div>
     {% else %}
 
-    <div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+    <div class="text-xs flex flex-wrap items-center gap-3 mb-2 pl-3" style="margin-left: {% if edit_mode %}2.25{% else %}1.25{% endif %}rem;">
         <span class="text-secondary-text">Sort:</span>
         <select id="misc-sort-field" onchange="_miscApplySort()"
                 class="rounded border border-border cursor-pointer"
-                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+                style="padding: 0.125rem 0.25rem; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="name"{% if misc_sort_field == 'name' %} selected{% endif %}>Name</option>
             <option value="release"{% if misc_sort_field == 'release' %} selected{% endif %}>Date</option>
             <option value="artist"{% if misc_sort_field == 'artist' %} selected{% endif %}>Artist</option>
             <option value="added"{% if misc_sort_field == 'added' %} selected{% endif %}>Last added</option>
         </select>
         <button id="misc-sort-dir" onclick="_miscToggleSortDir()" class="cursor-pointer rounded border-0 px-1"
-                style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 16px; line-height: 1.4;"
+                style="font-size: inherit; background: var(--edit-off-button); color: var(--button-text); min-width: 1rem; line-height: 1.4;"
                 title="Toggle sort direction">{% if misc_sort_dir == 'desc' %}&uarr;{% else %}&darr;{% endif %}</button>
         <span class="text-secondary-text ml-2">Show:</span>
         <select id="misc-scope-filter" onchange="_miscFilterChanged()"
                 class="rounded border border-border cursor-pointer"
-                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+                style="padding: 0.125rem 0.25rem; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="all"{% if misc_scope_filter == 'all' %} selected{% endif %}>All</option>
             <option value="misc-only"{% if misc_scope_filter == 'misc-only' %} selected{% endif %}>Misc exclusive</option>
             <option value="on-artist"{% if misc_scope_filter == 'on-artist' %} selected{% endif %}>On artist pages</option>
@@ -137,7 +137,7 @@
         <span class="text-secondary-text ml-2">Rated:</span>
         <select id="misc-rated-filter" onchange="_miscFilterChanged()"
                 class="rounded border border-border cursor-pointer"
-                style="padding: 2px 4px; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
+                style="padding: 0.125rem 0.25rem; font-size: inherit; background: var(--bg-secondary); color: var(--text-primary);">
             <option value="all"{% if rated_filter == 'all' %} selected{% endif %}>All</option>
             <option value="unrated"{% if rated_filter == 'unrated' %} selected{% endif %}>Unrated</option>
             <option value="rated"{% if rated_filter == 'rated' %} selected{% endif %}>Rated</option>
@@ -151,10 +151,10 @@
 
     <div class="discography-scroll-wrapper mx-auto" style="max-width: fit-content;">
     <div class="flex gap-3 items-start">
-    <table id="misc-table" class="text-xs border-collapse border border-grid-line" style="margin-left: {% if edit_mode %}36{% else %}20{% endif %}px;">
+    <table id="misc-table" class="text-xs border-collapse border border-grid-line" style="margin-left: {% if edit_mode %}2.25{% else %}1.25{% endif %}rem;">
         <thead>
             <tr class="thead-sticky">
-                <th class="text-left px-2 py-1 th-cell bg-discography-bg text-discography-text" style="width: 360px;">
+                <th class="text-left px-2 py-1 th-cell bg-discography-bg text-discography-text" style="width: 22.5rem;">
                     <span class="flex justify-between items-center">
                         DISCOGRAPHY
                         <span class="text-2xs font-normal flex items-center gap-2">
@@ -164,12 +164,12 @@
                     </span>
                 </th>
                 {% if edit_mode %}
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Remix</th>
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Cover</th>
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 30px;">Promo</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Remix</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Cover</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Promo</th>
                 {% endif %}
                 {% for u in users %}
-                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 45px;">{{ u.username }}</th>
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -184,7 +184,7 @@
         {% endif %}
 
         <tr id="misc-country-{{ country.country_id }}" class="child-header-gradient border border-grid-line cursor-pointer"
-            style="border-left: 6px solid var(--text-secondary);"
+            style="border-left: 0.375rem solid var(--text-secondary);"
             onclick="_miscToggleCountry({{ country.country_id }})">
             <td colspan="100" class="font-bold text-sm- text-discography-text relative p-0 pl-2">
                 <span id="misc-country-arrow-{{ country.country_id }}" class="collapse-arrow text-xxs">&#9654;</span>
@@ -195,7 +195,7 @@
 
         <tr class="misc-country-row-{{ country.country_id }}" style="display:none;"
             id="misc-country-loader-{{ country.country_id }}">
-            <td colspan="100" class="text-center text-secondary-text py-2" style="font-size:11px;">Loading...</td>
+            <td colspan="100" class="text-center text-secondary-text py-2" style="font-size:0.6875rem;">Loading...</td>
         </tr>
         {% endfor %}
         </tbody>
@@ -521,16 +521,15 @@ function _showSongGenreEditModal(event, songId, el, allGenres, currentIds) {
 
     var popup = document.createElement('div');
     popup.id = 'song-genre-edit-popup';
-    popup.style.cssText = 'position:fixed;z-index:100;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-height:300px;overflow-y:auto;min-width:160px;';
+    popup.style.cssText = 'position:fixed;z-index:100;background:var(--bg-secondary);border:0.0625rem solid var(--border);border-radius:0.25rem;padding:0.5rem;box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3);max-height:18.75rem;overflow-y:auto;min-width:10rem;';
 
-    var z = parseFloat(document.documentElement.style.zoom) || 1;
     var r = el.getBoundingClientRect();
-    popup.style.top = (r.bottom / z + 2) + 'px';
-    popup.style.left = (r.left / z) + 'px';
+    popup.style.top = (r.bottom + 2) + 'px';
+    popup.style.left = (r.left) + 'px';
 
     allGenres.forEach(function(g) {
         var label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;font-size:12px;color:var(--text-primary);';
+        label.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.1875rem 0;cursor:pointer;font-size:0.75rem;color:var(--text-primary);';
         var cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.value = g.id;
@@ -589,18 +588,18 @@ function _miscShowImageEdit(event) {
     _miscCloseImagePopover();
     var btn = event.currentTarget;
     var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:2px solid var(--link,#2563EB);border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:300px;';
+    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:0.125rem solid var(--link,#2563EB);border-radius:0.25rem;padding:0.5rem;box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2);width:18.75rem;';
     var label = document.createElement('div');
-    label.textContent = 'Image URL'; label.style.cssText = 'font-size:11px;color:var(--secondary-text);margin-bottom:4px;';
+    label.textContent = 'Image URL'; label.style.cssText = 'font-size:0.6875rem;color:var(--secondary-text);margin-bottom:0.25rem;';
     var hint = document.createElement('div');
     hint.textContent = 'https:// only. Cropped to a 2:3 portrait (centered), shown at 60×90, and used for the link preview.';
-    hint.style.cssText = 'font-size:10px;color:var(--secondary-text);margin-bottom:6px;line-height:1.3;';
+    hint.style.cssText = 'font-size:0.625rem;color:var(--secondary-text);margin-bottom:0.375rem;line-height:1.3;';
     var input = document.createElement('input');
     input.type = 'url'; input.value = {{ (rules.misc_image_url if rules and rules.misc_image_url else '') | tojson }};
     input.placeholder = 'https://...';
-    input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:3px;background:var(--bg-primary);color:var(--text-primary);';
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:0.25rem 0.375rem;font-size:0.75rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;background:var(--bg-primary);color:var(--text-primary);';
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+    btnRow.style.cssText = 'display:flex;gap:0.375rem;margin-top:0.5rem;';
     function save(value) {
         var headers = _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'});
         fetch('/misc/set-image', {method:'POST', headers:headers, body:'value=' + encodeURIComponent(value)}).then(function(r) {
@@ -623,9 +622,8 @@ function _miscShowImageEdit(event) {
     btnRow.appendChild(removeBtn);
     popover.appendChild(label); popover.appendChild(hint); popover.appendChild(input); popover.appendChild(btnRow);
     var rect = btn.getBoundingClientRect();
-    var z = parseFloat(document.documentElement.style.zoom) || 1;
-    popover.style.left = (rect.left / z) + 'px';
-    popover.style.top = (rect.bottom / z + 2) + 'px';
+    popover.style.left = (rect.left) + 'px';
+    popover.style.top = (rect.bottom + 2) + 'px';
     document.body.appendChild(popover);
     _miscImagePopover = popover;
     input.focus();
@@ -640,7 +638,7 @@ function _miscShowUserEdit(event, span, kind) {
     event.stopPropagation();
     _miscCloseUserPopover();
     var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:2px solid var(--link,#2563EB);border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:220px;max-height:320px;overflow-y:auto;';
+    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:0.125rem solid var(--link,#2563EB);border-radius:0.25rem;padding:0.5rem;box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2);width:13.75rem;max-height:20rem;overflow-y:auto;';
     var attr = kind === 'owner' ? 'ownerId' : (kind === 'creator' ? 'creatorId' : 'maintainerId');
     var currentId = span.dataset[attr] ? parseInt(span.dataset[attr]) : null;
     function pick(uid, uname, img) {
@@ -650,17 +648,17 @@ function _miscShowUserEdit(event, span, kind) {
             span.dataset[attr] = uid == null ? '' : uid;
             var pill = span.querySelector('.user-pill-content');
             if (uid == null) { pill.innerHTML = '—'; }
-            else { pill.innerHTML = '<img src="' + img + '" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'' + '{{ url_for("static", filename="img/default_image.png") }}' + '\'" class="rounded-full object-cover" style="width:18px;height:18px;">' + uname; }
+            else { pill.innerHTML = '<img src="' + img + '" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'' + '{{ url_for("static", filename="img/default_image.png") }}' + '\'" class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">' + uname; }
             _miscCloseUserPopover();
         });
     }
     function row(uid, uname, img, selected) {
         var d = document.createElement('div');
-        d.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:3px;cursor:pointer;' + (selected ? 'background:var(--link);color:#fff;' : '');
+        d.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.375rem;border-radius:0.1875rem;cursor:pointer;' + (selected ? 'background:var(--link);color:#fff;' : '');
         d.onmouseenter = function() { if (!selected) d.style.background = 'var(--hover-bg)'; };
         d.onmouseleave = function() { if (!selected) d.style.background = ''; };
-        if (img) { var i = document.createElement('img'); i.src = img; i.referrerPolicy = 'no-referrer'; i.className = 'rounded-full object-cover'; i.style.cssText = 'width:20px;height:20px;'; d.appendChild(i); }
-        var t = document.createElement('span'); t.textContent = uname; t.style.fontSize = '12px'; d.appendChild(t);
+        if (img) { var i = document.createElement('img'); i.src = img; i.referrerPolicy = 'no-referrer'; i.className = 'rounded-full object-cover'; i.style.cssText = 'width:1.25rem;height:1.25rem;'; d.appendChild(i); }
+        var t = document.createElement('span'); t.textContent = uname; t.style.fontSize = '0.75rem'; d.appendChild(t);
         return d;
     }
     var none = row(null, 'Unassigned', null, currentId === null);
@@ -672,9 +670,8 @@ function _miscShowUserEdit(event, span, kind) {
         popover.appendChild(r);
     });
     var rect = span.getBoundingClientRect();
-    var z = parseFloat(document.documentElement.style.zoom) || 1;
-    popover.style.left = (rect.left / z) + 'px';
-    popover.style.top = (rect.bottom / z + 2) + 'px';
+    popover.style.left = (rect.left) + 'px';
+    popover.style.top = (rect.bottom + 2) + 'px';
     document.body.appendChild(popover);
     _miscUserPopover = popover;
     var close = function(e) { if (!popover.contains(e.target) && !span.contains(e.target)) { _miscCloseUserPopover(); document.removeEventListener('click', close); } };
@@ -690,15 +687,15 @@ function _showManageMiscArtists() {
         var modal = _miscModal(520);
         var title = document.createElement('div');
         title.textContent = 'Manage Misc Artists';
-        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:12px;';
+        title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.75rem;';
         modal.appendChild(title);
 
         var controls = document.createElement('div');
-        controls.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+        controls.style.cssText = 'display:flex;gap:0.375rem;margin-bottom:0.5rem;';
         var search = _miscInput('Search artists...');
         search.style.flex = '1';
         var sortSel = _miscSelect([{id:'name', name:'A-Z'}, {id:'songs', name:'Most songs'}], 'name');
-        sortSel.style.cssText += 'width:auto;font-size:12px;padding:4px 6px;';
+        sortSel.style.cssText += 'width:auto;font-size:0.75rem;padding:0.25rem 0.375rem;';
         sortSel.onchange = function() { renderList(search.value); };
         controls.appendChild(search);
         controls.appendChild(sortSel);
@@ -726,12 +723,12 @@ function _showManageMiscArtists() {
             sorted.forEach(function(a) {
                 if (lower && a.name.toLowerCase().indexOf(lower) === -1) return;
                 var row = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--border,#eee);font-size:12px;';
+                row.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.3125rem 0.25rem;border-bottom:0.0625rem solid var(--border,#eee);font-size:0.75rem;';
                 var isDupe = dupes[a.name.toLowerCase().trim()] > 1;
                 if (isDupe) row.style.background = 'rgba(234,179,8,0.15)';
 
                 var nameInp = _miscInput('', a.name);
-                nameInp.style.cssText += 'flex:1;min-width:0;font-size:12px;padding:3px 6px;';
+                nameInp.style.cssText += 'flex:1;min-width:0;font-size:0.75rem;padding:0.1875rem 0.375rem;';
                 nameInp.onblur = function() {
                     var nv = nameInp.value.trim();
                     if (nv && nv !== a.name) {
@@ -741,7 +738,7 @@ function _showManageMiscArtists() {
                 };
 
                 var countrySel = _miscSelect(_allCountries, a.country_id);
-                countrySel.style.cssText += 'width:auto;min-width:90px;font-size:11px;padding:2px 4px;';
+                countrySel.style.cssText += 'width:auto;min-width:5.625rem;font-size:0.6875rem;padding:0.125rem 0.25rem;';
                 countrySel.onchange = function() {
                     fetch('/misc/edit-artist/' + a.id, {method:'POST', headers:_csrfJson(), body:JSON.stringify({country_id:parseInt(countrySel.value)})})
                         .then(function(r){return r.json();}).then(function(d) { a.country_id = d.country_id; });
@@ -749,14 +746,14 @@ function _showManageMiscArtists() {
 
                 var count = document.createElement('span');
                 count.textContent = a.song_count + ' songs';
-                count.style.cssText = 'color:var(--text-secondary);white-space:nowrap;min-width:55px;text-align:right;';
+                count.style.cssText = 'color:var(--text-secondary);white-space:nowrap;min-width:3.4375rem;text-align:right;';
 
                 a.alt_names = a.alt_names || [];
                 var altBtn = document.createElement('button');
                 var _altLabel = function() { altBtn.textContent = a.alt_names.length ? 'Alt · ' + a.alt_names.length : 'Alt'; };
                 _altLabel();
                 altBtn.title = 'Alternate names (also matched in search)';
-                altBtn.style.cssText = 'border:1px solid var(--border,#ccc);border-radius:3px;font-size:11px;padding:2px 6px;white-space:nowrap;cursor:pointer;background:' + (a.alt_names.length ? 'var(--link,#2563EB)' : 'transparent') + ';color:' + (a.alt_names.length ? '#fff' : 'var(--text-secondary)') + ';';
+                altBtn.style.cssText = 'border:0.0625rem solid var(--border,#ccc);border-radius:0.1875rem;font-size:0.6875rem;padding:0.125rem 0.375rem;white-space:nowrap;cursor:pointer;background:' + (a.alt_names.length ? 'var(--link,#2563EB)' : 'transparent') + ';color:' + (a.alt_names.length ? '#fff' : 'var(--text-secondary)') + ';';
                 altBtn.onclick = function() {
                     _showMiscAltNames(a, function() { _altLabel(); altBtn.style.background = a.alt_names.length ? 'var(--link,#2563EB)' : 'transparent'; altBtn.style.color = a.alt_names.length ? '#fff' : 'var(--text-secondary)'; });
                 };
@@ -775,7 +772,7 @@ function _showManageMiscArtists() {
                 delBtn.innerHTML = '&times;';
                 delBtn.title = a.song_count > 0 ? 'Cannot delete: has songs' : 'Delete';
                 delBtn.disabled = a.song_count > 0;
-                delBtn.style.cssText = 'border:none;background:none;color:' + (a.song_count > 0 ? 'var(--text-secondary)' : 'var(--delete,red)') + ';cursor:pointer;font-size:16px;padding:0 2px;';
+                delBtn.style.cssText = 'border:none;background:none;color:' + (a.song_count > 0 ? 'var(--text-secondary)' : 'var(--delete,red)') + ';cursor:pointer;font-size:1rem;padding:0 0.125rem;';
                 delBtn.onclick = function() {
                     if (!confirm('Delete "' + a.name + '"?')) return;
                     fetch('/misc/delete-artist/' + a.id, {method:'POST', headers:_csrfJson()})
@@ -789,7 +786,7 @@ function _showManageMiscArtists() {
                 combineBtn.textContent = 'Combine';
                 combineBtn.title = a.song_count > 0 ? 'Combine into a real artist' : 'No songs to combine';
                 combineBtn.disabled = a.song_count === 0;
-                combineBtn.style.cssText = 'border:none;border-radius:3px;font-size:11px;padding:2px 6px;white-space:nowrap;cursor:' + (a.song_count > 0 ? 'pointer' : 'default') + ';color:#fff;background:' + (a.song_count > 0 ? '#0D9488' : 'var(--text-secondary)') + ';';
+                combineBtn.style.cssText = 'border:none;border-radius:0.1875rem;font-size:0.6875rem;padding:0.125rem 0.375rem;white-space:nowrap;cursor:' + (a.song_count > 0 ? 'pointer' : 'default') + ';color:#fff;background:' + (a.song_count > 0 ? '#0D9488' : 'var(--text-secondary)') + ';';
                 combineBtn.onclick = function() {
                     if (a.song_count === 0) return;
                     _showCombineMiscArtist(a, function() {
@@ -811,9 +808,9 @@ function _showManageMiscArtists() {
         search.addEventListener('input', function() { renderList(search.value); });
 
         var btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;align-items:center;';
+        btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end;align-items:center;';
         var mergeCount = document.createElement('span');
-        mergeCount.style.cssText = 'color:var(--text-secondary);font-size:12px;margin-right:auto;';
+        mergeCount.style.cssText = 'color:var(--text-secondary);font-size:0.75rem;margin-right:auto;';
         var mergeBtn = _miscBtn('Merge Selected', '#7C3AED', function() {
             if (mergeSelection.length < 2) return;
             _showMergeConfirm(mergeSelection.slice(), artists, function(countryId) {
@@ -850,21 +847,21 @@ function _showMiscAltNames(a, onSaved) {
     var modal = _miscModal(400);
     var title = document.createElement('div');
     title.textContent = 'Alternate names — ' + a.name;
-    title.style.cssText = 'font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;';
+    title.style.cssText = 'font-size:0.9375rem;font-weight:700;color:var(--text-primary);margin-bottom:0.25rem;';
     modal.appendChild(title);
     var hint = document.createElement('div');
     hint.textContent = 'One name per line. These are also matched when searching for this artist.';
-    hint.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:10px;';
+    hint.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.625rem;';
     modal.appendChild(hint);
 
     var ta = document.createElement('textarea');
     ta.value = (a.alt_names || []).join('\n');
     ta.rows = 6;
-    ta.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;resize:vertical;';
+    ta.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;resize:vertical;';
     modal.appendChild(ta);
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var saveBtn = _miscBtn('Save', '#2563EB', function() {
         var names = ta.value.replace(/\r\n/g, '\n').split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
@@ -890,7 +887,7 @@ function _showAddMiscSong() {
     var modal = _miscModal(460);
     var title = document.createElement('div');
     title.textContent = 'Add Misc Song';
-    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+    title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem;';
     modal.appendChild(title);
 
     /* Song name */
@@ -901,7 +898,7 @@ function _showAddMiscSong() {
     /* Spotify URL (optional) */
     modal.appendChild(_miscLabel('Spotify URL (optional)'));
     var spotRow = document.createElement('div');
-    spotRow.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    spotRow.style.cssText = 'display:flex;gap:0.25rem;align-items:center;';
     var spotInp = _miscInput('https://open.spotify.com/track/...');
     spotInp.style.flex = '1';
     spotRow.appendChild(spotInp);
@@ -920,11 +917,11 @@ function _showAddMiscSong() {
                 spotStatus.textContent = 'Linked: ' + d.name;
             }).catch(function() { spotBtn.disabled = false; spotStatus.textContent = 'Fetch failed'; });
     });
-    spotBtn.style.fontSize = '11px'; spotBtn.style.padding = '4px 10px';
+    spotBtn.style.fontSize = '0.6875rem'; spotBtn.style.padding = '0.25rem 0.625rem';
     spotRow.appendChild(spotBtn);
     modal.appendChild(spotRow);
     var spotStatus = document.createElement('div');
-    spotStatus.style.cssText = 'font-size:11px;color:var(--text-secondary);min-height:14px;margin-bottom:2px;';
+    spotStatus.style.cssText = 'font-size:0.6875rem;color:var(--text-secondary);min-height:0.875rem;margin-bottom:0.125rem;';
     modal.appendChild(spotStatus);
 
     /* YouTube URL (optional) */
@@ -936,27 +933,27 @@ function _showAddMiscSong() {
     modal.appendChild(_miscLabel('Note (optional)'));
     var noteInp = document.createElement('textarea');
     noteInp.placeholder = 'Note';
-    noteInp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:48px;resize:vertical;';
+    noteInp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:3rem;resize:vertical;';
     modal.appendChild(noteInp);
 
     /* Misc artists */
     modal.appendChild(_miscLabel('Misc Artists *'));
     var maList = document.createElement('div');
-    maList.style.cssText = 'margin-bottom:4px;';
+    maList.style.cssText = 'margin-bottom:0.25rem;';
     modal.appendChild(maList);
     var miscArtists = [];
     function renderMAs() {
         maList.innerHTML = '';
         miscArtists.forEach(function(a, i) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.125rem 0;font-size:0.75rem;color:var(--text-primary);';
             row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
             var tog = document.createElement('button');
             tog.textContent = a.is_main ? 'main' : 'feat';
-            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
             tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
             var del = document.createElement('button');
-            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
             del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
             row.appendChild(tog); row.appendChild(del);
             maList.appendChild(row);
@@ -973,7 +970,7 @@ function _showAddMiscSong() {
     });
     /* Create new misc artist inline */
     var maCreateRow = document.createElement('div');
-    maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+    maCreateRow.style.cssText = 'display:flex;gap:0.25rem;margin-top:0.25rem;align-items:center;';
     var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
         var n = maInp.value.trim();
         if (!n) return;
@@ -984,9 +981,9 @@ function _showAddMiscSong() {
                 maInp.value = ''; renderMAs();
             });
     });
-    maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+    maCreateBtn.style.fontSize = '0.6875rem'; maCreateBtn.style.padding = '0.1875rem 0.5rem';
     var maCountrySel = _miscSelect(_allCountries);
-    maCountrySel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+    maCountrySel.style.cssText += 'width:auto;font-size:0.6875rem;padding:0.125rem 0.25rem;';
     maCreateRow.appendChild(maCreateBtn);
     maCreateRow.appendChild(maCountrySel);
     modal.appendChild(maCreateRow);
@@ -1000,14 +997,14 @@ function _showAddMiscSong() {
         raList.innerHTML = '';
         realArtists.forEach(function(a, i) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.125rem 0;font-size:0.75rem;color:var(--text-primary);';
             row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
             var tog = document.createElement('button');
             tog.textContent = a.is_main ? 'main' : 'feat';
-            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
             tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
             var del = document.createElement('button');
-            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
             del.onclick = function() { realArtists.splice(i, 1); renderRAs(); };
             row.appendChild(tog); row.appendChild(del);
             raList.appendChild(row);
@@ -1026,11 +1023,11 @@ function _showAddMiscSong() {
     /* Genres */
     modal.appendChild(_miscLabel('Genres'));
     var genreDiv = document.createElement('div');
-    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.375rem;';
     var selectedGenres = [];
     _allGenres.forEach(function(g) {
         var label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+        label.style.cssText = 'display:flex;align-items:center;gap:0.1875rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);';
         var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
         cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
         label.appendChild(cb); label.appendChild(document.createTextNode(g.genre));
@@ -1040,7 +1037,7 @@ function _showAddMiscSong() {
 
     /* Buttons */
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var saveBtn = _miscBtn('Add Song', 'var(--link,#2563EB)', function() {
         var sName = nameInp.value.trim();
@@ -1081,7 +1078,7 @@ function _showSpotifyImport() {
     var modal = _miscModal(520);
     var title = document.createElement('div');
     title.textContent = 'Import from Spotify';
-    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+    title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem;';
     modal.appendChild(title);
 
     /* Step 1: URL input */
@@ -1103,16 +1100,16 @@ function _showSpotifyImport() {
                 renderTracks(d.tracks);
             }).catch(function() { fetchBtn.disabled = false; statusDiv.textContent = 'Fetch failed'; });
     });
-    fetchBtn.style.marginTop = '6px';
+    fetchBtn.style.marginTop = '0.375rem';
     modal.appendChild(fetchBtn);
 
     var statusDiv = document.createElement('div');
-    statusDiv.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-top:4px;min-height:16px;';
+    statusDiv.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;min-height:1rem;';
     modal.appendChild(statusDiv);
 
     /* Track list */
     var trackDiv = document.createElement('div');
-    trackDiv.style.cssText = 'max-height:200px;overflow-y:auto;margin-top:8px;';
+    trackDiv.style.cssText = 'max-height:12.5rem;overflow-y:auto;margin-top:0.5rem;';
     modal.appendChild(trackDiv);
     var fetchedTracks = [];
 
@@ -1125,28 +1122,28 @@ function _showSpotifyImport() {
             trackDiv.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = allCb.checked; });
         };
         var allLabel = document.createElement('label');
-        allLabel.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border);';
+        allLabel.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0;font-size:0.75rem;font-weight:600;color:var(--text-primary);border-bottom:0.0625rem solid var(--border);';
         allLabel.appendChild(allCb);
         allLabel.appendChild(document.createTextNode('Select All'));
         trackDiv.appendChild(allLabel);
         tracks.forEach(function(t, i) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.1875rem 0;font-size:0.75rem;color:var(--text-primary);';
             var cb = document.createElement('input');
             cb.type = 'checkbox'; cb.checked = true; cb.dataset.idx = i;
             row.appendChild(cb);
             var nameSpan = document.createElement('span');
             nameSpan.textContent = t.track_number + '. ' + t.name;
-            nameSpan.style.cssText = 'flex:1;min-width:70px;';
+            nameSpan.style.cssText = 'flex:1;min-width:4.375rem;';
             row.appendChild(nameSpan);
             var yt = document.createElement('input');
             yt.type = 'text'; yt.placeholder = 'YouTube URL';
-            yt.style.cssText = 'width:130px;font-size:11px;padding:2px 4px;border:1px solid var(--border,#ccc);border-radius:3px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+            yt.style.cssText = 'width:8.125rem;font-size:0.6875rem;padding:0.125rem 0.25rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.1875rem;background:var(--bg-primary,#fff);color:var(--text-primary);';
             yt.oninput = function() { t.youtube_url = yt.value.trim(); };
             row.appendChild(yt);
             var nt = document.createElement('input');
             nt.type = 'text'; nt.placeholder = 'Note';
-            nt.style.cssText = 'width:110px;font-size:11px;padding:2px 4px;border:1px solid var(--border,#ccc);border-radius:3px;background:var(--bg-primary,#fff);color:var(--text-primary);';
+            nt.style.cssText = 'width:6.875rem;font-size:0.6875rem;padding:0.125rem 0.25rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.1875rem;background:var(--bg-primary,#fff);color:var(--text-primary);';
             nt.oninput = function() { t.note = nt.value.trim(); };
             row.appendChild(nt);
             trackDiv.appendChild(row);
@@ -1162,14 +1159,14 @@ function _showSpotifyImport() {
         maList.innerHTML = '';
         miscArtists.forEach(function(a, i) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px;color:var(--text-primary);';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.125rem 0;font-size:0.75rem;color:var(--text-primary);';
             row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
             var tog = document.createElement('button');
             tog.textContent = a.is_main ? 'main' : 'feat';
-            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
             tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
             var del = document.createElement('button');
-            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
             del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
             row.appendChild(tog); row.appendChild(del);
             maList.appendChild(row);
@@ -1185,7 +1182,7 @@ function _showSpotifyImport() {
         renderMAs();
     });
     var maCreateRow = document.createElement('div');
-    maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+    maCreateRow.style.cssText = 'display:flex;gap:0.25rem;margin-top:0.25rem;align-items:center;';
     var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
         var n = maInp.value.trim(); if (!n) return;
         var cid = parseInt(maCountrySel.value);
@@ -1195,20 +1192,20 @@ function _showSpotifyImport() {
                 maInp.value = ''; renderMAs();
             });
     });
-    maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+    maCreateBtn.style.fontSize = '0.6875rem'; maCreateBtn.style.padding = '0.1875rem 0.5rem';
     var maCountrySel = _miscSelect(_allCountries);
-    maCountrySel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+    maCountrySel.style.cssText += 'width:auto;font-size:0.6875rem;padding:0.125rem 0.25rem;';
     maCreateRow.appendChild(maCreateBtn); maCreateRow.appendChild(maCountrySel);
     modal.appendChild(maCreateRow);
 
     /* Genres */
     modal.appendChild(_miscLabel('Genres'));
     var genreDiv = document.createElement('div');
-    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.375rem;';
     var selectedGenres = [];
     _allGenres.forEach(function(g) {
         var label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+        label.style.cssText = 'display:flex;align-items:center;gap:0.1875rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);';
         var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
         cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
         label.appendChild(cb); label.appendChild(document.createTextNode(g.genre));
@@ -1218,7 +1215,7 @@ function _showSpotifyImport() {
 
     /* Buttons */
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var importBtn = _miscBtn('Import', 'var(--link,#2563EB)', function() {
         if (!fetchedTracks.length) { alert('Fetch tracks first'); return; }
@@ -1252,7 +1249,7 @@ function _showMiscArtistSelector(songId) {
         var modal = _miscModal(440);
         var title = document.createElement('div');
         title.textContent = 'Edit Artists';
-        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:10px;';
+        title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.625rem;';
         modal.appendChild(title);
 
         var miscArtists = data.misc_artists.map(function(a){return {id:a.id,name:a.name,country_id:a.country_id,is_main:a.is_main};});
@@ -1265,14 +1262,14 @@ function _showMiscArtistSelector(songId) {
             maList.innerHTML = '';
             miscArtists.forEach(function(a, i) {
                 var row = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+                row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.1875rem 0;font-size:0.75rem;color:var(--text-primary);';
                 row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
                 var tog = document.createElement('button');
                 tog.textContent = a.is_main ? 'main' : 'feat';
-                tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+                tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
                 tog.onclick = function() { a.is_main = !a.is_main; renderMAs(); };
                 var del = document.createElement('button');
-                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
                 del.onclick = function() { miscArtists.splice(i, 1); renderMAs(); };
                 row.appendChild(tog); row.appendChild(del);
                 maList.appendChild(row);
@@ -1290,7 +1287,7 @@ function _showMiscArtistSelector(songId) {
             renderMAs();
         });
         var maCreateRow = document.createElement('div');
-        maCreateRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center;';
+        maCreateRow.style.cssText = 'display:flex;gap:0.25rem;margin-top:0.25rem;align-items:center;';
         var maCreateBtn = _miscBtn('+ New', 'var(--edit-on-button,#16a34a)', function() {
             var n = maInp.value.trim(); if (!n) return;
             fetch('/misc/add-misc-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({name:n,country_id:parseInt(maCSel.value)})})
@@ -1299,9 +1296,9 @@ function _showMiscArtistSelector(songId) {
                     maInp.value=''; renderMAs();
                 });
         });
-        maCreateBtn.style.fontSize = '11px'; maCreateBtn.style.padding = '3px 8px';
+        maCreateBtn.style.fontSize = '0.6875rem'; maCreateBtn.style.padding = '0.1875rem 0.5rem';
         var maCSel = _miscSelect(_allCountries);
-        maCSel.style.cssText += 'width:auto;font-size:11px;padding:2px 4px;';
+        maCSel.style.cssText += 'width:auto;font-size:0.6875rem;padding:0.125rem 0.25rem;';
         maCreateRow.appendChild(maCreateBtn); maCreateRow.appendChild(maCSel);
         modal.appendChild(maCreateRow);
 
@@ -1312,14 +1309,14 @@ function _showMiscArtistSelector(songId) {
             raList.innerHTML = '';
             realArtists.forEach(function(a, i) {
                 var row = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+                row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.1875rem 0;font-size:0.75rem;color:var(--text-primary);';
                 row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
                 var tog = document.createElement('button');
                 tog.textContent = a.is_main ? 'main' : 'feat';
-                tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+                tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
                 tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
                 var del = document.createElement('button');
-                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+                del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
                 del.onclick = function() { realArtists.splice(i, 1); renderRAs(); };
                 row.appendChild(tog); row.appendChild(del);
                 raList.appendChild(row);
@@ -1337,7 +1334,7 @@ function _showMiscArtistSelector(songId) {
         }, 2);
 
         var btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+        btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
         var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
         var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
             var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
@@ -1363,12 +1360,12 @@ function _showMoveSongToArtist(event, songId, songName) {
     var modal = _miscModal(460);
     var title = document.createElement('div');
     title.textContent = 'Move to Artist';
-    title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px;';
+    title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.25rem;';
     modal.appendChild(title);
 
     var sub = document.createElement('div');
     sub.textContent = songName;
-    sub.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:12px;';
+    sub.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.75rem;';
     modal.appendChild(sub);
 
     /* Artists */
@@ -1380,14 +1377,14 @@ function _showMoveSongToArtist(event, songId, songName) {
         raList.innerHTML = '';
         realArtists.forEach(function(a, i) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;color:var(--text-primary);';
+            row.style.cssText = 'display:flex;align-items:center;gap:0.25rem;padding:0.1875rem 0;font-size:0.75rem;color:var(--text-primary);';
             row.innerHTML = '<span style="flex:1">' + a.name + '</span>';
             var tog = document.createElement('button');
             tog.textContent = a.is_main ? 'main' : 'feat';
-            tog.style.cssText = 'font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
+            tog.style.cssText = 'font-size:0.625rem;padding:0.0625rem 0.375rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;cursor:pointer;background:' + (a.is_main ? 'var(--link,#2563EB)' : 'var(--bg-primary)') + ';color:' + (a.is_main ? '#fff' : 'var(--text-primary)') + ';';
             tog.onclick = function() { a.is_main = !a.is_main; renderRAs(); };
             var del = document.createElement('button');
-            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:14px;';
+            del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
             del.onclick = function() { realArtists.splice(i, 1); renderRAs(); loadAlbums(); };
             row.appendChild(tog); row.appendChild(del);
             raList.appendChild(row);
@@ -1407,7 +1404,7 @@ function _showMoveSongToArtist(event, songId, songName) {
     /* Album */
     modal.appendChild(_miscLabel('Album'));
     var albumSel = document.createElement('select');
-    albumSel.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);';
+    albumSel.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);';
     var optNone = document.createElement('option');
     optNone.value = ''; optNone.textContent = '— None —';
     albumSel.appendChild(optNone);
@@ -1417,19 +1414,19 @@ function _showMoveSongToArtist(event, songId, songName) {
     modal.appendChild(albumSel);
 
     var newAlbumDiv = document.createElement('div');
-    newAlbumDiv.style.cssText = 'display:none;margin-top:6px;';
+    newAlbumDiv.style.cssText = 'display:none;margin-top:0.375rem;';
     var newAlbumName = _miscInput('Album name');
     newAlbumDiv.appendChild(newAlbumName);
     var newAlbumDate = document.createElement('input');
     newAlbumDate.type = 'date';
-    newAlbumDate.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:4px;';
+    newAlbumDate.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:0.25rem;';
     newAlbumDiv.appendChild(newAlbumDate);
     var newAlbumType = _miscSelect(_allAlbumTypes, 2);
-    newAlbumType.style.marginTop = '4px';
+    newAlbumType.style.marginTop = '0.25rem';
     newAlbumDiv.appendChild(newAlbumType);
     var newAlbumNote = document.createElement('textarea');
     newAlbumNote.placeholder = 'Note (optional)';
-    newAlbumNote.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:4px;min-height:42px;resize:vertical;';
+    newAlbumNote.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;margin-top:0.25rem;min-height:2.625rem;resize:vertical;';
     newAlbumDiv.appendChild(newAlbumNote);
     modal.appendChild(newAlbumDiv);
 
@@ -1454,7 +1451,7 @@ function _showMoveSongToArtist(event, songId, songName) {
     }
 
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+    btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var moveBtn = _miscBtn('Move', 'var(--link,#2563EB)', function() {
         if (!realArtists.length) { alert('Add at least one artist'); return; }
@@ -1491,7 +1488,7 @@ function _showAlbumEditor(songId, albumId) {
         var modal = _miscModal(380);
         var title = document.createElement('div');
         title.textContent = 'Edit Album';
-        title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;';
+        title.style.cssText = 'font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem;';
         modal.appendChild(title);
 
         modal.appendChild(_miscLabel('Album Name'));
@@ -1501,7 +1498,7 @@ function _showAlbumEditor(songId, albumId) {
         modal.appendChild(_miscLabel('Release Date'));
         var dateInp = document.createElement('input'); dateInp.type = 'date';
         dateInp.value = album.release_date || '';
-        dateInp.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
+        dateInp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
         modal.appendChild(dateInp);
 
         modal.appendChild(_miscLabel('Album Type'));
@@ -1510,11 +1507,11 @@ function _showAlbumEditor(songId, albumId) {
 
         modal.appendChild(_miscLabel('Album Genres'));
         var genreDiv = document.createElement('div');
-        genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+        genreDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.375rem;';
         var selectedGenres = album.genre_ids.slice();
         _allGenres.forEach(function(g) {
             var label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:var(--text-primary);';
+            label.style.cssText = 'display:flex;align-items:center;gap:0.1875rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);';
             var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id;
             cb.checked = selectedGenres.indexOf(g.id) !== -1;
             cb.onchange = function() { if (cb.checked) selectedGenres.push(g.id); else selectedGenres = selectedGenres.filter(function(x){return x !== g.id;}); };
@@ -1524,7 +1521,7 @@ function _showAlbumEditor(songId, albumId) {
         modal.appendChild(genreDiv);
 
         var btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+        btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
         var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
         var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
             saveBtn.disabled = true;
