@@ -858,6 +858,74 @@ function songEditConfig(cell) {
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
             var youtubeInput = ui.labeledInput(bodyArea, { label: 'YouTube URL', key: 'youtube_url', placeholder: 'https://…' }, data);
 
+            // Flags — same lead-star + checkbox-toggle component as the album edit modal,
+            // saved immediately on toggle and synced to any visible page tables/pills.
+            var flagsLabel = document.createElement('div');
+            flagsLabel.textContent = 'Flags';
+            flagsLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
+            bodyArea.appendChild(flagsLabel);
+            var flagsRow = document.createElement('div');
+            flagsRow.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:14px; padding-left:2px;';
+            bodyArea.appendChild(flagsRow);
+
+            function _syncFlagTable(field, checked) {
+                var others = document.querySelectorAll('input[type="checkbox"][data-song-id="' + songId + '"][data-field="is-' + field + '"]');
+                for (var i = 0; i < others.length; i++) { others[i].checked = checked; if (typeof updateSongPill === 'function') updateSongPill(others[i]); }
+            }
+            function _syncLeadTable(isLead, promoted) {
+                var rows = document.querySelectorAll('tr[data-song-id="' + songId + '"]');
+                for (var i = 0; i < rows.length; i++) {
+                    if (promoted && typeof _ensurePromotedVisual === 'function') _ensurePromotedVisual(rows[i]);
+                    if (typeof _setLeadVisual === 'function') _setLeadVisual(rows[i], songId, isLead);
+                }
+            }
+            function toggleFlag(field, checkbox) {
+                fetch('/edit/song/' + songId + '/is-' + field, { method: 'POST', headers: ui.headers(), body: 'checked=' + (checkbox.checked ? 'true' : '') })
+                    .then(function(r) { if (!r.ok) throw new Error('failed');
+                        data['is_' + field] = checkbox.checked;
+                        _syncFlagTable(field, checkbox.checked);
+                        if (field === 'promoted' && !checkbox.checked) { data.is_lead = false; _syncLeadTable(false, false); renderFlags(); }
+                    }).catch(function() { checkbox.checked = !checkbox.checked; ui.toast('Failed to save — try again'); });
+            }
+            function toggleLead() {
+                fetch('/edit/song/' + songId + '/is-lead', { method: 'POST', headers: ui.headers() })
+                    .then(function(r) { if (!r.ok) throw new Error('failed'); return r.json(); })
+                    .then(function(d) {
+                        data.is_lead = d.is_lead; data.is_promoted = d.is_promoted;
+                        if (d.is_promoted) _syncFlagTable('promoted', true);
+                        _syncLeadTable(d.is_lead, d.is_promoted);
+                        renderFlags();
+                    }).catch(function() { ui.toast('Failed to save — try again'); });
+            }
+            function _leadStar() {
+                var star = document.createElement('span');
+                star.textContent = '★'; star.title = 'Lead track';
+                star.setAttribute('role', 'checkbox'); star.setAttribute('aria-checked', data.is_lead ? 'true' : 'false');
+                star.style.cssText = 'cursor:pointer; font-size:19px; line-height:1; padding:2px 4px; color:' + (data.is_lead ? 'var(--lead-song,#f5a623)' : '#888') + ';';
+                star.onclick = function() { toggleLead(); };
+                return star;
+            }
+            function _flagToggle(label, field) {
+                var wrap = document.createElement('label');
+                wrap.style.cssText = 'display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-primary); cursor:pointer;';
+                var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!data['is_' + field]; cb.style.cssText = 'cursor:pointer;';
+                cb.onchange = function() { toggleFlag(field, cb); };
+                var txt = document.createElement('span'); txt.textContent = label;
+                wrap.appendChild(cb); wrap.appendChild(txt);
+                return wrap;
+            }
+            function renderFlags() {
+                flagsRow.innerHTML = '';
+                flagsRow.appendChild(_leadStar());
+                var flagGroup = document.createElement('div');
+                flagGroup.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:12px;';
+                flagGroup.appendChild(_flagToggle('Promoted', 'promoted'));
+                flagGroup.appendChild(_flagToggle('Remix', 'remix'));
+                flagGroup.appendChild(_flagToggle('Cover', 'cover'));
+                flagsRow.appendChild(flagGroup);
+            }
+            renderFlags();
+
             var aliasLabel = document.createElement('div');
             aliasLabel.textContent = 'Alternative names';
             aliasLabel.style.cssText = 'font-size:12px; color:var(--text-secondary,#6B7280); margin-bottom:6px;';
