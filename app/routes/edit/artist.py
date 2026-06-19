@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist, ArtistAltName, SongAlias
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, ArtistArtist, Rating, album_genres, SongMiscArtist, MiscArtist, ArtistAltName, SongAlias, AlbumAltName
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug, SUBUNIT, SOLOIST, RELATED
 from app.services.audit import log_change
@@ -617,6 +617,8 @@ def global_search_albums():
 
     country_ids, genre_ids = _get_filters()
     like = f'%{q}%'
+    alt_ids = {row[0] for row in db.session.query(AlbumAltName.album_id).filter(
+        AlbumAltName.name.ilike(like)).all()}
     query = db.session.query(Album, Artist).join(
         AlbumSong, Album.id == AlbumSong.album_id
     ).join(
@@ -624,7 +626,7 @@ def global_search_albums():
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        Album.name.ilike(like),
+        db.or_(Album.name.ilike(like), Album.id.in_(alt_ids)),
         ArtistSong.artist_is_main == True,
     )
     if country_ids:

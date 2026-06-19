@@ -667,6 +667,16 @@ function _showManageMiscArtists() {
                 count.textContent = a.song_count + ' songs';
                 count.style.cssText = 'color:var(--text-secondary);white-space:nowrap;min-width:55px;text-align:right;';
 
+                a.alt_names = a.alt_names || [];
+                var altBtn = document.createElement('button');
+                var _altLabel = function() { altBtn.textContent = a.alt_names.length ? 'Alt · ' + a.alt_names.length : 'Alt'; };
+                _altLabel();
+                altBtn.title = 'Alternate names (also matched in search)';
+                altBtn.style.cssText = 'border:1px solid var(--border,#ccc);border-radius:3px;font-size:11px;padding:2px 6px;white-space:nowrap;cursor:pointer;background:' + (a.alt_names.length ? 'var(--link,#2563EB)' : 'transparent') + ';color:' + (a.alt_names.length ? '#fff' : 'var(--text-secondary)') + ';';
+                altBtn.onclick = function() {
+                    _showMiscAltNames(a, function() { _altLabel(); altBtn.style.background = a.alt_names.length ? 'var(--link,#2563EB)' : 'transparent'; altBtn.style.color = a.alt_names.length ? '#fff' : 'var(--text-secondary)'; });
+                };
+
                 var mergeCb = document.createElement('input');
                 mergeCb.type = 'checkbox';
                 mergeCb.title = 'Select for merge';
@@ -707,6 +717,7 @@ function _showManageMiscArtists() {
                 row.appendChild(nameInp);
                 row.appendChild(countrySel);
                 row.appendChild(count);
+                row.appendChild(altBtn);
                 row.appendChild(combineBtn);
                 row.appendChild(delBtn);
                 listDiv.appendChild(row);
@@ -747,6 +758,44 @@ function _showManageMiscArtists() {
         bd.appendChild(modal);
         renderList('');
     });
+}
+
+/* Alt-names editor for a single misc artist (one name per line). */
+function _showMiscAltNames(a, onSaved) {
+    var bd = _miscBackdrop();
+    var modal = _miscModal(400);
+    var title = document.createElement('div');
+    title.textContent = 'Alternate names — ' + a.name;
+    title.style.cssText = 'font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;';
+    modal.appendChild(title);
+    var hint = document.createElement('div');
+    hint.textContent = 'One name per line. These are also matched when searching for this artist.';
+    hint.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:10px;';
+    modal.appendChild(hint);
+
+    var ta = document.createElement('textarea');
+    ta.value = (a.alt_names || []).join('\n');
+    ta.rows = 6;
+    ta.style.cssText = 'width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border,#ccc);border-radius:4px;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;resize:vertical;';
+    modal.appendChild(ta);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end;';
+    var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
+    var saveBtn = _miscBtn('Save', '#2563EB', function() {
+        var names = ta.value.replace(/\r\n/g, '\n').split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+        fetch('/misc/edit-artist/' + a.id, {method:'POST', headers:_csrfJson(), body:JSON.stringify({alt_names:names})})
+            .then(function(r){return r.json();}).then(function(d) {
+                a.alt_names = d.alt_names || [];
+                bd.remove();
+                if (onSaved) onSaved();
+            });
+    });
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    modal.appendChild(btnRow);
+    bd.appendChild(modal);
+    ta.focus();
 }
 
 /* _showCombineMiscArtist now lives in static/js/edit.js (shared with the Views page). */

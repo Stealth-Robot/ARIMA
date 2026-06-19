@@ -11,7 +11,8 @@ from sqlalchemy.orm import selectinload
 from app.extensions import db
 from app.models.music import (
     Song, Album, Rating, AlbumSong, ArtistSong, MiscArtist, SongMiscArtist,
-    song_genres, album_genres, Artist,
+    song_genres, album_genres, Artist, ArtistAltName, AlbumAltName, SongAlias,
+    MiscArtistAltName,
 )
 from app.models.lookups import Country, Genre, AlbumType
 from app.models.user import User
@@ -422,7 +423,11 @@ def search_misc_artists():
     q = request.args.get('q', '').strip()
     query = MiscArtist.query
     if q:
-        query = query.filter(MiscArtist.name.ilike(f'%{q}%'))
+        like = f'%{q}%'
+        alt_ids = {row[0] for row in db.session.query(MiscArtistAltName.misc_artist_id).filter(
+            MiscArtistAltName.name.ilike(like)).all()}
+        query = query.filter(db.or_(
+            MiscArtist.name.ilike(like), MiscArtist.id.in_(alt_ids)))
     results = query.order_by(func.lower(MiscArtist.name)).limit(30).all()
     return json.dumps([
         {'id': ma.id, 'name': ma.name, 'country_id': ma.country_id}
@@ -530,9 +535,15 @@ def manage_misc_artists():
     ).outerjoin(SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id).group_by(
         MiscArtist.id
     ).order_by(func.lower(MiscArtist.name)).all()
+    alt_map = {}
+    for mid, name in db.session.query(
+        MiscArtistAltName.misc_artist_id, MiscArtistAltName.name
+    ).order_by(MiscArtistAltName.id).all():
+        alt_map.setdefault(mid, []).append(name)
     countries = Country.query.order_by(Country.id).all()
     return json.dumps({
-        'artists': [{'id': a[0], 'name': a[1], 'country_id': a[2], 'song_count': a[3]} for a in artists],
+        'artists': [{'id': a[0], 'name': a[1], 'country_id': a[2], 'song_count': a[3],
+                     'alt_names': alt_map.get(a[0], [])} for a in artists],
         'countries': [{'id': c.id, 'name': c.country} for c in countries],
     }), 200, {'Content-Type': 'application/json'}
 
@@ -560,12 +571,30 @@ def edit_misc_artist(artist_id):
         if db.session.get(Country, cid) is None:
             abort(400)
         ma.country_id = cid
+    if 'alt_names' in data:
+        # Trim, drop blanks, dedupe case-insensitively (keep order).
+        seen = set()
+        names = []
+        for raw in (data['alt_names'] or []):
+            n = (raw or '').strip()
+            if not n:
+                continue
+            key = n.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            names.append(n)
+        old_alts = [a.name for a in ma.alt_names]
+        if old_alts != names:
+            ma.alt_names = [MiscArtistAltName(name=n) for n in names]
+            log_change(current_user, f'Updated alternate names for misc artist "{ma.name}"', change_type='artist')
     if ma.name != old_name:
         log_change(current_user, f'Renamed misc artist "{old_name}" to "{ma.name}"', change_type='artist')
     if ma.country_id != old_country:
         log_change(current_user, f'Changed misc artist "{ma.name}" country', change_type='artist')
     db.session.commit()
-    return json.dumps({'id': ma.id, 'name': ma.name, 'country_id': ma.country_id}), 200, {'Content-Type': 'application/json'}
+    return json.dumps({'id': ma.id, 'name': ma.name, 'country_id': ma.country_id,
+                       'alt_names': [a.name for a in ma.alt_names]}), 200, {'Content-Type': 'application/json'}
 
 
 @misc_bp.route('/misc/delete-artist/<int:artist_id>', methods=['POST'])
@@ -772,10 +801,14 @@ def combine_targets():
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
+    like = f'%{q}%'
+    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(
+        SongAlias.name.ilike(like)).all()}
     rows = db.session.query(Song.id, Song.name, ArtistSong.artist_is_main).join(
         ArtistSong, ArtistSong.song_id == Song.id
     ).filter(
-        ArtistSong.artist_id == artist_id, Song.name.ilike(f'%{q}%')
+        ArtistSong.artist_id == artist_id,
+        db.or_(Song.name.ilike(like), Song.id.in_(alias_ids)),
     ).all()
     song_ids = {r[0] for r in rows}
 
@@ -1032,7 +1065,11 @@ def search_real_artists():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
-    results = Artist.query.filter(Artist.name.ilike(f'%{q}%')).order_by(
+    like = f'%{q}%'
+    alt_ids = {row[0] for row in db.session.query(ArtistAltName.artist_id).filter(
+        ArtistAltName.name.ilike(like)).all()}
+    results = Artist.query.filter(db.or_(
+        Artist.name.ilike(like), Artist.id.in_(alt_ids))).order_by(
         func.lower(Artist.name)
     ).limit(20).all()
     return json.dumps([
@@ -1048,7 +1085,11 @@ def search_albums():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
-    results = Album.query.filter(Album.name.ilike(f'%{q}%')).order_by(
+    like = f'%{q}%'
+    alt_ids = {row[0] for row in db.session.query(AlbumAltName.album_id).filter(
+        AlbumAltName.name.ilike(like)).all()}
+    results = Album.query.filter(db.or_(
+        Album.name.ilike(like), Album.id.in_(alt_ids))).order_by(
         func.lower(Album.name)
     ).limit(20).all()
     return json.dumps([

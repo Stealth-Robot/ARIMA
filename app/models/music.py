@@ -265,3 +265,20 @@ class MiscArtist(db.Model):
     country = db.relationship('Country')
     songs = db.relationship('Song', secondary=SongMiscArtist.__table__,
                             back_populates='misc_artists', viewonly=True)
+    alt_names = db.relationship('MiscArtistAltName', back_populates='misc_artist',
+                                order_by='MiscArtistAltName.id',
+                                cascade='all, delete-orphan')
+
+
+class MiscArtistAltName(db.Model):
+    __tablename__ = 'misc_artist_alt_name'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    misc_artist_id = db.Column(db.Integer, db.ForeignKey('misc_artist.id', ondelete='CASCADE'),
+                               nullable=False)
+    name = db.Column(db.Text, nullable=False)
+
+    misc_artist = db.relationship('MiscArtist', back_populates='alt_names')
+
+    __table_args__ = (
+        db.Index('ix_misc_artist_alt_name_misc_artist_id', 'misc_artist_id'),
+    )

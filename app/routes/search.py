@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist, ArtistAltName, SongAlias, AlbumAltName
+from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist, ArtistAltName, SongAlias, AlbumAltName, MiscArtistAltName
 from app.services.search import like_contains, LIKE_ESCAPE, strip_punct, strip_punct_sql
 
 logger = logging.getLogger(__name__)
@@ -272,9 +272,8 @@ def search():
     # --- Misc songs (via song_misc_artist) ---
     misc_songs = []
     try:
-        misc_song_q = db.session.query(Song).options(
-            selectinload(Song.aliases)
-        ).join(
+        # Step 1: song IDs matching by song name or misc artist main name.
+        misc_id_q = db.session.query(Song.id).join(
             SongMiscArtist, Song.id == SongMiscArtist.song_id
         ).join(
             MiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
@@ -284,19 +283,30 @@ def search():
             for term, count in term_counts.items():
                 if count == 1:
                     t = like_contains(term)
-                    misc_song_q = misc_song_q.filter(
+                    misc_id_q = misc_id_q.filter(
                         db.or_(*(field_match(f, t) for f in misc_fields))
                     )
                 else:
-                    misc_song_q = misc_song_q.filter(
+                    misc_id_q = misc_id_q.filter(
                         _occurrences(misc_fields, term, ignore_punct) >= count
                     )
         else:
-            misc_song_q = misc_song_q.filter(
+            misc_id_q = misc_id_q.filter(
                 db.or_(field_match(Song.name, like),
                        field_match(MiscArtist.name, like))
             )
-        misc_song_rows = misc_song_q.distinct().all()
+        misc_name_song_ids = misc_id_q.distinct()
+
+        # Misc songs are also findable by any alternate name of their misc artist.
+        misc_alias_song_ids = {row[0] for row in db.session.query(SongMiscArtist.song_id).join(
+            MiscArtistAltName, MiscArtistAltName.misc_artist_id == SongMiscArtist.misc_artist_id
+        ).filter(field_match(MiscArtistAltName.name, like)).all()}
+
+        misc_song_rows = db.session.query(Song).options(
+            selectinload(Song.aliases)
+        ).filter(
+            db.or_(Song.id.in_(misc_name_song_ids), Song.id.in_(misc_alias_song_ids))
+        ).distinct().all()
 
         # Exclude songs already found via normal search
         misc_song_rows = [s for s in misc_song_rows if s.id not in seen]

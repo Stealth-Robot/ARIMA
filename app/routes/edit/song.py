@@ -5,7 +5,7 @@ from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres, SongAlias
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres, SongAlias, AlbumAltName
 from app.models.duplicate_display_override import DuplicateDisplayOverride
 from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
@@ -1092,12 +1092,14 @@ def search_albums():
             'JOIN album_song als ON als.album_id = a.id '
             'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
             'JOIN artist ar ON ar.id = ars.artist_id '
-            'WHERE (a.name LIKE :like OR ar.name LIKE :like) '
+            'WHERE (a.name LIKE :like OR ar.name LIKE :like '
+            'OR a.id IN (SELECT album_id FROM album_alt_name WHERE name LIKE :like)) '
             'UNION '
             'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
             'FROM album a '
             'JOIN artist ar ON ar.id = a.artist_id '
-            'WHERE a.artist_id IS NOT NULL AND (a.name LIKE :like OR ar.name LIKE :like) '
+            'WHERE a.artist_id IS NOT NULL AND (a.name LIKE :like OR ar.name LIKE :like '
+            'OR a.id IN (SELECT album_id FROM album_alt_name WHERE name LIKE :like)) '
             'ORDER BY 3, 2 '
             'LIMIT 50'
         ), {'like': like}).fetchall()
@@ -1138,7 +1140,8 @@ def search_songs():
             'JOIN artist ar ON ar.id = ars.artist_id '
             'JOIN album_song als ON als.song_id = s.id '
             'JOIN album al ON al.id = als.album_id '
-            'WHERE (s.name LIKE :like OR ar.name LIKE :like) '
+            'WHERE (s.name LIKE :like OR ar.name LIKE :like '
+            'OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :like)) '
             'ORDER BY ar.name, s.name '
             'LIMIT 100'
         ), {'like': like}).fetchall()
