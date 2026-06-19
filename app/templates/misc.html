@@ -24,9 +24,10 @@
         <div class="flex items-center gap-3 mt-1">
             <span id="misc-unrated" class="text-xs text-secondary-text">Loading...</span>
         </div>
+        {% set _show_creator = edit_mode or (rules and rules.misc_creator) %}
         {% set _show_owner = edit_mode or (rules and rules.misc_owner) %}
         {% set _show_maintainer = edit_mode or (rules and rules.misc_maintainer) %}
-        {% if _show_owner or _show_maintainer %}
+        {% if _show_creator or _show_owner or _show_maintainer %}
         <div class="text-xs text-secondary-text mt-0.5 flex flex-wrap items-center gap-4">
             {% if _show_owner %}
             <span id="misc-owner-span"
@@ -68,6 +69,28 @@
                          onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
                          class="rounded-full object-cover" style="width:18px;height:18px;">
                     {{ rules.misc_maintainer.username }}
+                    {% else %}—{% endif %}
+                </span>
+            </span>
+            {% endif %}
+            {% if _show_creator %}
+            <span id="misc-creator-span"
+                  data-creator-id="{{ rules.misc_creator_id if rules and rules.misc_creator_id is not none else '' }}"
+                  title="Creator"
+                  {% if edit_mode %}
+                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                  onclick="_miscShowUserEdit(event, this, 'creator')"
+                  {% else %}
+                  class="inline-flex items-center gap-1 px-1"
+                  {% endif %}>
+                <span aria-label="Creator">&#9997;&#65039;</span>
+                <span class="user-pill-content inline-flex items-center gap-1">
+                    {% if rules and rules.misc_creator %}
+                    <img src="{{ rules.misc_creator.profile_image or url_for('static', filename='img/default_image.png') }}"
+                         referrerpolicy="no-referrer"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                         class="rounded-full object-cover" style="width:18px;height:18px;">
+                    {{ rules.misc_creator.username }}
                     {% else %}—{% endif %}
                 </span>
             </span>
@@ -623,7 +646,7 @@ function _miscShowUserEdit(event, span, kind) {
     _miscCloseUserPopover();
     var popover = document.createElement('div');
     popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:2px solid var(--link,#2563EB);border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:220px;max-height:320px;overflow-y:auto;';
-    var attr = kind === 'owner' ? 'ownerId' : 'maintainerId';
+    var attr = kind === 'owner' ? 'ownerId' : (kind === 'creator' ? 'creatorId' : 'maintainerId');
     var currentId = span.dataset[attr] ? parseInt(span.dataset[attr]) : null;
     function pick(uid, uname, img) {
         var headers = _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'});

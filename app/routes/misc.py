@@ -1223,7 +1223,7 @@ def set_misc_role():
             request.method != 'GET' and not request.headers.get('X-Edit-Source')):
         abort(403)
     kind = request.form.get('kind')
-    if kind not in ('owner', 'maintainer'):
+    if kind not in ('owner', 'maintainer', 'creator'):
         abort(400)
     raw_user_id = request.form.get('user_id', '').strip()
     if raw_user_id:
@@ -1237,6 +1237,8 @@ def set_misc_role():
         abort(500)
     if kind == 'owner':
         rules.misc_owner_id = user_id
+    elif kind == 'creator':
+        rules.misc_creator_id = user_id
     else:
         rules.misc_maintainer_id = user_id
     db.session.commit()

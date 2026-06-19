@@ -113,6 +113,7 @@ class Artist(db.Model):
     country = db.relationship('Country')
     owner = db.relationship('User', foreign_keys=[owner_id])
     maintainer = db.relationship('User', foreign_keys=[maintainer_id])
+    submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
     songs = db.relationship('Song', secondary=ArtistSong.__table__, back_populates='artists',
                             viewonly=True)
     children = db.relationship('ArtistArtist', foreign_keys='ArtistArtist.artist_1',

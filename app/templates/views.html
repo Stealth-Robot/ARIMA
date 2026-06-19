@@ -23,6 +23,7 @@
         ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
         ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
         ('Artists without a maintainer', counts.no_maintainer_artists, url_for('views.view_no_maintainer_artists')),
+        ('Artists without a creator', counts.no_creator_artists, url_for('views.view_no_creator_artists')),
         ('Incomplete artists without an owner', counts.no_owner_incomplete, url_for('views.view_no_owner_incomplete')),
         ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
         ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),

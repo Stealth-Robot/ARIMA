@@ -248,6 +248,29 @@ def artist_maintainer(artist_id):
     return json.dumps({'maintainer_id': artist.maintainer_id}), 200, {'Content-Type': 'application/json'}
 
 
+@edit_bp.route('/artist/<int:artist_id>/creator', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def artist_creator(artist_id):
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    raw = request.form.get('user_id', '').strip()
+    if raw == '':
+        artist.submitted_by_id = None
+    else:
+        try:
+            user_id = int(raw)
+        except (TypeError, ValueError):
+            abort(400)
+        if user_id not in _assignable_user_ids():
+            abort(400)
+        artist.submitted_by_id = user_id
+    db.session.commit()
+    return json.dumps({'creator_id': artist.submitted_by_id}), 200, {'Content-Type': 'application/json'}
+
+
 @edit_bp.route('/artist/<int:artist_id>/is-disbanded', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)

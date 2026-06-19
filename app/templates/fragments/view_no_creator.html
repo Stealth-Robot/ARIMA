@@ -1,0 +1,38 @@
+<span data-view-count="{{ items | length }}" class="hidden"></span>
+{% if items %}
+{% set edit_mode = current_user.is_editor_or_admin %}
+<table class="w-full text-sm border-collapse border border-grid-line">
+    <thead>
+        <tr class="bg-header-row">
+            <th class="text-left px-3 py-1 border border-grid-line">Artist</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 80px;">Songs</th>
+            <th class="text-left px-3 py-1 border border-grid-line" style="width: 220px;">Creator</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        {% set a = item.artist %}
+        <tr id="no-creator-row-{{ a.id }}" class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+            <td class="px-3 py-1 border border-grid-line">
+                <a href="{{ url_for('artists.artist_detail', artist_id=a.id) }}" class="text-link">{{ a.name }}</a>
+            </td>
+            <td class="px-3 py-1 border border-grid-line text-secondary-text">{{ item.song_count }}</td>
+            <td class="px-3 py-1 border border-grid-line">
+                {% if edit_mode %}
+                <span id="creator-span-{{ a.id }}" data-creator-id="" title="Assign creator"
+                      class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                      onclick="viewAssignArtistUser(event, this, {{ a.id }}, 'creator')">
+                    <span aria-label="Creator">&#9997;&#65039;</span>
+                    <span class="user-pill-content inline-flex items-center gap-1 text-secondary-text">Assign…</span>
+                </span>
+                {% else %}
+                <span class="text-secondary-text">&#9997;&#65039; —</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-sm text-secondary-text">None found.</p>
+{% endif %}

@@ -98,6 +98,7 @@ def views_page():
         ).count(),
         'no_maintainer_artists': _no_maintainer_artists_query().count(),
         'no_owner_incomplete': _no_owner_incomplete_query().count(),
+        'no_creator_artists': _no_creator_artists_query().count(),
         'variant_songs': len(_variant_songs()),
         'duplicate_songs': '…',
         'collab_candidates': _collab_candidate_query().count(),
@@ -687,6 +688,41 @@ def view_no_owner_incomplete():
         song_counts = {aid: c for aid, c in rows}
     items = [{'artist': a, 'song_count': song_counts.get(a.id, 0)} for a in artists]
     return render_template('fragments/view_no_owner.html', items=items)
+
+
+def _no_creator_artists_query():
+    """Artists with a real discography (at least one main-artist song) and no
+    creator attributed (submitted_by is unset, System, or Guest). Excludes the
+    Misc. Artists bucket and its subunits."""
+    misc_ids = _misc_artist_ids()
+    q = db.session.query(Artist).filter(
+        db.or_(Artist.submitted_by_id.is_(None), Artist.submitted_by_id.in_([0, 1])),
+        Artist.id.in_(
+            db.session.query(ArtistSong.artist_id).filter(ArtistSong.artist_is_main == True)
+        ),
+    )
+    if misc_ids:
+        q = q.filter(~Artist.id.in_(misc_ids))
+    return q.order_by(Artist.name)
+
+
+@views_bp.route('/views/no-creator-artists')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_no_creator_artists():
+    artists = _no_creator_artists_query().all()
+    ids = [a.id for a in artists]
+    song_counts = {}
+    if ids:
+        rows = db.session.query(
+            ArtistSong.artist_id, func.count(ArtistSong.song_id)
+        ).filter(
+            ArtistSong.artist_id.in_(ids),
+            ArtistSong.artist_is_main == True,
+        ).group_by(ArtistSong.artist_id).all()
+        song_counts = {aid: c for aid, c in rows}
+    items = [{'artist': a, 'song_count': song_counts.get(a.id, 0)} for a in artists]
+    return render_template('fragments/view_no_creator.html', items=items)
 
 
 def _no_maintainer_artists_query():

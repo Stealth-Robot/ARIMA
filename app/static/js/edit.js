@@ -636,7 +636,7 @@ function showArtistUserEdit(event, artistId, span, kind, onCommit) {
         'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:2px solid var(--link,#2563EB);' +
         'border-radius:4px; padding:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); width:220px; max-height:320px; overflow-y:auto;';
 
-    var currentAttr = kind === 'owner' ? 'ownerId' : 'maintainerId';
+    var currentAttr = kind === 'owner' ? 'ownerId' : (kind === 'creator' ? 'creatorId' : 'maintainerId');
     var current = span.dataset[currentAttr];
     var currentId = current ? parseInt(current) : null;
 

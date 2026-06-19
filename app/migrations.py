@@ -191,10 +191,96 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        # 4. Backfill artist creator (submitted_by_id) for spreadsheet-seeded artists.
+        #    Seeded artists carry submitted_by_id = 0 (System); artists created in-app
+        #    already carry the real creator. Two signals, in priority order:
+        #      (a) explicit "Created/Added <X> tab" rows from the original spreadsheets
+        #          (only ~16 artists, embedded statically — the .xlsx files aren't deployed),
+        #      (b) earliest changelog editor on the artist (a best-effort proxy).
+        #    Idempotent: only ever touches rows still at submitted_by_id = 0, and both
+        #    signals are deterministic, so re-running is a no-op.
+        _backfill_artist_creators()
+
         db.session.commit()
     except Exception:
         db.session.rollback()
         logger.exception('Startup migration failed (DB may not exist yet)')
+
+
+# Original-spreadsheet "Created/Added <X> tab" attributions. These predate the
+# in-app changelog and the .xlsx files are not deployed, so the mapping is embedded
+# here. Keyed by artist name (matched case-insensitively) -> spreadsheet username.
+# (ABBA and 5 Seconds of Summer were tab-created too but live as misc artists, not
+# full artist pages, so they're intentionally omitted.)
+SPREADSHEET_CREATORS = {
+    'Doja Cat': 'Assy',
+    'LØLØ': 'Stealth',
+    'Maggie Lindemann': 'Stealth',
+    'Lexie Liu': 'Assy',
+    'Billie Eilish': 'Assy',
+    'LATENCY': 'Toki',
+    'YUNA': 'Toki',
+    'XG': 'Sam',
+    'Inseong': 'Diam',
+    'KINO': 'Diam',
+    'Yeonjun': 'Diam',
+    'Kang Yuchan': 'Diam',
+    'ALPHA DRIVE ONE': 'Quiet',
+    'ChRocktikal': 'Toki',
+    'ARTMS': 'Assy',
+    'Loossemble': 'Assy',
+}
+
+
+def _backfill_artist_creators():
+    """Set submitted_by_id on artists still attributed to System (id 0).
+
+    Priority: (a) the static spreadsheet map, then (b) the earliest real changelog
+    editor. Only rows at submitted_by_id = 0 are ever touched, so artists created
+    in-app (which already carry their real creator) are left untouched, and the step
+    is safe to re-run.
+    """
+    tables = {row[0] for row in db.session.execute(db.text(
+        "SELECT name FROM sqlite_master WHERE type='table'"))}
+    if not {'artist', 'user', 'changelog'} <= tables:
+        return
+
+    # Nothing seeded as System -> nothing to do (e.g. a brand-new database).
+    remaining = db.session.execute(db.text(
+        'SELECT count(*) FROM artist WHERE submitted_by_id = 0')).scalar()
+    if not remaining:
+        return
+
+    # username (lowercased, ignoring a leading lock emoji) -> user id
+    uid = {}
+    for row in db.session.execute(db.text('SELECT id, username FROM user')):
+        uid[row[1].lower().lstrip('🔒').strip()] = row[0]
+
+    # (a) Spreadsheet-derived creators (authoritative; applied first).
+    for name, username in SPREADSHEET_CREATORS.items():
+        creator_id = uid.get(username.lower())
+        if creator_id is None:
+            continue
+        db.session.execute(
+            db.text('UPDATE artist SET submitted_by_id = :cid '
+                    'WHERE lower(name) = lower(:name) AND submitted_by_id = 0'),
+            {'cid': creator_id, 'name': name})
+
+    # (b) Earliest real (non-System, non-Guest) changelog editor as a proxy.
+    db.session.execute(db.text("""
+        UPDATE artist
+        SET submitted_by_id = (
+            SELECT c.user_id FROM changelog c
+            WHERE c.artist_id = artist.id AND c.user_id NOT IN (0, 1)
+            ORDER BY c.date ASC, c.id ASC
+            LIMIT 1
+        )
+        WHERE submitted_by_id = 0
+          AND EXISTS (
+            SELECT 1 FROM changelog c
+            WHERE c.artist_id = artist.id AND c.user_id NOT IN (0, 1)
+          )
+    """))
 
 
 def _parse_misc_artists(text):

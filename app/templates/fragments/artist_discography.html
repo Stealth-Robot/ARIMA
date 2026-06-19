@@ -40,15 +40,16 @@
         AKA {% for an in artist.alt_names %}{% if not loop.first %}, {% endif %}{{ an.name }}{% endfor %}
     </div>
     {% endif %}
+    {% set creator = artist.submitted_by if artist.submitted_by_id not in [none, 0, 1] else none %}
     {% set show_owner = not artist.is_complete and artist.owner %}
-    {% set show_user_fields = show_owner or artist.maintainer %}
+    {% set show_user_fields = show_owner or artist.maintainer or creator %}
     {% if show_user_fields %}
     <div class="text-xs text-secondary-text mt-0.5 flex flex-wrap items-center gap-4">
         {% if show_owner %}
         <span id="owner-span-{{ artist.id }}"
               data-owner-id="{{ artist.owner_id if artist.owner_id is not none else '' }}"
               title="Owner"
-              
+
               class="inline-flex items-center gap-1 px-1"
               >
             <span aria-label="Owner">👑</span>
@@ -63,10 +64,11 @@
             </span>
         </span>
         {% endif %}
+        {% if show_owner or artist.maintainer %}
         <span id="maintainer-span-{{ artist.id }}"
               data-maintainer-id="{{ artist.maintainer_id if artist.maintainer_id is not none else '' }}"
               title="Maintainer"
-              
+
               class="inline-flex items-center gap-1 px-1"
               >
             <span aria-label="Maintainer">🔧</span>
@@ -80,6 +82,19 @@
                 {% else %}—{% endif %}
             </span>
         </span>
+        {% endif %}
+        {% if creator %}
+        <span title="Creator" class="inline-flex items-center gap-1 px-1">
+            <span aria-label="Creator">✍️</span>
+            <span class="inline-flex items-center gap-1">
+                <img src="{{ creator.profile_image or url_for('static', filename='img/default_image.png') }}"
+                     referrerpolicy="no-referrer"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                     class="rounded-full object-cover" style="width:18px;height:18px;">
+                {{ creator.username }}
+            </span>
+        </span>
+        {% endif %}
     </div>
     {% endif %}
     {% if soloist_parents %}
