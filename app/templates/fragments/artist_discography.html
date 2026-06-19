@@ -659,13 +659,16 @@ function submitConvertArtist() {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
+    if (window._canEdit) headers['X-Edit-Source'] = 'editor';
     fetch('/edit/artist/{{ artist.id }}/convert', {
         method: 'POST',
         headers: headers,
         body: 'parent_id=' + parentId + '&type=' + _convertType + '&password=' + encodeURIComponent(pw),
     }).then(function(r) {
-        if (r.status === 403) { alert('Incorrect password'); return; }
-        if (!r.ok) return r.text().then(function(msg) { showToast(msg || 'Convert failed'); });
+        if (!r.ok) return r.text().then(function(msg) {
+            if (r.status === 403 && _convertType !== 'related') { alert(msg || 'Incorrect password'); return; }
+            showToast(msg || 'Convert failed');
+        });
         window.location.reload();
     }).catch(function() {
         showToast('Convert failed — try again');
