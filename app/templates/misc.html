@@ -24,7 +24,7 @@
         <div class="flex items-center gap-3 mt-1">
             <span id="misc-unrated" class="text-xs text-secondary-text">Loading...</span>
         </div>
-        {% set _show_creator = edit_mode or (rules and rules.misc_creator) %}
+        {% set _show_creator = rules and rules.misc_creator %}
         {% set _show_owner = edit_mode or (rules and rules.misc_owner) %}
         {% set _show_maintainer = edit_mode or (rules and rules.misc_maintainer) %}
         {% if _show_creator or _show_owner or _show_maintainer %}
@@ -34,7 +34,7 @@
                   data-owner-id="{{ rules.misc_owner_id if rules and rules.misc_owner_id is not none else '' }}"
                   title="Owner"
                   {% if edit_mode %}
-                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
                   onclick="_miscShowUserEdit(event, this, 'owner')"
                   {% else %}
                   class="inline-flex items-center gap-1 px-1"
@@ -56,7 +56,7 @@
                   data-maintainer-id="{{ rules.misc_maintainer_id if rules and rules.misc_maintainer_id is not none else '' }}"
                   title="Maintainer"
                   {% if edit_mode %}
-                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
+                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
                   onclick="_miscShowUserEdit(event, this, 'maintainer')"
                   {% else %}
                   class="inline-flex items-center gap-1 px-1"
@@ -77,12 +77,7 @@
             <span id="misc-creator-span"
                   data-creator-id="{{ rules.misc_creator_id if rules and rules.misc_creator_id is not none else '' }}"
                   title="Creator"
-                  {% if edit_mode %}
-                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg"
-                  onclick="_miscShowUserEdit(event, this, 'creator')"
-                  {% else %}
-                  class="inline-flex items-center gap-1 px-1"
-                  {% endif %}>
+                  class="inline-flex items-center gap-1 px-1">
                 <span aria-label="Creator">&#9997;&#65039;</span>
                 <span class="user-pill-content inline-flex items-center gap-1">
                     {% if rules and rules.misc_creator %}

@@ -384,10 +384,10 @@
                         var isOwn = cell.classList.contains('my-cell');
                         var parts = cell.id.split('-');
                         if (isSelf || isOwn) {
-                            cell.classList.add('cursor-pointer', 'hover:opacity-70');
+                            cell.classList.add('cursor-pointer', 'hover:opacity-40');
                             cell.setAttribute('onclick', 'showRatingInput(event, ' + parts[1] + ', ' + parts[2] + ')');
                         } else {
-                            cell.classList.remove('cursor-pointer', 'hover:opacity-70');
+                            cell.classList.remove('cursor-pointer', 'hover:opacity-40');
                             cell.removeAttribute('onclick');
                         }
                     });

@@ -10,8 +10,9 @@ module.exports = {
     options: {
       safelist: [
         'hidden',
-        'hover:opacity-70',
+        'hover:opacity-40',
         'hover:opacity-80',
+        'hover:text-primary-text',
         'hover:underline',
         'hover:bg-red-700',
         'lg:flex-row',

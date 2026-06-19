@@ -24,7 +24,7 @@
     {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
     {% set cell_editable = current_user.can_rate and (u.id == current_user.id or rating_all) %}
     <td id="rating-{{ card.song.id }}-{{ u.id }}"
-        class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-70{% endif %}"
+        class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-40{% endif %}"
         style="vertical-align: middle;{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
         {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
         {% if cell_editable %}onclick="showRatingInput(event, {{ card.song.id }}, {{ u.id }})"{% endif %}>

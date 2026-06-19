@@ -426,8 +426,6 @@ function artistEditConfig(artistId) {
             { type: 'boolean', key: 'is_tracked', label: 'Tracked', endpoint: pfx + '/is-tracked' },
             { type: 'select', key: 'gender', idKey: 'gender_id', idParam: 'gender_id', label: 'Gender', endpoint: pfx + '/gender', lookupUrl: '/lookups/genders' },
             { type: 'select', key: 'country', idKey: 'country_id', idParam: 'country_id', label: 'Country', endpoint: pfx + '/country', lookupUrl: '/lookups/countries' },
-            { type: 'user', key: 'owner', idKey: 'owner_id', label: 'Owner', endpoint: pfx + '/owner', lookupUrl: '/lookups/users' },
-            { type: 'user', key: 'maintainer', idKey: 'maintainer_id', label: 'Maintainer', endpoint: pfx + '/maintainer', lookupUrl: '/lookups/users' },
         ],
         actions: function(data) {
             var acts = [

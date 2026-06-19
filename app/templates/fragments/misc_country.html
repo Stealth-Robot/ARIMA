@@ -111,7 +111,7 @@
     <td id="rating-{{ song.id }}-{{ u.id }}"
         class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}
                {% if u.id == current_user.id %} my-cell{% endif %}
-               {% if cell_editable %}cursor-pointer hover:opacity-70{% endif %}"
+               {% if cell_editable %}cursor-pointer hover:opacity-40{% endif %}"
         style="{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %} vertical-align: middle;"
         {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
         {% if cell_editable %}
