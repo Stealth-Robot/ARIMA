@@ -68,7 +68,7 @@
 
         <!-- Daily bar chart (built by JS using local dates) -->
         <!-- Scrolls horizontally so date labels are never truncated when there are many days. -->
-        <div class="mt-4" style="overflow-x: auto; padding-bottom: 20px;">
+        <div class="mt-4" style="overflow-x: auto; padding-bottom: 15px;">
             <div id="daily-chart-bars" class="flex items-end gap-0.75" style="height: 80px; min-width: 100%; width: max-content;"></div>
             <div id="daily-chart-labels" class="flex gap-0.75 mt-1" style="min-width: 100%; width: max-content;"></div>
         </div>
@@ -327,7 +327,7 @@ var chartTip = (function() {
         header.textContent = friendlyDate(g.date) + '  (' + g.cards.length + ')';
         section.appendChild(header);
         var row = document.createElement('div');
-        row.style.cssText = 'display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory;';
+        row.style.cssText = 'display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory;';
         g.cards.forEach(function(card) { row.appendChild(card); });
         section.appendChild(row);
         container.appendChild(section);
