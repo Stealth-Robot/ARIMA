@@ -80,6 +80,18 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE artist ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing artist column: %s', col.name)
 
+        # 1a'''. Add any new rules columns (e.g. misc_owner_id, misc_image_url)
+        from app.models.rules import Rules
+        existing_rules_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('rules')"))}
+        if existing_rules_cols:
+            for col in Rules.__table__.columns:
+                if col.name not in existing_rules_cols:
+                    if isinstance(col.type, sqlalchemy.Integer):
+                        db.session.execute(db.text(f'ALTER TABLE rules ADD COLUMN {col.name} INTEGER'))
+                    else:
+                        db.session.execute(db.text(f'ALTER TABLE rules ADD COLUMN {col.name} TEXT'))
+                    logger.info('Added missing rules column: %s', col.name)
+
         # 1b. Add any new theme colour columns
         existing = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('theme')"))}
         for col in Theme.__table__.columns:

@@ -1243,6 +1243,32 @@ def set_misc_role():
     return jsonify({kind + '_id': user_id})
 
 
+@misc_bp.route('/misc/set-image', methods=['POST'])
+@login_required
+def set_misc_image():
+    """Set the misc tab image (shown in the header and used for the link preview)."""
+    if not current_user.is_editor_or_admin or (
+            request.method != 'GET' and not request.headers.get('X-Edit-Source')):
+        abort(403)
+    from app.services.audit import log_change
+    url = (request.form.get('value', '') or '').strip() or None
+    if url and not url.startswith('https://'):
+        abort(400)
+    rules = db.session.get(Rules, 1)
+    if not rules:
+        abort(500)
+    old = rules.misc_image_url
+    rules.misc_image_url = url
+    if url and not old:
+        log_change(current_user, 'Added misc tab image', change_type='link')
+    elif not url and old:
+        log_change(current_user, 'Removed misc tab image', change_type='link')
+    elif url != old:
+        log_change(current_user, 'Updated misc tab image', change_type='link')
+    db.session.commit()
+    return url or ''
+
+
 @misc_bp.route('/misc/spotify-track')
 @login_required
 def spotify_track():
