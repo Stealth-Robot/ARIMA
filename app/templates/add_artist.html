@@ -31,6 +31,7 @@
 
     <form id="add-artist-form" method="POST" action="{{ url_for('edit.add_artist_submit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="edit_source" value="editor">
 
         <div class="mb-4 p-3 rounded" style="border:0.0625rem dashed var(--border);">
             <label class="block text-sm mb-1 text-secondary-text">Import from Spotify</label>

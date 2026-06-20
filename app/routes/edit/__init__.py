@@ -22,6 +22,10 @@ def _require_edit_mode():
     # anti-CSRF-adjacent signal that the request came from a real edit affordance.
     if request.headers.get('X-Edit-Source'):
         return
+    # Full-page editor forms (e.g. Add Artist) submit as native browser POSTs and
+    # cannot set a custom header, so they carry the same intent signal as a field.
+    if request.form.get('edit_source'):
+        return
     abort(403)
 
 
