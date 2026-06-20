@@ -576,6 +576,7 @@ def delete_album_info(album_id):
     song_ids = [r.song_id for r in album_songs]
     songs_to_delete = 0
     ratings_to_delete = 0
+    deleted_song_ids = []
     for sid in song_ids:
         other_albums = AlbumSong.query.filter(
             AlbumSong.song_id == sid, AlbumSong.album_id != album_id
@@ -583,8 +584,37 @@ def delete_album_info(album_id):
         if other_albums == 0:
             songs_to_delete += 1
             ratings_to_delete += Rating.query.filter_by(song_id=sid).count()
+            deleted_song_ids.append(sid)
+    # Of the songs being permanently deleted, count those also credited to artists
+    # other than this album's home artist — deleting the album removes them too.
+    # "Other" covers both real artists (ArtistSong) and featured/misc artists
+    # (SongMiscArtist), since most featured credits in this app are misc artists.
+    home_id = album.artist_id
+    if home_id is None and deleted_song_ids:
+        main_link = ArtistSong.query.filter(
+            ArtistSong.song_id.in_(deleted_song_ids), ArtistSong.artist_is_main == True).first()
+        if main_link:
+            home_id = main_link.artist_id
+    other_artist_songs = 0
+    other_real_ids = set()
+    other_misc_ids = set()
+    for sid in deleted_song_ids:
+        real_ids = [l.artist_id for l in ArtistSong.query.filter_by(song_id=sid).all()
+                    if l.artist_id != home_id]
+        misc_ids = [l.misc_artist_id for l in SongMiscArtist.query.filter_by(song_id=sid).all()]
+        if real_ids or misc_ids:
+            other_artist_songs += 1
+            other_real_ids.update(real_ids)
+            other_misc_ids.update(misc_ids)
+    names = []
+    if other_real_ids:
+        names += [a.name for a in Artist.query.filter(Artist.id.in_(other_real_ids)).all()]
+    if other_misc_ids:
+        names += [m.name for m in MiscArtist.query.filter(MiscArtist.id.in_(other_misc_ids)).all()]
+    other_artists = sorted(names)
     return jsonify(songs=len(song_ids), songs_deleted=songs_to_delete,
-                   ratings_deleted=ratings_to_delete)
+                   ratings_deleted=ratings_to_delete,
+                   other_artist_songs=other_artist_songs, other_artists=other_artists)
 
 
 @edit_bp.route('/album/<int:album_id>/delete', methods=['POST'])

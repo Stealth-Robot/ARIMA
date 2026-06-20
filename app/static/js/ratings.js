@@ -536,6 +536,20 @@ function showMobilePassword(opts) {
         modal.appendChild(m);
     }
 
+    var checkbox = null;
+    if (opts.checkboxLabel) {
+        var cbWrap = document.createElement('label');
+        cbWrap.style.cssText = 'display:flex; gap:0.5rem; align-items:flex-start; font-size:0.8125rem; color:var(--text-primary); margin-bottom:0.625rem; cursor:pointer;';
+        checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.style.cssText = 'margin-top:0.1875rem; flex-shrink:0;';
+        var cbText = document.createElement('span');
+        cbText.textContent = opts.checkboxLabel;
+        cbWrap.appendChild(checkbox);
+        cbWrap.appendChild(cbText);
+        modal.appendChild(cbWrap);
+    }
+
     var input = document.createElement('input');
     input.type = 'password';
     input.placeholder = 'Password';
@@ -557,6 +571,7 @@ function showMobilePassword(opts) {
     confirm.textContent = opts.confirmLabel || 'Confirm';
     confirm.style.cssText = 'padding:0.5rem 1rem; font-size:0.875rem; background:var(--delete-button,#DC2626); color:#fff; border:none; border-radius:0.375rem; cursor:pointer;';
     confirm.onclick = function() {
+        if (checkbox && !checkbox.checked) { err.textContent = 'Please tick the box to acknowledge.'; return; }
         if (!input.value) { err.textContent = 'Enter your password.'; return; }
         err.textContent = '';
         opts.onConfirm(input.value, { close: close, error: function(msg) { err.textContent = msg; } });

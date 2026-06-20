@@ -734,13 +734,25 @@ function albumEditConfig(albumId, albumName) {
                     } });
             });
             _act('Delete album', 'danger', function() {
-                showMobilePassword({ title: 'Delete album?',
-                    message: '"' + data.name + '" and its songs/ratings may be permanently deleted. Enter your password to confirm.',
-                    confirmLabel: 'Delete',
-                    onConfirm: function(pw, helpers) {
-                        fetch(pfx + '/delete', { method: 'POST', headers: ui.headers(), body: 'password=' + encodeURIComponent(pw), redirect: 'manual' })
-                            .then(function(r) { if (r.status === 403) { helpers.error('Incorrect password.'); return; } helpers.close(); window.location.reload(); });
-                    } });
+                fetch(pfx + '/delete-info', { headers: { 'Accept': 'application/json' } })
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(info) {
+                        var opts = { title: 'Delete album?',
+                            message: '"' + data.name + '" and its songs/ratings may be permanently deleted. Enter your password to confirm.',
+                            confirmLabel: 'Delete',
+                            onConfirm: function(pw, helpers) {
+                                fetch(pfx + '/delete', { method: 'POST', headers: ui.headers(), body: 'password=' + encodeURIComponent(pw), redirect: 'manual' })
+                                    .then(function(r) { if (r.status === 403) { helpers.error('Incorrect password.'); return; } helpers.close(); window.location.reload(); });
+                            } };
+                        if (info && info.other_artist_songs > 0) {
+                            var n = info.other_artist_songs;
+                            var names = (info.other_artists || []);
+                            opts.checkboxLabel = 'I acknowledge this also permanently deletes ' + n + ' song' + (n === 1 ? '' : 's') +
+                                (names.length === 1 ? ' belonging to another artist' : ' belonging to other artists') +
+                                (names.length ? ' (' + names.join(', ') + ')' : '') + '.';
+                        }
+                        showMobilePassword(opts);
+                    });
             });
         },
         onDirtyClose: 'reload',
