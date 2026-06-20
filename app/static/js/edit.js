@@ -1140,8 +1140,7 @@ function showMergeDiffModal(keptId, keptName, absorbedId, absorbedName, absorbed
     header.style.cssText = 'padding:1.25rem 1.5rem 0.75rem;flex-shrink:0;';
     header.innerHTML = '<div style="font-size:1rem;font-weight:bold;color:var(--text-primary);">Merge Songs</div><div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;">Loading...</div>';
     container.appendChild(header);
-    // Insert at top of <body> so password managers (which cap field collection in DOM order) see the pw field despite thousands of page inputs
-    document.body.insertBefore(overlay, document.body.firstChild);
+    document.body.appendChild(overlay);
 
     fetch('/edit/song/' + keptId + '/merge-preview/' + absorbedId, {headers: _csrfHeaders({})})
     .then(function(r) { if (!r.ok) throw new Error('failed'); return r.json(); })
@@ -1405,27 +1404,6 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
     var footer = document.createElement('div');
     footer.style.cssText = 'padding:0.75rem 1.5rem 1.25rem;border-top:0.0625rem solid var(--border);flex-shrink:0;';
 
-    // Reuse the persistent credential form rendered in the page at load. Because it was
-    // present (hidden) during the password manager's initial page scan, the manager has
-    // already attached its listeners to the password field. Relocating the form into the
-    // modal and focusing the field then registers it as the focused login field
-    // deterministically — no timing race, so the manager's Fill reliably targets it.
-    var pwInput = null;
-    if (!opts.noPassword) {
-        var credForm = document.getElementById('merge-cred-form');
-        pwInput = document.getElementById('merge-pw-input');
-        pwInput.value = '';
-        pwInput.required = true;
-        pwInput.style.cssText = 'width:100%;padding:0.5rem 0.75rem;border:0.0625rem solid var(--border);border-radius:0.25rem;background:var(--bg-primary);color:var(--text-primary);box-sizing:border-box;';
-
-        var pwLabel = document.createElement('label');
-        pwLabel.textContent = 'Enter your password to confirm';
-        pwLabel.htmlFor = 'merge-pw-input';
-        pwLabel.style.cssText = 'display:block;font-size:0.8125rem;margin-bottom:0.25rem;color:var(--text-primary);';
-        footer.appendChild(pwLabel);
-        footer.appendChild(credForm);
-    }
-
     var btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem;';
     var cancelBtn = document.createElement('button');
@@ -1442,7 +1420,6 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
 
     mergeBtn.addEventListener('click', function() {
         if (!inputs.name.value.trim()) { alert('Song name is required.'); return; }
-        if (!opts.noPassword && !pwInput.value) { alert('Password is required.'); return; }
         mergeBtn.disabled = true;
         mergeBtn.textContent = 'Merging...';
 
@@ -1464,7 +1441,6 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
                 };
             })
         };
-        if (!opts.noPassword) payload.password = pwInput.value;
         if (opts.extraPayload) {
             for (var key in opts.extraPayload) {
                 if (opts.extraPayload.hasOwnProperty(key)) payload[key] = opts.extraPayload[key];
@@ -1476,11 +1452,9 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
             headers: _csrfHeaders({'Content-Type': 'application/json'}),
             body: JSON.stringify(payload)
         }).then(function(r) {
-            if (r.status === 403 && !opts.noPassword) { alert('Incorrect password.'); mergeBtn.disabled = false; mergeBtn.textContent = mergeLabel; return; }
             if (!r.ok) throw new Error('failed');
             return r.json().catch(function() { return {}; });
         }).then(function(resp) {
-            if (resp === undefined) return;  // 403 path already handled
             if (opts.onSuccess) { _closeMergeModal(overlay); opts.onSuccess(resp); }
             else { window.location.reload(); }
         }).catch(function() {
@@ -1494,11 +1468,6 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
     btnRow.appendChild(mergeBtn);
     footer.appendChild(btnRow);
     container.appendChild(footer);
-
-    // Focus the now-visible password field. The manager's listener is already attached
-    // (the field existed at page load), so this single focus registers it as the
-    // focused login field.
-    if (pwInput) pwInput.focus();
 }
 
 // Focus a confirm-password modal's password field when the modal is shown. The field
@@ -1512,15 +1481,7 @@ function focusModalPassword(modalId) {
     if (pw) setTimeout(function() { pw.focus(); }, 0);
 }
 
-// Move the persistent credential form back to its hidden home and clear it. Must run
-// before the merge overlay is removed, otherwise the form (with the password manager's
-// listeners) would be torn out of the DOM along with the overlay.
 function _closeMergeModal(overlay) {
-    var form = document.getElementById('merge-cred-form');
-    var home = document.getElementById('merge-cred-home');
-    var pw = document.getElementById('merge-pw-input');
-    if (pw) pw.value = '';
-    if (form && home && form.parentNode !== home) home.appendChild(form);
     if (overlay) overlay.remove();
 }
 

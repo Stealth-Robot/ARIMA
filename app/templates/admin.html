@@ -69,6 +69,33 @@
     </div>
 
     <div class="mb-8">
+        <h2 class="text-lg font-bold mb-3">Album Types</h2>
+        <div class="flex flex-wrap gap-2 mb-3">
+            {% for t in album_types %}
+            <form method="POST" action="{{ url_for('admin.rename_album_type') }}" class="flex items-center gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="{{ t.id }}">
+                <input type="text" name="name" value="{{ t.type }}" required
+                       class="text-xs px-2 py-1 rounded border bg-secondary-bg text-primary-text border-border w-24">
+                <button type="submit" class="text-xs px-2 py-1 rounded bg-button-primary text-button-text">Save</button>
+                <button type="button" title="Delete album type"
+                        onclick='showDeleteConfirm("Delete album type?", {{ t.type | tojson }} + " will be permanently deleted.", "/admin/delete-album-type/{{ t.id }}", true)'
+                        class="text-xs px-2 py-1 rounded border bg-secondary-bg border-border cursor-pointer"
+                        style="color:var(--delete-button, #e02424);">&#10005;</button>
+            </form>
+            {% endfor %}
+        </div>
+        <form method="POST" action="{{ url_for('admin.add_album_type') }}" class="flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="name" placeholder="New album type name" required
+                   class="text-sm px-3 py-1 rounded border"
+                   class="bg-secondary-bg text-primary-text border-border">
+            <button type="submit" class="text-sm px-4 py-1 rounded"
+                    class="bg-button-primary text-button-text">Add Album Type</button>
+        </form>
+    </div>
+
+    <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Railway Billing Costs</h2>
         <p class="text-xs text-secondary-text mb-2">Real amount paid per billing cycle (17th–17th).</p>
         <form method="POST" action="{{ url_for('admin.save_billing_costs') }}">

@@ -11,7 +11,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models.lookups import Genre, Country
+from app.models.lookups import Genre, Country, AlbumType
 from app.decorators import role_required, ADMIN
 from app.cache import clear_filter_cache
 
@@ -38,11 +38,13 @@ def admin_page():
     from app.models.music import Artist, Album
     genres = Genre.query.order_by(func.lower(Genre.genre)).all()
     countries = Country.query.order_by(func.lower(Country.country)).all()
+    album_types = AlbumType.query.order_by(AlbumType.id).all()
     artists_missing = Artist.query.filter(
         db.or_(Artist.spotify_url.is_(None), Artist.spotify_url == '')).count()
     albums_missing = Album.query.filter(
         db.or_(Album.spotify_url.is_(None), Album.spotify_url == '')).count()
     return render_template('admin.html', genres=genres, countries=countries,
+                           album_types=album_types,
                            billing_cycles=get_billing_cycles(),
                            artists_missing=artists_missing,
                            albums_missing=albums_missing)
@@ -212,6 +214,71 @@ def rename_country():
     db.session.commit()
     clear_filter_cache()
     return redirect(url_for('admin.admin_page'))
+
+
+@admin_bp.route('/admin/add-album-type', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def add_album_type():
+    name = request.form.get('name', '').strip()
+    if not name:
+        return redirect(url_for('admin.admin_page'))
+
+    if AlbumType.query.filter(db.func.lower(AlbumType.type) == name.lower()).first():
+        return redirect(url_for('admin.admin_page'))
+
+    max_id = db.session.query(db.func.max(AlbumType.id)).scalar() or -1
+    db.session.add(AlbumType(id=max_id + 1, type=name))
+    db.session.commit()
+    clear_filter_cache()
+    return redirect(url_for('admin.admin_page'))
+
+
+@admin_bp.route('/admin/rename-album-type', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def rename_album_type():
+    type_id = request.form.get('id', '').strip()
+    name = request.form.get('name', '').strip()
+    if not type_id or not name:
+        return redirect(url_for('admin.admin_page'))
+
+    album_type = db.session.get(AlbumType, int(type_id))
+    if album_type is None:
+        return redirect(url_for('admin.admin_page'))
+
+    if name.lower() != album_type.type.lower() and AlbumType.query.filter(
+        db.func.lower(AlbumType.type) == name.lower(), AlbumType.id != album_type.id
+    ).first():
+        return redirect(url_for('admin.admin_page'))
+
+    album_type.type = name
+    db.session.commit()
+    clear_filter_cache()
+    return redirect(url_for('admin.admin_page'))
+
+
+@admin_bp.route('/admin/delete-album-type/<int:type_id>', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def delete_album_type(type_id):
+    from app.routes.edit import _verify_password
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    album_type = db.session.get(AlbumType, type_id)
+    if album_type is None:
+        return 'Not found', 404
+
+    from app.models.music import Album
+    in_use = Album.query.filter_by(album_type_id=album_type.id).first()
+    if in_use:
+        return 'Album type is still in use', 400
+
+    db.session.delete(album_type)
+    db.session.commit()
+    clear_filter_cache()
+    return '', 200
 
 
 @admin_bp.route('/admin/replace-database', methods=['GET', 'POST'])

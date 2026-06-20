@@ -20,6 +20,7 @@
         <div class="min-w-0">
         <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
             MISC ARTISTS
+            {% if edit_mode %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit misc" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span>{% endif %}
         </h2>
         <div class="flex items-center gap-3 mt-1">
             <span id="misc-unrated" class="text-xs text-secondary-text">Loading...</span>
@@ -92,18 +93,6 @@
             {% endif %}
         </div>
         {% endif %}
-        {% if edit_mode %}
-        <div class="flex gap-2 mt-2">
-            <button onclick="_showManageMiscArtists()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
-                    style="background: var(--edit-off-button); color: var(--button-text);">Manage Misc Artists</button>
-            <button onclick="_showAddMiscSong()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
-                    style="background: var(--edit-on-button); color: var(--button-text);">+ Add Song</button>
-            <button onclick="_showSpotifyImport()" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
-                    style="background: var(--edit-on-button); color: var(--button-text);">Import from Spotify</button>
-            <button type="button" onclick="_miscShowImageEdit(event)" class="border-0 rounded text-xs px-3 py-1 cursor-pointer"
-                    style="background: var(--edit-off-button); color: var(--button-text);">{% if rules and rules.misc_image_url %}Edit Image{% else %}+ Image{% endif %}</button>
-        </div>
-        {% endif %}
         </div>
     </div>
 
@@ -163,11 +152,6 @@
                         </span>
                     </span>
                 </th>
-                {% if edit_mode %}
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Remix</th>
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Cover</th>
-                <th class="px-1 py-1 text-center th-cell bg-header-row" style="width: 1.875rem;">Promo</th>
-                {% endif %}
                 {% for u in users %}
                 <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                 {% endfor %}
@@ -580,56 +564,30 @@ var _allCountries = [{% for c in all_countries %}{id: {{ c.id }}, name: {{ c.cou
 var _allAlbumTypes = [{% for t in all_album_types %}{id: {{ t.id }}, name: {{ t.type | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 var _miscAssignableUsers = [{% for u in assignable_users %}{id:{{ u.id }},username:{{ u.username | tojson }},profileImage:{{ (u.profile_image or url_for('static', filename='img/default_image.png')) | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 
-var _miscImagePopover = null;
-function _miscCloseImagePopover() { if (_miscImagePopover) { _miscImagePopover.remove(); _miscImagePopover = null; } }
-function _miscShowImageEdit(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    _miscCloseImagePopover();
-    var btn = event.currentTarget;
-    var popover = document.createElement('div');
-    popover.style.cssText = 'position:fixed;z-index:50;background:var(--bg-secondary,#fff);border:0.125rem solid var(--link,#2563EB);border-radius:0.25rem;padding:0.5rem;box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2);width:18.75rem;';
-    var label = document.createElement('div');
-    label.textContent = 'Image URL'; label.style.cssText = 'font-size:0.6875rem;color:var(--secondary-text);margin-bottom:0.25rem;';
-    var hint = document.createElement('div');
-    hint.textContent = 'https:// only. Cropped to a 2:3 portrait (centered), shown at 60×90, and used for the link preview.';
-    hint.style.cssText = 'font-size:0.625rem;color:var(--secondary-text);margin-bottom:0.375rem;line-height:1.3;';
-    var input = document.createElement('input');
-    input.type = 'url'; input.value = {{ (rules.misc_image_url if rules and rules.misc_image_url else '') | tojson }};
-    input.placeholder = 'https://...';
-    input.style.cssText = 'width:100%;box-sizing:border-box;padding:0.25rem 0.375rem;font-size:0.75rem;border:0.0625rem solid var(--border);border-radius:0.1875rem;background:var(--bg-primary);color:var(--text-primary);';
-    var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:0.375rem;margin-top:0.5rem;';
-    function save(value) {
-        var headers = _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'});
-        fetch('/misc/set-image', {method:'POST', headers:headers, body:'value=' + encodeURIComponent(value)}).then(function(r) {
-            if (!r.ok) { alert('Could not save image (https:// URLs only).'); return; }
-            _miscCloseImagePopover();
-            window.location.reload();
-        });
-    }
-    var saveBtn = document.createElement('button');
-    saveBtn.type = 'button'; saveBtn.textContent = 'Save';
-    saveBtn.className = 'border-0 rounded text-xs px-3 py-1 cursor-pointer';
-    saveBtn.style.cssText = 'background:var(--edit-on-button);color:var(--button-text);';
-    saveBtn.onclick = function() { save(input.value.trim()); };
-    btnRow.appendChild(saveBtn);
-    var removeBtn = document.createElement('button');
-    removeBtn.type = 'button'; removeBtn.textContent = 'Remove';
-    removeBtn.className = 'border-0 rounded text-xs px-3 py-1 cursor-pointer';
-    removeBtn.style.cssText = 'background:var(--delete-button,#e02424);color:#fff;';
-    removeBtn.onclick = function() { save(''); };
-    btnRow.appendChild(removeBtn);
-    popover.appendChild(label); popover.appendChild(hint); popover.appendChild(input); popover.appendChild(btnRow);
-    var rect = btn.getBoundingClientRect();
-    popover.style.left = (rect.left) + 'px';
-    popover.style.top = (rect.bottom + 2) + 'px';
-    document.body.appendChild(popover);
-    _miscImagePopover = popover;
-    input.focus();
-    input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); save(input.value.trim()); } };
-    var close = function(e) { if (!popover.contains(e.target) && e.target !== btn && !btn.contains(e.target)) { _miscCloseImagePopover(); document.removeEventListener('click', close); } };
-    setTimeout(function() { document.addEventListener('click', close); }, 0);
+/* Edit-misc modal — rolls the page-level edit actions (image, manage artists,
+   add song, Spotify import) into one modal, matching the artist page pattern. */
+function showMiscEdit() {
+    openEditModal({
+        entity: 'misc',
+        startEdit: true,
+        title: function() { return 'Misc Artists'; },
+        loader: function(done) {
+            done({ image_url: {{ (rules.misc_image_url if rules and rules.misc_image_url else '') | tojson }} });
+        },
+        infoRows: function(data) {
+            return [ data.image_url ? ['Image', data.image_url] : null ];
+        },
+        fields: [
+            { type: 'url', key: 'image_url', label: 'Image URL', placeholder: 'https://…',
+              hint: 'Cropped to a 2:3 portrait (centered), shown at 60×90, and used for the link preview.',
+              endpoint: '/misc/set-image', errorMsg: 'Could not save image (https:// URLs only).' },
+        ],
+        actions: [
+            { label: 'Manage Misc Artists', run: function() { closeMobileModal(); _showManageMiscArtists(); } },
+            { label: '+ Add Song', run: function() { closeMobileModal(); _showAddMiscSong(); } },
+            { label: 'Import from Spotify', run: function() { closeMobileModal(); _showSpotifyImport(); } },
+        ],
+    });
 }
 
 var _miscUserPopover = null;

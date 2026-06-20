@@ -788,6 +788,9 @@ function songEditConfig(cell) {
     var albumId = _row ? parseInt(_row.getAttribute('data-album-id'), 10) : NaN;
     if (isNaN(albumId)) albumId = null;
     var seedName = (typeof _getSongNameFromCell === 'function') ? _getSongNameFromCell(cell) : (cell.getAttribute('title') || cell.textContent.trim());
+    // Misc page songs use misc-specific artist management + a "move to artist" flow
+    // (the generic showSongArtists relies on _allArtists, which the misc page lacks).
+    var isMisc = !!cell.closest('#misc-table');
 
     return {
         entity: 'song', id: songId,
@@ -1097,8 +1100,18 @@ function songEditConfig(cell) {
             _action('Add to album', 'secondary', function() { _albumSearch('Add to which album?', 'add-to-album'); });
             _action('Manage artists', 'secondary', function() {
                 closeMobileModal();
-                if (typeof showSongArtists === 'function') showSongArtists({ stopPropagation: function() {} }, parseInt(songId, 10), cell);
+                if (isMisc) {
+                    if (typeof _showMiscArtistSelector === 'function') _showMiscArtistSelector(parseInt(songId, 10));
+                } else if (typeof showSongArtists === 'function') {
+                    showSongArtists({ stopPropagation: function() {} }, parseInt(songId, 10), cell);
+                }
             });
+            if (isMisc) {
+                _action('Move to artist', 'secondary', function() {
+                    closeMobileModal();
+                    if (typeof _showMoveSongToArtist === 'function') _showMoveSongToArtist({ stopPropagation: function() {} }, parseInt(songId, 10), data.name);
+                });
+            }
             _action('Merge', 'secondary', function() {
                 closeMobileModal();
                 if (typeof _openMergePopover === 'function') _openMergePopover(parseInt(songId, 10), data.name, cell);

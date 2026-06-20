@@ -1,5 +1,4 @@
 {% from "fragments/spotify_macros.html" import song_spotify_icon with context %}
-{% from "fragments/_credentials.html" import password_confirm with context %}
 {% macro spotify_link_icon(url) %}{% if url and not hide_all_spotify %}{% if url == 'n/a' %}<span class="spotify-na relative inline-block align-middle" title="Not on Spotify" onclick="event.stopPropagation()" style="width:0.75rem; height:0.75rem; line-height:0;"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle" style="filter: grayscale(1); opacity: 0.6;"><span class="absolute" style="top:50%; left:50%; width:0.9375rem; height:0.125rem; background:var(--delete-button, #e02424); transform: translate(-50%, -50%) rotate(-45deg); transform-origin: center; pointer-events:none; border-radius:0.0625rem;"></span></span>{% else %}<a href="{{ spotify_href(url) }}" target="{{ spotify_link_target }}" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}{% endmacro %}
 <!-- Artist header -->
 <div class="mb-3 pl-3 flex items-start gap-3" data-current-artist-id="{{ artist.id }}" style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
@@ -129,14 +128,6 @@
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
 
 {% if emit_edit_globals %}
-<!-- Persistent credential form for the song-merge modal. Present (hidden) at page load
-     so password managers register the password field during their initial page scan;
-     edit.js relocates this form into the merge modal when it opens. -->
-<div id="merge-cred-home" aria-hidden="true" style="display:none;">
-    <form id="merge-cred-form">
-        {{ password_confirm(pw_id='merge-pw-input', pw_class='', required=false, show_label=false) }}
-    </form>
-</div>
 <script>
 var _allGenres = [{% for g in edit_genres %}{ id: {{ g.id }}, name: {{ g.genre | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];
 var _allCountries = [{% for c in edit_countries %}{ id: {{ c.id }}, name: {{ c.country | tojson }} }{% if not loop.last %},{% endif %}{% endfor %}];

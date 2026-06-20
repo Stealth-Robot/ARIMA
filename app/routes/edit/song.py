@@ -767,11 +767,6 @@ def merge_song(kept_song_id):
     if absorbed is None:
         return 'Absorbed song not found', 400
 
-    password = (data or {}).get('password') or request.form.get('password', '')
-    from app.routes.auth import _check_password
-    if not password or not current_user.password or not _check_password(current_user.password, password):
-        return 'Incorrect password', 403
-
     overrides = {}
     if data:
         if 'name' in data:
