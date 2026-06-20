@@ -312,9 +312,6 @@ def convert_artist(artist_id):
     rel_type = request.form.get('type', '').strip()
     if parent_id is None or rel_type not in ('subunit', 'soloist', 'related'):
         abort(400)
-    # Related links are lightweight and reversible — no password confirmation
-    if rel_type != 'related' and not _verify_password():
-        return 'Incorrect password', 403
     if parent_id == artist_id:
         return 'Cannot link an artist to itself', 400
     parent = db.session.get(Artist, parent_id)
@@ -358,6 +355,39 @@ def convert_artist(artist_id):
     db.session.add(ArtistArtist(artist_1=parent_id, artist_2=artist_id, relationship=rel_id))
     artist.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Converted "{artist.name}" to {rel_type} of "{parent.name}" artist', artist=artist)
+    db.session.commit()
+    return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
+
+
+@edit_bp.route('/artist/<int:artist_id>/swap-role', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def swap_artist_role(artist_id):
+    """Flip an artist's existing subunit/soloist relationship to the other type.
+    Only changes the relationship value on the existing parent link(s) — no parent
+    selection or password confirmation."""
+    _require_edit_mode()
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    target = request.form.get('to', '').strip()
+    if target not in ('subunit', 'soloist'):
+        abort(400)
+    target_rel = SUBUNIT if target == 'subunit' else SOLOIST
+    source_rel = SOLOIST if target == 'subunit' else SUBUNIT
+    links = ArtistArtist.query.filter(
+        ArtistArtist.artist_2 == artist_id,
+        ArtistArtist.relationship == source_rel).all()
+    if not links:
+        return 'Artist is not a ' + ('soloist' if source_rel == SOLOIST else 'subunit'), 400
+    # A subunit may only have one parent
+    if target_rel == SUBUNIT and len(links) > 1:
+        return 'Artist is a soloist of multiple groups; cannot convert to subunit', 400
+    for link in links:
+        link.relationship = target_rel
+    artist.last_updated = datetime.now(timezone.utc).isoformat()
+    src_name = 'soloist' if source_rel == SOLOIST else 'subunit'
+    log_change(current_user, f'Converted "{artist.name}" from {src_name} to {target}', artist=artist)
     db.session.commit()
     return json.dumps({'ok': True}), 200, {'Content-Type': 'application/json'}
 

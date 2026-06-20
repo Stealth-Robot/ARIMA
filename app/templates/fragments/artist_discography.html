@@ -645,9 +645,6 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
             {% endif %}
             {% endfor %}
         </select>
-        <div id="convert-pw-wrap">
-            {{ password_confirm(pw_id='convert-pw', pw_name='', label='Password', pw_class='w-full px-3 py-2 border rounded mb-3 text-sm border-border', required=false) }}
-        </div>
         <div class="flex gap-2 justify-end">
             <button type="button" onclick="document.getElementById('convert-artist-modal').style.display='none'"
                     class="px-4 py-2 rounded text-sm bg-button-secondary text-primary-text">Cancel</button>
@@ -673,17 +670,12 @@ function showConvertArtist(type) {
     document.getElementById('convert-parent-label').textContent = type === 'related' ? 'Related Artist' : 'Parent Artist';
     document.getElementById('convert-parent').options[0].textContent = type === 'related' ? 'Select related artist...' : 'Select parent artist...';
     document.getElementById('convert-submit-btn').textContent = type === 'related' ? 'Link' : 'Convert';
-    document.getElementById('convert-pw-wrap').style.display = type === 'related' ? 'none' : '';
     document.getElementById('convert-parent').value = '';
-    document.getElementById('convert-pw').value = '';
     document.getElementById('convert-artist-modal').style.display = 'flex';
-    if (type !== 'related') focusModalPassword('convert-artist-modal');
 }
 function submitConvertArtist() {
     var parentId = document.getElementById('convert-parent').value;
-    var pw = document.getElementById('convert-pw').value;
     if (!parentId) { alert(_convertType === 'related' ? 'Select a related artist' : 'Select a parent artist'); return; }
-    if (!pw && _convertType !== 'related') { alert('Password required'); return; }
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
@@ -691,10 +683,9 @@ function submitConvertArtist() {
     fetch('/edit/artist/{{ artist.id }}/convert', {
         method: 'POST',
         headers: headers,
-        body: 'parent_id=' + parentId + '&type=' + _convertType + '&password=' + encodeURIComponent(pw),
+        body: 'parent_id=' + parentId + '&type=' + _convertType,
     }).then(function(r) {
         if (!r.ok) return r.text().then(function(msg) {
-            if (r.status === 403 && _convertType !== 'related') { alert(msg || 'Incorrect password'); return; }
             showToast(msg || 'Convert failed');
         });
         window.location.reload();

@@ -428,14 +428,37 @@ function artistEditConfig(artistId) {
             { type: 'select', key: 'country', idKey: 'country_id', idParam: 'country_id', label: 'Country', endpoint: pfx + '/country', lookupUrl: '/lookups/countries' },
         ],
         actions: function(data) {
+            var links = data.links || [];
+            var isSubunit = links.some(function(l) { return l.rel === 'subunit'; });
+            var soloistLinks = links.filter(function(l) { return l.rel === 'soloist'; });
+            function swapRole(to) {
+                fetch(pfx + '/swap-role', { method: 'POST', headers: _emHeaders(), body: 'to=' + to })
+                    .then(function(r) {
+                        if (r.ok) { closeMobileModal(); window.location.reload(); }
+                        else { r.text().then(function(t) { _emToast(t || 'Could not convert artist'); }); }
+                    });
+            }
             var acts = [
                 { label: '+ Add album', run: function() { closeMobileModal(); if (typeof resetAddAlbumModal === 'function') resetAddAlbumModal(); var m = document.getElementById('add-album-modal'); if (m) m.style.display = 'flex'; } },
-                { label: 'Convert to subunit', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('subunit'); } },
-                { label: 'Convert to soloist', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('soloist'); } },
-                { label: 'Link related group', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('related'); } },
+            ];
+            if (isSubunit) {
+                acts.push({ label: 'Convert to soloist', run: function() { swapRole('soloist'); } });
+            } else if (soloistLinks.length >= 1) {
+                // Single-parent soloist can be swapped to a subunit; multi-parent soloists
+                // cannot (a subunit may only have one parent).
+                if (soloistLinks.length === 1) {
+                    acts.push({ label: 'Convert to subunit', run: function() { swapRole('subunit'); } });
+                }
+                acts.push({ label: 'Add as soloist of another group', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('soloist'); } });
+            } else {
+                acts.push({ label: 'Convert to subunit', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('subunit'); } });
+                acts.push({ label: 'Convert to soloist', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('soloist'); } });
+            }
+            acts.push({ label: 'Link related group', run: function() { closeMobileModal(); if (typeof showConvertArtist === 'function') showConvertArtist('related'); } });
+            acts.push.apply(acts, [
                 { label: 'Manage genres', run: function(ctx) { closeMobileModal(); if (typeof showBulkGenreModal === 'function') showBulkGenreModal(id, ctx.data.name); } },
                 { label: 'Auto-fill Spotify', run: function(ctx) { if (typeof autoPopulateSpotify === 'function') autoPopulateSpotify(id, ctx && ctx.data ? ctx.data.spotify_url : null); } },
-            ];
+            ]);
             (data.links || []).forEach(function(lnk) {
                 acts.push({ label: 'Unlink: ' + lnk.name, kind: 'danger',
                     confirm: { title: 'Unlink from ' + lnk.name + '?', confirmLabel: 'Unlink',
