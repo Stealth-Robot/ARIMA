@@ -803,7 +803,7 @@ def album_songs(album_id):
         'spotify_url': album.spotify_url or '',
         'genres': [g.genre for g in album.genres],
         'genre_ids': [g.id for g in album.genres],
-        'alt_names': [n.name for n in album.alt_names],
+        'alt_names': [{'name': n.name, 'native_lang': n.native_lang} for n in album.alt_names],
         'songs': [{
             'id': s.id,
             'name': s.name,

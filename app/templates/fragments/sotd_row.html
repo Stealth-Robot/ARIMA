@@ -13,7 +13,7 @@
         </div>
         {% if card.album %}
         <div class="text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            {{ card.album.name }}{% if card.album.release_date %} ({{ card.album.release_date[:4] }}){% endif %}{% if card.album.genres %} &middot; {{ card.album.genres | map(attribute='genre') | join(', ') }}{% endif %}
+            {{ album_display_name(card.album) }}{% if card.album.release_date %} ({{ card.album.release_date[:4] }}){% endif %}{% if card.album.genres %} &middot; {{ card.album.genres | map(attribute='genre') | join(', ') }}{% endif %}
         </div>
         {% endif %}
         <div class="mt-1">{% include 'fragments/sotd_links.html' %}</div>

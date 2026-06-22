@@ -92,8 +92,8 @@ def create_app():
                 return {'latest_update_id': latest.id}
         return {'latest_update_id': 0}
 
-    # Song display-name helper — swaps in a song's native JP/KR alias per the
-    # viewer's profile toggles (Korean wins when both apply).
+    # Song/album display-name helpers — swap in a native JP/KR name per the viewer's
+    # profile toggles (Korean wins when both apply). Albums honor the same toggles.
     @flask_app.context_processor
     def inject_song_display():
         ja = ko = False
@@ -104,7 +104,10 @@ def create_app():
             else:
                 ja = bool(session.get('display_native_ja', False))
                 ko = bool(session.get('display_native_ko', False))
-        return {'song_display_name': lambda song: song.display_name(ja, ko)}
+        return {
+            'song_display_name': lambda song: song.display_name(ja, ko),
+            'album_display_name': lambda album: album.display_name(ja, ko),
+        }
 
     # Theme context processor — injects resolved theme + helpers into all templates
     @flask_app.context_processor

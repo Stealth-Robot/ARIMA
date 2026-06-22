@@ -67,6 +67,20 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE album ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing album column: %s', col.name)
 
+        # 1a'''. Add native_lang to album_alt_name (mirrors song_alias) + its unique
+        # partial indexes (at most one native JP and one native KR name per album).
+        existing_aan_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album_alt_name')"))}
+        if existing_aan_cols and 'native_lang' not in existing_aan_cols:
+            db.session.execute(db.text('ALTER TABLE album_alt_name ADD COLUMN native_lang TEXT'))
+            logger.info('Added missing album_alt_name column: native_lang')
+        if existing_aan_cols:
+            db.session.execute(db.text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_ja "
+                "ON album_alt_name (album_id) WHERE native_lang = 'ja'"))
+            db.session.execute(db.text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_ko "
+                "ON album_alt_name (album_id) WHERE native_lang = 'ko'"))
+
         # 1a'. Add any new artist columns (e.g. owner_id, maintainer_id, spotify_url)
         existing_artist_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('artist')"))}
         for col in Artist.__table__.columns:

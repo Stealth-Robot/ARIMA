@@ -61,9 +61,9 @@
         {% if row.album %}
         &middot;
         {% if edit_mode %}
-        <span class="cursor-pointer" onclick="_showAlbumEditor({{ song.id }}, {{ row.album.id }})" title="Edit album">{{ row.album.name }}</span>
+        <span class="cursor-pointer" onclick="_showAlbumEditor({{ song.id }}, {{ row.album.id }})" title="Edit album">{{ album_display_name(row.album) }}</span>
         {% else %}
-        {{ row.album.name }}
+        {{ album_display_name(row.album) }}
         {% endif %}
         {% if row.album.release_date %}
         (<span{% if not show_full_album_date %} class="album-date-hover" data-full-date="{{ row.album.release_date }}"{% endif %}>{{ row.album.release_date if show_full_album_date else row.album.release_date[:4] }}</span>)

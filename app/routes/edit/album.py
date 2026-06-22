@@ -186,35 +186,58 @@ def album_genres_edit(album_id):
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def album_alt_names(album_id):
-    """Replace an album's alternate-name list (one name per line in `value`).
+    """Replace an album's alternate-name list.
 
     Alternate names exist mainly to make hard-to-search albums findable; they
-    are matched alongside the main name in the Albums search section.
+    are matched alongside the main name in the Albums search section. Each may be
+    tagged native_lang 'ja' or 'ko' to designate it the native Japanese/Korean
+    name (at most one of each), which the viewer's profile toggles can swap in as
+    the album's display name. Expects JSON: {"alt_names": [{"name", "native_lang"}, ...]}.
+
+    For backward compatibility a plain `value=` form body (one name per line, no
+    native tags) is still accepted.
     """
     _require_edit_mode()
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    raw = request.form.get('value', '') or ''
+
+    payload = request.get_json(silent=True)
     seen = set()
-    names = []
-    for line in raw.replace('\r\n', '\n').split('\n'):
-        n = line.strip()
-        if not n:
+    alt_names = []
+    used_langs = set()
+    if payload is not None:
+        items = payload.get('alt_names', [])
+    else:
+        items = [{'name': line} for line in
+                 (request.form.get('value', '') or '').replace('\r\n', '\n').split('\n')]
+    for item in items:
+        name = (item.get('name') or '').strip()
+        if not name:
             continue
-        key = n.lower()
+        key = name.lower()
         if key in seen:
             continue
         seen.add(key)
-        names.append(n)
-    old = [a.name for a in album.alt_names]
-    if old == names:
-        return jsonify(alt_names=names)
-    album.alt_names = [AlbumAltName(name=n) for n in names]
+        lang = (item.get('native_lang') or '').strip().lower() or None
+        if lang not in (None, 'ja', 'ko'):
+            abort(400)
+        if lang is not None:
+            if lang in used_langs:
+                abort(400)
+            used_langs.add(lang)
+        alt_names.append((name, lang))
+
+    def _out():
+        return jsonify(alt_names=[{'name': n, 'native_lang': l} for n, l in alt_names])
+    current = sorted((a.name, a.native_lang) for a in album.alt_names)
+    if current == sorted(alt_names):
+        return _out()
+    album.alt_names = [AlbumAltName(name=n, native_lang=l) for n, l in alt_names]
     album.last_updated = datetime.now(timezone.utc).isoformat()
     log_change(current_user, f'Updated alternate names for "{album.name}" album', album=album)
     db.session.commit()
-    return jsonify(alt_names=names)
+    return _out()
 
 
 @edit_bp.route('/album/<int:album_id>/move-artist', methods=['POST'])

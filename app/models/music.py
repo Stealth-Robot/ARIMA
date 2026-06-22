@@ -225,6 +225,24 @@ class Album(db.Model):
                                 order_by='AlbumAltName.id',
                                 cascade='all, delete-orphan')
 
+    def display_name(self, native_ja=False, native_kr=False):
+        """Title to show given a viewer's native-display toggles.
+
+        Korean wins when an album has both native names and both toggles are on.
+        Falls back to the main name when no matching native alt name exists.
+        """
+        ja = kr = None
+        for a in self.alt_names:
+            if a.native_lang == 'ko':
+                kr = a.name
+            elif a.native_lang == 'ja':
+                ja = a.name
+        if native_kr and kr:
+            return kr
+        if native_ja and ja:
+            return ja
+        return self.name
+
 
 class AlbumAltName(db.Model):
     __tablename__ = 'album_alt_name'
@@ -232,11 +250,17 @@ class AlbumAltName(db.Model):
     album_id = db.Column(db.Integer, db.ForeignKey('album.id', ondelete='CASCADE'),
                          nullable=False)
     name = db.Column(db.Text, nullable=False)
+    # NULL = plain searchable alt name; 'ja' = native Japanese; 'ko' = native Korean.
+    native_lang = db.Column(db.Text)
 
     album = db.relationship('Album', back_populates='alt_names')
 
     __table_args__ = (
         db.Index('ix_album_alt_name_album_id', 'album_id'),
+        db.Index('ux_album_alt_name_native_ja', 'album_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'ja'")),
+        db.Index('ux_album_alt_name_native_ko', 'album_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'ko'")),
     )
 
 

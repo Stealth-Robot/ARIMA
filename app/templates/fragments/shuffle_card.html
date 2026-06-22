@@ -23,7 +23,7 @@
                         <a href="{{ artist_url }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); font-size: 1.1875rem; line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
                     </div>
                     <div class="text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        {{ album.name }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}
+                        {{ album_display_name(album) }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}
                     </div>
                 </td>
                 {% for u in users %}
