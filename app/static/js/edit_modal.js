@@ -78,6 +78,10 @@ function _emLabeledInput(container, field, data) {
     if (field.placeholder) inp.placeholder = field.placeholder;
     inp.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;' + (field.hint ? '' : ' margin-bottom:0.75rem;');
     container.appendChild(inp);
+    if (field.dateFormat && typeof applyDateFormat === 'function') {
+        inp.setAttribute('data-date-format', '');
+        applyDateFormat(inp);
+    }
     if (field.hint) {
         var h = document.createElement('div');
         h.textContent = field.hint;
@@ -652,7 +656,7 @@ function albumEditConfig(albumId, albumName) {
                 onConvert: function(v) { altWidget.addName(v, ''); },
                 onChange: function() { updateSaveState(); },
             });
-            var dateInput = ui.labeledInput(bodyArea, { label: 'Release Date', key: 'release_date', placeholder: 'YYYY-MM-DD' }, data);
+            var dateInput = ui.labeledInput(bodyArea, { label: 'Release Date', key: 'release_date', placeholder: 'YYYY-MM-DD', dateFormat: true }, data);
             altWidget = ui.aliasListField(bodyArea, { key: 'alt_names', label: 'Alternate Names' }, data);
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/…' }, data);
 
