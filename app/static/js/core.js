@@ -792,6 +792,11 @@ function _setupDateGuide(input, pattern) {
         guide.style.borderWidth = cs.borderWidth;
         guide.style.borderStyle = 'solid';
         guide.style.borderColor = 'transparent';
+        // Match the input's own height, not the wrapper's — the wrapper also
+        // contains the input's bottom margin, which would make a height:100%
+        // guide taller and (since inputs vertically center text) push the
+        // pattern below the real placeholder.
+        guide.style.height = input.offsetHeight + 'px';
     });
 
     function updateGuide() {
@@ -822,29 +827,115 @@ function applyDateFormat(input) {
     input.type = 'text';
     input.placeholder = 'yyyy-mm-dd';
     input.maxLength = 10;
+    input.setAttribute('inputmode', 'numeric');
     input.style.fontFamily = 'monospace';
 
     var updateGuide = _setupDateGuide(input, 'yyyy-mm-dd');
 
-    input.addEventListener('input', function() {
-        var raw = this.value;
-        var pos = this.selectionStart;
-        // Count digits before cursor in the old value
-        var digitsBefore = (raw.slice(0, pos).match(/[0-9]/g) || []).length;
-        var v = raw.replace(/[^0-9]/g, '');
-        if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
-        if (v.length > 7) v = v.slice(0, 7) + '-' + v.slice(7);
-        if (v.length > 10) v = v.slice(0, 10);
-        this.value = v;
-        this.style.borderColor = '';
-        // Restore cursor: find position after the same number of digits
-        var newPos = 0;
-        var count = 0;
-        while (newPos < v.length && count < digitsBefore) {
-            if (/[0-9]/.test(v[newPos])) count++;
-            newPos++;
+    // The field is modelled as up to 8 digits; the dashes are structural and
+    // can never be typed, deleted, selected past, or landed on — every edit is
+    // expressed in digit-space, so `.value` stays a clean YYYY-MM-DD string.
+    function fmt(d) {
+        var s = d.slice(0, 4);
+        if (d.length > 4) s += '-' + d.slice(4, 6);
+        if (d.length > 6) s += '-' + d.slice(6, 8);
+        return s;
+    }
+    // How many digits sit to the left of char offset `off` in `value`.
+    function digIdxAt(value, off) {
+        return (value.slice(0, off).match(/[0-9]/g) || []).length;
+    }
+    // Char offset for a caret sitting after `k` digits, glued to the right of
+    // any dash that follows so the next keystroke lands in the next group.
+    function caretChar(F, k) {
+        if (k <= 0) return 0;
+        var seen = 0;
+        for (var i = 0; i < F.length; i++) {
+            if (/[0-9]/.test(F[i])) {
+                seen++;
+                if (seen === k) {
+                    var off = i + 1;
+                    if (F[off] === '-') off++;
+                    return off;
+                }
+            }
         }
-        this.setSelectionRange(newPos, newPos);
+        return F.length;
+    }
+    function commit(d, caretDigits) {
+        d = d.replace(/[^0-9]/g, '').slice(0, 8);
+        var F = fmt(d);
+        input.value = F;
+        input.style.borderColor = '';
+        var c = caretChar(F, Math.max(0, Math.min(caretDigits, d.length)));
+        try { input.setSelectionRange(c, c); } catch (e) {}
+        updateGuide();
+    }
+
+    input.addEventListener('beforeinput', function(e) {
+        var t = e.inputType || '';
+        var val = this.value;
+        var ds = digIdxAt(val, this.selectionStart);
+        var de = digIdxAt(val, this.selectionEnd);
+        var digits = val.replace(/[^0-9]/g, '');
+        var isDelete = t.indexOf('delete') === 0;
+        var isInsert = t.indexOf('insert') === 0 || (!isDelete && e.data != null);
+
+        if (isInsert) {
+            e.preventDefault();
+            var text = e.data;
+            if (text == null && e.dataTransfer) text = e.dataTransfer.getData('text');
+            text = (text || '').replace(/[^0-9]/g, '');
+            commit(digits.slice(0, ds) + text + digits.slice(de), ds + text.length);
+        } else if (isDelete) {
+            e.preventDefault();
+            if (ds !== de) {
+                commit(digits.slice(0, ds) + digits.slice(de), ds);
+            } else if (t.indexOf('Forward') >= 0) {
+                commit(digits.slice(0, ds) + digits.slice(ds + 1), ds);
+            } else {
+                commit(digits.slice(0, Math.max(0, ds - 1)) + digits.slice(ds), Math.max(0, ds - 1));
+            }
+        }
+    });
+
+    // Keep caret movement in digit-space so arrows/Home/End hop over the dashes.
+    input.addEventListener('keydown', function(e) {
+        if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+        var val = this.value;
+        if (e.key === 'ArrowLeft' && this.selectionStart === this.selectionEnd) {
+            e.preventDefault();
+            var k = digIdxAt(val, this.selectionStart);
+            var c = caretChar(val, Math.max(0, k - 1));
+            this.setSelectionRange(c, c);
+        } else if (e.key === 'ArrowRight' && this.selectionStart === this.selectionEnd) {
+            e.preventDefault();
+            var k2 = digIdxAt(val, this.selectionStart);
+            var len = val.replace(/[^0-9]/g, '').length;
+            var c2 = caretChar(val, Math.min(len, k2 + 1));
+            this.setSelectionRange(c2, c2);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            this.setSelectionRange(0, 0);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            this.setSelectionRange(val.length, val.length);
+        }
+    });
+
+    // Fallback for programmatic value sets (other code does
+    // `el.value = '2023-06-13'; el.dispatchEvent(new Event('input'))`) and any
+    // path that bypasses beforeinput — reformat idempotently.
+    input.addEventListener('input', function() {
+        var val = this.value;
+        var f = fmt(val.replace(/[^0-9]/g, '').slice(0, 8));
+        if (f !== val) {
+            var k = digIdxAt(val, this.selectionStart);
+            this.value = f;
+            var c = caretChar(f, Math.min(k, f.replace(/[^0-9]/g, '').length));
+            try { this.setSelectionRange(c, c); } catch (e) {}
+        }
+        this.style.borderColor = '';
         updateGuide();
     });
 

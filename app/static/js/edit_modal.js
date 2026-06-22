@@ -251,7 +251,10 @@ function openEditModal(config) {
     title.style.cssText = 'font-size:1rem; font-weight:600; color:var(--text-primary); margin-bottom:0.75rem; word-wrap:break-word;';
     modal.appendChild(title);
     var bodyArea = document.createElement('div');
-    bodyArea.style.cssText = 'overflow-y:auto; flex:1; padding-right:1.25rem; margin-right:-0.75rem; scrollbar-gutter:stable;';
+    // padding-left + matching negative margin keeps the fields visually aligned
+    // while giving inputs clip-safe room on the left, so the scroll container's
+    // overflow clip no longer cuts off focus rings / selection highlights there.
+    bodyArea.style.cssText = 'overflow-y:auto; flex:1; padding-left:0.5rem; margin-left:-0.5rem; padding-right:1.25rem; margin-right:-0.75rem; scrollbar-gutter:stable;';
     bodyArea.textContent = 'Loading…';
     modal.appendChild(bodyArea);
     var footerArea = document.createElement('div');
