@@ -1126,6 +1126,24 @@ def search_songs():
     _require_edit_mode()
     q = request.args.get('q', '').strip()
     exclude_id = request.args.get('exclude', type=int)
+    # Look up the kept song's name and main artist so exact-name and same-artist
+    # matches can be ordered first and survive the LIMIT below.
+    kept_name = None
+    kept_artist_id = None
+    if exclude_id:
+        kept = db.session.execute(db.text(
+            'SELECT s.name, ars.artist_id '
+            'FROM song s '
+            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
+            'WHERE s.id = :sid LIMIT 1'
+        ), {'sid': exclude_id}).fetchone()
+        if kept:
+            kept_name = kept[0]
+            kept_artist_id = kept[1]
+    prioritize = (
+        'CASE WHEN :kept_name IS NOT NULL AND lower(s.name) = lower(:kept_name) THEN 0 ELSE 1 END, '
+        'CASE WHEN :kept_artist_id IS NOT NULL AND ar.id = :kept_artist_id THEN 0 ELSE 1 END, '
+    )
     if q:
         like = f'%{q}%'
         rows = db.session.execute(db.text(
@@ -1137,9 +1155,9 @@ def search_songs():
             'JOIN album al ON al.id = als.album_id '
             'WHERE (s.name LIKE :like OR ar.name LIKE :like '
             'OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :like)) '
-            'ORDER BY ar.name, s.name '
+            'ORDER BY ' + prioritize + 'ar.name, s.name '
             'LIMIT 100'
-        ), {'like': like}).fetchall()
+        ), {'like': like, 'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
     else:
         rows = db.session.execute(db.text(
             'SELECT s.id, s.name, ar.name, ar.id, al.name '
@@ -1148,9 +1166,9 @@ def search_songs():
             'JOIN artist ar ON ar.id = ars.artist_id '
             'JOIN album_song als ON als.song_id = s.id '
             'JOIN album al ON al.id = als.album_id '
-            'ORDER BY ar.name, s.name '
+            'ORDER BY ' + prioritize + 'ar.name, s.name '
             'LIMIT 100'
-        )).fetchall()
+        ), {'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
     seen_ids = set()
     results = []
     for r in rows:
