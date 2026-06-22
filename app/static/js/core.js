@@ -718,6 +718,12 @@ function formatUtcDates(root) {
     (root || document).querySelectorAll('.changelog-date').forEach(function(td) {
         var utc = td.dataset.utc;
         if (!utc) return;
+        // Treat designator-less timestamps (e.g. trigger-written
+        // "2026-06-22T13:15:28") as UTC; without a 'Z'/offset the browser
+        // would parse them as local time and skip the timezone conversion.
+        if (/\d{2}:\d{2}/.test(utc) && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(utc)) {
+            utc = utc + 'Z';
+        }
         var d = new Date(utc);
         if (isNaN(d)) return;
         var pad = function(n) { return n < 10 ? '0' + n : n; };
