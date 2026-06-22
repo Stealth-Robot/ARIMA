@@ -116,6 +116,7 @@ function _emNameListField(container, field, data) {
     addBtn.onclick = function() { addRow(''); };
     container.appendChild(addBtn);
     return {
+        addName: function(name) { addRow(name); },
         collect: function() {
             var out = [], seen = {};
             var rows = wrap.children;
@@ -132,6 +133,99 @@ function _emNameListField(container, field, data) {
             return out;
         }
     };
+}
+
+/* One row per alternative name — text box + Native JP/KR <select> + remove button.
+   data[field.key] is an array of { name, native_lang } (native_lang null/''/'ja'/'ko').
+   Returns { addName, collect }: addName(name, lang) appends a row; collect() yields the
+   trimmed, case-insensitively de-duped rows as [{ name, native_lang }]. */
+function _emAliasListField(container, field, data) {
+    var l = document.createElement('div');
+    l.textContent = field.label;
+    l.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
+    container.appendChild(l);
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex; flex-direction:column; gap:0.375rem; margin-bottom:0.5rem;';
+    container.appendChild(wrap);
+    function addRow(name, lang) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:0.375rem; align-items:center;';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.value = name || ''; inp.placeholder = field.placeholder || 'Alternative name';
+        inp.className = 'alias-name';
+        inp.style.cssText = 'flex:1; min-width:0; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem 0.5rem; font-size:0.875rem; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+        var sel = document.createElement('select');
+        sel.className = 'alias-lang';
+        sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem; font-size:0.8125rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
+        [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+            var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
+            if (o[0] === (lang || '')) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        var del = _emBtn('✕', 'secondary');
+        del.style.padding = '0.375rem 0.625rem';
+        del.onclick = function() { wrap.removeChild(row); };
+        row.appendChild(inp); row.appendChild(sel); row.appendChild(del);
+        wrap.appendChild(row);
+    }
+    (data[field.key] || []).forEach(function(a) { addRow(a.name, a.native_lang); });
+    var addBtn = _emBtn('+ Add name', 'secondary');
+    addBtn.style.cssText += 'margin-bottom:0.875rem;';
+    addBtn.onclick = function() { addRow('', ''); };
+    container.appendChild(addBtn);
+    return {
+        addName: function(name, lang) { addRow(name, lang); },
+        collect: function() {
+            var out = [], seen = {};
+            var rows = wrap.children;
+            for (var i = 0; i < rows.length; i++) {
+                var nm = rows[i].querySelector('.alias-name');
+                var lg = rows[i].querySelector('.alias-lang');
+                if (!nm) continue;
+                var v = nm.value.trim();
+                if (!v) continue;
+                var key = v.toLowerCase();
+                if (seen[key]) continue;
+                seen[key] = 1;
+                out.push({ name: v, native_lang: lg && lg.value ? lg.value : null });
+            }
+            return out;
+        }
+    };
+}
+
+/* Labelled title <input> with a small "convert title to alternative name" button to
+   its right. Clicking the button hands the current trimmed value to opts.onConvert
+   (which appends it to the entity's alternate-names list), clears the input, and
+   notifies opts.onChange so the caller can block Save until the title is refilled.
+   The input also fires opts.onChange on every keystroke. Returns the input element. */
+function _emTitleConvertField(container, labelText, value, opts) {
+    var l = document.createElement('div');
+    l.textContent = labelText;
+    l.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.25rem;';
+    container.appendChild(l);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:0.375rem; align-items:center; margin-bottom:0.75rem;';
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.value = value || '';
+    inp.style.cssText = 'flex:1; min-width:0; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box;';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '🔄';
+    btn.title = 'Convert the title to an alternative name';
+    btn.style.cssText = 'flex-shrink:0; padding:0.375rem 0.5rem; font-size:1rem; line-height:1; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; background:var(--bg-primary,#fff); color:var(--text-primary); cursor:pointer;';
+    btn.onclick = function() {
+        var v = inp.value.trim();
+        if (!v) return;
+        opts.onConvert(v);
+        inp.value = '';
+        inp.focus();
+        if (opts.onChange) opts.onChange();
+    };
+    row.appendChild(inp); row.appendChild(btn);
+    container.appendChild(row);
+    if (opts.onChange) inp.addEventListener('input', opts.onChange);
+    return inp;
 }
 
 /* ----------------------------------------------------------------------------
@@ -179,7 +273,9 @@ function openEditModal(config) {
         ensure: _emEnsure,
         infoRow: _emInfoRow,
         labeledInput: _emLabeledInput,
+        titleConvertField: _emTitleConvertField,
         nameListField: _emNameListField,
+        aliasListField: _emAliasListField,
         close: closeMobileModal,
         doClose: doClose,
         reload: function() { window.location.reload(); },
@@ -514,7 +610,11 @@ function albumEditConfig(albumId, albumName) {
                 bodyArea.appendChild(meta);
             }
             if (data.alt_names && data.alt_names.length) {
-                bodyArea.appendChild(ui.infoRow('Alternate Names', data.alt_names.join(', ')));
+                var altText = data.alt_names.map(function(a) {
+                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : '');
+                    return a.name + tag;
+                }).join(', ');
+                bodyArea.appendChild(ui.infoRow('Alternate Names', altText));
             }
             if (data.songs.length) {
                 var listWrap = document.createElement('div');
@@ -541,16 +641,28 @@ function albumEditConfig(albumId, albumName) {
             var songs = data.songs;
             var songListContainer = null;
 
-            var nameInput = ui.labeledInput(bodyArea, { label: 'Album Name', key: 'name' }, data);
+            var altWidget;
+            function updateSaveState() {
+                var empty = !nameInput.value.trim();
+                saveBtn.disabled = empty;
+                saveBtn.style.opacity = empty ? '0.5' : '1';
+                saveBtn.style.cursor = empty ? 'default' : 'pointer';
+            }
+            var nameInput = ui.titleConvertField(bodyArea, 'Album Name', data.name, {
+                onConvert: function(v) { altWidget.addName(v, ''); },
+                onChange: function() { updateSaveState(); },
+            });
             var dateInput = ui.labeledInput(bodyArea, { label: 'Release Date', key: 'release_date', placeholder: 'YYYY-MM-DD' }, data);
+            altWidget = ui.aliasListField(bodyArea, { key: 'alt_names', label: 'Alternate Names' }, data);
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/…' }, data);
-            var altWidget = ui.nameListField(bodyArea, { key: 'alt_names', label: 'Alternate Names', endpoint: pfx + '/alt-names' }, data);
 
             var saveRow = document.createElement('div');
             saveRow.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end; margin-bottom:0.375rem;';
             var cancelBtn = ui.btn('Cancel', 'secondary'); cancelBtn.onclick = ui.showInfo;
             var saveBtn = ui.btn('Save', 'primary');
+            updateSaveState();
             saveBtn.onclick = function() {
+                if (saveBtn.disabled) return;
                 var promises = [];
                 if (nameInput.value.trim() && nameInput.value.trim() !== data.name) {
                     promises.push(fetch(pfx + '/name', { method: 'POST', headers: ui.headers(), body: 'value=' + encodeURIComponent(nameInput.value.trim()) })
@@ -566,10 +678,13 @@ function albumEditConfig(albumId, albumName) {
                 }
                 var altNames = altWidget.collect();
                 var prevAlt = data.alt_names || [];
-                var altChanged = altNames.length !== prevAlt.length || altNames.some(function(n, i) { return n !== prevAlt[i]; });
+                var altChanged = altNames.length !== prevAlt.length || altNames.some(function(a, i) {
+                    return !prevAlt[i] || a.name !== prevAlt[i].name || (a.native_lang || null) !== (prevAlt[i].native_lang || null);
+                });
                 if (altChanged) {
-                    promises.push(fetch(pfx + '/alt-names', { method: 'POST', headers: ui.headers(), body: 'value=' + encodeURIComponent(altNames.join('\n')) })
-                        .then(function(r) { if (r.ok) { data.alt_names = altNames; ui.markDirty(); } }));
+                    promises.push(fetch(pfx + '/alt-names', { method: 'POST', headers: ui.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ alt_names: altNames }) })
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(j) { if (j) { data.alt_names = j.alt_names || altNames; ui.markDirty(); } else ui.toast('Could not save alternate names — only one native JP and one native KR allowed.'); }));
                 }
                 Promise.all(promises).then(ui.showInfo);
             };
@@ -880,7 +995,16 @@ function songEditConfig(cell) {
             }
         },
         renderEditBody: function(bodyArea, data, ui) {
-            var nameInput = ui.labeledInput(bodyArea, { label: 'Song Name', key: 'name' }, data);
+            function updateSaveState() {
+                var empty = !nameInput.value.trim();
+                saveBtn.disabled = empty;
+                saveBtn.style.opacity = empty ? '0.5' : '1';
+                saveBtn.style.cursor = empty ? 'default' : 'pointer';
+            }
+            var nameInput = ui.titleConvertField(bodyArea, 'Song Name', data.name, {
+                onConvert: function(v) { addAliasRow(v, ''); },
+                onChange: function() { updateSaveState(); },
+            });
 
             var noteLabel = document.createElement('div');
             noteLabel.textContent = 'Note';
@@ -890,9 +1014,6 @@ function songEditConfig(cell) {
             textarea.value = data.note; textarea.rows = 3; textarea.placeholder = 'Add a note...';
             textarea.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5rem; font-size:0.875rem; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary); box-sizing:border-box; margin-bottom:0.875rem;';
             bodyArea.appendChild(textarea);
-
-            var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
-            var youtubeInput = ui.labeledInput(bodyArea, { label: 'YouTube URL', key: 'youtube_url', placeholder: 'https://…' }, data);
 
             // Flags — same lead-star + checkbox-toggle component as the album edit modal,
             // saved immediately on toggle and synced to any visible page tables/pills.
@@ -995,6 +1116,10 @@ function songEditConfig(cell) {
             addAliasBtn.style.cssText += 'margin-bottom:0.875rem;';
             addAliasBtn.onclick = function() { addAliasRow('', ''); };
             bodyArea.appendChild(addAliasBtn);
+
+            var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
+            var youtubeInput = ui.labeledInput(bodyArea, { label: 'YouTube URL', key: 'youtube_url', placeholder: 'https://…' }, data);
+
             function collectAliases() {
                 var out = [];
                 var rows = aliasWrap.children;
@@ -1020,7 +1145,9 @@ function songEditConfig(cell) {
             };
             var cancelBtn = ui.btn('Cancel', 'secondary'); cancelBtn.onclick = function() { ui.showInfo(); };
             var saveBtn = ui.btn('Save', 'primary');
+            updateSaveState();
             saveBtn.onclick = function() {
+                if (saveBtn.disabled) return;
                 var newName = nameInput.value.trim();
                 var nameChanged = newName && newName !== data.name;
                 var noteVal = textarea.value.trim();
