@@ -191,10 +191,84 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        # 4. One-time correction of the broken artist-creator proxy backfill.
+        _reset_proxy_artist_creators()
+
         db.session.commit()
     except Exception:
         db.session.rollback()
         logger.exception('Startup migration failed (DB may not exist yet)')
+
+
+# Artists with an explicit "Created/Added <X> tab" entry in the original
+# spreadsheet changelogs — the only founding artists with a real creator of
+# record. Matched case-insensitively by name; kept as-is by the reset below.
+_SPREADSHEET_VERIFIED_CREATORS = {
+    'doja cat', 'lølø', 'maggie lindemann', 'lexie liu', 'billie eilish',
+    'latency', 'yuna', 'xg', 'inseong', 'kino', 'yeonjun', 'kang yuchan',
+    'alpha drive one', 'chrocktikal', 'artms', 'loossemble',
+}
+
+
+def _reset_proxy_artist_creators():
+    """Undo the bad creator-proxy backfill (one-time).
+
+    The earlier backfill (commit 5f39605) guessed a creator for every
+    spreadsheet-seeded artist from its earliest in-app changelog editor. But the
+    in-app changelog only begins after the spreadsheet era, so that "editor" is
+    just whoever first touched the artist in the app — not who created it (e.g.
+    ~255 artists were miscredited to a single early editor). The source
+    spreadsheets hold no creator-of-record for these founding artists, so they
+    are reset to System (id 0) and surface in the "artists without a creator"
+    view for manual attribution.
+
+    Founding artists are identified as those WITHOUT an in-app creation changelog
+    entry ('Added "<name>" artist with ...', the only artist-creation path). This
+    correctly spares genuinely in-app-created artists and subunits (which carry
+    that entry and a real creator) and needs no access to the spreadsheets, so it
+    is production-portable. The 16 artists with an explicit spreadsheet
+    "Created <X> tab" record keep their verified creator.
+
+    Guarded by a one-time flag so a later manual attribution is never clobbered.
+    """
+    tables = {row[0] for row in db.session.execute(db.text(
+        "SELECT name FROM sqlite_master WHERE type='table'"))}
+    if not {'artist', 'changelog'} <= tables:
+        return
+
+    db.session.execute(db.text(
+        'CREATE TABLE IF NOT EXISTS migration_flag (key TEXT PRIMARY KEY, applied_at TEXT)'))
+    already = db.session.execute(db.text(
+        "SELECT 1 FROM migration_flag WHERE key = 'reset_proxy_artist_creators'")).scalar()
+    if already:
+        return
+
+    # Resolve the verified-creator names to ids in Python: SQLite's lower() is
+    # ASCII-only and won't fold names like "LØLØ", so do the case-insensitive
+    # match here where str.lower() handles Unicode correctly.
+    keep_ids = [row[0] for row in db.session.execute(db.text('SELECT id, name FROM artist'))
+                if (row[1] or '').lower() in _SPREADSHEET_VERIFIED_CREATORS]
+    keep_clause = ''
+    params = {}
+    if keep_ids:
+        placeholders = ', '.join(f':id{i}' for i in range(len(keep_ids)))
+        params = {f'id{i}': aid for i, aid in enumerate(keep_ids)}
+        keep_clause = f'AND id NOT IN ({placeholders})'
+    result = db.session.execute(db.text(f"""
+        UPDATE artist
+        SET submitted_by_id = 0
+        WHERE submitted_by_id NOT IN (0)
+          {keep_clause}
+          AND NOT EXISTS (
+            SELECT 1 FROM changelog c
+            WHERE c.artist_id = artist.id
+              AND c.description LIKE 'Added "%" artist with %'
+          )
+    """), params)
+    db.session.execute(db.text(
+        "INSERT INTO migration_flag (key, applied_at) "
+        "VALUES ('reset_proxy_artist_creators', datetime('now'))"))
+    logger.info('Reset proxy creator on %d founding artists to System', result.rowcount)
 
 
 def _parse_misc_artists(text):
