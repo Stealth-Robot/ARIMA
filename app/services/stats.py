@@ -2,6 +2,7 @@
 
 import os
 import math
+import threading
 import time
 from collections import defaultdict
 
@@ -14,6 +15,11 @@ SUBUNIT = 0
 
 # Wall-clock time this module was imported — close enough to process start for uptime.
 _PROCESS_START = time.time()
+
+# Cap concurrent _BulkData builds. Each build transiently allocates ~60-70MB on
+# top of its ~40MB retained result; with 11 worker threads, unbounded concurrent
+# builds could stack into an OOM at the 500MB limit. 3 permits bounds the spike.
+_BUILD_SEMAPHORE = threading.Semaphore(2)
 
 
 def get_app_ops_stats():
@@ -108,36 +114,33 @@ class _BulkData:
                 ).filter(album_genres.c.genre_id == ost_genre.id).all()}
             else:
                 self._ost_song_ids = set()
-            self._anime_artist_ids = {a.id for a in Artist.query.filter_by(gender_id=3).all()}
+            self._anime_artist_ids = {row[0] for row in db.session.query(Artist.id).filter(Artist.gender_id == 3).all()}
         else:
             self._ost_song_ids = None
             self._anime_artist_ids = set()
 
         # 1. Artist-song mappings (still needed for song_id resolution)
+        as_q = db.session.query(ArtistSong.artist_id, ArtistSong.song_id, ArtistSong.artist_is_main)
         if scoped:
-            all_as = ArtistSong.query.filter(ArtistSong.artist_id.in_(artist_ids)).all()
-        else:
-            all_as = ArtistSong.query.all()
+            as_q = as_q.filter(ArtistSong.artist_id.in_(artist_ids))
         self.artist_songs = defaultdict(set)
         self.artist_main_songs = defaultdict(set)
-        for row in all_as:
-            self.artist_songs[row.artist_id].add(row.song_id)
-            if row.artist_is_main:
-                self.artist_main_songs[row.artist_id].add(row.song_id)
+        for artist_id, song_id, is_main in as_q.all():
+            self.artist_songs[artist_id].add(song_id)
+            if is_main:
+                self.artist_main_songs[artist_id].add(song_id)
 
         # 2. Subunit relationships
+        rels_q = db.session.query(ArtistArtist.artist_1, ArtistArtist.artist_2).filter(
+            ArtistArtist.relationship == SUBUNIT)
         if scoped:
-            all_rels = ArtistArtist.query.filter(
-                ArtistArtist.relationship == SUBUNIT,
-                db.or_(ArtistArtist.artist_1.in_(artist_ids), ArtistArtist.artist_2.in_(artist_ids))
-            ).all()
-        else:
-            all_rels = ArtistArtist.query.filter_by(relationship=SUBUNIT).all()
+            rels_q = rels_q.filter(
+                db.or_(ArtistArtist.artist_1.in_(artist_ids), ArtistArtist.artist_2.in_(artist_ids)))
         self.subunit_ids = set()
         self.children = defaultdict(list)
-        for rel in all_rels:
-            self.subunit_ids.add(rel.artist_2)
-            self.children[rel.artist_1].append(rel.artist_2)
+        for artist_1, artist_2 in rels_q.all():
+            self.subunit_ids.add(artist_2)
+            self.children[artist_1].append(artist_2)
 
         # 3. Remix song IDs
         if not include_remixes:
@@ -145,11 +148,11 @@ class _BulkData:
             for song_ids in self.artist_songs.values():
                 all_song_ids |= song_ids
             if scoped and all_song_ids:
-                self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True, Song.id.in_(all_song_ids)).all()}
+                self.remix_ids = {row[0] for row in db.session.query(Song.id).filter(Song.is_remix == True, Song.id.in_(all_song_ids)).all()}
             elif scoped:
                 self.remix_ids = set()
             else:
-                self.remix_ids = {s.id for s in Song.query.filter(Song.is_remix == True).all()}
+                self.remix_ids = {row[0] for row in db.session.query(Song.id).filter(Song.is_remix == True).all()}
             # Keep remixes the viewer has rated visible (opt-in 'show rated remixes')
             if keep_remix_ids:
                 self.remix_ids -= keep_remix_ids
@@ -162,11 +165,11 @@ class _BulkData:
             for song_ids in self.artist_songs.values():
                 all_song_ids |= song_ids
             if scoped and all_song_ids:
-                self.cover_ids = {s.id for s in Song.query.filter(Song.is_cover == True, Song.id.in_(all_song_ids)).all()}
+                self.cover_ids = {row[0] for row in db.session.query(Song.id).filter(Song.is_cover == True, Song.id.in_(all_song_ids)).all()}
             elif scoped:
                 self.cover_ids = set()
             else:
-                self.cover_ids = {s.id for s in Song.query.filter(Song.is_cover == True).all()}
+                self.cover_ids = {row[0] for row in db.session.query(Song.id).filter(Song.is_cover == True).all()}
         else:
             self.cover_ids = set()
 
@@ -234,7 +237,8 @@ class _BulkData:
                     all_songs_query = all_songs_query.filter(Song.is_remix == False)
             if not include_covers:
                 all_songs_query = all_songs_query.filter(Song.is_cover == False)
-            self.all_song_ids = {s.id for s in all_songs_query.all()}
+            all_songs_query = all_songs_query.with_entities(Song.id)
+            self.all_song_ids = {row[0] for row in all_songs_query.all()}
             if not include_featured and self.all_main_song_ids is not None:
                 self.all_song_ids &= self.all_main_song_ids
         if self._genre_song_ids is not None:
@@ -409,7 +413,8 @@ def _overall_score_stats(users, bulk, artists=None):
 
 def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
     """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
-    return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
+    with _BUILD_SEMAPHORE:
+        return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
 
 
 def get_artist_stats(artist_id, users, bulk):
