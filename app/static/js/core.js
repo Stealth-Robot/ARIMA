@@ -1103,6 +1103,16 @@ function highlightRow(tr, fast) {
         el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         highlightRow(el);
     }
+    // Run once the DOM is parsed — deferred so it fires after the inline
+    // collapse-state restore (also a DOMContentLoaded handler), which can hide the
+    // target row. Don't gate this on `load`: on mobile that event waits on slow
+    // album-art images and can effectively never fire, leaving hash links from
+    // search unable to expand/scroll to their song. `load` stays as a late backstop.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(highlightHash, 0); });
+    } else {
+        setTimeout(highlightHash, 0);
+    }
     window.addEventListener('load', highlightHash);
     window.addEventListener('hashchange', highlightHash);
 })();

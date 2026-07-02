@@ -377,6 +377,13 @@ function _miscCollapseAll() {
         });
     }
 
+    // Run at DOM-ready rather than waiting on `load`, which on mobile can hang on
+    // slow images and leave a song link from search never expanding/scrolling.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(handleHash, 0); });
+    } else {
+        setTimeout(handleHash, 0);
+    }
     window.addEventListener('load', handleHash);
     window.addEventListener('hashchange', handleHash);
 })();
