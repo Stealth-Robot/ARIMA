@@ -117,6 +117,18 @@ BYPASS_FILTERS = {
 }
 
 
+def _viewer_native_toggles():
+    """(native_ja, native_ko) for the viewer, mirroring inject_song_display."""
+    if not current_user.is_authenticated:
+        return False, False
+    if not current_user.is_system_or_guest and current_user.settings:
+        s = current_user.settings
+        return (bool(getattr(s, 'display_native_ja', False)),
+                bool(getattr(s, 'display_native_ko', False)))
+    return (bool(session.get('display_native_ja', False)),
+            bool(session.get('display_native_ko', False)))
+
+
 def _build_misc_shell(bypass_filters=False):
     """Build lightweight page shell: country list with song counts, no song data."""
     from app.services.stats import get_display_users
@@ -234,6 +246,28 @@ def _build_country_data(country_id, bypass_filters=False):
             song_album_map[sid] = {
                 'id': alid, 'name': al_name, 'release_date': al_date, 'album_type_id': al_type,
             }
+
+    # Precompute each album's display name (native JP/KR per the viewer's toggles) here,
+    # since the row.album passed to the template is a plain dict, not an Album ORM object.
+    native_ja, native_ko = _viewer_native_toggles()
+    album_native = defaultdict(dict)
+    album_ids = {info['id'] for info in song_album_map.values()}
+    if album_ids and (native_ja or native_ko):
+        for aid, lang, aname in db.session.query(
+            AlbumAltName.album_id, AlbumAltName.native_lang, AlbumAltName.name,
+        ).filter(
+            AlbumAltName.album_id.in_(album_ids),
+            AlbumAltName.native_lang.in_(('ja', 'ko')),
+        ).all():
+            album_native[aid][lang] = aname
+    for info in song_album_map.values():
+        native = album_native.get(info['id'], {})
+        if native_ko and native.get('ko'):
+            info['display_name'] = native['ko']
+        elif native_ja and native.get('ja'):
+            info['display_name'] = native['ja']
+        else:
+            info['display_name'] = info['name']
 
     ratings_rows = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
     ratings_map = defaultdict(dict)
