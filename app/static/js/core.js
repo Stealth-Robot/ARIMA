@@ -825,7 +825,9 @@ function applyDateFormat(input) {
     if (input._dateFormatApplied) return;
     input._dateFormatApplied = true;
     input.type = 'text';
-    input.placeholder = 'yyyy-mm-dd';
+    // The guide overlay already shows the yyyy-mm-dd format; a placeholder too
+    // renders it twice. Clear it (also drops any template-set placeholder).
+    input.placeholder = '';
     input.maxLength = 10;
     input.setAttribute('inputmode', 'numeric');
     input.style.fontFamily = 'monospace';
@@ -949,7 +951,8 @@ function applyDateTimeFormat(input) {
     if (input._dateFormatApplied) return;
     input._dateFormatApplied = true;
     input.type = 'text';
-    input.placeholder = 'YYYY-MM-DD HH:MM';
+    // Guide overlay already shows the format; a placeholder too renders it twice.
+    input.placeholder = '';
     input.maxLength = 16;
     input.style.fontFamily = 'monospace';
 
