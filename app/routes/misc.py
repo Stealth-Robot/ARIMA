@@ -514,6 +514,28 @@ def add_misc_song():
     if not genre_ids:
         return json.dumps({'error': 'At least one genre is required'}), 400, {'Content-Type': 'application/json'}
 
+    # Optional alternative names — same rules as /edit/song/<id>/aliases:
+    # dedupe case-insensitively; at most one native 'ja' and one native 'ko'.
+    aliases = []
+    seen_alias = set()
+    used_langs = set()
+    for item in data.get('aliases', []):
+        name = (item.get('name') or '').strip()
+        if not name:
+            continue
+        key = name.lower()
+        if key in seen_alias:
+            continue
+        seen_alias.add(key)
+        lang = (item.get('native_lang') or '').strip().lower() or None
+        if lang not in (None, 'ja', 'ko'):
+            return json.dumps({'error': 'Invalid native language'}), 400, {'Content-Type': 'application/json'}
+        if lang is not None:
+            if lang in used_langs:
+                return json.dumps({'error': 'Only one native name per language'}), 400, {'Content-Type': 'application/json'}
+            used_langs.add(lang)
+        aliases.append((name, lang))
+
     song = Song(
         name=song_name,
         submitted_by_id=current_user.id,
@@ -550,6 +572,10 @@ def add_misc_song():
     # Song genres
     for gid in genre_ids:
         db.session.execute(song_genres.insert().values(song_id=song.id, genre_id=int(gid)))
+
+    # Alternative names
+    for name, lang in aliases:
+        db.session.add(SongAlias(song_id=song.id, name=name, native_lang=lang))
 
     log_change(current_user, f'Added "{song_name}" misc song', song=song)
     db.session.commit()

@@ -901,6 +901,49 @@ function _showAddMiscSong() {
     noteInp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:3rem;resize:vertical;';
     modal.appendChild(noteInp);
 
+    /* Alternative names (optional) */
+    modal.appendChild(_miscLabel('Alternative names (optional)'));
+    var aliasWrap = document.createElement('div');
+    aliasWrap.style.cssText = 'display:flex;flex-direction:column;gap:0.25rem;margin-bottom:0.25rem;';
+    modal.appendChild(aliasWrap);
+    function addAliasRow(name, lang) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:0.25rem;align-items:center;';
+        var aInp = document.createElement('input');
+        aInp.type = 'text'; aInp.value = name || ''; aInp.placeholder = 'Alternative name';
+        aInp.className = 'misc-alias-name';
+        aInp.style.cssText = 'flex:1;min-width:0;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;';
+        var sel = document.createElement('select');
+        sel.className = 'misc-alias-lang';
+        sel.style.cssText = 'font-size:0.75rem;padding:0.125rem 0.25rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);';
+        [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+            var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
+            if (o[0] === (lang || '')) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        var del = document.createElement('button');
+        del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
+        del.onclick = function() { aliasWrap.removeChild(row); };
+        row.appendChild(aInp); row.appendChild(sel); row.appendChild(del);
+        aliasWrap.appendChild(row);
+    }
+    var addAliasBtn = _miscBtn('+ Add name', 'var(--edit-on-button,#16a34a)', function() { addAliasRow('', ''); });
+    addAliasBtn.style.fontSize = '0.6875rem'; addAliasBtn.style.padding = '0.1875rem 0.5rem';
+    modal.appendChild(addAliasBtn);
+    function collectAliases() {
+        var out = [];
+        var rows = aliasWrap.children;
+        for (var i = 0; i < rows.length; i++) {
+            var nm = rows[i].querySelector('.misc-alias-name');
+            var lg = rows[i].querySelector('.misc-alias-lang');
+            if (!nm) continue;
+            var v = nm.value.trim();
+            if (!v) continue;
+            out.push({ name: v, native_lang: lg && lg.value ? lg.value : null });
+        }
+        return out;
+    }
+
     /* Misc artists */
     modal.appendChild(_miscLabel('Misc Artists *'));
     var maList = document.createElement('div');
@@ -1023,6 +1066,7 @@ function _showAddMiscSong() {
             }),
             real_artists: realArtists.map(function(a) { return {artist_id: a.artist_id, is_main: a.is_main}; }),
             genre_ids: selectedGenres,
+            aliases: collectAliases(),
         };
         saveBtn.disabled = true;
         fetch('/misc/add-song', {method:'POST', headers:_csrfJson(), body:JSON.stringify(payload)})
