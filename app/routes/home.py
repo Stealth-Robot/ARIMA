@@ -319,28 +319,38 @@ def toggle_hide_disbanded():
     return json.dumps({'hide_disbanded': settings.hide_disbanded_maintained}), 200, {'Content-Type': 'application/json'}
 
 
-def _shuffle_all_candidates():
+def _pick_random_all_song():
+    """Pick one random unrated (song, artist, album) at the SQL level.
+
+    Materializing the whole unrated catalog to random.choice one row was the
+    biggest per-request memory spike; ORDER BY RANDOM() LIMIT 1 keeps it in SQLite.
+    """
     rated_sq = db.session.query(Rating.song_id).filter(
-        Rating.user_id == current_user.id
-    ).subquery()
-    rows = (db.session.query(Song, Artist, Album)
-            .join(ArtistSong, db.and_(
-                ArtistSong.song_id == Song.id,
-                ArtistSong.artist_is_main == True,
-            ))
-            .join(Artist, Artist.id == ArtistSong.artist_id)
-            .join(AlbumSong, AlbumSong.song_id == Song.id)
-            .join(Album, Album.id == AlbumSong.album_id)
-            .outerjoin(rated_sq, Song.id == rated_sq.c.song_id)
-            .filter(rated_sq.c.song_id == None)
-            .all())
-    seen = set()
-    candidates = []
-    for song, artist, album in rows:
-        if song.id not in seen:
-            seen.add(song.id)
-            candidates.append((song, artist, album))
-    return candidates
+        Rating.user_id == current_user.id)
+    song_id = (db.session.query(Song.id)
+               .join(ArtistSong, and_(
+                   ArtistSong.song_id == Song.id,
+                   ArtistSong.artist_is_main == True))
+               .join(AlbumSong, AlbumSong.song_id == Song.id)
+               .filter(~Song.id.in_(rated_sq))
+               .distinct()
+               .order_by(func.random())
+               .limit(1)
+               .scalar())
+    if song_id is None:
+        return None
+    song = db.session.get(Song, song_id)
+    as_row = (db.session.query(ArtistSong.artist_id)
+              .filter(ArtistSong.song_id == song_id,
+                      ArtistSong.artist_is_main == True)
+              .first())
+    artist = db.session.get(Artist, as_row[0]) if as_row else None
+    alb_row = (db.session.query(AlbumSong.album_id)
+               .filter(AlbumSong.song_id == song_id).first())
+    album = db.session.get(Album, alb_row[0]) if alb_row else None
+    if not (song and artist and album):
+        return None
+    return song, artist, album
 
 
 def _render_shuffle_card(song, artist, album):
@@ -377,16 +387,19 @@ def shuffle():
     mode = request.args.get('mode', 'subscribed')
     try:
         if mode == 'all':
-            candidates = _shuffle_all_candidates()
-        else:
-            backlog, _ = _get_rating_backlog()
-            if not backlog:
+            picked = _pick_random_all_song()
+            if picked is None:
                 return '', 204
-            candidates = []
-            for artist, (_count, album_groups) in backlog:
-                for album, songs in album_groups:
-                    for song in songs:
-                        candidates.append((song, artist, album))
+            song, artist, album = picked
+            return _render_shuffle_card(song, artist, album)
+        backlog, _ = _get_rating_backlog()
+        if not backlog:
+            return '', 204
+        candidates = []
+        for artist, (_count, album_groups) in backlog:
+            for album, songs in album_groups:
+                for song in songs:
+                    candidates.append((song, artist, album))
         if not candidates:
             return '', 204
         song, artist, album = random.choice(candidates)

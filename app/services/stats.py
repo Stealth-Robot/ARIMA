@@ -201,12 +201,12 @@ class _BulkData:
                 Rating.rating.isnot(None),
             ).group_by(Rating.song_id, Rating.user_id).all()
 
-        # Build lookup: song_id → {user_id: {'count': n, 'sum': s}}
+        # Build lookup: song_id → {user_id: (count, sum)}. Tuples instead of dicts
+        # (and no parallel rated_by set — keys are the raters) cut this map's heap
+        # from ~33MB to ~11MB per cached entry.
         self.song_user_stats = defaultdict(dict)
-        self.song_rated_by = defaultdict(set)
         for song_id, user_id, cnt, total in agg_rows:
-            self.song_user_stats[song_id][user_id] = {'count': cnt, 'sum': total}
-            self.song_rated_by[song_id].add(user_id)
+            self.song_user_stats[song_id][user_id] = (cnt, total)
 
         # 5. All main song IDs (for featured filter)
         if not include_featured:
@@ -305,7 +305,7 @@ def _artist_completion_stats(artist_id, users, bulk):
     # Count ratings per user from pre-aggregated data
     user_rated = defaultdict(int)
     for sid in song_ids:
-        for uid in bulk.song_rated_by.get(sid, set()):
+        for uid in bulk.song_user_stats.get(sid, {}):
             user_rated[uid] += 1
 
     per_user = {}
@@ -349,9 +349,9 @@ def _artist_score_stats(artist_id, users, bulk):
     user_sum = defaultdict(float)
     user_count = defaultdict(int)
     for sid in song_ids:
-        for uid, stats in bulk.song_user_stats.get(sid, {}).items():
-            user_sum[uid] += stats['sum']
-            user_count[uid] += stats['count']
+        for uid, (cnt, total) in bulk.song_user_stats.get(sid, {}).items():
+            user_sum[uid] += total
+            user_count[uid] += cnt
 
     per_user = {}
     user_avgs = []
@@ -385,9 +385,9 @@ def _overall_score_stats(users, bulk, artists=None):
     user_sum = defaultdict(float)
     user_count = defaultdict(int)
     for sid in song_ids:
-        for uid, stats in bulk.song_user_stats.get(sid, {}).items():
-            user_sum[uid] += stats['sum']
-            user_count[uid] += stats['count']
+        for uid, (cnt, total) in bulk.song_user_stats.get(sid, {}).items():
+            user_sum[uid] += total
+            user_count[uid] += cnt
 
     per_user = {}
     user_avgs = []
@@ -453,7 +453,7 @@ def get_summary_stats(users, bulk, artists=None):
     # Count ratings per user across all relevant songs
     user_total_rated = defaultdict(int)
     for sid in relevant_song_ids:
-        for uid in bulk.song_rated_by.get(sid, set()):
+        for uid in bulk.song_user_stats.get(sid, {}):
             user_total_rated[uid] += 1
 
     user_scored_groups_80 = {u.id: 0 for u in users}
