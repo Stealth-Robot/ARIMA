@@ -456,7 +456,7 @@ function showMobilePicker(opts) {
             var q = input.value.trim();
             if (q.length < 2) { results.innerHTML = ''; return; }
             timer = setTimeout(function() {
-                fetch(opts.searchUrl(q), { headers: { 'Accept': 'application/json' } })
+                fetch(opts.searchUrl(q), { headers: _csrfHeaders({ 'Accept': 'application/json' }) })
                     .then(function(r) { return r.ok ? r.json() : []; })
                     .then(function(data) {
                         var items = opts.mapItems ? opts.mapItems(data) : data;

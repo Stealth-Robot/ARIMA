@@ -2336,7 +2336,7 @@ function albumSongSearch(artistId) {
     var q = input.value.trim();
     if (q.length < 2) { results.style.display = 'none'; return; }
 
-    fetch('/edit/artist/' + artistId + '/search-songs?q=' + encodeURIComponent(q))
+    fetch('/edit/artist/' + artistId + '/search-songs?q=' + encodeURIComponent(q), { headers: _csrfHeaders({ 'Accept': 'application/json' }) })
         .then(function(r) { return r.json(); })
         .then(function(songs) {
             if (!songs.length) {
