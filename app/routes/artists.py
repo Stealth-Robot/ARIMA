@@ -774,6 +774,7 @@ def song_info(song_id):
         'featured_artists': featured_artists,
         'albums': albums,
         'genres': [g.genre for g in song.genres],
+        'genre_ids': [g.id for g in song.genres],
         'is_lead': song.is_lead,
         'is_promoted': song.is_promoted,
         'is_cover': song.is_cover,

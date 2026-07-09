@@ -920,7 +920,7 @@ function songEditConfig(cell) {
         loader: function(done) {
             var seed = {
                 name: seedName, note: cell.getAttribute('data-song-note') || '',
-                main_artists: [], featured_artists: [], albums: [], genres: [],
+                main_artists: [], featured_artists: [], albums: [], genres: [], genre_ids: [],
                 is_lead: false, is_promoted: false, is_cover: false, is_remix: false,
                 spotify_url: '', youtube_url: '', aliases: [],
             };
@@ -932,7 +932,7 @@ function songEditConfig(cell) {
                         seed.name = d.name || seed.name;
                         seed.main_artists = d.main_artists || [];
                         seed.featured_artists = d.featured_artists || [];
-                        seed.albums = d.albums || []; seed.genres = d.genres || [];
+                        seed.albums = d.albums || []; seed.genres = d.genres || []; seed.genre_ids = d.genre_ids || [];
                         seed.is_lead = !!d.is_lead; seed.is_promoted = !!d.is_promoted;
                         seed.is_cover = !!d.is_cover; seed.is_remix = !!d.is_remix;
                         seed.note = d.note || ''; seed.spotify_url = d.spotify_url || ''; seed.youtube_url = d.youtube_url || '';
@@ -1232,6 +1232,18 @@ function songEditConfig(cell) {
             }
             _action('Move to album', 'secondary', function() { _albumSearch('Move to which album?', 'move-album'); });
             _action('Add to album', 'secondary', function() { _albumSearch('Add to which album?', 'add-to-album'); });
+            _action('Edit genres', 'secondary', function() {
+                ui.ensure('/lookups/genres', function(opts) {
+                    showMobilePicker({ title: 'Song genres', mode: 'multiselect',
+                        options: opts.map(function(g) { return { id: g.id, label: g.name }; }),
+                        selectedIds: data.genre_ids,
+                        onDone: function(ids) {
+                            fetch('/edit/song/' + songId + '/genres', { method: 'POST', headers: ui.headers(), body: 'genre_ids=' + ids.join(',') })
+                                .then(function(r) { return r.ok ? r.json() : null; })
+                                .then(function(names) { if (names) { data.genres = names; data.genre_ids = ids; ui.markDirty(); } });
+                        } });
+                });
+            });
             _action('Manage artists', 'secondary', function() {
                 closeMobileModal();
                 if (isMisc) {
