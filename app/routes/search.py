@@ -302,10 +302,17 @@ def search():
             MiscArtistAltName, MiscArtistAltName.misc_artist_id == SongMiscArtist.misc_artist_id
         ).filter(field_match(MiscArtistAltName.name, like)).all()}
 
+        # ...and by the song's own alternate names (the regular section can't
+        # surface these — album-less misc songs are dropped by its Album join).
+        misc_song_alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).join(
+            SongMiscArtist, SongMiscArtist.song_id == SongAlias.song_id
+        ).filter(field_match(SongAlias.name, like)).all()}
+
         misc_song_rows = db.session.query(Song).options(
             selectinload(Song.aliases)
         ).filter(
-            db.or_(Song.id.in_(misc_name_song_ids), Song.id.in_(misc_alias_song_ids))
+            db.or_(Song.id.in_(misc_name_song_ids), Song.id.in_(misc_alias_song_ids),
+                   Song.id.in_(misc_song_alias_ids))
         ).distinct().all()
 
         # Exclude songs already found via normal search
