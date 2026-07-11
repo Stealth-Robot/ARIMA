@@ -13,18 +13,18 @@
 
     <hr class="border-border my-8">
 
-    <h1 class="text-2xl font-bold mb-2">How It Works</h1>
-    <p class="text-sm mb-4 text-secondary-text">A quick guide to getting the most out of A.R.I.M.A.</p>
+    <h1 class="text-2xl font-bold mb-2">How to Use A.R.I.M.A.</h1>
+    <p class="text-sm mb-3 text-secondary-text">A quick guide to getting the most out of A.R.I.M.A.</p>
+    <p class="text-sm mb-4 text-secondary-text"><strong>Roles:</strong> <strong>Raters</strong> rate songs and manage their own settings · <strong>Editors</strong> also add and edit artists, albums, and songs · <strong>Guests</strong> get read-only access.</p>
 
     <!-- Jump nav -->
     <div class="flex flex-wrap gap-2 mb-6 text-xs">
         <a href="#hw-rating" class="text-link no-underline py-0.5 px-2 border border-border rounded">Rating</a>
-        <a href="#hw-navigation" class="text-link no-underline py-0.5 px-2 border border-border rounded">Navigation</a>
-        <a href="#hw-search" class="text-link no-underline py-0.5 px-2 border border-border rounded">Search</a>
+        <a href="#hw-discover" class="text-link no-underline py-0.5 px-2 border border-border rounded">Navigation &amp; Discography</a>
+        <a href="#hw-names" class="text-link no-underline py-0.5 px-2 border border-border rounded">Song Names</a>
+        <a href="#hw-profile" class="text-link no-underline py-0.5 px-2 border border-border rounded">Profile &amp; Settings</a>
         <a href="#hw-pages" class="text-link no-underline py-0.5 px-2 border border-border rounded">Pages</a>
-        <a href="#hw-personalisation" class="text-link no-underline py-0.5 px-2 border border-border rounded">Personalisation</a>
-        <a href="#hw-editors" class="text-link no-underline py-0.5 px-2 border border-border rounded">Editors &amp; Admins</a>
-        <a href="#hw-profile" class="text-link no-underline py-0.5 px-2 border border-border rounded">Profile</a>
+        <a href="#hw-editors" class="text-link no-underline py-0.5 px-2 border border-border rounded">Editors</a>
     </div>
 
     <div class="text-sm text-primary-text">
@@ -32,8 +32,9 @@
         <!-- Rating -->
         <div id="hw-rating" class="p-4 mb-4 border rounded border-border">
             <h2 class="text-lg font-semibold mb-2">Rating Songs</h2>
-            <p class="mb-2">Click any cell in your column to rate a song <strong>0 to 5</strong>. Type a number, then use arrow keys to move to the next song. Notes can be added to any cell (right-click or press <strong>N</strong>) — cells with notes show a small triangle on hover.</p>
-            <p class="mb-3">Ratings from other users show up in real time.</p>
+            <p class="mb-2">Click any cell in <strong>your</strong> column to rate a song <strong>0 to 5</strong>. Type a number, then use the arrow keys to keep moving down the list, rating as you go. Ratings save instantly and show up for everyone in real time.</p>
+            <p class="mb-2">Add a <strong>note</strong> to any cell (right-click it, or press <strong>N</strong> while it's selected) — cells with notes show a small triangle on hover. You can rename the score labels (e.g. what "3" means to you) under <strong>Profile → Rating key</strong>.</p>
+            <p class="mb-3">Made a mistake? <strong>Ctrl+Z / Cmd+Z</strong> undoes; add <strong>Shift</strong> to redo.</p>
 
             <details class="mb-1">
                 <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Keyboard shortcuts</summary>
@@ -49,179 +50,150 @@
             </details>
         </div>
 
-        <!-- Navigation & Discography -->
-        <div id="hw-navigation" class="p-4 mb-4 border rounded border-border">
+        <!-- Finding & discovering music -->
+        <div id="hw-discover" class="p-4 mb-4 border rounded border-border">
             <h2 class="text-lg font-semibold mb-2">Navigation &amp; Discography</h2>
-            <ul class="list-disc ml-4 mb-2 space-y-1">
-                <li>Click <strong>album headers</strong> to collapse or expand them. Use <strong>Expand All / Collapse All</strong> in the discography header. Collapse state is remembered across edit mode toggles and artist navigation.</li>
-                <li>Songs with a Spotify link show a <img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"> icon. YouTube icons link directly or fall back to a search.</li>
-                <li>Songs may carry tags: <strong>promoted</strong>, <strong>cover</strong>, <strong>remix</strong>. Lead singles are marked with a &#9733; star.</li>
-                <li>Collaborations show as <em>"with Artist"</em> (main) or <em>"feat. Artist"</em> (featured) next to song names.</li>
-                <li><strong>Subscribe</strong> to an artist (checkbox on the artist page) to add them to your rating backlog on the home page.</li>
-            </ul>
-        </div>
 
-        <!-- Search -->
-        <div id="hw-search" class="p-4 mb-4 border rounded border-border">
-            <h2 class="text-lg font-semibold mb-2">Search</h2>
-            <p class="mb-2">Click the search icon in the top bar to open the search overlay. Type at least <strong>2 characters</strong> to find artists, albums, songs, or misc songs.</p>
-            <ul class="list-disc ml-4 mb-2 space-y-1">
-                <li>Results are grouped into collapsible sections: <strong>Artists</strong>, <strong>Albums</strong>, <strong>Songs</strong>, and <strong>Misc Songs</strong>. Click a section header to collapse or expand it.</li>
-                <li>Check <strong>Show hidden songs</strong> to include remixes, covers, and other filtered-out tracks in results.</li>
-                <li>Press <strong>Escape</strong> to close the overlay, or click outside it.</li>
+            <h3 class="text-sm font-semibold mb-1">Browsing a discography</h3>
+            <ul class="list-disc ml-4 mb-3 space-y-1">
+                <li>Click <strong>album headers</strong> to collapse or expand them; use <strong>Expand All / Collapse All</strong> in the discography header. Your collapse state is remembered as you navigate between artists.</li>
+                <li>Songs can carry tags — <strong>promoted</strong>, <strong>cover</strong>, <strong>remix</strong> — and lead singles show a &#9733; star.</li>
+                <li>Collaborations appear as <em>"with Artist"</em> (main) or <em>"feat. Artist"</em> (featured) next to the song.</li>
+                <li>Each song shows a <img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"> Spotify and <img src="{{ url_for('static', filename='img/youtube.png') }}" class="inline w-3 h-3 align-middle"> YouTube icon (YouTube falls back to a search), plus a link icon to copy a direct link to that song.</li>
+                <li>A <span class="relative inline-block align-middle" title="Not on Spotify" style="width:0.75rem; height:0.75rem; line-height:0;"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle" style="filter: grayscale(1); opacity: 0.6;"><span class="absolute" style="top:50%; left:50%; width:0.9375rem; height:0.125rem; background:var(--delete-button, #e02424); transform: translate(-50%, -50%) rotate(-45deg); transform-origin: center; pointer-events:none; border-radius:0.0625rem;"></span></span> greyed, struck-through Spotify icon means the song isn't on Spotify.</li>
             </ul>
 
-            <details class="mb-1">
+            <h3 class="text-sm font-semibold mb-1">Search</h3>
+            <p class="mb-2">Click the search icon in the top bar and type at least <strong>2 characters</strong>. Results are grouped into collapsible sections — <strong>Artists</strong>, <strong>Albums</strong>, <strong>Songs</strong>, <strong>Misc Songs</strong>. Search also matches <strong>alternative names</strong>, so romanized, native, or English titles all find the song. Tick <strong>Show hidden songs</strong> to include remixes, covers, and filtered-out tracks.</p>
+            <details class="mb-3">
                 <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Keyboard navigation</summary>
                 <table class="text-xs mt-2 border-collapse w-full">
                     <tbody>
-                        <tr><td class="px-2 py-1 border border-border"><strong>Up / Down</strong></td><td class="px-2 py-1 border border-border">Move between results (wraps around, crosses sections)</td></tr>
+                        <tr><td class="px-2 py-1 border border-border"><strong>Up / Down</strong></td><td class="px-2 py-1 border border-border">Move between results (wraps, crosses sections)</td></tr>
                         <tr><td class="px-2 py-1 border border-border"><strong>Left / Right</strong></td><td class="px-2 py-1 border border-border">Jump to the first result in the previous / next section</td></tr>
-                        <tr><td class="px-2 py-1 border border-border"><strong>Enter</strong></td><td class="px-2 py-1 border border-border">Navigate to the highlighted result</td></tr>
-                        <tr><td class="px-2 py-1 border border-border"><strong>Escape</strong></td><td class="px-2 py-1 border border-border">Close the search overlay</td></tr>
+                        <tr><td class="px-2 py-1 border border-border"><strong>Enter</strong></td><td class="px-2 py-1 border border-border">Go to the highlighted result</td></tr>
+                        <tr><td class="px-2 py-1 border border-border"><strong>Escape</strong></td><td class="px-2 py-1 border border-border">Close the overlay</td></tr>
                     </tbody>
                 </table>
             </details>
+
+            <h3 class="text-sm font-semibold mb-1">Discovery tools</h3>
+            <ul class="list-disc ml-4 space-y-1">
+                <li><strong>Subscribe</strong> to artists on the <strong>Subscriptions</strong> page (or the artist page). Subscribed artists build your <strong>rating backlog</strong>.</li>
+                <li>The <strong>Home</strong> page is your dashboard: the <strong>Song of the Day</strong>, a <strong>Shuffle</strong> button that surfaces a random unrated song (toggle between your <em>Subscribed</em> backlog and <em>All</em> songs), your rating backlog, and any artists you own or maintain.</li>
+                <li><strong>Song of the Day</strong> is a system pick that rotates daily (resets at midnight US Eastern); its own page shows the full history with everyone's ratings.</li>
+            </ul>
+        </div>
+
+        <!-- How names are displayed -->
+        <div id="hw-names" class="p-4 mb-4 border rounded border-border">
+            <h2 class="text-lg font-semibold mb-2">How Song &amp; Album Names Are Shown</h2>
+            <p class="mb-2">Songs and albums can carry <strong>alternative names</strong> — extra titles that make them easier to find in search. Each alternative can be tagged as a language: <strong>English</strong>, <strong>Romanized</strong>, or a native name (<strong>Japanese</strong>, <strong>Korean</strong>, <strong>Chinese</strong>, or <strong>Other</strong>). The native tags are mutually exclusive, so an item has at most one native name.</p>
+            <p class="mb-2">You decide which name <em>you</em> see under <strong>Profile → Discography display</strong>:</p>
+            <ul class="list-disc ml-4 mb-2 space-y-1">
+                <li><strong>English</strong> or <strong>Romanized</strong> over the original — these two are mutually exclusive (turning one on turns the other off). They replace the original/Spotify name only.</li>
+                <li><strong>Native Japanese / Korean / Chinese / Other</strong> — each independent; when set, the native name wins over everything else.</li>
+            </ul>
+            <p>Precedence: a <strong>native</strong> name (if you've enabled its language) beats everything, then <strong>English/Romanized</strong> replaces the original, otherwise the original name shows. This applies everywhere names appear — discography, search, home, and stats.</p>
+        </div>
+
+        <!-- Profile & settings -->
+        <div id="hw-profile" class="p-4 mb-4 border rounded border-border">
+            <h2 class="text-lg font-semibold mb-2">Profile &amp; Settings</h2>
+            <p class="mb-2">Everything on your <strong>Profile</strong> page <strong>saves automatically</strong> as you change it. (Guest accounts don't have personal settings.)</p>
+            <ul class="list-disc ml-4 space-y-1">
+                <li><strong>Appearance</strong> — pick a theme (Classic, Dark, or your own), and set the song button text size. Build or copy a theme on the <strong>Themes</strong> page.</li>
+                <li><strong>Discography display</strong> — include/exclude featured tracks, remixes (optionally rated-only), and covers; show track numbers and full album dates; hide OST albums; show hidden songs in search; ignore punctuation when searching; album sort order; and the <a href="#hw-names" class="text-link">display-name preferences</a> above.</li>
+                <li><strong>Rating key</strong> — show the standard key and/or your own, and rename the labels for each score (0–5).</li>
+                <li><strong>Link visibility</strong> — hide autogenerated YouTube links, all YouTube links, or all Spotify links; open Spotify links in the desktop app.</li>
+                <li><strong>Stats page users</strong> — show, hide, or reorder which users appear on the stats pages (with a mobile-only option).</li>
+                <li><strong>Account</strong> — set a profile image, connect or disconnect Spotify, and reset your password.</li>
+            </ul>
         </div>
 
         <!-- Pages -->
         <div id="hw-pages" class="p-4 mb-4 border rounded border-border">
             <h2 class="text-lg font-semibold mb-2">Pages</h2>
+            <p class="mb-2 text-xs text-secondary-text">Grouped by the navigation menus.</p>
             <ul class="list-disc ml-4 space-y-1">
-                <li><strong>Home</strong> — Your dashboard. Shows Song of the Day, a shuffle button for random song discovery, your rating backlog (unrated songs for subscribed artists), and artists you own or maintain.</li>
-                <li><strong>Subscriptions</strong> — Manage which artists you're subscribed to. Subscribed artists feed into your rating backlog on the home page.</li>
-                <li><strong>Song of the Day</strong> — A daily random song pick (EST-based). View today's pick on the home page, or browse the full history on its dedicated page.</li>
-                <li><strong>Artists</strong> — Full discography with everyone's ratings side by side. Artist names are colour-coded by gender. Use the bottom bar or hamburger menu to switch between artists.</li>
-                <li><strong>Misc</strong> — Songs not tied to a specific artist, grouped by country.</li>
-                <li><strong>Global Stats</strong> — Average scores per artist, colour-coded. Expand to see subunits and soloists.</li>
-                <li><strong>Artist Stats</strong> — Rating completion per person. Toggle between "% complete" and "songs remaining". Use "Hide unrated" to filter.</li>
-                <li><strong>Update Stats</strong> — Visual timeline chart of app updates and feature releases.</li>
-                <li><strong>Themes</strong> — Browse all themes with previews. Create a custom theme with a full colour editor, copy another user's theme, or reset yours to defaults.</li>
-                <li><strong>Changelog</strong> — Searchable log of all data edits. Filter by user or type.</li>
-                <li><strong>For Me</strong> <em>(under Changelog)</em> — Approve or reject rating and note changes made on your behalf. Filter by For Me or By Me. Bulk approve/reject available.</li>
-                <li><strong>Updates</strong> — App release notes and feature announcements.</li>
-                <li><strong>Rules</strong> — This page.</li>
-                <li><strong>Users</strong> — List of all users.</li>
-                <li><strong>Data Views</strong> <em>(Editors)</em> — Data integrity monitors: orphaned songs/albums, empty artists, undated albums, potential duplicates, variant songs, and more.</li>
+                <li><strong>Home</strong> — your dashboard: Song of the Day, shuffle, rating backlog, and artists you own/maintain.</li>
+                <li><strong>Subscriptions</strong> — browse every artist, subscribe/unsubscribe, and see rating completion.</li>
+                <li><strong>Song of the Day</strong> — the daily pick and its full history.</li>
+                <li><strong>Artists</strong> — full discographies with everyone's ratings side by side; names are colour-coded by gender.</li>
+                <li><strong>Misc</strong> — songs not tied to a specific artist, grouped by country.</li>
+                <li><strong>Artist Stats</strong> — rating completion per person (toggle % complete vs songs remaining).</li>
+                <li><strong>Global Stats</strong> — average scores per artist, colour-coded.</li>
+                <li><strong>Update Stats</strong> — visual timeline and heatmap of app updates.</li>
+                <li><strong>Operational Stats</strong> — app health and hosting metrics.</li>
+                <li><strong>Changelog</strong> — searchable log of every data edit; filter by user or type.</li>
+                <li><strong>For Me</strong> — approve or reject rating/note changes made on your behalf (see Editors below).</li>
+                <li><strong>Updates</strong> — release notes and feature announcements.</li>
+                <li><strong>Themes</strong> — browse, build, copy, or reset colour themes.</li>
+                <li><strong>Rules</strong> — this page.</li>
+                <li><strong>Views</strong> <em>(editors)</em> — data-quality monitors.</li>
             </ul>
         </div>
 
-        <!-- Personalisation -->
-        <div id="hw-personalisation" class="p-4 mb-4 border rounded border-border">
-            <h2 class="text-lg font-semibold mb-2">Personalisation</h2>
-            <p class="mb-2">All settings are on your <strong>Profile</strong> page and saved between sessions.</p>
-            <ul class="list-disc ml-4 space-y-1">
-                <li><strong>Themes</strong> — Classic, Dark, or a custom theme. Visit the Themes page to build your own or copy someone else's.</li>
-                <li><strong>Filters</strong> — Genre, country, remixes, covers, featured tracks, OST hiding, and album sort order (newest or oldest first).</li>
-                <li><strong>Display</strong> — Show track numbers, show full album dates (not just year).</li>
-                <li><strong>Link visibility</strong> — Hide autogenerated YouTube links, all YouTube links, or all Spotify links.</li>
-                <li><strong>Rating key</strong> — Customise labels for each score (0–5) and choose which keys to show.</li>
-                <li><strong>Song button size</strong> — Adjust edit-mode icon button size (6–30px).</li>
-                <li><strong>Edit mode buttons</strong> — Choose which editing action icons appear on songs in edit mode.</li>
-                <li><strong>Stats page users</strong> — Hide, show, or reorder which users appear on stats pages. Mobile-only toggle available.</li>
-            </ul>
-        </div>
-
-        <!-- Editors & Admins -->
+        <!-- Editors -->
         <div id="hw-editors" class="p-4 mb-4 border rounded border-border">
-            <h2 class="text-lg font-semibold mb-2">For Editors &amp; Admins</h2>
-            <p class="mb-3">Toggle <strong>Edit Mode</strong> in the navbar. Everything saves instantly. Switch <strong>Rating Mode</strong> between Self and All to rate on behalf of other users (records a proxy change for their approval).</p>
+            <h2 class="text-lg font-semibold mb-2">For Editors</h2>
+            <p class="mb-2">If you're an editor or admin, editing is always available — there's no edit mode to switch on. Open an editor by <strong>clicking a song name</strong>, <strong>clicking an album header</strong> (its collapse arrow still just collapses it), or the <strong>&#9998; pencil</strong> next to an artist name. Each opens a modal showing the current info; click <strong>Edit</strong> to reveal the form with fields and action buttons. Most fields save when you press <strong>Save</strong>; flag toggles (lead, promoted, remix, cover) save instantly.</p>
+            <p class="mb-3"><strong>Rating Mode</strong> (navbar) switches between <em>Self</em> and <em>All</em>. In <em>All</em> mode you rate on behalf of another user, which creates a <strong>proxy change</strong> they must approve on their <strong>For Me</strong> page (with For&nbsp;Me / By&nbsp;Me / All tabs, approve or reject-with-reason, and bulk actions — the proposer can only withdraw their own).</p>
 
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Inline editing</summary>
+            <details class="mb-1">
+                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Song editor</summary>
                 <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
-                    <li><strong>Artist name, gender, country</strong> — Click to edit.</li>
-                    <li><strong>Album name, genres, type, release date</strong> — Click any in the album header.</li>
-                    <li><strong>Song name</strong> — Click to rename.</li>
-                    <li><strong>Remix / Cover / Promoted</strong> — Checkboxes in the extra columns.</li>
-                    <li><strong>Spotify &amp; YouTube URLs</strong> — Click the greyed-out icons on a song row.</li>
-                    <li><strong>Rate for other users</strong> — Click any user's rating cell.</li>
+                    <li><strong>Fields:</strong> name (with a &#128260; button to turn the current title into an alternative name), note, flags (&#9733; lead / promoted / remix / cover), alternative names, and Spotify / YouTube URLs.</li>
+                    <li><strong>Alternative names:</strong> each row has a language dropdown; already-used native languages grey out. The <strong>&#11014; button</strong> makes an alternative the main song name (demoting the old name to an alternative), and <strong>&#10005;</strong> removes a row.</li>
+                    <li><strong>Actions:</strong> Move to album, Add to album, Edit genres, Manage artists (main/featured), Merge, Remove from album, Split, Delete <em>(password)</em>. Misc songs also get "Move to artist".</li>
                 </ul>
             </details>
 
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Song controls</summary>
-                <table class="text-xs mt-2 mb-1 border-collapse w-full">
-                    <tbody>
-                        <tr><td class="px-2 py-1 border border-border">&#8693;</td><td class="px-2 py-1 border border-border">Move to a different album</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#43;</td><td class="px-2 py-1 border border-border">Add to an additional album</td></tr>
-                        <tr><td class="px-2 py-1 border border-border text-delete">&#10005;</td><td class="px-2 py-1 border border-border">Delete song (password required)</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#128279;</td><td class="px-2 py-1 border border-border">Remove from this album only</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#9834;</td><td class="px-2 py-1 border border-border">Manage artists (main / featured)</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#10697;</td><td class="px-2 py-1 border border-border">Merge with another song</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#9986;</td><td class="px-2 py-1 border border-border">Split duplicate into independent copy (clones ratings &amp; notes)</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#9650; &#9660;</td><td class="px-2 py-1 border border-border">Reorder within album</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#9733;</td><td class="px-2 py-1 border border-border">Toggle lead track (marks the lead single for an album)</td></tr>
-                    </tbody>
-                </table>
-            </details>
-
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Album controls</summary>
-                <table class="text-xs mt-2 mb-1 border-collapse w-full">
-                    <tbody>
-                        <tr><td class="px-2 py-1 border border-border">&#43;</td><td class="px-2 py-1 border border-border">Add a song (search existing or create new)</td></tr>
-                        <tr><td class="px-2 py-1 border border-border">&#8644;</td><td class="px-2 py-1 border border-border">Move all songs to another artist (subunits/parent pinned at top)</td></tr>
-                    </tbody>
-                </table>
-            </details>
-
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Duplicates</summary>
-                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
-                    <li>Songs in multiple albums are tagged <strong>duplicate</strong> (hidden outside edit mode).</li>
-                    <li>Click the tag to override which album is primary.</li>
-                    <li>Use &#9986; to split into an independent copy with all ratings cloned.</li>
+            <details class="mb-1">
+                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Album editor</summary>
+                <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
+                    <li><strong>Fields:</strong> name (with the &#128260; make-alias button), release date, alternate names, and Spotify URL, plus an inline song list where you can reorder (&#11014;&#11015;) and toggle &#9733; lead / promoted / remix / cover.</li>
+                    <li><strong>Actions:</strong> Edit genres, Edit type, Add song (search existing), Create new song, Move songs to artist, Delete album <em>(password)</em>.</li>
                 </ul>
             </details>
 
-            <details>
+            <details class="mb-1">
+                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Artist editor</summary>
+                <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
+                    <li><strong>Fields:</strong> name, alternate names, Spotify URL, image URL, Inactive / Complete / Tracked toggles, gender, and country.</li>
+                    <li><strong>Actions:</strong> Add album, Convert to soloist / subunit, Add as soloist of another group, Link related group, Manage genres, Auto-fill Spotify, Unlink, Delete artist <em>(password)</em>.</li>
+                </ul>
+            </details>
+
+            <details class="mb-1">
                 <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Adding content</summary>
-                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
-                    <li><strong>Add Album</strong> — Green button at the bottom of the artist page.</li>
-                    <li><strong>Add song to album</strong> — &#43; icon in the album header.</li>
-                    <li><strong>Add Artist</strong> — From the navbar. Tooltip on submit shows missing fields.</li>
-                    <li><strong>Spotify import</strong> — Paste a Spotify URL to auto-fill albums, tracks, and links.</li>
-                    <li><strong>Auto-fill Spotify links</strong> — Batch-populate Spotify URLs for an artist's songs.</li>
-                    <li><strong>Manage genres</strong> — Bulk assign genres from the artist page.</li>
+                <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
+                    <li><strong>Add Artist</strong> — from the navbar; the submit tooltip lists any missing fields.</li>
+                    <li><strong>Add Album</strong> — button at the bottom of an artist page.</li>
+                    <li><strong>Add / Create a song</strong> — from an album's editor (search an existing song, or create a new one with genres and alternative names).</li>
+                    <li><strong>Spotify import</strong> — paste a Spotify URL to auto-fill albums, tracks, and links; <strong>Auto-fill Spotify</strong> batch-links an artist's songs.</li>
+                    <li><strong>Manage genres</strong> — bulk-assign genres from the artist page.</li>
+                </ul>
+            </details>
+
+            <details class="mb-1">
+                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Owners &amp; maintainers</summary>
+                <ul class="list-disc ml-4 mt-2 mb-3 space-y-1">
+                    <li><strong>Owner</strong> — responsible for completing an artist's discography; owned incomplete artists appear on that user's Home.</li>
+                    <li><strong>Maintainer</strong> — keeps an artist's data up to date; maintained artists appear on that user's Home.</li>
                 </ul>
             </details>
 
             <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Subunits &amp; Soloists</summary>
-                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
-                    <li><strong>Convert</strong> — Buttons at the bottom of an artist page to link under a parent (password required).</li>
-                    <li><strong>Unlink</strong> — &#128279; next to a subunit/soloist header to make them standalone again.</li>
+                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Views — data quality</summary>
+                <p class="mt-2 mb-1">The <strong>Views</strong> page flags things worth cleaning up and offers one-click fixes (dismiss, merge, or link):</p>
+                <ul class="list-disc ml-4 mb-1 space-y-1">
+                    <li>Orphan and empty songs/albums; empty artists.</li>
+                    <li>Artists with no owner, maintainer, or creator; potentially disbanded artists; incomplete discography tabs.</li>
+                    <li>Missing, guessed, or invalid album release dates.</li>
+                    <li>Potential duplicate songs, variant songs (TV/Live/Instrumental), collab candidates, and duplicate misc artists.</li>
                 </ul>
             </details>
-
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Owner &amp; Maintainer</summary>
-                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
-                    <li><strong>Owner</strong> — Assign a user responsible for completing an artist's discography. Owned artists appear on your home page under "My Incomplete Artists".</li>
-                    <li><strong>Maintainer</strong> — Assign a user to keep an artist's data up to date. Maintained artists appear on your home page.</li>
-                </ul>
-            </details>
-
-            <details>
-                <summary class="cursor-pointer text-xs font-semibold text-secondary-text">Deleting</summary>
-                <ul class="list-disc ml-4 mt-2 mb-1 space-y-1">
-                    <li><strong>Song</strong> — Red &#10005; next to the name (password required).</li>
-                    <li><strong>Album</strong> — Red &#10005; left of the header (shows impact count, password required).</li>
-                    <li><strong>Artist</strong> — Red button at the bottom of the page (password required).</li>
-                    <li><strong>Changelog entry</strong> — Admins only, small &#10005; on each entry.</li>
-                </ul>
-            </details>
-        </div>
-
-        <!-- Profile -->
-        <div id="hw-profile" class="p-4 mb-4 border rounded border-border">
-            <h2 class="text-lg font-semibold mb-2">Profile &amp; Account</h2>
-            <ul class="list-disc ml-4 space-y-1">
-                <li><strong>Profile image</strong> — Set a custom image URL.</li>
-                <li><strong>Reset password</strong> — Change your password anytime.</li>
-                <li><strong>Settings</strong> — Theme, filters, album sort, button size, rating key labels, and link visibility.</li>
-            </ul>
         </div>
 
     </div>
