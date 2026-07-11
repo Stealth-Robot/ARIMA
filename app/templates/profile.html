@@ -135,16 +135,46 @@
         </div>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="display_english" id="display_english"
+                       onchange="if(this.checked){document.getElementById('display_romanized').checked=false;}"
+                       {% if settings.display_english %}checked{% endif %}>
+                Set song/album names to English over the Spotify/original name
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="display_romanized" id="display_romanized"
+                       onchange="if(this.checked){document.getElementById('display_english').checked=false;}"
+                       {% if settings.display_romanized %}checked{% endif %}>
+                Set song/album names to Romanized over the Spotify/original name
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="display_native_ja"
                        {% if settings.display_native_ja %}checked{% endif %}>
-                Set Japanese song & album display name to native name
+                Set song/album name to Native Japanese over all other names
             </label>
         </div>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="display_native_ko"
                        {% if settings.display_native_ko %}checked{% endif %}>
-                Set Korean song & album display name to native name
+                Set song/album name to Native Korean over all other names
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="display_native_zh"
+                       {% if settings.display_native_zh %}checked{% endif %}>
+                Set song/album name to Native Chinese over all other names
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="display_native_other"
+                       {% if settings.display_native_other %}checked{% endif %}>
+                Set song/album name to Native Other over all other names
             </label>
         </div>
         <div class="mb-4">

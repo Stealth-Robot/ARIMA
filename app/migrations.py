@@ -19,6 +19,22 @@ def create_last_updated_triggers(database):
     database.session.commit()
 
 
+def _dedupe_native_group(database, table, id_col):
+    """Demote all-but-earliest JP/KR/CN/Other native tags per parent to plain aliases.
+
+    JP/KR/CN/Other are mutually exclusive, so keep the lowest-id tagged name per
+    parent and clear native_lang on the rest (the name stays as a plain searchable
+    alias) so the group unique index can be created. Idempotent — no-op once compliant.
+    """
+    n = database.session.execute(database.text(
+        f"UPDATE {table} SET native_lang = NULL "
+        f"WHERE native_lang IN ('ja', 'ko', 'zh', 'other') AND id NOT IN ("
+        f"SELECT MIN(id) FROM {table} WHERE native_lang IN ('ja', 'ko', 'zh', 'other') GROUP BY {id_col})"
+    )).rowcount
+    if n:
+        logger.info('Demoted %d conflicting JP/KR/CN/Other native tags in %s', n, table)
+
+
 def run_startup_migrations():
     """Run auto-migrations on app startup. Safe to call repeatedly.
 
@@ -68,18 +84,43 @@ def run_startup_migrations():
                 logger.info('Added missing album column: %s', col.name)
 
         # 1a'''. Add native_lang to album_alt_name (mirrors song_alias) + its unique
-        # partial indexes (at most one native JP and one native KR name per album).
+        # partial indexes. JP/KR/CN/Other share one group index (mutually exclusive — at
+        # most one native-group name per album); romanized/English each at most one.
+        # Resolve any pre-existing group conflicts before building the group index, then
+        # drop the now-obsolete per-language JP/KR/CN/Other indexes.
         existing_aan_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album_alt_name')"))}
         if existing_aan_cols and 'native_lang' not in existing_aan_cols:
             db.session.execute(db.text('ALTER TABLE album_alt_name ADD COLUMN native_lang TEXT'))
             logger.info('Added missing album_alt_name column: native_lang')
         if existing_aan_cols:
+            _dedupe_native_group(db, 'album_alt_name', 'album_id')
+            # Drop first so an older group index (without 'other') is rebuilt with it.
+            db.session.execute(db.text("DROP INDEX IF EXISTS ux_album_alt_name_native_group"))
             db.session.execute(db.text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_ja "
-                "ON album_alt_name (album_id) WHERE native_lang = 'ja'"))
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_group "
+                "ON album_alt_name (album_id) WHERE native_lang IN ('ja', 'ko', 'zh', 'other')"))
+            for _lang in ('rom', 'en'):
+                db.session.execute(db.text(
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_{_lang} "
+                    f"ON album_alt_name (album_id) WHERE native_lang = '{_lang}'"))
+            for _old in ('ja', 'ko', 'zh', 'other'):
+                db.session.execute(db.text(f"DROP INDEX IF EXISTS ux_album_alt_name_native_{_old}"))
+
+        # 1a''''. Same group + per-language indexes for song_alias.
+        existing_sa_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('song_alias')"))}
+        if existing_sa_cols:
+            _dedupe_native_group(db, 'song_alias', 'song_id')
+            # Drop first so an older group index (without 'other') is rebuilt with it.
+            db.session.execute(db.text("DROP INDEX IF EXISTS ux_song_alias_native_group"))
             db.session.execute(db.text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS ux_album_alt_name_native_ko "
-                "ON album_alt_name (album_id) WHERE native_lang = 'ko'"))
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_song_alias_native_group "
+                "ON song_alias (song_id) WHERE native_lang IN ('ja', 'ko', 'zh', 'other')"))
+            for _lang in ('rom', 'en'):
+                db.session.execute(db.text(
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS ux_song_alias_native_{_lang} "
+                    f"ON song_alias (song_id) WHERE native_lang = '{_lang}'"))
+            for _old in ('ja', 'ko', 'zh', 'other'):
+                db.session.execute(db.text(f"DROP INDEX IF EXISTS ux_song_alias_native_{_old}"))
 
         # 1a'. Add any new artist columns (e.g. owner_id, maintainer_id, spotify_url)
         existing_artist_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('artist')"))}

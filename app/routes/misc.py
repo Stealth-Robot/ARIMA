@@ -118,15 +118,23 @@ BYPASS_FILTERS = {
 
 
 def _viewer_native_toggles():
-    """(native_ja, native_ko) for the viewer, mirroring inject_song_display."""
+    """(native_ja, native_ko, native_zh, romanized, english, native_other) for the viewer, mirroring inject_song_display."""
     if not current_user.is_authenticated:
-        return False, False
+        return False, False, False, False, False, False
     if not current_user.is_system_or_guest and current_user.settings:
         s = current_user.settings
         return (bool(getattr(s, 'display_native_ja', False)),
-                bool(getattr(s, 'display_native_ko', False)))
+                bool(getattr(s, 'display_native_ko', False)),
+                bool(getattr(s, 'display_native_zh', False)),
+                bool(getattr(s, 'display_romanized', False)),
+                bool(getattr(s, 'display_english', False)),
+                bool(getattr(s, 'display_native_other', False)))
     return (bool(session.get('display_native_ja', False)),
-            bool(session.get('display_native_ko', False)))
+            bool(session.get('display_native_ko', False)),
+            bool(session.get('display_native_zh', False)),
+            bool(session.get('display_romanized', False)),
+            bool(session.get('display_english', False)),
+            bool(session.get('display_native_other', False)))
 
 
 def _build_misc_shell(bypass_filters=False):
@@ -247,25 +255,34 @@ def _build_country_data(country_id, bypass_filters=False):
                 'id': alid, 'name': al_name, 'release_date': al_date, 'album_type_id': al_type,
             }
 
-    # Precompute each album's display name (native JP/KR per the viewer's toggles) here,
-    # since the row.album passed to the template is a plain dict, not an Album ORM object.
-    native_ja, native_ko = _viewer_native_toggles()
+    # Precompute each album's display name (native JP/KR/CN, romanized, English, or other
+    # per the viewer's toggles) here, since the row.album passed to the template is a plain
+    # dict, not an Album ORM object.
+    native_ja, native_ko, native_zh, romanized, english, native_other = _viewer_native_toggles()
     album_native = defaultdict(dict)
     album_ids = {info['id'] for info in song_album_map.values()}
-    if album_ids and (native_ja or native_ko):
+    if album_ids and (native_ja or native_ko or native_zh or romanized or english or native_other):
         for aid, lang, aname in db.session.query(
             AlbumAltName.album_id, AlbumAltName.native_lang, AlbumAltName.name,
         ).filter(
             AlbumAltName.album_id.in_(album_ids),
-            AlbumAltName.native_lang.in_(('ja', 'ko')),
+            AlbumAltName.native_lang.in_(('ja', 'ko', 'zh', 'rom', 'en', 'other')),
         ).all():
             album_native[aid][lang] = aname
     for info in song_album_map.values():
         native = album_native.get(info['id'], {})
-        if native_ko and native.get('ko'):
-            info['display_name'] = native['ko']
-        elif native_ja and native.get('ja'):
+        if native_ja and native.get('ja'):
             info['display_name'] = native['ja']
+        elif native_ko and native.get('ko'):
+            info['display_name'] = native['ko']
+        elif native_zh and native.get('zh'):
+            info['display_name'] = native['zh']
+        elif native_other and native.get('other'):
+            info['display_name'] = native['other']
+        elif english and native.get('en'):
+            info['display_name'] = native['en']
+        elif romanized and native.get('rom'):
+            info['display_name'] = native['rom']
         else:
             info['display_name'] = info['name']
 
@@ -515,7 +532,7 @@ def add_misc_song():
         return json.dumps({'error': 'At least one genre is required'}), 400, {'Content-Type': 'application/json'}
 
     # Optional alternative names — same rules as /edit/song/<id>/aliases:
-    # dedupe case-insensitively; at most one native 'ja' and one native 'ko'.
+    # dedupe case-insensitively; at most one of each native lang ('ja'/'ko'/'zh'/'rom'/'en'/'other').
     aliases = []
     seen_alias = set()
     used_langs = set()
@@ -528,12 +545,14 @@ def add_misc_song():
             continue
         seen_alias.add(key)
         lang = (item.get('native_lang') or '').strip().lower() or None
-        if lang not in (None, 'ja', 'ko'):
+        if lang not in (None, 'ja', 'ko', 'zh', 'rom', 'en', 'other'):
             return json.dumps({'error': 'Invalid native language'}), 400, {'Content-Type': 'application/json'}
         if lang is not None:
-            if lang in used_langs:
-                return json.dumps({'error': 'Only one native name per language'}), 400, {'Content-Type': 'application/json'}
-            used_langs.add(lang)
+            # JP/KR/CN/Other are mutually exclusive, so they collapse to one group key.
+            group = 'jkc' if lang in ('ja', 'ko', 'zh', 'other') else lang
+            if group in used_langs:
+                return json.dumps({'error': 'Only one native name per language (JP/KR/CN/Other are mutually exclusive)'}), 400, {'Content-Type': 'application/json'}
+            used_langs.add(group)
         aliases.append((name, lang))
 
     song = Song(

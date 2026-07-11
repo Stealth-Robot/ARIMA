@@ -906,6 +906,22 @@ function _showAddMiscSong() {
     var aliasWrap = document.createElement('div');
     aliasWrap.style.cssText = 'display:flex;flex-direction:column;gap:0.25rem;margin-bottom:0.25rem;';
     modal.appendChild(aliasWrap);
+    // Grey out native-lang options already taken by another row (JP/KR/CN/Other share a group).
+    function refreshAliasLangOpts() {
+        var groupKey = function(v) { return (v === 'ja' || v === 'ko' || v === 'zh' || v === 'other') ? 'jkc' : v; };
+        var selects = aliasWrap.querySelectorAll('.misc-alias-lang');
+        var used = {};
+        for (var i = 0; i < selects.length; i++) {
+            if (selects[i].value) used[groupKey(selects[i].value)] = true;
+        }
+        for (var k = 0; k < selects.length; k++) {
+            var cur = groupKey(selects[k].value), opts = selects[k].options;
+            for (var j = 0; j < opts.length; j++) {
+                var gk = groupKey(opts[j].value);
+                opts[j].disabled = !!opts[j].value && used[gk] && gk !== cur;
+            }
+        }
+    }
     function addAliasRow(name, lang) {
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;gap:0.25rem;align-items:center;';
@@ -916,16 +932,18 @@ function _showAddMiscSong() {
         var sel = document.createElement('select');
         sel.className = 'misc-alias-lang';
         sel.style.cssText = 'font-size:0.75rem;padding:0.125rem 0.25rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);';
-        [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+        [['', '—'], ['en', 'English'], ['rom', 'Romanized'], ['ko', 'Native KR'], ['ja', 'Native JP'], ['zh', 'Native CN'], ['other', 'Native Other']].forEach(function(o) {
             var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
             if (o[0] === (lang || '')) opt.selected = true;
             sel.appendChild(opt);
         });
+        sel.onchange = refreshAliasLangOpts;
         var del = document.createElement('button');
         del.innerHTML = '&times;'; del.style.cssText = 'border:none;background:none;color:var(--delete,red);cursor:pointer;font-size:0.875rem;';
-        del.onclick = function() { aliasWrap.removeChild(row); };
+        del.onclick = function() { aliasWrap.removeChild(row); refreshAliasLangOpts(); };
         row.appendChild(aInp); row.appendChild(sel); row.appendChild(del);
         aliasWrap.appendChild(row);
+        refreshAliasLangOpts();
     }
     var addAliasBtn = _miscBtn('+ Add name', 'var(--edit-on-button,#16a34a)', function() { addAliasRow('', ''); });
     addAliasBtn.style.fontSize = '0.6875rem'; addAliasBtn.style.padding = '0.1875rem 0.5rem';

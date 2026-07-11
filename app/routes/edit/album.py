@@ -190,9 +190,10 @@ def album_alt_names(album_id):
 
     Alternate names exist mainly to make hard-to-search albums findable; they
     are matched alongside the main name in the Albums search section. Each may be
-    tagged native_lang 'ja' or 'ko' to designate it the native Japanese/Korean
-    name (at most one of each), which the viewer's profile toggles can swap in as
-    the album's display name. Expects JSON: {"alt_names": [{"name", "native_lang"}, ...]}.
+    tagged native_lang 'ja', 'ko', 'zh', 'rom', 'en', or 'other' to designate it the
+    native Japanese/Korean/Chinese, romanized, English, or other name (at most one of
+    each), which the viewer's profile toggles can swap in as the album's display name.
+    Expects JSON: {"alt_names": [{"name", "native_lang"}, ...]}.
 
     For backward compatibility a plain `value=` form body (one name per line, no
     native tags) is still accepted.
@@ -220,12 +221,14 @@ def album_alt_names(album_id):
             continue
         seen.add(key)
         lang = (item.get('native_lang') or '').strip().lower() or None
-        if lang not in (None, 'ja', 'ko'):
+        if lang not in (None, 'ja', 'ko', 'zh', 'rom', 'en', 'other'):
             abort(400)
         if lang is not None:
-            if lang in used_langs:
+            # JP/KR/CN/Other are mutually exclusive, so they collapse to one group key.
+            group = 'jkc' if lang in ('ja', 'ko', 'zh', 'other') else lang
+            if group in used_langs:
                 abort(400)
-            used_langs.add(lang)
+            used_langs.add(group)
         alt_names.append((name, lang))
 
     def _out():

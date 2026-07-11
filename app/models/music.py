@@ -165,22 +165,39 @@ class Song(db.Model):
     aliases = db.relationship('SongAlias', back_populates='song',
                               order_by='SongAlias.id', cascade='all, delete-orphan')
 
-    def display_name(self, native_ja=False, native_kr=False):
+    def display_name(self, native_ja=False, native_kr=False, native_zh=False, romanized=False, english=False, native_other=False):
         """Title to show given a viewer's native-display toggles.
 
-        Korean wins when a song has both native names and both toggles are on.
-        Falls back to the main name when no matching native alias exists.
+        A native name (JP/KR/CN/Other) wins over all other names; failing that, an
+        English or romanized name (mutually exclusive as viewer prefs) overrides only
+        the original name. Falls back to the main name when no matching alias exists.
         """
-        ja = kr = None
+        ja = kr = zh = rom = en = other = None
         for a in self.aliases:
             if a.native_lang == 'ko':
                 kr = a.name
             elif a.native_lang == 'ja':
                 ja = a.name
-        if native_kr and kr:
-            return kr
+            elif a.native_lang == 'zh':
+                zh = a.name
+            elif a.native_lang == 'rom':
+                rom = a.name
+            elif a.native_lang == 'en':
+                en = a.name
+            elif a.native_lang == 'other':
+                other = a.name
         if native_ja and ja:
             return ja
+        if native_kr and kr:
+            return kr
+        if native_zh and zh:
+            return zh
+        if native_other and other:
+            return other
+        if english and en:
+            return en
+        if romanized and rom:
+            return rom
         return self.name
 
 
@@ -190,17 +207,21 @@ class SongAlias(db.Model):
     song_id = db.Column(db.Integer, db.ForeignKey('song.id', ondelete='CASCADE'),
                         nullable=False)
     name = db.Column(db.Text, nullable=False)
-    # NULL = plain searchable alias; 'ja' = native Japanese; 'ko' = native Korean.
+    # NULL = plain searchable alias; 'ja' = native Japanese; 'ko' = native Korean;
+    # 'zh' = native Chinese; 'rom' = romanized; 'en' = English; 'other' = native other.
     native_lang = db.Column(db.Text)
 
     song = db.relationship('Song', back_populates='aliases')
 
     __table_args__ = (
         db.Index('ix_song_alias_song_id', 'song_id'),
-        db.Index('ux_song_alias_native_ja', 'song_id', unique=True,
-                 sqlite_where=db.text("native_lang = 'ja'")),
-        db.Index('ux_song_alias_native_ko', 'song_id', unique=True,
-                 sqlite_where=db.text("native_lang = 'ko'")),
+        # JP/KR/CN/Other are mutually exclusive: at most one of the group per song.
+        db.Index('ux_song_alias_native_group', 'song_id', unique=True,
+                 sqlite_where=db.text("native_lang IN ('ja', 'ko', 'zh', 'other')")),
+        db.Index('ux_song_alias_native_rom', 'song_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'rom'")),
+        db.Index('ux_song_alias_native_en', 'song_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'en'")),
     )
 
 
@@ -225,22 +246,39 @@ class Album(db.Model):
                                 order_by='AlbumAltName.id',
                                 cascade='all, delete-orphan')
 
-    def display_name(self, native_ja=False, native_kr=False):
+    def display_name(self, native_ja=False, native_kr=False, native_zh=False, romanized=False, english=False, native_other=False):
         """Title to show given a viewer's native-display toggles.
 
-        Korean wins when an album has both native names and both toggles are on.
-        Falls back to the main name when no matching native alt name exists.
+        A native name (JP/KR/CN/Other) wins over all other names; failing that, an
+        English or romanized name (mutually exclusive as viewer prefs) overrides only
+        the original name. Falls back to the main name when no matching alt name exists.
         """
-        ja = kr = None
+        ja = kr = zh = rom = en = other = None
         for a in self.alt_names:
             if a.native_lang == 'ko':
                 kr = a.name
             elif a.native_lang == 'ja':
                 ja = a.name
-        if native_kr and kr:
-            return kr
+            elif a.native_lang == 'zh':
+                zh = a.name
+            elif a.native_lang == 'rom':
+                rom = a.name
+            elif a.native_lang == 'en':
+                en = a.name
+            elif a.native_lang == 'other':
+                other = a.name
         if native_ja and ja:
             return ja
+        if native_kr and kr:
+            return kr
+        if native_zh and zh:
+            return zh
+        if native_other and other:
+            return other
+        if english and en:
+            return en
+        if romanized and rom:
+            return rom
         return self.name
 
 
@@ -250,17 +288,21 @@ class AlbumAltName(db.Model):
     album_id = db.Column(db.Integer, db.ForeignKey('album.id', ondelete='CASCADE'),
                          nullable=False)
     name = db.Column(db.Text, nullable=False)
-    # NULL = plain searchable alt name; 'ja' = native Japanese; 'ko' = native Korean.
+    # NULL = plain searchable alt name; 'ja' = native Japanese; 'ko' = native Korean;
+    # 'zh' = native Chinese; 'rom' = romanized; 'en' = English; 'other' = native other.
     native_lang = db.Column(db.Text)
 
     album = db.relationship('Album', back_populates='alt_names')
 
     __table_args__ = (
         db.Index('ix_album_alt_name_album_id', 'album_id'),
-        db.Index('ux_album_alt_name_native_ja', 'album_id', unique=True,
-                 sqlite_where=db.text("native_lang = 'ja'")),
-        db.Index('ux_album_alt_name_native_ko', 'album_id', unique=True,
-                 sqlite_where=db.text("native_lang = 'ko'")),
+        # JP/KR/CN/Other are mutually exclusive: at most one of the group per album.
+        db.Index('ux_album_alt_name_native_group', 'album_id', unique=True,
+                 sqlite_where=db.text("native_lang IN ('ja', 'ko', 'zh', 'other')")),
+        db.Index('ux_album_alt_name_native_rom', 'album_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'rom'")),
+        db.Index('ux_album_alt_name_native_en', 'album_id', unique=True,
+                 sqlite_where=db.text("native_lang = 'en'")),
     )
 
 

@@ -139,8 +139,27 @@ function _emNameListField(container, field, data) {
     };
 }
 
-/* One row per alternative name — text box + Native JP/KR <select> + remove button.
-   data[field.key] is an array of { name, native_lang } (native_lang null/''/'ja'/'ko').
+/* Grey out native-lang options already taken by another row so each is at most one.
+   JP/KR/CN/Other share a group (picking any one blocks the others elsewhere); a row's own
+   current value stays selectable. selSelector picks the <select>s within wrap. */
+function _emRefreshLangOpts(wrap, selSelector) {
+    var groupKey = function(v) { return (v === 'ja' || v === 'ko' || v === 'zh' || v === 'other') ? 'jkc' : v; };
+    var selects = wrap.querySelectorAll(selSelector);
+    var used = {};
+    for (var i = 0; i < selects.length; i++) {
+        if (selects[i].value) used[groupKey(selects[i].value)] = true;
+    }
+    for (var k = 0; k < selects.length; k++) {
+        var cur = groupKey(selects[k].value), opts = selects[k].options;
+        for (var j = 0; j < opts.length; j++) {
+            var gk = groupKey(opts[j].value);
+            opts[j].disabled = !!opts[j].value && used[gk] && gk !== cur;
+        }
+    }
+}
+
+/* One row per alternative name — text box + Native JP/KR/CN/Romanized/English/Other <select> + remove button.
+   data[field.key] is an array of { name, native_lang } (native_lang null/''/'ja'/'ko'/'zh'/'rom'/'en'/'other').
    Returns { addName, collect }: addName(name, lang) appends a row; collect() yields the
    trimmed, case-insensitively de-duped rows as [{ name, native_lang }]. */
 function _emAliasListField(container, field, data) {
@@ -161,21 +180,23 @@ function _emAliasListField(container, field, data) {
         var sel = document.createElement('select');
         sel.className = 'alias-lang';
         sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem; font-size:0.8125rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
-        [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+        [['', '—'], ['en', 'English'], ['rom', 'Romanized'], ['ko', 'Native KR'], ['ja', 'Native JP'], ['zh', 'Native CN'], ['other', 'Native Other']].forEach(function(o) {
             var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
             if (o[0] === (lang || '')) opt.selected = true;
             sel.appendChild(opt);
         });
+        sel.onchange = function() { _emRefreshLangOpts(wrap, '.alias-lang'); };
         var del = _emBtn('✕', 'secondary');
         del.style.padding = '0.375rem 0.625rem';
-        del.onclick = function() { wrap.removeChild(row); };
+        del.onclick = function() { wrap.removeChild(row); _emRefreshLangOpts(wrap, '.alias-lang'); };
         row.appendChild(inp); row.appendChild(sel); row.appendChild(del);
         wrap.appendChild(row);
     }
     (data[field.key] || []).forEach(function(a) { addRow(a.name, a.native_lang); });
+    _emRefreshLangOpts(wrap, '.alias-lang');
     var addBtn = _emBtn('+ Add name', 'secondary');
     addBtn.style.cssText += 'margin-bottom:0.875rem;';
-    addBtn.onclick = function() { addRow('', ''); };
+    addBtn.onclick = function() { addRow('', ''); _emRefreshLangOpts(wrap, '.alias-lang'); };
     container.appendChild(addBtn);
     return {
         addName: function(name, lang) { addRow(name, lang); },
@@ -851,7 +872,7 @@ function albumEditConfig(albumId, albumName) {
             }
             if (data.alt_names && data.alt_names.length) {
                 var altText = data.alt_names.map(function(a) {
-                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : '');
+                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : (a.native_lang === 'zh' ? ' (native CN)' : (a.native_lang === 'rom' ? ' (romanized)' : (a.native_lang === 'en' ? ' (English)' : (a.native_lang === 'other' ? ' (native other)' : '')))));
                     return a.name + tag;
                 }).join(', ');
                 bodyArea.appendChild(ui.infoRow('Alternate Names', altText));
@@ -924,7 +945,7 @@ function albumEditConfig(albumId, albumName) {
                 if (altChanged) {
                     promises.push(fetch(pfx + '/alt-names', { method: 'POST', headers: ui.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ alt_names: altNames }) })
                         .then(function(r) { return r.ok ? r.json() : null; })
-                        .then(function(j) { if (j) { data.alt_names = j.alt_names || altNames; ui.markDirty(); } else ui.toast('Could not save alternate names — only one native JP and one native KR allowed.'); }));
+                        .then(function(j) { if (j) { data.alt_names = j.alt_names || altNames; ui.markDirty(); } else ui.toast('Could not save alternate names — Native JP/KR/CN/Other are mutually exclusive, and one each of the others.'); }));
                 }
                 Promise.all(promises).then(ui.showInfo);
             };
@@ -1205,7 +1226,7 @@ function songEditConfig(cell) {
 
             if (data.aliases && data.aliases.length) {
                 var aliasText = data.aliases.map(function(a) {
-                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : '');
+                    var tag = a.native_lang === 'ja' ? ' (native JP)' : (a.native_lang === 'ko' ? ' (native KR)' : (a.native_lang === 'zh' ? ' (native CN)' : (a.native_lang === 'rom' ? ' (romanized)' : (a.native_lang === 'en' ? ' (English)' : (a.native_lang === 'other' ? ' (native other)' : '')))));
                     return a.name + tag;
                 }).join(', ');
                 bodyArea.appendChild(ui.infoRow('Alt names', aliasText));
@@ -1343,21 +1364,46 @@ function songEditConfig(cell) {
                 var sel = document.createElement('select');
                 sel.className = 'alias-lang';
                 sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.375rem; font-size:0.8125rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
-                [['', '—'], ['ja', 'Native JP'], ['ko', 'Native KR']].forEach(function(o) {
+                [['', '—'], ['en', 'English'], ['rom', 'Romanized'], ['ko', 'Native KR'], ['ja', 'Native JP'], ['zh', 'Native CN'], ['other', 'Native Other']].forEach(function(o) {
                     var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
                     if (o[0] === (lang || '')) opt.selected = true;
                     sel.appendChild(opt);
                 });
+                sel.onchange = function() { _emRefreshLangOpts(aliasWrap, '.alias-lang'); };
+                var mainBtn = ui.btn('⬆', 'secondary');
+                mainBtn.title = 'Make this the main song name';
+                mainBtn.style.padding = '0.375rem 0.625rem';
+                mainBtn.onclick = function() {
+                    var newMain = nameInp.value.trim();
+                    if (!newMain) return;
+                    var oldMain = nameInput.value.trim();
+                    var promotedTagged = !!sel.value;
+                    nameInput.value = newMain;
+                    // Is the old main already present as another alias? (case-insensitive)
+                    var dup = false, rows = aliasWrap.children;
+                    for (var i = 0; i < rows.length; i++) {
+                        if (rows[i] === row) continue;
+                        var nm = rows[i].querySelector('.alias-name');
+                        if (nm && nm.value.trim().toLowerCase() === oldMain.toLowerCase()) { dup = true; break; }
+                    }
+                    // Drop the promoted alias only when it was an untagged (plain) name.
+                    if (!promotedTagged) aliasWrap.removeChild(row);
+                    // Demote the old main to an alias unless it's empty, unchanged, or already an alias.
+                    if (oldMain && oldMain.toLowerCase() !== newMain.toLowerCase() && !dup) addAliasRow(oldMain, '');
+                    _emRefreshLangOpts(aliasWrap, '.alias-lang');
+                    updateSaveState();
+                };
                 var del = ui.btn('✕', 'secondary');
                 del.style.padding = '0.375rem 0.625rem';
-                del.onclick = function() { aliasWrap.removeChild(row); };
-                row.appendChild(nameInp); row.appendChild(sel); row.appendChild(del);
+                del.onclick = function() { aliasWrap.removeChild(row); _emRefreshLangOpts(aliasWrap, '.alias-lang'); };
+                row.appendChild(nameInp); row.appendChild(sel); row.appendChild(mainBtn); row.appendChild(del);
                 aliasWrap.appendChild(row);
             }
             (data.aliases || []).forEach(function(a) { addAliasRow(a.name, a.native_lang); });
+            _emRefreshLangOpts(aliasWrap, '.alias-lang');
             var addAliasBtn = ui.btn('+ Add name', 'secondary');
             addAliasBtn.style.cssText += 'margin-bottom:0.875rem;';
-            addAliasBtn.onclick = function() { addAliasRow('', ''); };
+            addAliasBtn.onclick = function() { addAliasRow('', ''); _emRefreshLangOpts(aliasWrap, '.alias-lang'); };
             bodyArea.appendChild(addAliasBtn);
 
             var spotifyInput = ui.labeledInput(bodyArea, { label: 'Spotify URL', key: 'spotify_url', placeholder: 'https://open.spotify.com/… (or n/a)' }, data);
@@ -1428,7 +1474,7 @@ function songEditConfig(cell) {
                     else { cell.classList.remove('has-song-note'); cell.removeAttribute('data-song-note'); }
                     var aliasRes = results[4];
                     if (aliasRes.ok) data.aliases = aliasRes.aliases || [];
-                    else ui.toast('Could not save alternative names — only one native JP and one native KR allowed.');
+                    else ui.toast('Could not save alternative names — Native JP/KR/CN/Other are mutually exclusive, and one each of the others.');
                     var sp = results[2], yt = results[3];
                     var badUrl = (sp.changed && !sp.ok) || (yt.changed && !yt.ok);
                     Promise.all([

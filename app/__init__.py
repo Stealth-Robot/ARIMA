@@ -92,21 +92,30 @@ def create_app():
                 return {'latest_update_id': latest.id}
         return {'latest_update_id': 0}
 
-    # Song/album display-name helpers — swap in a native JP/KR name per the viewer's
-    # profile toggles (Korean wins when both apply). Albums honor the same toggles.
+    # Song/album display-name helpers — swap in a native JP/KR/CN, romanized, English,
+    # or other name per the viewer's profile toggles (Korean wins, then Japanese, then
+    # Chinese, then romanized, then English, then other). Albums honor the same toggles.
     @flask_app.context_processor
     def inject_song_display():
-        ja = ko = False
+        ja = ko = zh = rom = en = other = False
         if current_user.is_authenticated:
             if not current_user.is_system_or_guest and current_user.settings:
                 ja = bool(getattr(current_user.settings, 'display_native_ja', False))
                 ko = bool(getattr(current_user.settings, 'display_native_ko', False))
+                zh = bool(getattr(current_user.settings, 'display_native_zh', False))
+                rom = bool(getattr(current_user.settings, 'display_romanized', False))
+                en = bool(getattr(current_user.settings, 'display_english', False))
+                other = bool(getattr(current_user.settings, 'display_native_other', False))
             else:
                 ja = bool(session.get('display_native_ja', False))
                 ko = bool(session.get('display_native_ko', False))
+                zh = bool(session.get('display_native_zh', False))
+                rom = bool(session.get('display_romanized', False))
+                en = bool(session.get('display_english', False))
+                other = bool(session.get('display_native_other', False))
         return {
-            'song_display_name': lambda song: song.display_name(ja, ko),
-            'album_display_name': lambda album: album.display_name(ja, ko),
+            'song_display_name': lambda song: song.display_name(ja, ko, zh, rom, en, other),
+            'album_display_name': lambda album: album.display_name(ja, ko, zh, rom, en, other),
         }
 
     # Theme context processor — injects resolved theme + helpers into all templates

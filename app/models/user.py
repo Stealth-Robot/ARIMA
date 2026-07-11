@@ -103,6 +103,10 @@ class UserSettings(db.Model):
     hide_disbanded_maintained = db.Column(db.Boolean, nullable=False, server_default='1')
     display_native_ja = db.Column(db.Boolean, nullable=False, server_default='0')
     display_native_ko = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_native_zh = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_romanized = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_english = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_native_other = db.Column(db.Boolean, nullable=False, server_default='0')
     edit_buttons = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
 
     EDIT_BUTTON_DEFAULTS = [

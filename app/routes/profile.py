@@ -49,6 +49,10 @@ def profile():
             'search_ignore_punctuation': session.get('search_ignore_punctuation', False),
             'display_native_ja': session.get('display_native_ja', False),
             'display_native_ko': session.get('display_native_ko', False),
+            'display_native_zh': session.get('display_native_zh', False),
+            'display_romanized': session.get('display_romanized', False),
+            'display_english': session.get('display_english', False),
+            'display_native_other': session.get('display_native_other', False),
         }
     else:
         s = current_user.settings
@@ -74,6 +78,10 @@ def profile():
             'search_ignore_punctuation': getattr(s, 'search_ignore_punctuation', False) if s else False,
             'display_native_ja': getattr(s, 'display_native_ja', False) if s else False,
             'display_native_ko': getattr(s, 'display_native_ko', False) if s else False,
+            'display_native_zh': getattr(s, 'display_native_zh', False) if s else False,
+            'display_romanized': getattr(s, 'display_romanized', False) if s else False,
+            'display_english': getattr(s, 'display_english', False) if s else False,
+            'display_native_other': getattr(s, 'display_native_other', False) if s else False,
             'edit_buttons': s.visible_edit_buttons if s else set(UserSettings.EDIT_BUTTON_DEFAULTS),
         }
 
@@ -108,6 +116,10 @@ def _apply_theme_settings(set_field, form):
         set_field('search_ignore_punctuation', form.get('search_ignore_punctuation') == 'on')
         set_field('display_native_ja', form.get('display_native_ja') == 'on')
         set_field('display_native_ko', form.get('display_native_ko') == 'on')
+        set_field('display_native_zh', form.get('display_native_zh') == 'on')
+        set_field('display_romanized', form.get('display_romanized') == 'on')
+        set_field('display_english', form.get('display_english') == 'on')
+        set_field('display_native_other', form.get('display_native_other') == 'on')
         val = form.get('album_sort_order')
         set_field('album_sort_order', val if val in ('asc', 'desc') else 'desc')
         sbs = form.get('song_button_size', type=int)

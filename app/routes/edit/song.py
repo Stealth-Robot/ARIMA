@@ -1031,8 +1031,9 @@ def song_aliases_edit(song_id):
     """Replace a song's alternative names.
 
     Aliases make songs findable by romanized/translated titles. Each alias may be
-    tagged native_lang 'ja' or 'ko' to designate it the native Japanese/Korean name
-    (at most one of each). Expects JSON: {"aliases": [{"name", "native_lang"}, ...]}.
+    tagged native_lang 'ja', 'ko', 'zh', 'rom', 'en', or 'other' to designate it the
+    native Japanese/Korean/Chinese, romanized, English, or other name (at most one of
+    each). Expects JSON: {"aliases": [{"name", "native_lang"}, ...]}.
     """
     _require_edit_mode()
     song = db.session.get(Song, song_id)
@@ -1051,12 +1052,14 @@ def song_aliases_edit(song_id):
             continue
         seen.add(key)
         lang = (item.get('native_lang') or '').strip().lower() or None
-        if lang not in (None, 'ja', 'ko'):
+        if lang not in (None, 'ja', 'ko', 'zh', 'rom', 'en', 'other'):
             abort(400)
         if lang is not None:
-            if lang in used_langs:
+            # JP/KR/CN/Other are mutually exclusive, so they collapse to one group key.
+            group = 'jkc' if lang in ('ja', 'ko', 'zh', 'other') else lang
+            if group in used_langs:
                 abort(400)
-            used_langs.add(lang)
+            used_langs.add(group)
         aliases.append((name, lang))
 
     def _key(rows):
