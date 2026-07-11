@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 
 from sqlalchemy import func
 from app.extensions import db
-from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, SongMiscArtist, MiscArtist, SongAlias, AlbumAltName
+from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, album_genres, song_genres, SongMiscArtist, MiscArtist, SongAlias, AlbumAltName
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
 from app.services.events import publish
@@ -539,6 +539,16 @@ def album_create_song(album_id):
         mid = int(ma['misc_artist_id'])
         if db.session.get(MiscArtist, mid):
             db.session.add(SongMiscArtist(song_id=song.id, misc_artist_id=mid, artist_is_main=bool(ma.get('is_main'))))
+
+    try:
+        genre_ids = sorted({int(g) for g in (data.get('genre_ids') or [])})
+    except (TypeError, ValueError):
+        abort(400)
+    if genre_ids:
+        valid_ids = {g.id for g in Genre.query.filter(Genre.id.in_(genre_ids)).all()}
+        for gid in genre_ids:
+            if gid in valid_ids:
+                db.session.execute(song_genres.insert().values(song_id=song.id, genre_id=gid))
 
     log_change(current_user,
                f'Created "{name}" song in "{album.name}" album',

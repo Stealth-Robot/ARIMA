@@ -584,6 +584,239 @@ function artistEditConfig(artistId) {
     };
 }
 
+/* Create a brand-new song and attach it to an album. Full form: name, real +
+   misc artists (main/featured), and remix/cover/promoted flags. Posts to the
+   album's /create-song endpoint, then reloads so the new track shows up. */
+function showCreateSongSheet(pfx) {
+    var realArtists = [];   // {id, name, is_main}
+    var miscArtists = [];   // {id, name, is_main}
+    // Seed the page's current artist as Main so the common case is one click.
+    var seed = document.querySelector('[data-current-artist-id]');
+    if (seed) {
+        var sid = parseInt(seed.getAttribute('data-current-artist-id'), 10);
+        var sname = seed.getAttribute('data-current-artist-name') || ('Artist #' + sid);
+        if (sid) realArtists.push({ id: sid, name: sname, is_main: true });
+    }
+
+    var backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center;';
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:var(--bg-secondary,#fff); border-top-left-radius:0.75rem; border-top-right-radius:0.75rem; width:100%; max-width:30rem; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 -0.25rem 1rem rgba(0,0,0,0.3);';
+    function close() { backdrop.remove(); }
+    backdrop.addEventListener('click', function(e) { if (e.target === backdrop) close(); });
+
+    var head = document.createElement('div');
+    head.style.cssText = 'padding:0.875rem 1rem 0.5rem; display:flex; align-items:center; gap:0.5rem; flex-shrink:0;';
+    var h = document.createElement('div');
+    h.textContent = 'Create new song';
+    h.style.cssText = 'font-size:0.9375rem; font-weight:600; color:var(--text-primary); flex:1;';
+    var x = document.createElement('button');
+    x.innerHTML = '&#10005;';
+    x.style.cssText = 'border:none; background:none; font-size:1.125rem; color:var(--text-secondary,#6B7280); cursor:pointer;';
+    x.onclick = close;
+    head.appendChild(h); head.appendChild(x);
+    sheet.appendChild(head);
+
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:0 1rem 1rem; overflow-y:auto; flex:1;';
+    sheet.appendChild(body);
+
+    function _label(text) {
+        var l = document.createElement('div');
+        l.textContent = text;
+        l.style.cssText = 'font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-secondary,#6B7280); margin:0.75rem 0 0.375rem;';
+        return l;
+    }
+
+    body.appendChild(_label('Song name'));
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Song name';
+    nameInput.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    nameInput.addEventListener('input', updateCreateState);
+    body.appendChild(nameInput);
+
+    // Spotify URL + one-click import (fills the name from the track when blank).
+    body.appendChild(_label('Spotify URL'));
+    var spotRow = document.createElement('div');
+    spotRow.style.cssText = 'display:flex; gap:0.375rem; align-items:center;';
+    var spotInput = document.createElement('input');
+    spotInput.type = 'text';
+    spotInput.placeholder = 'https://open.spotify.com/track/…';
+    spotInput.style.cssText = 'flex:1; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    var importBtn = _emBtn('Import', 'secondary');
+    importBtn.onclick = function() {
+        var u = spotInput.value.trim();
+        if (!u) return;
+        importBtn.disabled = true;
+        spotStatus.textContent = 'Fetching…';
+        fetch('/misc/spotify-track?url=' + encodeURIComponent(u), { headers: _csrfHeaders({ 'Accept': 'application/json' }) })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                importBtn.disabled = false;
+                if (d.error) { spotStatus.textContent = (typeof localizeCooldown === 'function' ? localizeCooldown(d.error) : d.error); return; }
+                if (d.name && !nameInput.value.trim()) { nameInput.value = d.name; updateCreateState(); }
+                if (d.spotify_url) spotInput.value = d.spotify_url;
+                spotStatus.textContent = 'Linked: ' + (d.name || '');
+            })
+            .catch(function() { importBtn.disabled = false; spotStatus.textContent = 'Fetch failed'; });
+    };
+    spotRow.appendChild(spotInput); spotRow.appendChild(importBtn);
+    body.appendChild(spotRow);
+    var spotStatus = document.createElement('div');
+    spotStatus.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary,#6B7280); min-height:0.875rem; margin-top:0.25rem;';
+    body.appendChild(spotStatus);
+
+    body.appendChild(_label('YouTube URL'));
+    var ytInput = document.createElement('input');
+    ytInput.type = 'text';
+    ytInput.placeholder = 'https://www.youtube.com/watch?v=…';
+    ytInput.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    body.appendChild(ytInput);
+
+    body.appendChild(_label('Artists'));
+    var artistsWrap = document.createElement('div');
+    body.appendChild(artistsWrap);
+    var addArtistBtn = _emBtn('+ Add artist', 'secondary');
+    addArtistBtn.style.marginTop = '0.375rem';
+    addArtistBtn.onclick = function() {
+        showMobilePicker({ title: 'Add which artist?', mode: 'search', placeholder: 'Search artists…',
+            searchUrl: function(q) { return '/misc/search-real-artists?q=' + encodeURIComponent(q); },
+            mapItems: function(d) { return d.map(function(a) { return { id: a.artist_id, label: a.name, name: a.name }; }); },
+            onSelect: function(item) {
+                if (realArtists.some(function(a) { return a.id === item.id; })) return;
+                realArtists.push({ id: item.id, name: item.name, is_main: false });
+                renderArtists();
+            } });
+    };
+    body.appendChild(addArtistBtn);
+
+    body.appendChild(_label('Misc artists'));
+    var miscWrap = document.createElement('div');
+    body.appendChild(miscWrap);
+    var addMiscBtn = _emBtn('+ Add misc artist', 'secondary');
+    addMiscBtn.style.marginTop = '0.375rem';
+    addMiscBtn.onclick = function() {
+        showMobilePicker({ title: 'Add which misc artist?', mode: 'search', placeholder: 'Search misc artists…',
+            searchUrl: function(q) { return '/misc/search-artists?q=' + encodeURIComponent(q); },
+            mapItems: function(d) { return d.map(function(a) { return { id: a.id, label: a.name, name: a.name }; }); },
+            onSelect: function(item) {
+                if (miscArtists.some(function(a) { return a.id === item.id; })) return;
+                miscArtists.push({ id: item.id, name: item.name, is_main: false });
+                renderArtists();
+            } });
+    };
+    body.appendChild(addMiscBtn);
+
+    body.appendChild(_label('Flags'));
+    var flagsWrap = document.createElement('div');
+    flagsWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:1rem;';
+    function _flag(labelText) {
+        var lab = document.createElement('label');
+        lab.style.cssText = 'display:flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:var(--text-primary); cursor:pointer;';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.style.cursor = 'pointer';
+        var sp = document.createElement('span'); sp.textContent = labelText;
+        lab.appendChild(cb); lab.appendChild(sp);
+        flagsWrap.appendChild(lab);
+        return cb;
+    }
+    var remixCb = _flag('Remix');
+    var coverCb = _flag('Cover');
+    var promotedCb = _flag('Promoted');
+    body.appendChild(flagsWrap);
+
+    body.appendChild(_label('Genres'));
+    var genreIds = [];
+    var genreDisplay = document.createElement('div');
+    genreDisplay.textContent = 'None';
+    genreDisplay.style.cssText = 'font-size:0.8125rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
+    body.appendChild(genreDisplay);
+    var editGenresBtn = _emBtn('Edit genres', 'secondary');
+    editGenresBtn.onclick = function() {
+        _emEnsure('/lookups/genres', function(opts) {
+            showMobilePicker({ title: 'Song genres', mode: 'multiselect',
+                options: opts.map(function(g) { return { id: g.id, label: g.name }; }),
+                selectedIds: genreIds,
+                onDone: function(ids) {
+                    genreIds = ids;
+                    var names = opts.filter(function(g) { return ids.indexOf(g.id) !== -1; }).map(function(g) { return g.name; });
+                    genreDisplay.textContent = names.length ? names.join(', ') : 'None';
+                } });
+        });
+    };
+    body.appendChild(editGenresBtn);
+
+    var footer = document.createElement('div');
+    footer.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;';
+    var cancelBtn = _emBtn('Cancel', 'secondary'); cancelBtn.onclick = close;
+    var createBtn = _emBtn('Create', 'primary'); createBtn.onclick = doCreate;
+    footer.appendChild(cancelBtn); footer.appendChild(createBtn);
+    body.appendChild(footer);
+
+    function _artistRow(a, list) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:0.5rem; padding:0.375rem 0; border-bottom:0.0625rem solid var(--border,#eee);';
+        var nm = document.createElement('span');
+        nm.textContent = a.name;
+        nm.style.cssText = 'flex:1; font-size:0.875rem; color:var(--text-primary); word-break:break-word;';
+        var roleSel = document.createElement('select');
+        roleSel.style.cssText = 'font-size:0.8125rem; padding:0.25rem; border:0.0625rem solid var(--border,#ccc); border-radius:0.25rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
+        roleSel.innerHTML = '<option value="main"' + (a.is_main ? ' selected' : '') + '>Main</option>' +
+                            '<option value="feat"' + (!a.is_main ? ' selected' : '') + '>Featured</option>';
+        roleSel.onchange = function() { a.is_main = (roleSel.value === 'main'); updateCreateState(); };
+        var rm = document.createElement('button');
+        rm.innerHTML = '&times;';
+        rm.style.cssText = 'border:none; background:none; font-size:1rem; color:var(--delete-button,#DC2626); cursor:pointer; line-height:1;';
+        rm.onclick = function() { var i = list.indexOf(a); if (i > -1) list.splice(i, 1); renderArtists(); };
+        row.appendChild(nm); row.appendChild(roleSel); row.appendChild(rm);
+        return row;
+    }
+    function renderArtists() {
+        artistsWrap.innerHTML = '';
+        if (!realArtists.length) {
+            var e1 = document.createElement('div');
+            e1.textContent = 'Add at least one Main artist.';
+            e1.style.cssText = 'font-size:0.8125rem; color:var(--text-secondary,#6B7280); padding:0.25rem 0;';
+            artistsWrap.appendChild(e1);
+        }
+        realArtists.forEach(function(a) { artistsWrap.appendChild(_artistRow(a, realArtists)); });
+        miscWrap.innerHTML = '';
+        miscArtists.forEach(function(a) { miscWrap.appendChild(_artistRow(a, miscArtists)); });
+        updateCreateState();
+    }
+    function updateCreateState() {
+        var ok = !!nameInput.value.trim() && realArtists.some(function(a) { return a.is_main; });
+        createBtn.disabled = !ok;
+        createBtn.style.opacity = ok ? '1' : '0.5';
+        createBtn.style.cursor = ok ? 'pointer' : 'default';
+    }
+    function doCreate() {
+        if (createBtn.disabled) return;
+        var payload = {
+            name: nameInput.value.trim(),
+            artists: realArtists.map(function(a) { return { artist_id: a.id, is_main: a.is_main }; }),
+            misc_artists: miscArtists.map(function(a) { return { misc_artist_id: a.id, is_main: a.is_main }; }),
+            is_remix: remixCb.checked, is_cover: coverCb.checked, is_promoted: promotedCb.checked,
+            spotify_url: spotInput.value.trim() || null,
+            youtube_url: ytInput.value.trim() || null,
+            genre_ids: genreIds,
+        };
+        createBtn.disabled = true;
+        fetch(pfx + '/create-song', { method: 'POST', headers: _emHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) })
+            .then(function(r) {
+                if (r.ok) return r.json();
+                return r.json().catch(function() { return {}; }).then(function(j) { throw new Error(j.error || 'Create failed'); });
+            })
+            .then(function() { window.location.reload(); })
+            .catch(function(err) { _emToast(err.message || 'Create failed'); createBtn.disabled = false; updateCreateState(); });
+    }
+
+    renderArtists();
+    backdrop.appendChild(sheet);
+    document.body.appendChild(backdrop);
+    setTimeout(function() { nameInput.focus(); }, 60);
+}
+
 function albumEditConfig(albumId, albumName) {
     var id = albumId;
     var pfx = '/edit/album/' + id;
@@ -842,6 +1075,9 @@ function albumEditConfig(albumId, albumName) {
                         fetch(pfx + '/add-song', { method: 'POST', headers: ui.headers(), body: 'song_id=' + item.id })
                             .then(function(r) { if (r.ok) window.location.reload(); else ui.toast('Add failed'); });
                     } });
+            });
+            _act('Create new song', 'secondary', function() {
+                showCreateSongSheet(pfx);
             });
             _act('Move songs to artist', 'secondary', function() {
                 var srcEl = document.querySelector('[data-current-artist-id]');
