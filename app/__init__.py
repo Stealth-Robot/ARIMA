@@ -273,4 +273,8 @@ def create_app():
     from app.services.railway_retention import start_retention_scheduler
     start_retention_scheduler(flask_app)
 
+    # Start RSS watchdog — recycles the worker before the container OOMs (no-op without /proc)
+    from app.services.memwatch import start_memory_watchdog
+    start_memory_watchdog()
+
     return flask_app

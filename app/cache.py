@@ -9,6 +9,13 @@ import threading
 import time
 from collections import OrderedDict
 
+# glibc hoards freed arena pages, so each evicted ~40MB _BulkData ratchets RSS; trim returns them to the OS.
+try:
+    import ctypes
+    _malloc_trim = ctypes.CDLL('libc.so.6').malloc_trim
+except (OSError, AttributeError):
+    _malloc_trim = None  # non-glibc platform (e.g. macOS dev) — trimming not needed/available
+
 # ---------------------------------------------------------------------------
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
@@ -131,6 +138,8 @@ def get_cached_bulk_data(include_featured, include_remixes, include_covers=True,
         _stats_cache.move_to_end(key)
         while len(_stats_cache) > _STATS_MAX:
             _stats_cache.popitem(last=False)
+    if _malloc_trim:
+        _malloc_trim(0)
     return data
 
 
