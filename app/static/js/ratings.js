@@ -193,7 +193,7 @@ function showMobileRatingModal(cell, songId, targetUserId) {
         return btn;
     }
 
-    for (var i = 0; i <= 5; i++) {
+    for (var i = 0; i <= 6; i++) {   // 6 is a shortcut for a 5 + "6/5" note (server-side)
         btnRow.appendChild(makeScoreBtn(String(i)));
     }
     modal.appendChild(btnRow);
@@ -643,7 +643,7 @@ function showRatingInput(event, songId, targetUserId) {
         const val = input.value.trim();
         if (val === '') {
             submitRating(cell, songId, null, targetUserId);
-        } else if (/^[0-5]$/.test(val)) {
+        } else if (/^[0-6]$/.test(val)) {   // 6 is a shortcut for a 5 + "6/5" note (server-side)
             submitRating(cell, songId, parseInt(val), targetUserId);
         } else {
             cancelRating(cell);
@@ -675,7 +675,7 @@ function showRatingInput(event, songId, targetUserId) {
             e.preventDefault();
             if (!submitted) cancelRating(cell);
             showNoteInput(cell, songId);
-        } else if (e.key.length === 1 && !/^[0-5]$/.test(e.key)) {
+        } else if (e.key.length === 1 && !/^[0-6]$/.test(e.key)) {
             e.preventDefault();
         }
     });

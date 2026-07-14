@@ -31,7 +31,8 @@ def rate():
     if rating_value is None and not note_sent:
         return 'Missing rating or note', 400
 
-    if rating_value is not None and (rating_value < 0 or rating_value > 5):
+    # 6 is a shortcut for a 5 plus a "6/5" note (handled below), so accept 0-6 here.
+    if rating_value is not None and (rating_value < 0 or rating_value > 6):
         return 'Rating must be 0-5', 400
 
     # Determine target user — editors/admins can write for other users in rating-all mode
@@ -47,6 +48,19 @@ def rate():
     existing = db.session.get(Rating, (song_id, target_user_id))
     old_rating = existing.rating if existing else None
     old_note = existing.note if existing else None
+
+    # Entering 6 is a shortcut: the actual score stays 5, and a "6/5" note is added.
+    # Prepend "6/5 " to any existing note (unless it already contains "6/5").
+    if rating_value == 6:
+        rating_value = 5
+        base_note = note if note_sent else old_note
+        if not base_note:
+            note = '6/5'
+        elif '6/5' not in base_note:
+            note = '6/5 ' + base_note
+        else:
+            note = base_note
+        note_sent = True
 
     if existing:
         if rating_value is not None:
