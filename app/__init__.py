@@ -97,25 +97,25 @@ def create_app():
     # Chinese, then romanized, then English, then other). Albums honor the same toggles.
     @flask_app.context_processor
     def inject_song_display():
-        ja = ko = zh = rom = en = other = False
+        native = rom = en = False
+        nat_scope = en_scope = rom_scope = (False, False, False, False)
         if current_user.is_authenticated:
             if not current_user.is_system_or_guest and current_user.settings:
-                ja = bool(getattr(current_user.settings, 'display_native_ja', False))
-                ko = bool(getattr(current_user.settings, 'display_native_ko', False))
-                zh = bool(getattr(current_user.settings, 'display_native_zh', False))
-                rom = bool(getattr(current_user.settings, 'display_romanized', False))
-                en = bool(getattr(current_user.settings, 'display_english', False))
-                other = bool(getattr(current_user.settings, 'display_native_other', False))
+                s = current_user.settings
+                get = lambda k: bool(getattr(s, k, False))
             else:
-                ja = bool(session.get('display_native_ja', False))
-                ko = bool(session.get('display_native_ko', False))
-                zh = bool(session.get('display_native_zh', False))
-                rom = bool(session.get('display_romanized', False))
-                en = bool(session.get('display_english', False))
-                other = bool(session.get('display_native_other', False))
+                get = lambda k: bool(session.get(k, False))
+            native = get('display_native')
+            rom = get('display_romanized')
+            en = get('display_english')
+            nat_scope = (get('display_nat_scope_ja'), get('display_nat_scope_ko'), get('display_nat_scope_zh'), get('display_nat_scope_other'))
+            en_scope = (get('display_en_scope_ja'), get('display_en_scope_ko'), get('display_en_scope_zh'), get('display_en_scope_other'))
+            rom_scope = (get('display_rom_scope_ja'), get('display_rom_scope_ko'), get('display_rom_scope_zh'), get('display_rom_scope_other'))
         return {
-            'song_display_name': lambda song: song.display_name(ja, ko, zh, rom, en, other),
-            'album_display_name': lambda album: album.display_name(ja, ko, zh, rom, en, other),
+            'song_display_name': lambda song: song.display_name(
+                native, rom, en, nat_scope, en_scope, rom_scope),
+            'album_display_name': lambda album: album.display_name(
+                native, rom, en, nat_scope, en_scope, rom_scope),
         }
 
     # Theme context processor — injects resolved theme + helpers into all templates

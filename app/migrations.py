@@ -176,6 +176,16 @@ def run_startup_migrations():
                     ))
                 logger.info('Added missing user_settings column: %s', col.name)
 
+        # 1c'. Collapse the former per-language native display toggles into the single
+        # display_native flag. Runs once, when display_native is first added and the
+        # old columns still exist; idempotent thereafter (guard fails once collapsed).
+        if 'display_native' not in existing_settings_cols and 'display_native_ja' in existing_settings_cols:
+            db.session.execute(db.text(
+                "UPDATE user_settings SET display_native = 1 WHERE "
+                "display_native_ja = 1 OR display_native_ko = 1 OR display_native_zh = 1 "
+                "OR display_native_other = 1"))
+            logger.info('Backfilled display_native from legacy per-language native toggles')
+
         # 1d. Add any new user columns (e.g. spotify_* OAuth fields)
         existing_user_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('user')"))}
         for col in User.__table__.columns:

@@ -133,50 +133,45 @@
                 Ignore punctuation when searching
             </label>
         </div>
+        {% macro scope_group(pfx) %}
+        <div class="mb-3 ml-6">
+            {% for lang, label in [('ja', 'Japanese'), ('ko', 'Korean'), ('zh', 'Chinese'), ('other', 'Other-language')] %}
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="display_{{ pfx }}_scope_{{ lang }}"
+                       onchange="_scopeChildChanged('{{ pfx }}', '{{ lang }}', this.checked);"
+                       {% if settings['display_' ~ pfx ~ '_scope_' ~ lang] %}checked{% endif %}>
+                {{ label }} songs/albums
+            </label>
+            {% endfor %}
+        </div>
+        {% endmacro %}
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="display_english" id="display_english"
-                       onchange="if(this.checked){document.getElementById('display_romanized').checked=false;}"
+                       onchange="_scopeParentChanged('en', this.checked);"
                        {% if settings.display_english %}checked{% endif %}>
                 Set song/album names to English over the Spotify/original name
             </label>
         </div>
+        {{ scope_group('en') }}
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="display_romanized" id="display_romanized"
-                       onchange="if(this.checked){document.getElementById('display_english').checked=false;}"
+                       onchange="_scopeParentChanged('rom', this.checked);"
                        {% if settings.display_romanized %}checked{% endif %}>
                 Set song/album names to Romanized over the Spotify/original name
             </label>
         </div>
+        {{ scope_group('rom') }}
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="display_native_ja"
-                       {% if settings.display_native_ja %}checked{% endif %}>
-                Set song/album name to Native Japanese over all other names
+                <input type="checkbox" name="display_native"
+                       onchange="_scopeParentChanged('nat', this.checked);"
+                       {% if settings.display_native %}checked{% endif %}>
+                Set song/album name to Native over all other names
             </label>
         </div>
-        <div class="mb-3">
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="display_native_ko"
-                       {% if settings.display_native_ko %}checked{% endif %}>
-                Set song/album name to Native Korean over all other names
-            </label>
-        </div>
-        <div class="mb-3">
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="display_native_zh"
-                       {% if settings.display_native_zh %}checked{% endif %}>
-                Set song/album name to Native Chinese over all other names
-            </label>
-        </div>
-        <div class="mb-3">
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="display_native_other"
-                       {% if settings.display_native_other %}checked{% endif %}>
-                Set song/album name to Native Other over all other names
-            </label>
-        </div>
+        {{ scope_group('nat') }}
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Album Sort Order</label>
             <select name="album_sort_order" class="w-full px-3 py-2 border rounded border-border">
@@ -411,6 +406,39 @@
     </p>
 </div>
 <script>
+// Scope-checkbox interaction for the name-display prefs.
+// - Checking a "Set names to X" parent checks all its language children;
+//   unchecking a parent leaves its children as-is.
+// - Unchecking any child unchecks its parent.
+// - A given language is mutually exclusive across the three groups (en/rom/nat):
+//   selecting it in one group clears it in the others.
+var _SCOPE_GROUPS = ['en', 'rom', 'nat'];
+var _SCOPE_PARENT = {en: 'display_english', rom: 'display_romanized', nat: 'display_native'};
+function _scopeCb(name) { return document.querySelector('input[name="' + name + '"]'); }
+function _uncheckScopeChild(pfx, lang) {
+    var c = _scopeCb('display_' + pfx + '_scope_' + lang);
+    if (c && c.checked) {
+        c.checked = false;
+        var p = _scopeCb(_SCOPE_PARENT[pfx]);   // a child turned off -> turn off its parent
+        if (p) p.checked = false;
+    }
+}
+function _scopeChildChanged(pfx, lang, checked) {
+    if (checked) {
+        _SCOPE_GROUPS.forEach(function(p) { if (p !== pfx) _uncheckScopeChild(p, lang); });
+    } else {
+        var p = _scopeCb(_SCOPE_PARENT[pfx]);
+        if (p) p.checked = false;
+    }
+}
+function _scopeParentChanged(pfx, checked) {
+    if (!checked) return;   // unchecking a parent leaves its children alone
+    ['ja', 'ko', 'zh', 'other'].forEach(function(lang) {
+        var c = _scopeCb('display_' + pfx + '_scope_' + lang);
+        if (c) c.checked = true;
+        _SCOPE_GROUPS.forEach(function(p) { if (p !== pfx) _uncheckScopeChild(p, lang); });
+    });
+}
 // Auto-save settings forms on any change
 (function() {
     function autoSave(form, reload) {

@@ -101,12 +101,26 @@ class UserSettings(db.Model):
     search_ignore_punctuation = db.Column(db.Boolean, nullable=False, default=False, server_default='0')
     stats_users_mobile_only = db.Column(db.Boolean, nullable=False, server_default='1')
     hide_disbanded_maintained = db.Column(db.Boolean, nullable=False, server_default='1')
-    display_native_ja = db.Column(db.Boolean, nullable=False, server_default='0')
-    display_native_ko = db.Column(db.Boolean, nullable=False, server_default='0')
-    display_native_zh = db.Column(db.Boolean, nullable=False, server_default='0')
+    # One "show the native name" toggle; the nat_* scope below picks which native
+    # language(s) it applies to. (Replaces the former per-language native toggles,
+    # which are backfilled into this on startup.)
+    display_native = db.Column(db.Boolean, nullable=False, server_default='0')
     display_romanized = db.Column(db.Boolean, nullable=False, server_default='0')
     display_english = db.Column(db.Boolean, nullable=False, server_default='0')
-    display_native_other = db.Column(db.Boolean, nullable=False, server_default='0')
+    # Per-setting scope: restrict each display-name override to songs/albums that
+    # carry a native alias in the checked language(s). None checked = apply to all.
+    display_en_scope_ja = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_en_scope_ko = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_en_scope_zh = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_en_scope_other = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_rom_scope_ja = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_rom_scope_ko = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_rom_scope_zh = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_rom_scope_other = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_nat_scope_ja = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_nat_scope_ko = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_nat_scope_zh = db.Column(db.Boolean, nullable=False, server_default='0')
+    display_nat_scope_other = db.Column(db.Boolean, nullable=False, server_default='0')
     edit_buttons = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
 
     EDIT_BUTTON_DEFAULTS = [

@@ -165,12 +165,19 @@ class Song(db.Model):
     aliases = db.relationship('SongAlias', back_populates='song',
                               order_by='SongAlias.id', cascade='all, delete-orphan')
 
-    def display_name(self, native_ja=False, native_kr=False, native_zh=False, romanized=False, english=False, native_other=False):
+    def display_name(self, native=False, romanized=False, english=False,
+                     nat_scope=(False, False, False, False),
+                     en_scope=(False, False, False, False),
+                     rom_scope=(False, False, False, False)):
         """Title to show given a viewer's native-display toggles.
 
-        A native name (JP/KR/CN/Other) wins over all other names; failing that, an
-        English or romanized name (mutually exclusive as viewer prefs) overrides only
-        the original name. Falls back to the main name when no matching alias exists.
+        The native (JP/KR/CN/Other) name wins over all other names; failing that, an
+        English or romanized name overrides only the original name. Falls back to the
+        main name when no matching alias exists.
+
+        Each override carries an optional (ja, ko, zh, other) scope: when any of its
+        scope flags is set, that override applies only to songs that also carry a
+        native alias in a checked language, else the override is skipped (falls through).
         """
         ja = kr = zh = rom = en = other = None
         for a in self.aliases:
@@ -186,17 +193,20 @@ class Song(db.Model):
                 en = a.name
             elif a.native_lang == 'other':
                 other = a.name
-        if native_ja and ja:
-            return ja
-        if native_kr and kr:
-            return kr
-        if native_zh and zh:
-            return zh
-        if native_other and other:
-            return other
-        if english and en:
+
+        def _in_scope(scope):
+            sja, sko, szh, soth = scope
+            if not (sja or sko or szh or soth):
+                return True
+            return bool((sja and ja) or (sko and kr) or (szh and zh) or (soth and other))
+
+        if native and _in_scope(nat_scope):
+            n = ja or kr or zh or other  # native group is mutually exclusive: at most one exists
+            if n:
+                return n
+        if english and en and _in_scope(en_scope):
             return en
-        if romanized and rom:
+        if romanized and rom and _in_scope(rom_scope):
             return rom
         return self.name
 
@@ -246,12 +256,19 @@ class Album(db.Model):
                                 order_by='AlbumAltName.id',
                                 cascade='all, delete-orphan')
 
-    def display_name(self, native_ja=False, native_kr=False, native_zh=False, romanized=False, english=False, native_other=False):
+    def display_name(self, native=False, romanized=False, english=False,
+                     nat_scope=(False, False, False, False),
+                     en_scope=(False, False, False, False),
+                     rom_scope=(False, False, False, False)):
         """Title to show given a viewer's native-display toggles.
 
-        A native name (JP/KR/CN/Other) wins over all other names; failing that, an
-        English or romanized name (mutually exclusive as viewer prefs) overrides only
-        the original name. Falls back to the main name when no matching alt name exists.
+        The native (JP/KR/CN/Other) name wins over all other names; failing that, an
+        English or romanized name overrides only the original name. Falls back to the
+        main name when no matching alt name exists.
+
+        Each override carries an optional (ja, ko, zh, other) scope: when any of its
+        scope flags is set, that override applies only to albums that also carry a
+        native alt name in a checked language, else the override is skipped (falls through).
         """
         ja = kr = zh = rom = en = other = None
         for a in self.alt_names:
@@ -267,17 +284,20 @@ class Album(db.Model):
                 en = a.name
             elif a.native_lang == 'other':
                 other = a.name
-        if native_ja and ja:
-            return ja
-        if native_kr and kr:
-            return kr
-        if native_zh and zh:
-            return zh
-        if native_other and other:
-            return other
-        if english and en:
+
+        def _in_scope(scope):
+            sja, sko, szh, soth = scope
+            if not (sja or sko or szh or soth):
+                return True
+            return bool((sja and ja) or (sko and kr) or (szh and zh) or (soth and other))
+
+        if native and _in_scope(nat_scope):
+            n = ja or kr or zh or other  # native group is mutually exclusive: at most one exists
+            if n:
+                return n
+        if english and en and _in_scope(en_scope):
             return en
-        if romanized and rom:
+        if romanized and rom and _in_scope(rom_scope):
             return rom
         return self.name
 

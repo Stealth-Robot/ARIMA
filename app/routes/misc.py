@@ -118,23 +118,23 @@ BYPASS_FILTERS = {
 
 
 def _viewer_native_toggles():
-    """(native_ja, native_ko, native_zh, romanized, english, native_other) for the viewer, mirroring inject_song_display."""
+    """(native, romanized, english, nat_scope, en_scope, rom_scope) for the viewer, mirroring inject_song_display.
+
+    Each *_scope is a (ja, ko, zh, other) tuple.
+    """
+    z = (False, False, False, False)
     if not current_user.is_authenticated:
-        return False, False, False, False, False, False
+        return False, False, False, z, z, z
     if not current_user.is_system_or_guest and current_user.settings:
-        s = current_user.settings
-        return (bool(getattr(s, 'display_native_ja', False)),
-                bool(getattr(s, 'display_native_ko', False)),
-                bool(getattr(s, 'display_native_zh', False)),
-                bool(getattr(s, 'display_romanized', False)),
-                bool(getattr(s, 'display_english', False)),
-                bool(getattr(s, 'display_native_other', False)))
-    return (bool(session.get('display_native_ja', False)),
-            bool(session.get('display_native_ko', False)),
-            bool(session.get('display_native_zh', False)),
-            bool(session.get('display_romanized', False)),
-            bool(session.get('display_english', False)),
-            bool(session.get('display_native_other', False)))
+        get = lambda k: bool(getattr(current_user.settings, k, False))
+    else:
+        get = lambda k: bool(session.get(k, False))
+    return (get('display_native'),
+            get('display_romanized'),
+            get('display_english'),
+            (get('display_nat_scope_ja'), get('display_nat_scope_ko'), get('display_nat_scope_zh'), get('display_nat_scope_other')),
+            (get('display_en_scope_ja'), get('display_en_scope_ko'), get('display_en_scope_zh'), get('display_en_scope_other')),
+            (get('display_rom_scope_ja'), get('display_rom_scope_ko'), get('display_rom_scope_zh'), get('display_rom_scope_other')))
 
 
 def _build_misc_shell(bypass_filters=False):
@@ -258,10 +258,11 @@ def _build_country_data(country_id, bypass_filters=False):
     # Precompute each album's display name (native JP/KR/CN, romanized, English, or other
     # per the viewer's toggles) here, since the row.album passed to the template is a plain
     # dict, not an Album ORM object.
-    native_ja, native_ko, native_zh, romanized, english, native_other = _viewer_native_toggles()
+    (native, romanized, english,
+     nat_scope, en_scope, rom_scope) = _viewer_native_toggles()
     album_native = defaultdict(dict)
     album_ids = {info['id'] for info in song_album_map.values()}
-    if album_ids and (native_ja or native_ko or native_zh or romanized or english or native_other):
+    if album_ids and (native or romanized or english):
         for aid, lang, aname in db.session.query(
             AlbumAltName.album_id, AlbumAltName.native_lang, AlbumAltName.name,
         ).filter(
@@ -269,20 +270,23 @@ def _build_country_data(country_id, bypass_filters=False):
             AlbumAltName.native_lang.in_(('ja', 'ko', 'zh', 'rom', 'en', 'other')),
         ).all():
             album_native[aid][lang] = aname
+    # Mirror Album.display_name: each override is gated by its own (ja, ko, zh, other) scope.
     for info in song_album_map.values():
-        native = album_native.get(info['id'], {})
-        if native_ja and native.get('ja'):
-            info['display_name'] = native['ja']
-        elif native_ko and native.get('ko'):
-            info['display_name'] = native['ko']
-        elif native_zh and native.get('zh'):
-            info['display_name'] = native['zh']
-        elif native_other and native.get('other'):
-            info['display_name'] = native['other']
-        elif english and native.get('en'):
-            info['display_name'] = native['en']
-        elif romanized and native.get('rom'):
-            info['display_name'] = native['rom']
+        alt = album_native.get(info['id'], {})
+
+        def _in_scope(scope, _n=alt):
+            sja, sko, szh, soth = scope
+            if not (sja or sko or szh or soth):
+                return True
+            return bool((sja and _n.get('ja')) or (sko and _n.get('ko')) or (szh and _n.get('zh')) or (soth and _n.get('other')))
+
+        nat_name = alt.get('ja') or alt.get('ko') or alt.get('zh') or alt.get('other')
+        if native and nat_name and _in_scope(nat_scope):
+            info['display_name'] = nat_name
+        elif english and alt.get('en') and _in_scope(en_scope):
+            info['display_name'] = alt['en']
+        elif romanized and alt.get('rom') and _in_scope(rom_scope):
+            info['display_name'] = alt['rom']
         else:
             info['display_name'] = info['name']
 
