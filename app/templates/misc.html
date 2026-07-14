@@ -249,6 +249,11 @@ window._miscRefreshExpanded = function() {
             document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.remove(); });
             header.insertAdjacentHTML('afterend', html);
             _miscApplyFilters();
+            // This in-place refresh replaced the hash-target's row, dropping its glow; re-highlight it.
+            if (location.hash.indexOf('#song-') === 0) {
+                var t = document.getElementById(location.hash.slice(1));
+                if (t && typeof highlightRow === 'function') highlightRow(t);
+            }
         });
     });
 };
@@ -348,7 +353,17 @@ function _miscCollapseAll() {
                 var parts = key.split('-');
                 _miscToggleGenre(parseInt(parts[0]), parseInt(parts[1]));
             }
+            // The rated/scope filter may have hidden this whole genre section; unhide its header + spacer.
+            var gHeader = document.getElementById('misc-genre-' + key);
+            if (gHeader) {
+                gHeader.classList.remove('rating-filtered');
+                var spacer = gHeader.previousElementSibling;
+                if (spacer && spacer.querySelector('td.h-3.border-0')) spacer.classList.remove('rating-filtered');
+            }
         }
+        // The rated/scope filter hides rows via the .rating-filtered class (display:none !important),
+        // so clear it here too — otherwise a filtered-out target never becomes visible or highlights.
+        el.classList.remove('rating-filtered');
         if (el.style.display === 'none') el.style.display = '';
         el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         if (typeof highlightRow === 'function') highlightRow(el);
@@ -386,6 +401,16 @@ function _miscCollapseAll() {
     }
     window.addEventListener('load', handleHash);
     window.addEventListener('hashchange', handleHash);
+    // Re-entering the same #song URL (address-bar Enter) fires neither load nor hashchange.
+    // popstate covers back/forward + some re-navigations; the Navigation API catches the
+    // same-document same-fragment case (address-bar Enter to the current song) that fires nothing else.
+    window.addEventListener('popstate', handleHash);
+    if (window.navigation && window.navigation.addEventListener) {
+        window.navigation.addEventListener('navigate', function(e) {
+            var url = e && e.destination && e.destination.url;
+            if (url && url.indexOf('#song-') !== -1) setTimeout(handleHash, 0);
+        });
+    }
 })();
 
 /* Sort */
@@ -452,12 +477,15 @@ function _miscApplyFilters() {
     var ratedEl = document.getElementById('misc-rated-filter');
     var scope = scopeEl ? scopeEl.value : 'all';
     var rated = ratedEl ? ratedEl.value : 'all';
+    // Pin the hash-target song (e.g. a just-added song we navigated to): never hide it,
+    // otherwise the live-refresh poll re-filters and hides it out from under the jump.
+    var pinnedId = location.hash.indexOf('#song-') === 0 ? location.hash.slice(1) : null;
     document.querySelectorAll('[data-my-rated]').forEach(function(row) {
         var onArtist = row.dataset.onArtistPage === '1';
         var isRated = row.dataset.myRated === '1';
         var scopeOk = scope === 'all' || (scope === 'misc-only' && !onArtist) || (scope === 'on-artist' && onArtist);
         var ratedOk = rated === 'all' || (rated === 'rated' && isRated) || (rated === 'unrated' && !isRated);
-        row.classList.toggle('rating-filtered', !(scopeOk && ratedOk));
+        row.classList.toggle('rating-filtered', !(scopeOk && ratedOk) && row.id !== pinnedId);
     });
     // Hide genre sections (and their spacer) with no visible songs
     document.querySelectorAll('[id^="misc-genre-"]').forEach(function(header) {
