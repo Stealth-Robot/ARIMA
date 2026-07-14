@@ -246,6 +246,41 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        # 4. Backfill misc-song changelog links — misc song names were never
+        # linked at write time; point their quoted name at the /misc anchor.
+        from markupsafe import escape as _cl_escape
+        from app.models.changelog import Changelog
+        from app.models.music import Song as _Song
+        from app.services.audit import _make_link as _cl_link
+        misc_song_ids = {r[0] for r in db.session.execute(db.text(
+            'SELECT DISTINCT song_id FROM song_misc_artist'))}
+        if misc_song_ids:
+            rows = Changelog.query.filter(
+                Changelog.song_id.in_(misc_song_ids),
+                Changelog.description_html.isnot(None),
+            ).all()
+            n_linked = 0
+            for row in rows:
+                html = row.description_html
+                if not html or '/misc#song-' in html:
+                    continue
+                song = db.session.get(_Song, row.song_id)
+                if not song:
+                    continue
+                link = _cl_link('/misc#song-' + str(song.id), song.name)
+                esc_name = str(_cl_escape(song.name))
+                new_html = html
+                for q in ('&#34;', '&quot;', '"'):
+                    quoted = q + esc_name + q
+                    if quoted in new_html:
+                        new_html = new_html.replace(quoted, q + link + q, 1)
+                        break
+                if new_html != html:
+                    row.description_html = new_html
+                    n_linked += 1
+            if n_linked:
+                logger.info('Backfilled misc-song changelog links on %d entries', n_linked)
+
         db.session.commit()
     except Exception:
         db.session.rollback()

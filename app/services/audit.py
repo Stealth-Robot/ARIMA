@@ -7,7 +7,7 @@ from markupsafe import escape
 
 from app.extensions import db
 from app.models.changelog import Changelog
-from app.models.music import Artist, ArtistSong, AlbumSong
+from app.models.music import Artist, ArtistSong, AlbumSong, SongMiscArtist
 from app.services.events import publish
 
 
@@ -21,6 +21,11 @@ def _artist_url(artist):
 
 def _make_link(url, text):
     return '<a href="{}" class="changelog-link">{}</a>'.format(escape(url), escape(text))
+
+
+def _is_misc_song(song_id):
+    """True if the song is a misc song (linked to a misc artist)."""
+    return db.session.query(SongMiscArtist.song_id).filter_by(song_id=song_id).first() is not None
 
 
 def build_description_html(description, artist=None, album=None, song=None):
@@ -41,6 +46,9 @@ def build_description_html(description, artist=None, album=None, song=None):
         links[album.name] = _make_link(_artist_url(artist) + '#album-' + str(album.id), album.name)
     if song and artist:
         links[song.name] = _make_link(_artist_url(artist) + '#song-' + str(song.id), song.name)
+    elif song and _is_misc_song(song.id):
+        # Misc songs have no artist page; link to their /misc anchor instead.
+        links[song.name] = _make_link('/misc#song-' + str(song.id), song.name)
 
     # Replace only quoted names — songs first (most specific), then albums, then artists
     # This is safe because quotes are unambiguous delimiters
