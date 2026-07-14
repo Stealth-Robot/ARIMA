@@ -1090,7 +1090,10 @@ function _showAddMiscSong() {
         fetch('/misc/add-song', {method:'POST', headers:_csrfJson(), body:JSON.stringify(payload)})
             .then(function(r){return r.json();}).then(function(d) {
                 if (d.error) { alert(d.error); saveBtn.disabled = false; return; }
-                bd.remove(); location.reload();
+                bd.remove();
+                // Navigate to the new song: hash triggers handleHash to expand + scroll after reload.
+                location.hash = '#song-' + d.song_id;
+                location.reload();
             }).catch(function() { saveBtn.disabled = false; });
     });
     btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
