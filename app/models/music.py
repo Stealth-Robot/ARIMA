@@ -141,6 +141,45 @@ class ArtistAltName(db.Model):
     )
 
 
+def resolve_display_name(main, ja=None, kr=None, zh=None, other=None, rom=None, en=None,
+                         native=False, romanized=False, english=False,
+                         nat_scope=(False, False, False, False),
+                         en_scope=(False, False, False, False),
+                         rom_scope=(False, False, False, False)):
+    """Resolve the name to display from a song/album's aliases and a viewer's prefs.
+
+    Model: a checked parent (native/romanized/english) is the DEFAULT mode for every
+    song. A per-language override sub — nat/en/rom_scope indexed (ja, ko, zh, other) —
+    says "for songs whose native name is this language, use this mode instead". A song
+    with no native name always uses the default. Each language maps to at most one
+    override mode (enforced in the UI). Missing alias for the chosen mode falls back to
+    the default mode, then the main name.
+    """
+    native_name = ja or kr or zh or other  # native group is mutually exclusive
+    lang_idx = 0 if ja else (1 if kr else (2 if zh else (3 if other else None)))
+
+    modes = []
+    if lang_idx is not None:
+        if nat_scope[lang_idx]:
+            modes.append('native')
+        elif en_scope[lang_idx]:
+            modes.append('english')
+        elif rom_scope[lang_idx]:
+            modes.append('romanized')
+    default = 'native' if native else ('english' if english else ('romanized' if romanized else None))
+    if default and default not in modes:
+        modes.append(default)
+
+    for m in modes:
+        if m == 'native' and native_name:
+            return native_name
+        if m == 'english' and en:
+            return en
+        if m == 'romanized' and rom:
+            return rom
+    return main
+
+
 class Song(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
@@ -169,16 +208,7 @@ class Song(db.Model):
                      nat_scope=(False, False, False, False),
                      en_scope=(False, False, False, False),
                      rom_scope=(False, False, False, False)):
-        """Title to show given a viewer's native-display toggles.
-
-        The native (JP/KR/CN/Other) name wins over all other names; failing that, an
-        English or romanized name overrides only the original name. Falls back to the
-        main name when no matching alias exists.
-
-        Each override carries an optional (ja, ko, zh, other) scope: when any of its
-        scope flags is set, that override applies only to songs that also carry a
-        native alias in a checked language, else the override is skipped (falls through).
-        """
+        """Display title given a viewer's prefs. See resolve_display_name for the model."""
         ja = kr = zh = rom = en = other = None
         for a in self.aliases:
             if a.native_lang == 'ko':
@@ -193,22 +223,9 @@ class Song(db.Model):
                 en = a.name
             elif a.native_lang == 'other':
                 other = a.name
-
-        def _in_scope(scope):
-            sja, sko, szh, soth = scope
-            if not (sja or sko or szh or soth):
-                return True
-            return bool((sja and ja) or (sko and kr) or (szh and zh) or (soth and other))
-
-        if native and _in_scope(nat_scope):
-            n = ja or kr or zh or other  # native group is mutually exclusive: at most one exists
-            if n:
-                return n
-        if english and en and _in_scope(en_scope):
-            return en
-        if romanized and rom and _in_scope(rom_scope):
-            return rom
-        return self.name
+        return resolve_display_name(self.name, ja=ja, kr=kr, zh=zh, other=other, rom=rom, en=en,
+                                    native=native, romanized=romanized, english=english,
+                                    nat_scope=nat_scope, en_scope=en_scope, rom_scope=rom_scope)
 
 
 class SongAlias(db.Model):
@@ -260,16 +277,7 @@ class Album(db.Model):
                      nat_scope=(False, False, False, False),
                      en_scope=(False, False, False, False),
                      rom_scope=(False, False, False, False)):
-        """Title to show given a viewer's native-display toggles.
-
-        The native (JP/KR/CN/Other) name wins over all other names; failing that, an
-        English or romanized name overrides only the original name. Falls back to the
-        main name when no matching alt name exists.
-
-        Each override carries an optional (ja, ko, zh, other) scope: when any of its
-        scope flags is set, that override applies only to albums that also carry a
-        native alt name in a checked language, else the override is skipped (falls through).
-        """
+        """Display title given a viewer's prefs. See resolve_display_name for the model."""
         ja = kr = zh = rom = en = other = None
         for a in self.alt_names:
             if a.native_lang == 'ko':
@@ -284,22 +292,9 @@ class Album(db.Model):
                 en = a.name
             elif a.native_lang == 'other':
                 other = a.name
-
-        def _in_scope(scope):
-            sja, sko, szh, soth = scope
-            if not (sja or sko or szh or soth):
-                return True
-            return bool((sja and ja) or (sko and kr) or (szh and zh) or (soth and other))
-
-        if native and _in_scope(nat_scope):
-            n = ja or kr or zh or other  # native group is mutually exclusive: at most one exists
-            if n:
-                return n
-        if english and en and _in_scope(en_scope):
-            return en
-        if romanized and rom and _in_scope(rom_scope):
-            return rom
-        return self.name
+        return resolve_display_name(self.name, ja=ja, kr=kr, zh=zh, other=other, rom=rom, en=en,
+                                    native=native, romanized=romanized, english=english,
+                                    nat_scope=nat_scope, en_scope=en_scope, rom_scope=rom_scope)
 
 
 class AlbumAltName(db.Model):

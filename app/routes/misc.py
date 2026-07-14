@@ -262,7 +262,7 @@ def _build_country_data(country_id, bypass_filters=False):
      nat_scope, en_scope, rom_scope) = _viewer_native_toggles()
     album_native = defaultdict(dict)
     album_ids = {info['id'] for info in song_album_map.values()}
-    if album_ids and (native or romanized or english):
+    if album_ids and (native or romanized or english or any(nat_scope) or any(en_scope) or any(rom_scope)):
         for aid, lang, aname in db.session.query(
             AlbumAltName.album_id, AlbumAltName.native_lang, AlbumAltName.name,
         ).filter(
@@ -270,25 +270,15 @@ def _build_country_data(country_id, bypass_filters=False):
             AlbumAltName.native_lang.in_(('ja', 'ko', 'zh', 'rom', 'en', 'other')),
         ).all():
             album_native[aid][lang] = aname
-    # Mirror Album.display_name: each override is gated by its own (ja, ko, zh, other) scope.
+    # Album is a plain dict here, so resolve via the shared helper for parity with Album.display_name.
+    from app.models.music import resolve_display_name
     for info in song_album_map.values():
         alt = album_native.get(info['id'], {})
-
-        def _in_scope(scope, _n=alt):
-            sja, sko, szh, soth = scope
-            if not (sja or sko or szh or soth):
-                return True
-            return bool((sja and _n.get('ja')) or (sko and _n.get('ko')) or (szh and _n.get('zh')) or (soth and _n.get('other')))
-
-        nat_name = alt.get('ja') or alt.get('ko') or alt.get('zh') or alt.get('other')
-        if native and nat_name and _in_scope(nat_scope):
-            info['display_name'] = nat_name
-        elif english and alt.get('en') and _in_scope(en_scope):
-            info['display_name'] = alt['en']
-        elif romanized and alt.get('rom') and _in_scope(rom_scope):
-            info['display_name'] = alt['rom']
-        else:
-            info['display_name'] = info['name']
+        info['display_name'] = resolve_display_name(
+            info['name'], ja=alt.get('ja'), kr=alt.get('ko'), zh=alt.get('zh'),
+            other=alt.get('other'), rom=alt.get('rom'), en=alt.get('en'),
+            native=native, romanized=romanized, english=english,
+            nat_scope=nat_scope, en_scope=en_scope, rom_scope=rom_scope)
 
     ratings_rows = Rating.query.filter(Rating.song_id.in_(song_ids)).all()
     ratings_map = defaultdict(dict)
