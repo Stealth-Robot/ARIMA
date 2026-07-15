@@ -52,7 +52,7 @@
 </div>
 <div class="search-section-body" data-section="search-misc">
 {% for song, album_name, artists_str in misc_songs %}
-<a href="{{ url_for('misc.misc_page') }}#song-{{ song.id }}"
+<a href="{{ url_for('misc.misc_page') }}?song={{ song.id }}#song-{{ song.id }}"
    class="search-result-item block py-1.5 px-3.5 text-sm- no-underline text-primary-text cursor-pointer">
     {{ song_display_name(song) }} <span class="text-secondary-text">{% if album_name %}({{ album_name }} — {{ artists_str }}){% else %}({{ artists_str }}){% endif %}</span>
 </a>

@@ -169,6 +169,7 @@
 
         <tr id="misc-country-{{ country.country_id }}" class="child-header-gradient border border-grid-line cursor-pointer"
             style="border-left: 0.375rem solid var(--text-secondary);"
+            {% if country.only_song_id %}data-only-song="{{ country.only_song_id }}"{% endif %}
             onclick="_miscToggleCountry({{ country.country_id }})">
             <td colspan="100" class="font-bold text-sm- text-discography-text relative p-0 pl-2">
                 <span id="misc-country-arrow-{{ country.country_id }}" class="collapse-arrow text-xxs">&#9654;</span>
@@ -200,6 +201,15 @@
 /* Collapse/expand */
 var _miscLoadedCountries = {};
 var _miscNoFilter = new URLSearchParams(window.location.search).get('nofilter') === '1' ? '?nofilter=1' : '';
+// Query string for loading a country fragment. A country surfaced only to reveal a
+// linked song (its own country is filter-hidden) carries data-only-song, so we fetch
+// just that one song rather than dumping the whole hidden country.
+function _miscCountryQuery(cid) {
+    if (_miscNoFilter) return _miscNoFilter;
+    var header = document.getElementById('misc-country-' + cid);
+    var only = header && header.getAttribute('data-only-song');
+    return only ? '?only=' + only : '';
+}
 function _miscToggleCountry(cid) {
     var arrow = document.getElementById('misc-country-arrow-' + cid);
     var hiding = arrow.innerHTML === '▼';
@@ -213,7 +223,7 @@ function _miscToggleCountry(cid) {
         var loader = document.getElementById('misc-country-loader-' + cid);
         if (loader) {
             loader.style.display = '';
-            return fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
+            return fetch('/misc/country/' + cid + _miscCountryQuery(cid)).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
                 _miscApplyFilters();
             });
@@ -245,7 +255,13 @@ window._miscRefreshExpanded = function() {
         if (!arrow || arrow.innerHTML !== '▼') return;
         var header = document.getElementById('misc-country-' + cid);
         if (!header) return;
-        fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
+        // Keep the linked song visible across the refresh: an only-song country reloads
+        // as ?only=; a visible country with a content-filtered hash target keeps ?include=.
+        var q = _miscCountryQuery(cid);
+        if (!q && location.hash.indexOf('#song-') === 0) {
+            q = '?include=' + location.hash.slice(6);
+        }
+        fetch('/misc/country/' + cid + q).then(function(r) { return r.text(); }).then(function(html) {
             document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.remove(); });
             header.insertAdjacentHTML('afterend', html);
             _miscApplyFilters();
@@ -314,7 +330,7 @@ function _miscExpandAll() {
         if (!_miscLoadedCountries[cid]) {
             _miscLoadedCountries[cid] = true;
             loader.style.display = '';
-            fetch('/misc/country/' + cid + _miscNoFilter).then(function(r) { return r.text(); }).then(function(html) {
+            fetch('/misc/country/' + cid + _miscCountryQuery(cid)).then(function(r) { return r.text(); }).then(function(html) {
                 loader.outerHTML = html;
                 document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.style.display = ''; });
                 _miscApplyFilters();
@@ -369,6 +385,24 @@ function _miscCollapseAll() {
         if (typeof highlightRow === 'function') highlightRow(el);
     }
 
+    // A content filter (remix/cover/featured/OST/genre) can drop the linked song from
+    // the server-rendered country fragment; reload the country with ?include=<songId>
+    // so that one song is force-included past the filters, then reveal it.
+    function _miscForceRevealSong(cid, songId) {
+        var header = document.getElementById('misc-country-' + cid);
+        if (!header) return;
+        fetch('/misc/country/' + cid + '?include=' + songId).then(function(r) { return r.text(); }).then(function(html) {
+            document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.remove(); });
+            header.insertAdjacentHTML('afterend', html);
+            var arrow = document.getElementById('misc-country-arrow-' + cid);
+            if (arrow) arrow.innerHTML = '▼';
+            _miscLoadedCountries[cid] = true;
+            _miscApplyFilters();
+            var el = document.getElementById('song-' + songId);
+            if (el) revealSong(el);
+        });
+    }
+
     function handleHash() {
         var hash = location.hash;
         if (!hash || hash.indexOf('#song-') !== 0) return;
@@ -383,12 +417,13 @@ function _miscCollapseAll() {
             var cid = data.country_id;
             var arrow = document.getElementById('misc-country-arrow-' + cid);
             if (!arrow) return;
-            if (arrow.innerHTML !== '▼') {
-                _miscToggleCountry(cid).then(function() {
-                    var el = document.getElementById('song-' + songId);
-                    if (el) revealSong(el);
-                });
-            }
+            var ensureExpanded = arrow.innerHTML === '▼' ? Promise.resolve() : _miscToggleCountry(cid);
+            ensureExpanded.then(function() {
+                var el = document.getElementById('song-' + songId);
+                if (el) { revealSong(el); return; }
+                // Country is expanded but the song is missing — a content filter dropped it.
+                _miscForceRevealSong(cid, songId);
+            });
         });
     }
 

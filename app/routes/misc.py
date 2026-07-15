@@ -137,8 +137,12 @@ def _viewer_native_toggles():
             (get('display_rom_scope_ja'), get('display_rom_scope_ko'), get('display_rom_scope_zh'), get('display_rom_scope_other')))
 
 
-def _build_misc_shell(bypass_filters=False):
-    """Build lightweight page shell: country list with song counts, no song data."""
+def _build_misc_shell(bypass_filters=False, target_song_id=None):
+    """Build lightweight page shell: country list with song counts, no song data.
+
+    target_song_id (from a shared ?song= link) surfaces that song's country even when
+    the viewer's country filter would omit it, so the section exists for handleHash
+    to expand and reveal the linked song."""
     from app.services.stats import get_display_users
 
     filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
@@ -153,6 +157,19 @@ def _build_misc_shell(bypass_filters=False):
         query = query.filter(MiscArtist.country_id.in_(filters['country_ids']))
     country_counts = query.group_by(MiscArtist.country_id).all()
 
+    # A shared link to a song in a filtered-out country: pull in that one country so
+    # the section renders (the country filter is a hard omission the JS can't work around).
+    only_song_country = None
+    if target_song_id and filters['country_ids']:
+        forced_cid = db.session.query(MiscArtist.country_id).join(
+            SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
+        ).filter(SongMiscArtist.song_id == target_song_id).order_by(
+            SongMiscArtist.artist_is_main.desc()).scalar()
+        if forced_cid is not None and not any(c[0] == forced_cid for c in country_counts):
+            # Section exists only to reveal the one linked song, so it holds just that song.
+            only_song_country = forced_cid
+            country_counts = list(country_counts) + [(forced_cid, 1)]
+
     all_countries_map = {c.id: c for c in Country.query.all()}
     country_sections = []
     for cid, count in sorted(country_counts, key=lambda x: all_countries_map.get(x[0], Country()).country if x[0] in all_countries_map else ''):
@@ -162,6 +179,7 @@ def _build_misc_shell(bypass_filters=False):
                 'country_id': cid,
                 'country_name': country.country,
                 'song_count': count,
+                'only_song_id': target_song_id if cid == only_song_country else None,
             })
 
     return {
@@ -183,8 +201,15 @@ def _build_misc_shell(bypass_filters=False):
     }
 
 
-def _build_country_data(country_id, bypass_filters=False):
-    """Build genre → songs data for a single country."""
+def _build_country_data(country_id, bypass_filters=False, force_song_id=None, only_song_id=None):
+    """Build genre → songs data for a single country.
+
+    force_song_id keeps that one song in the result even when the viewer's content
+    filters would drop it, so a shared #song- link always has a row to reveal.
+
+    only_song_id restricts the fragment to that single song — used when the country
+    is present solely because a link targets it (its own country is filter-hidden),
+    so we surface just the linked song, not the whole hidden country."""
     from app.services.stats import get_display_users
 
     filters = dict(BYPASS_FILTERS) if bypass_filters else _get_user_filters()
@@ -199,11 +224,16 @@ def _build_country_data(country_id, bypass_filters=False):
     ).all()
 
     song_ids = {r[0] for r in sma_rows}
+    if only_song_id is not None:
+        song_ids &= {only_song_id}
+        force_song_id = only_song_id  # skip content filters too — the link should always land
     if not song_ids:
         return {'misc_genres': [], 'users': get_display_users(), 'edit_mode': edit_mode, 'country_id': country_id}
 
     song_misc_artists = defaultdict(list)
     for sid, maid, is_main, ma_name, cid in sma_rows:
+        if sid not in song_ids:
+            continue
         song_misc_artists[sid].append({
             'id': maid, 'name': ma_name, 'country_id': cid, 'is_main': is_main,
         })
@@ -310,7 +340,10 @@ def _build_country_data(country_id, bypass_filters=False):
 
     genre_data = defaultdict(list)
     for sid, song in song_map.items():
-        if not bypass_filters:
+        # A shared link targets one song; force it past content filters that would
+        # otherwise drop it from the fragment (leaving the link with nothing to reveal).
+        forced = sid == force_song_id
+        if not bypass_filters and not forced:
             if not filters['include_remixes'] and song.is_remix and sid not in keep_remix_ids:
                 continue
             if not filters['include_covers'] and song.is_cover:
@@ -320,9 +353,9 @@ def _build_country_data(country_id, bypass_filters=False):
                 if not main_names:
                     continue
         genre_ids = song_genre_map.get(sid, set())
-        if filters['hide_osts'] and ost_genre_id and genre_ids == {ost_genre_id} and not _is_anime_song(sid):
+        if not forced and filters['hide_osts'] and ost_genre_id and genre_ids == {ost_genre_id} and not _is_anime_song(sid):
             continue
-        if filters['genre_ids']:
+        if not forced and filters['genre_ids']:
             if not genre_ids.intersection(set(filters['genre_ids'])):
                 continue
 
@@ -367,14 +400,17 @@ def _build_country_data(country_id, bypass_filters=False):
 @misc_bp.route('/misc')
 @login_required
 def misc_page():
-    data = _build_misc_shell(bypass_filters=request.args.get('nofilter') == '1')
+    data = _build_misc_shell(bypass_filters=request.args.get('nofilter') == '1',
+                             target_song_id=request.args.get('song', type=int))
     return render_template('misc.html', **data)
 
 
 @misc_bp.route('/misc/country/<int:country_id>')
 @login_required
 def misc_country(country_id):
-    data = _build_country_data(country_id, bypass_filters=request.args.get('nofilter') == '1')
+    data = _build_country_data(country_id, bypass_filters=request.args.get('nofilter') == '1',
+                               force_song_id=request.args.get('include', type=int),
+                               only_song_id=request.args.get('only', type=int))
     return render_template('fragments/misc_country.html', **data)
 
 

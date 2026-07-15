@@ -198,7 +198,7 @@ def view_feat_only():
         if aid:
             link = f'/artists/{aid}#song-{s.id}'        # real/album artist page
         elif s.id in misc_song_ids:
-            link = f'/misc#song-{s.id}'                   # misc page (auto-expands)
+            link = f'/misc?song={s.id}#song-{s.id}'       # misc page (auto-expands; ?song surfaces a filtered-out country)
         else:
             link = None
         items.append({'id': s.id, 'name': s.name, 'link': link,
