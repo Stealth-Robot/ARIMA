@@ -922,12 +922,41 @@ function _showAddMiscSong() {
     var ytInp = _miscInput('https://www.youtube.com/watch?v=...');
     modal.appendChild(ytInp);
 
-    /* Note (optional) */
-    modal.appendChild(_miscLabel('Note (optional)'));
+    /* Song note (shared, optional) */
+    modal.appendChild(_miscLabel('Song Note (shared, optional)'));
     var noteInp = document.createElement('textarea');
-    noteInp.placeholder = 'Note';
+    noteInp.placeholder = 'Note shown to everyone';
     noteInp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:3rem;resize:vertical;';
     modal.appendChild(noteInp);
+
+    /* Your score (personal rating, optional) */
+    modal.appendChild(_miscLabel('Your Score (optional)'));
+    var scoreInp = _miscInput('0-5');
+    scoreInp.inputMode = 'numeric';
+    scoreInp.maxLength = 1;
+    // Block any printable key that isn't 0-6, like the rating-cell input.
+    scoreInp.addEventListener('keydown', function(e) {
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !/^[0-6]$/.test(e.key)) e.preventDefault();
+    });
+    // Guard against paste / autofill sneaking in other characters,
+    // and collapse a 6 to a 5 + prepended "6/5" note (same as the rating cell).
+    scoreInp.addEventListener('input', function() {
+        if (!/^[0-6]?$/.test(scoreInp.value)) { scoreInp.value = ''; return; }
+        if (scoreInp.value === '6') {
+            scoreInp.value = '5';
+            var base = ratingNoteInp.value;
+            if (!base) ratingNoteInp.value = '6/5';
+            else if (base.indexOf('6/5') === -1) ratingNoteInp.value = '6/5 ' + base;
+        }
+    });
+    modal.appendChild(scoreInp);
+
+    /* Your note (personal rating note, optional) */
+    modal.appendChild(_miscLabel('Your Note (optional)'));
+    var ratingNoteInp = document.createElement('textarea');
+    ratingNoteInp.placeholder = 'Note only on your rating';
+    ratingNoteInp.style.cssText = 'width:100%;padding:0.375rem 0.5rem;font-size:0.8125rem;border:0.0625rem solid var(--border,#ccc);border-radius:0.25rem;background:var(--bg-primary,#fff);color:var(--text-primary);box-sizing:border-box;min-height:3rem;resize:vertical;';
+    modal.appendChild(ratingNoteInp);
 
     /* Alternative names (optional) */
     modal.appendChild(_miscLabel('Alternative names (optional)'));
@@ -1100,12 +1129,17 @@ function _showAddMiscSong() {
         var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
         if (!hasMain) { alert('At least one artist must be main'); return; }
 
+        var scoreVal = scoreInp.value.trim();
+        if (scoreVal && !/^[0-6]$/.test(scoreVal)) { alert('Score must be 0-5'); return; }
+
         var spotUrl = spotInp.value.trim();
         var payload = {
             name: sName,
             spotify_url: spotUrl || null,
             youtube_url: ytInp.value.trim() || null,
             note: noteInp.value.trim() || null,
+            rating: scoreVal ? parseInt(scoreVal) : null,
+            rating_note: ratingNoteInp.value.trim() || null,
             misc_artists: miscArtists.map(function(a) {
                 if (a.id) return {id: a.id, is_main: a.is_main};
                 return {new: true, name: a.name, country_id: a.country_id, is_main: a.is_main};

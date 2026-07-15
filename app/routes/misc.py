@@ -590,8 +590,32 @@ def add_misc_song():
     for name, lang in aliases:
         db.session.add(SongAlias(song_id=song.id, name=name, native_lang=lang))
 
+    # Optional personal rating (submitter's own score + note), same semantics as /rate.
+    rating_value = data.get('rating')
+    rating_note = (data.get('rating_note') or '').strip() or None
+    if rating_value is not None:
+        try:
+            rating_value = int(rating_value)
+        except (TypeError, ValueError):
+            return json.dumps({'error': 'Score must be 0-5'}), 400, {'Content-Type': 'application/json'}
+        # 6 is a shortcut for a 5 plus a prepended "6/5" note.
+        if rating_value < 0 or rating_value > 6:
+            return json.dumps({'error': 'Score must be 0-5'}), 400, {'Content-Type': 'application/json'}
+        if rating_value == 6:
+            rating_value = 5
+            if not rating_note:
+                rating_note = '6/5'
+            elif '6/5' not in rating_note:
+                rating_note = '6/5 ' + rating_note
+    if rating_value is not None or rating_note:
+        db.session.add(Rating(song_id=song.id, user_id=current_user.id,
+                              rating=rating_value, note=rating_note))
+
     log_change(current_user, f'Added "{song_name}" misc song', song=song)
     db.session.commit()
+
+    from app.cache import clear_stats_cache
+    clear_stats_cache()
 
     return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
 
