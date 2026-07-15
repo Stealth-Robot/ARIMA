@@ -22,6 +22,13 @@ def create_app():
     config = ProdConfig if os.environ.get('FLASK_ENV') == 'production' else Config
     flask_app.config.from_object(config)
 
+    # Railway terminates TLS at the edge and forwards plain HTTP to gunicorn, so
+    # trust its X-Forwarded-Proto/Host — otherwise url_for(_external=True) and
+    # request.url_root emit http://, breaking the Spotify redirect_uri match and
+    # invite-email links. One proxy hop.
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_proto=1, x_host=1)
+
 
     # Initialise extensions
     db.init_app(flask_app)
