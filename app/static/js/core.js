@@ -234,7 +234,7 @@ function showSessionExpiredToast() {
     setTimeout(function () { toast.remove(); sessionExpiredToastActive = false; }, 3000);
 }
 
-function showBriefToast(message) {
+function showBriefToast(message, duration, bg, fg) {
     var toast = document.createElement('div');
     toast.textContent = message;
     toast.style.cssText = [
@@ -242,17 +242,22 @@ function showBriefToast(message) {
         'bottom:1.5rem',
         'left:50%',
         'transform:translateX(-50%)',
-        'background:#1f2937',
-        'color:#fff',
+        'background:' + (bg || '#1f2937'),
+        'color:' + (fg || '#fff'),
         'padding:0.625rem 1.25rem',
         'border-radius:0.375rem',
         'font-size:0.875rem',
+        'font-weight:500',
         'z-index:9999',
-        'box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.3)',
+        'box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.35)',
         'pointer-events:none',
+        // Wrap long messages instead of stretching off-screen.
+        'max-width:min(90vw, 24rem)',
+        'text-align:center',
+        'line-height:1.4',
     ].join(';');
     document.body.appendChild(toast);
-    setTimeout(function () { toast.remove(); }, 3000);
+    setTimeout(function () { toast.remove(); }, duration || 3000);
 }
 
 // Alias used throughout edit popovers
@@ -1175,6 +1180,47 @@ function handleSubscribeToggle(cb, artistId) {
 function doSubscribe(cb, artistId) {
     fetch('/artist/' + artistId + '/subscribe', {method: 'POST', headers: _csrfHeaders()})
         .then(function(r) { if (!r.ok) cb.checked = !cb.checked; });
+}
+
+// Build a Spotify playlist of every unrated song currently on the page, in the
+// exact top-to-bottom order the rows are rendered (data-my-rated="0" = unrated).
+function createArtistPlaylist(artistId, btn) {
+    var rows = document.querySelectorAll('tr[data-song-id][data-my-rated="0"]');
+    var ids = [];
+    var seen = {};
+    rows.forEach(function(row) {
+        var sid = row.getAttribute('data-song-id');
+        if (sid && !seen[sid]) { seen[sid] = true; ids.push(sid); }
+    });
+    if (!ids.length) { showToast('No unrated songs to add.'); return; }
+    if (btn) { btn.disabled = true; }
+    fetch('/artist/' + artistId + '/create-playlist',
+          {method: 'POST', headers: _csrfJson(), body: JSON.stringify({song_ids: ids})})
+        .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+        .then(function(res) {
+            var d = res.data || {};
+            if (!res.ok || d.error) {
+                if (d.error === 'not_connected') {
+                    showConfirm(
+                        'Connect Spotify',
+                        'You need to log in with Spotify (OAuth) before creating playlists. Connect your account on your profile page.',
+                        function() { window.location = '/profile'; },
+                        'Go to profile');
+                } else if (d.error === 'no_tracks') {
+                    showToast('No unrated songs have a Spotify link.');
+                } else {
+                    showToast('Could not create playlist: ' + (d.error || 'please try again.'));
+                }
+                return;
+            }
+            var msg = 'Playlist created (' + d.added + ' song' + (d.added === 1 ? '' : 's');
+            if (d.skipped) { msg += ', ' + d.skipped + ' skipped — no Spotify link'; }
+            msg += ')';
+            showToast(msg);
+            if (d.url) { window.open(d.url, '_blank', 'noopener'); }
+        })
+        .catch(function() { showToast('Could not create playlist. Try again.'); })
+        .finally(function() { if (btn) { btn.disabled = false; } });
 }
 
 function showSubscribeConfirm(cb, artistId, data) {

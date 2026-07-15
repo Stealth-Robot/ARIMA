@@ -93,6 +93,24 @@ def change_role(user_id):
     return redirect(url_for('users.user_list'))
 
 
+@users_bp.route('/admin/users/<int:user_id>/spotify-app', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def set_spotify_app(user_id):
+    """Set which OAuth app (env suffix) mints this user's Spotify tokens.
+
+    Blank = the default app. Changing it on an already-connected user breaks
+    their token refresh until they reconnect (refresh tokens are app-bound).
+    """
+    user = db.session.get(User, user_id)
+    if not user or user.is_system_or_guest:
+        return 'Cannot modify this account', 400
+    value = request.form.get('spotify_oauth_app', '').strip()
+    user.spotify_oauth_app = value or None
+    db.session.commit()
+    return redirect(url_for('users.user_list'))
+
+
 @users_bp.route('/admin/users/<int:user_id>/delete', methods=['POST'])
 @login_required
 @role_required(ADMIN)

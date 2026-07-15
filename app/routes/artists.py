@@ -309,6 +309,64 @@ def toggle_subscribe(artist_id):
     return json.dumps({'subscribed': subscribed}), 200, {'Content-Type': 'application/json'}
 
 
+@artists_bp.route('/artist/<int:artist_id>/create-playlist', methods=['POST'])
+@login_required
+def create_artist_playlist(artist_id):
+    """Create a Spotify playlist of the given (unrated) songs, in the order sent."""
+    from datetime import datetime
+    from app.services import spotify_oauth
+    from app.services.spotify import to_app_uri
+    artist = db.session.get(Artist, artist_id)
+    if artist is None:
+        abort(404)
+    if spotify_oauth.get_valid_access_token(current_user) is None:
+        return json.dumps({'error': 'not_connected'}), 400, {'Content-Type': 'application/json'}
+
+    body = request.get_json(silent=True) or {}
+    song_ids = body.get('song_ids') or []
+    # Keep only valid ints, preserving the client's on-screen order.
+    ordered_ids = []
+    seen = set()
+    for sid in song_ids:
+        try:
+            sid = int(sid)
+        except (TypeError, ValueError):
+            continue
+        if sid not in seen:
+            seen.add(sid)
+            ordered_ids.append(sid)
+
+    songs = {s.id: s for s in Song.query.filter(Song.id.in_(ordered_ids)).all()} if ordered_ids else {}
+    uris = []
+    for sid in ordered_ids:
+        song = songs.get(sid)
+        if song is None:
+            continue
+        uri = to_app_uri(song.spotify_url) if song.spotify_url else None
+        # Only real track URIs are addable (skips null / 'n/a' / unparseable).
+        if uri and uri.startswith('spotify:track:'):
+            uris.append(uri)
+
+    if not uris:
+        return json.dumps({'error': 'no_tracks', 'total': len(ordered_ids)}), 200, {'Content-Type': 'application/json'}
+
+    try:
+        playlist_name = (
+            f'ARIMA - {artist.name} - Unrated - '
+            f'{datetime.now().strftime("%Y-%m-%d")}')
+        url = spotify_oauth.create_playlist(
+            current_user, playlist_name, uris, public=False)
+    except spotify_oauth.SpotifyOAuthError as e:
+        return json.dumps({'error': str(e)}), 502, {'Content-Type': 'application/json'}
+
+    return json.dumps({
+        'url': url,
+        'added': len(uris),
+        'skipped': len(ordered_ids) - len(uris),
+        'total': len(ordered_ids),
+    }), 200, {'Content-Type': 'application/json'}
+
+
 @artists_bp.route('/artist/<int:artist_id>/unrated-count')
 @login_required
 def unrated_count(artist_id):

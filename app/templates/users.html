@@ -16,6 +16,7 @@
                 <th class="text-left px-3 py-2">Email</th>
                 <th class="text-left px-3 py-2">Join Date</th>
                 <th class="text-left px-3 py-2">Last Seen</th>
+                <th class="px-3 py-2" title="OAuth app that mints this user's Spotify tokens. Blank = default app; e.g. 2 uses SPOTIFY_OAUTH_CLIENT_ID_2. Changing it on a connected user requires them to reconnect.">Spotify App</th>
                 <th class="px-3 py-2">Actions</th>
             </tr>
         </thead>
@@ -68,6 +69,15 @@
                 <td class="px-3 py-2 text-xs">{{ u.email }}</td>
                 <td class="px-3 py-2 text-xs changelog-date" data-utc="{{ u.created_at or '' }}">{{ u.created_at[:10] if u.created_at else '-' }}</td>
                 <td class="px-3 py-2 text-xs last-seen-cell" data-utc="{{ u.last_seen or '' }}">{{ u.last_seen[:10] if u.last_seen else 'Never' }}</td>
+                <td class="px-3 py-2 text-center">
+                    <form method="POST" action="{{ url_for('users.set_spotify_app', user_id=u.id) }}"
+                          class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="spotify_oauth_app" value="{{ u.spotify_oauth_app or '' }}"
+                               onchange="this.form.submit()" placeholder="default"
+                               class="w-20 px-2 py-1 border rounded text-xs text-center border-border">
+                    </form>
+                </td>
                 <td class="px-3 py-2 text-center whitespace-nowrap">
                     {% if u.id != current_user.id %}
                     <button type="button" class="text-xs hover:underline text-button-primary"

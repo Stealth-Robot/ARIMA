@@ -349,10 +349,20 @@
             <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
             Spotify Account
         </h2>
-        {% if session.get('spotify_error') %}
-        <p class="text-sm mb-3 text-delete">{{ session.pop('spotify_error') }}</p>
-        {% elif session.get('spotify_success') %}
-        <p class="text-sm mb-3 text-edit-on">{{ session.pop('spotify_success') }}</p>
+        {% set _sp_err = session.pop('spotify_error', None) %}
+        {% set _sp_ok = session.pop('spotify_success', None) %}
+        {% if _sp_err %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof showToast === 'function') showToast({{ _sp_err | tojson }}, 8000, '#f59e0b', '#111827');
+        });
+        </script>
+        {% elif _sp_ok %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof showToast === 'function') showToast({{ _sp_ok | tojson }}, 5000, '#1db954', '#ffffff');
+        });
+        </script>
         {% endif %}
         {% if current_user.spotify_connected %}
         <div class="flex items-center gap-3">
@@ -371,11 +381,28 @@
         <p class="text-sm text-secondary-text mb-3">
             Link your Spotify account to enable playlist and playback features.
         </p>
-        <a href="{{ url_for('profile.spotify_connect') }}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded text-sm text-white no-underline" style="background-color: #1db954;">
+        <button type="button" onclick="connectSpotify(this)"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded text-sm text-white cursor-pointer" style="background-color: #1db954;">
             <img src="{{ url_for('static', filename='img/spotify.png') }}" class="w-4 h-4">
             Connect Spotify
-        </a>
+        </button>
+        <script>
+        function connectSpotify(btn) {
+            if (btn) btn.disabled = true;
+            fetch("{{ url_for('profile.spotify_connect') }}", {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.authorize_url) { window.location = d.authorize_url; return; }
+                    if (d && d.error && typeof showToast === 'function') {
+                        showToast(d.error, 8000, '#f59e0b', '#111827');
+                    }
+                })
+                .catch(function () {
+                    if (typeof showToast === 'function') showToast('Could not start Spotify connect. Try again.', 4000);
+                })
+                .finally(function () { if (btn) btn.disabled = false; });
+        }
+        </script>
         {% endif %}
     </div>
     {% endif %}

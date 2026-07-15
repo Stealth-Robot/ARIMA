@@ -26,6 +26,10 @@ class User(UserMixin, db.Model):
     spotify_access_token = db.Column(db.Text)
     spotify_refresh_token = db.Column(db.Text)
     spotify_token_expires_at = db.Column(db.Integer)
+    # Which OAuth app minted this user's tokens: a suffix (e.g. '2') selecting
+    # SPOTIFY_OAUTH_CLIENT_ID_2/SECRET_2 in env. NULL = the default app. Must
+    # match the app the tokens were minted by, so changing it requires reconnect.
+    spotify_oauth_app = db.Column(db.Text)
 
     role = db.relationship('Role')
 

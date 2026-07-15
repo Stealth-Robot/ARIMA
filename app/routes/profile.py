@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session, render_template, redirect, url_for, Response
+from flask import Blueprint, request, session, render_template, redirect, url_for, Response, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -256,17 +256,35 @@ def _spotify_redirect_uri():
 @profile_bp.route('/profile/spotify/connect')
 @login_required
 def spotify_connect():
-    """Kick off the Spotify Authorization Code flow."""
+    """Kick off the Spotify Authorization Code flow.
+
+    The profile page calls this via fetch (X-Requested-With), so an ineligible
+    user gets the guidance as JSON and shows a toast in place — no full-page
+    reload that would scroll back to the top. Direct (non-fetch) hits still get
+    plain redirects.
+    """
     import secrets
     from app.services import spotify_oauth
-    if current_user.is_system_or_guest:
-        return redirect(url_for('profile.profile'))
-    if not spotify_oauth.is_configured():
-        session['spotify_error'] = 'Spotify is not configured on this server.'
+    wants_json = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    # Only users provisioned with a dedicated OAuth app can complete the flow;
+    # everyone else would hit Spotify's redirect_uri/allowlist error page, so
+    # guide them to request access instead of sending them there.
+    if current_user.is_system_or_guest or not spotify_oauth.has_dedicated_oauth_app(current_user):
+        msg = (
+            "Per Spotify's policy you must be manually added to the allowlist. "
+            "If you want to use the Spotify playlist creation and management "
+            "features please reach out to Stealth with your full name and "
+            "email associated with your Spotify account.")
+        if wants_json:
+            return jsonify({'error': msg})
+        session['spotify_error'] = msg
         return redirect(url_for('profile.profile'))
     state = secrets.token_urlsafe(24)
     session['spotify_oauth_state'] = state
-    return redirect(spotify_oauth.authorize_url(_spotify_redirect_uri(), state))
+    url = spotify_oauth.authorize_url(_spotify_redirect_uri(), state, current_user)
+    if wants_json:
+        return jsonify({'authorize_url': url})
+    return redirect(url)
 
 
 @profile_bp.route('/spotify/callback')
@@ -285,7 +303,8 @@ def spotify_callback():
         session['spotify_error'] = 'Spotify authorization failed (invalid state).'
         return redirect(url_for('profile.profile'))
     try:
-        token_data = spotify_oauth.exchange_code(code, _spotify_redirect_uri())
+        token_data = spotify_oauth.exchange_code(
+            code, _spotify_redirect_uri(), current_user)
         profile = spotify_oauth.fetch_me(token_data['access_token'])
         spotify_oauth.store_connection(current_user, token_data, profile)
         session['spotify_success'] = (

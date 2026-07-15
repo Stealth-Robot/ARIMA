@@ -582,7 +582,10 @@ def find_artist_url(name):
     exact = [a for a in items if _normalize_name(a.get('name', '')) == norm]
     if not exact:
         return None
-    best = max(exact, key=lambda a: a.get('popularity', 0))
+    # Search returns results in relevance/popularity order, so the first exact
+    # match is the most popular (popularity was removed from artist objects in
+    # the Feb 2026 API changes).
+    best = exact[0]
     url = best.get('external_urls', {}).get('spotify')
     if not url or not best.get('id'):
         return None

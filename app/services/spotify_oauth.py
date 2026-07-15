@@ -9,6 +9,7 @@ Credentials flow for catalog search/import (no user context).
 """
 
 import os
+import json
 import time
 import base64
 import logging
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 _AUTHORIZE_URL = 'https://accounts.spotify.com/authorize'
 _TOKEN_URL = 'https://accounts.spotify.com/api/token'
 _ME_URL = 'https://api.spotify.com/v1/me'
+_API_BASE = 'https://api.spotify.com/v1'
 
 # Broad scope set: view account, read/modify library + playlists, and control
 # playback. Spotify only grants what the user approves on the consent screen.
@@ -50,37 +52,63 @@ class SpotifyOAuthError(Exception):
     pass
 
 
-def _raw_credentials():
-    """OAuth-app credentials, falling back to the main app's if unset.
+def _raw_credentials(user=None):
+    """OAuth-app credentials for this user.
 
-    Lets you run a separate Spotify app for user OAuth (SPOTIFY_OAUTH_CLIENT_ID/
-    SECRET) than the one used for catalog API calls (SPOTIFY_CLIENT_ID/SECRET).
+    A user may be assigned a specific OAuth app via user.spotify_oauth_app: a
+    suffix (e.g. '2') selecting SPOTIFY_OAUTH_CLIENT_ID_2/SECRET_2 in env. This
+    lets a user connect through their own Spotify developer app. An assigned
+    suffix does NOT fall back to the default app — a missing suffixed var is a
+    misconfiguration, and silently using another app would break token refresh
+    (refresh tokens are bound to the app that minted them).
+
+    Unassigned users use the default SPOTIFY_OAUTH_CLIENT_ID/SECRET, which
+    itself falls back to the catalog app's SPOTIFY_CLIENT_ID/SECRET.
     """
+    suffix = (getattr(user, 'spotify_oauth_app', None) or '').strip()
+    if suffix:
+        return (os.environ.get(f'SPOTIFY_OAUTH_CLIENT_ID_{suffix}'),
+                os.environ.get(f'SPOTIFY_OAUTH_CLIENT_SECRET_{suffix}'))
     cid = os.environ.get('SPOTIFY_OAUTH_CLIENT_ID') or os.environ.get('SPOTIFY_CLIENT_ID')
     secret = os.environ.get('SPOTIFY_OAUTH_CLIENT_SECRET') or os.environ.get('SPOTIFY_CLIENT_SECRET')
     return cid, secret
 
 
-def is_configured():
-    cid, secret = _raw_credentials()
+def is_configured(user=None):
+    cid, secret = _raw_credentials(user)
     return bool(cid and secret)
 
 
-def _credentials():
-    cid, secret = _raw_credentials()
+def has_dedicated_oauth_app(user=None):
+    """True if a real user-OAuth app is configured for this user (an assigned
+    SPOTIFY_OAUTH_CLIENT_ID_<suffix>, or the default SPOTIFY_OAUTH_CLIENT_ID) —
+    i.e. NOT the catalog SPOTIFY_CLIENT_ID fallback, which has no redirect URI
+    and would fail Spotify's redirect_uri check. Used to gate the connect flow
+    so unprovisioned users get guidance instead of a Spotify error page.
+    """
+    suffix = (getattr(user, 'spotify_oauth_app', None) or '').strip()
+    if suffix:
+        return bool(os.environ.get(f'SPOTIFY_OAUTH_CLIENT_ID_{suffix}')
+                    and os.environ.get(f'SPOTIFY_OAUTH_CLIENT_SECRET_{suffix}'))
+    return bool(os.environ.get('SPOTIFY_OAUTH_CLIENT_ID')
+                and os.environ.get('SPOTIFY_OAUTH_CLIENT_SECRET'))
+
+
+def _credentials(user=None):
+    cid, secret = _raw_credentials(user)
     if not cid or not secret:
         raise SpotifyOAuthError('Spotify credentials not configured')
     return cid, secret
 
 
-def _basic_auth_header():
-    cid, secret = _credentials()
+def _basic_auth_header(user=None):
+    cid, secret = _credentials(user)
     token = base64.b64encode(f'{cid}:{secret}'.encode()).decode()
     return {'Authorization': f'Basic {token}'}
 
 
-def authorize_url(redirect_uri, state):
-    cid, _ = _credentials()
+def authorize_url(redirect_uri, state, user=None):
+    cid, _ = _credentials(user)
     params = {
         'response_type': 'code',
         'client_id': cid,
@@ -92,11 +120,11 @@ def authorize_url(redirect_uri, state):
     return f'{_AUTHORIZE_URL}?{urlencode(params)}'
 
 
-def _token_request(data):
+def _token_request(data, user=None):
     try:
         resp = spotify_queue.request(
             'POST', _TOKEN_URL,
-            headers=_basic_auth_header(),
+            headers=_basic_auth_header(user),
             data=data,
             timeout=10,
         )
@@ -117,13 +145,13 @@ def _token_request(data):
     return resp.json()
 
 
-def exchange_code(code, redirect_uri):
+def exchange_code(code, redirect_uri, user=None):
     """Trade an authorization code for access + refresh tokens."""
     return _token_request({
         'grant_type': 'authorization_code',
         'code': code,
         'redirect_uri': redirect_uri,
-    })
+    }, user)
 
 
 def fetch_me(access_token):
@@ -162,6 +190,69 @@ def store_connection(user, token_data, profile):
     db.session.commit()
 
 
+def _error_detail(resp):
+    """Extract Spotify's error message from a Web API response, if any.
+
+    Web API errors nest the message under `error.message` (the token endpoint
+    uses a flat `error_description` instead). Returns a ': <msg>' suffix or ''.
+    """
+    try:
+        err = (resp.json() or {}).get('error')
+        msg = err.get('message') if isinstance(err, dict) else err
+    except Exception:
+        msg = None
+    return f': {msg}' if msg else ''
+
+
+def create_playlist(user, name, track_uris, public=False):
+    """Create a playlist on the user's account and add the given track URIs.
+
+    Returns the new playlist's web URL. Raises SpotifyOAuthError on failure.
+    """
+    token = get_valid_access_token(user)
+    if not token:
+        raise SpotifyOAuthError('Spotify account not connected')
+    # ApiQueue only forwards data=, so JSON-encode the body and set the header.
+    auth = {'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'}
+    try:
+        # Feb 2026 API change: POST /users/{id}/playlists was removed; the
+        # current user's playlist is created via /me/playlists.
+        resp = spotify_queue.request(
+            'POST', f'{_API_BASE}/me/playlists',
+            headers=auth,
+            data=json.dumps({'name': name, 'public': public}),
+            timeout=15,
+        )
+    except (ApiQueueError, RateLimitedError) as e:
+        raise SpotifyOAuthError(f'Spotify playlist create failed: {e}')
+    if resp.status_code not in (200, 201):
+        raise SpotifyOAuthError(
+            f'Spotify playlist create failed ({resp.status_code})'
+            + _error_detail(resp))
+    playlist = resp.json()
+    playlist_id = playlist.get('id')
+    # Spotify caps add-items at 100 URIs per request.
+    for i in range(0, len(track_uris), 100):
+        batch = track_uris[i:i + 100]
+        try:
+            # Feb 2026 API change: /playlists/{id}/tracks was renamed to
+            # /playlists/{id}/items (body still takes {'uris': [...]}).
+            add = spotify_queue.request(
+                'POST', f'{_API_BASE}/playlists/{playlist_id}/items',
+                headers=auth,
+                data=json.dumps({'uris': batch}),
+                timeout=15,
+            )
+        except (ApiQueueError, RateLimitedError) as e:
+            raise SpotifyOAuthError(f'Spotify add-tracks failed: {e}')
+        if add.status_code not in (200, 201):
+            raise SpotifyOAuthError(
+                f'Spotify add-tracks failed ({add.status_code})'
+                + _error_detail(add))
+    return (playlist.get('external_urls') or {}).get('spotify')
+
+
 def disconnect(user):
     user.spotify_user_id = None
     user.spotify_display_name = None
@@ -186,7 +277,7 @@ def get_valid_access_token(user):
     token_data = _token_request({
         'grant_type': 'refresh_token',
         'refresh_token': user.spotify_refresh_token,
-    })
+    }, user)
     user.spotify_access_token = token_data['access_token']
     if token_data.get('refresh_token'):
         user.spotify_refresh_token = token_data['refresh_token']
