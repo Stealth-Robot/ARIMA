@@ -359,8 +359,14 @@ def create_artist_playlist(artist_id):
     except spotify_oauth.SpotifyOAuthError as e:
         return json.dumps({'error': str(e)}), 502, {'Content-Type': 'application/json'}
 
+    # Match song/album links: open in the desktop app (spotify: URI) when the
+    # user's "open in app" preference is on, else fall back to a web tab.
+    settings = getattr(current_user, 'settings', None)
+    open_in_app = getattr(settings, 'spotify_open_in_app', True) if settings else True
     return json.dumps({
         'url': url,
+        'app_uri': to_app_uri(url) if url else None,
+        'open_in_app': open_in_app,
         'added': len(uris),
         'skipped': len(ordered_ids) - len(uris),
         'total': len(ordered_ids),

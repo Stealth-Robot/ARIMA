@@ -1217,7 +1217,13 @@ function createArtistPlaylist(artistId, btn) {
             if (d.skipped) { msg += ', ' + d.skipped + ' skipped — no Spotify link'; }
             msg += ')';
             showToast(msg);
-            if (d.url) { window.open(d.url, '_blank', 'noopener'); }
+            // Open in the Spotify desktop app (like song/album links) when the
+            // user's "open in app" preference is on; else a web tab.
+            if (d.open_in_app && d.app_uri) {
+                window.location.href = d.app_uri;
+            } else if (d.url) {
+                window.open(d.url, '_blank', 'noopener');
+            }
         })
         .catch(function() { showToast('Could not create playlist. Try again.'); })
         .finally(function() { if (btn) { btn.disabled = false; } });
