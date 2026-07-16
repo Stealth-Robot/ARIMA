@@ -256,10 +256,68 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        # 4. Seed simuls (status legend + first-time xlsx import). Idempotent:
+        # legend upserts by key; shows import only when simul_show is empty.
+        _seed_simuls(db)
+
         db.session.commit()
     except Exception:
         db.session.rollback()
         logger.exception('Startup migration failed (DB may not exist yet)')
+
+
+def _seed_simuls(database):
+    """Seed the simuls status legend and, on first run, import the bundled xlsx
+    export (app/data/simul_seed.json). Idempotent — legend upserts by key and the
+    show import only runs while simul_show is empty."""
+    import json
+    import os
+    from datetime import datetime, timezone
+    from app.models.simul import SimulStatusType, SimulShow, SimulStatus
+    from app.models.user import User
+
+    seed_path = os.path.join(os.path.dirname(__file__), 'data', 'simul_seed.json')
+    if not os.path.exists(seed_path):
+        return
+    with open(seed_path, encoding='utf-8') as fh:
+        data = json.load(fh)
+
+    # Legend: upsert by key so relabels/recolors done in-app are preserved (only
+    # missing keys are inserted).
+    type_by_key = {t.key: t for t in SimulStatusType.query.all()}
+    for st in data['status_types']:
+        if st['key'] not in type_by_key:
+            row = SimulStatusType(key=st['key'], label=st['label'], color_hex=st['color_hex'],
+                                  applies_to=st['applies_to'], sort_order=st['sort_order'])
+            database.session.add(row)
+            type_by_key[st['key']] = row
+    database.session.flush()
+
+    if SimulShow.query.first() is not None:
+        return  # shows already imported
+
+    users_by_name = {u.username.lower(): u.id for u in User.query.all()}
+    now = datetime.now(timezone.utc).isoformat()
+    imported = 0
+    for s in data['shows']:
+        show = SimulShow(title=s['title'], category=s['category'], bucket=s['bucket'],
+                         year=s['year'], youtube_url=s['youtube_url'],
+                         years_running=s['years_running'], sort_order=s['sort_order'],
+                         created_at=now, last_updated=now)
+        for st in s['statuses']:
+            type_row = type_by_key.get(st['status_key'])
+            if not type_row:
+                continue
+            uid = users_by_name.get((st['user'] or '').lower()) if st['user'] else None
+            # Skip a mapped-user row we can't resolve; keep member rows as-is.
+            if st['user'] and uid is None:
+                continue
+            show.statuses.append(SimulStatus(
+                user_id=uid, member_name=st['member_name'],
+                status_type_id=type_row.id, note=st['note']))
+        database.session.add(show)
+        imported += 1
+    logger.info('Seeded %d simul shows from xlsx export', imported)
 
 
 def _parse_misc_artists(text):

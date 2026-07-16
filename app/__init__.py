@@ -76,6 +76,28 @@ def create_app():
     # Import all models so SQLAlchemy registers them
     import app.models  # noqa: F401
 
+    # Host-based split (Option A: one app serves both subdomains). The simuls host
+    # serves only the simul blueprint (+ auth/health/static); the arima host serves
+    # everything except simul. Keeps SERVER_NAME unset so url_for/ProxyFix are intact.
+    _SIMUL_OK = {'simul', 'auth', 'health', 'static'}
+
+    @flask_app.before_request
+    def enforce_host_split():
+        from flask import request, abort
+        endpoint = request.endpoint or ''
+        bp = endpoint.split('.')[0]
+        on_simul = request.host.lower() == flask_app.config['SIMUL_HOST'].lower()
+        if on_simul:
+            if bp not in _SIMUL_OK:
+                abort(404)
+        elif bp == 'simul':
+            abort(404)
+
+    @flask_app.context_processor
+    def inject_simul_host():
+        from flask import request
+        return {'on_simul_host': request.host.lower() == flask_app.config['SIMUL_HOST'].lower()}
+
     # Update last_seen on every request, stash previous value for update notification
     @flask_app.before_request
     def update_last_seen():

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Lettuce Simuls{% endblock %}</title>
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
+    <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
+    <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% if theme %}
+    <style>
+        :root {
+            {% for name, value in theme.items() %}
+            --{{ name | replace('_', '-') }}: {{ value }};
+            {% endfor %}
+        }
+    </style>
+    {% endif %}
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
+    <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex items-center whitespace-nowrap text-base-" style="gap: 0.75rem; padding: 0 0.75rem;">
+        <a href="{{ url_for('simul.index') }}" class="font-bold no-underline text-navbar-text">🥬 Lettuce Simuls</a>
+        <span class="flex-1"></span>
+        {% if current_user.is_authenticated %}
+        <span class="flex items-center gap-2">
+            <img src="{{ current_user.profile_image or url_for('static', filename='img/default_image.png') }}" alt=""
+                 referrerpolicy="no-referrer"
+                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                 style="width: 1.375rem; height: 1.375rem;" class="rounded-full object-cover">
+            <span>{{ current_user.username }}</span>
+            <form method="post" action="{{ url_for('auth.logout') }}" class="m-0 inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="bg-transparent border border-border text-navbar-text text-sm- py-0.5 px-2 rounded cursor-pointer">Logout</button>
+            </form>
+        </span>
+        {% endif %}
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true, category_filter=['error']) %}
+    {% if messages %}
+    <div class="fixed z-50" style="top:3.125rem; left:50%; transform:translateX(-50%); max-width:31.25rem;">
+        {% for category, message in messages %}
+        <div class="py-2.5 px-6 mb-1.5 rounded-md text-sm- bg-delete text-button-text cursor-pointer"
+             style="box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.3);" onclick="this.remove()">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main class="px-4 pt-3 pb-8">{% block content %}{% endblock %}</main>
+
+    <script>
+    // Send the CSRF token on every HTMX request (Flask-WTF accepts X-CSRFToken).
+    document.body.addEventListener('htmx:configRequest', function(e) {
+        var m = document.querySelector('meta[name=csrf-token]');
+        if (m) e.detail.headers['X-CSRFToken'] = m.getAttribute('content');
+    });
+    // Edit a cell's note: prompt, then POST keeping the current status.
+    function simulEditNote(btn) {
+        var note = prompt('Note:', btn.getAttribute('data-note') || '');
+        if (note === null) return;
+        var body = new URLSearchParams();
+        body.set('show_id', btn.getAttribute('data-show'));
+        body.set('pkey', btn.getAttribute('data-pkey'));
+        body.set('status_type_id', btn.getAttribute('data-type') || '');
+        body.set('note', note);
+        var td = btn.closest('td');
+        fetch('{{ url_for('simul.set_status') }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded',
+                      'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')},
+            body: body.toString()
+        }).then(function(r) { return r.text(); }).then(function(html) {
+            td.outerHTML = html;
+        });
+    }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

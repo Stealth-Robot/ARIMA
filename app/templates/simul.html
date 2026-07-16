@@ -1,0 +1,96 @@
+{% extends "simul_base.html" %}
+{% set cat_labels = {'tv': 'TV', 'movie': 'Movie', 'upcoming_seasonal': 'Upcoming', 'upcoming_movie': 'Upcoming Movie', 'uncategorized': ''} %}
+
+{% block content %}
+<div class="flex flex-wrap items-center gap-2 mb-3">
+  <h1 class="text-base- font-bold mr-2">🥬 Lettuce Simuls</h1>
+  {% for b in buckets %}
+  <a href="{{ url_for('simul.index', bucket=b, year=(None if b == 'planning' else year)) }}"
+     class="text-sm- py-1 px-3 rounded no-underline {% if b == bucket %}bg-edit-on text-button-text{% else %}bg-secondary-bg text-primary-text border border-border{% endif %}">
+    {{ b|capitalize }}
+  </a>
+  {% endfor %}
+  {% if bucket != 'planning' and years %}
+  <span class="flex-1"></span>
+  <select onchange="window.location = '{{ url_for('simul.index', bucket=bucket) }}&year=' + this.value"
+          class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
+    {% for y in years %}
+    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+</div>
+
+{# Legend #}
+<div class="flex flex-wrap items-center gap-3 mb-3 text-2xs text-secondary-text">
+  {% for t in status_types %}
+  <span class="flex items-center gap-1">
+    <span class="inline-block rounded" style="width:0.75rem;height:0.75rem;background-color:{{ t.color_hex }};"></span>{{ t.label }}
+  </span>
+  {% endfor %}
+</div>
+
+{% if can_edit %}
+<form method="post" action="{{ url_for('simul.add_show') }}" class="flex flex-wrap items-center gap-2 mb-3 p-2 bg-secondary-bg border border-border rounded">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="text" name="title" placeholder="Add a title…" required
+         class="text-sm- py-1 px-2 rounded border border-border" style="min-width:16rem;">
+  <select name="category" class="text-sm- py-1 px-2 rounded border border-border">
+    {% for c in categories %}<option value="{{ c }}">{{ cat_labels[c] or 'Uncategorized' }}</option>{% endfor %}
+  </select>
+  <input type="hidden" name="bucket" value="{{ bucket }}">
+  {% if bucket != 'planning' %}<input type="hidden" name="year" value="{{ year }}">{% endif %}
+  <button type="submit" class="text-sm- py-1 px-3 rounded bg-edit-on text-button-text border-0 cursor-pointer">Add</button>
+</form>
+{% endif %}
+
+<div class="overflow-x-auto border border-border rounded">
+  <table class="border-collapse text-sm-" style="width:max-content;">
+    <thead>
+      <tr class="bg-header-row">
+        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1" style="min-width:16rem;">Title</th>
+        {% for u in users %}
+        <th class="border border-border px-1 py-1 text-center" style="min-width:4.5rem;">{{ u.username }}</th>
+        {% endfor %}
+        {% for m in members %}
+        <th class="border border-border px-1 py-1 text-center text-secondary-text" style="min-width:4.5rem;" title="Historical member (no account)">{{ m }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for show in shows %}
+      <tr class="{% if loop.index is even %}bg-row-alternate{% endif %}">
+        <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}">
+          <div class="flex items-center gap-2">
+            <span>{{ show.title }}</span>
+            {% if cat_labels[show.category] %}<span class="text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
+            {% if show.years_running %}<span class="text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
+            {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="text-2xs">▶</a>{% endif %}
+            {% if can_edit %}
+            <form method="post" action="{{ url_for('simul.delete_show', show_id=show.id) }}" class="m-0 inline" onsubmit="return confirm('Delete this title?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="bg-transparent border-0 cursor-pointer text-2xs text-secondary-text" title="Delete">✕</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+        {% set row = status_map.get(show.id, {}) %}
+        {% for u in users %}
+          {% set pkey = 'u:' ~ u.id %}
+          {% set status = row.get(pkey) %}
+          {% set editable = can_edit or u.id == current_user.id %}
+          {% include 'fragments/simul_cell.html' %}
+        {% endfor %}
+        {% for m in members %}
+          {% set pkey = 'm:' ~ m %}
+          {% set status = row.get(pkey) %}
+          {% set editable = can_edit %}
+          {% include 'fragments/simul_cell.html' %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if not shows %}<p class="text-secondary-text mt-4">No titles in this list yet.</p>{% endif %}
+{% endblock %}
