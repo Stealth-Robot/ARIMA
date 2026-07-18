@@ -44,8 +44,10 @@ def _pick_random_sotd(as_of_date):
         SongOfDay.date < as_of_date.isoformat()
     ).all()}
 
-    all_song_ids = {r.song_id for r in ArtistSong.query.filter(
-        ArtistSong.artist_is_main == True).all()}
+    # Remixes are never eligible to be auto-picked as Song of the Day.
+    all_song_ids = {sid for (sid,) in db.session.query(ArtistSong.song_id).join(
+        Song, Song.id == ArtistSong.song_id).filter(
+        ArtistSong.artist_is_main == True, Song.is_remix == False).all()}
     candidates = all_song_ids - used_ids
 
     if not candidates:
