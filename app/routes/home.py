@@ -11,7 +11,8 @@ from sqlalchemy import and_, func
 from app.extensions import db
 from app.decorators import role_required, ADMIN
 from app.models.music import (Artist, ArtistArtist, ArtistSubscription, ArtistSong,
-                               AlbumSong, Album, Song, Rating, album_genres)
+                               AlbumSong, Album, Song, Rating, album_genres,
+                               SongMiscArtist, MiscArtist)
 from app.models.song_of_day import SongOfDay
 from app.models.user import User, UserSettings
 from app.models.rules import Rules
@@ -323,37 +324,73 @@ def toggle_hide_disbanded():
 
 
 def _pick_random_all_song():
-    """Pick one random unrated (song, artist, album) at the SQL level.
+    """Pick one random unrated song id from the whole catalog: real-artist songs
+    (that have an album) plus misc-artist songs. Returns a song id or None.
 
     Materializing the whole unrated catalog to random.choice one row was the
     biggest per-request memory spike; ORDER BY RANDOM() LIMIT 1 keeps it in SQLite.
     """
     rated_sq = db.session.query(Rating.song_id).filter(
         Rating.user_id == current_user.id)
-    song_id = (db.session.query(Song.id)
-               .join(ArtistSong, and_(
-                   ArtistSong.song_id == Song.id,
-                   ArtistSong.artist_is_main == True))
-               .join(AlbumSong, AlbumSong.song_id == Song.id)
-               .filter(~Song.id.in_(rated_sq))
-               .distinct()
-               .order_by(func.random())
-               .limit(1)
-               .scalar())
-    if song_id is None:
-        return None
+    real_q = (db.session.query(Song.id)
+              .join(ArtistSong, and_(
+                  ArtistSong.song_id == Song.id,
+                  ArtistSong.artist_is_main == True))
+              .join(AlbumSong, AlbumSong.song_id == Song.id)
+              .filter(~Song.id.in_(rated_sq)))
+    misc_q = (db.session.query(Song.id)
+              .join(SongMiscArtist, and_(
+                  SongMiscArtist.song_id == Song.id,
+                  SongMiscArtist.artist_is_main == True))
+              .filter(~Song.id.in_(rated_sq)))
+    return (real_q.union(misc_q)
+            .order_by(func.random())
+            .limit(1)
+            .scalar())
+
+
+def _render_shuffle_any(song_id):
+    """Render a shuffle card for either a real-artist or a misc-artist song."""
     song = db.session.get(Song, song_id)
+    if song is None:
+        return '', 204
     as_row = (db.session.query(ArtistSong.artist_id)
               .filter(ArtistSong.song_id == song_id,
                       ArtistSong.artist_is_main == True)
               .first())
-    artist = db.session.get(Artist, as_row[0]) if as_row else None
+    if as_row:
+        artist = db.session.get(Artist, as_row[0])
+        alb_row = (db.session.query(AlbumSong.album_id)
+                   .filter(AlbumSong.song_id == song_id).first())
+        album = db.session.get(Album, alb_row[0]) if alb_row else None
+        if artist and album:
+            return _render_shuffle_card(song, artist, album)
+    return _render_shuffle_misc_card(song)
+
+
+def _render_shuffle_misc_card(song):
+    """Shuffle card for a misc-artist song — links to the /misc page (no artist page)."""
+    from app.services.stats import get_display_users
+    users = get_display_users()
+    ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
+    rows = (db.session.query(SongMiscArtist.artist_is_main, MiscArtist.name)
+            .join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id)
+            .filter(SongMiscArtist.song_id == song.id)
+            .order_by(SongMiscArtist.artist_is_main.desc(), MiscArtist.name)
+            .all())
+    main_names = [n for is_main, n in rows if is_main]
+    feat_names = [n for is_main, n in rows if not is_main]
+    artist_name = ', '.join(main_names) or 'Unknown'
+    collab_label = '(feat. ' + ', '.join(feat_names) + ')' if feat_names else ''
     alb_row = (db.session.query(AlbumSong.album_id)
-               .filter(AlbumSong.song_id == song_id).first())
+               .filter(AlbumSong.song_id == song.id).first())
     album = db.session.get(Album, alb_row[0]) if alb_row else None
-    if not (song and artist and album):
-        return None
-    return song, artist, album
+    song_url = '/misc?song=%d#song-%d' % (song.id, song.id)
+    return render_template('fragments/shuffle_card.html',
+                           song=song, artist={'name': artist_name}, album=album,
+                           artist_url=song_url, song_url=song_url, artist_id='',
+                           users=users, ratings=ratings,
+                           collab_label=collab_label, gender_css=GENDER_CSS)
 
 
 def _render_shuffle_card(song, artist, album):
@@ -375,7 +412,9 @@ def _render_shuffle_card(song, artist, album):
     collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
     return render_template('fragments/shuffle_card.html',
                            song=song, artist=artist, album=album,
-                           artist_url=artist_url, artist_id=artist.id,
+                           artist_url=artist_url,
+                           song_url=artist_url + '#song-' + str(song.id),
+                           artist_id=artist.id,
                            users=users, ratings=ratings,
                            collab_label=collab_label,
                            gender_css=GENDER_CSS)
@@ -390,11 +429,10 @@ def shuffle():
     mode = request.args.get('mode', 'subscribed')
     try:
         if mode == 'all':
-            picked = _pick_random_all_song()
-            if picked is None:
+            song_id = _pick_random_all_song()
+            if song_id is None:
                 return '', 204
-            song, artist, album = picked
-            return _render_shuffle_card(song, artist, album)
+            return _render_shuffle_any(song_id)
         backlog, _ = _get_rating_backlog()
         if not backlog:
             return '', 204

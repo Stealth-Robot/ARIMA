@@ -47,8 +47,10 @@ def build_description_html(description, artist=None, album=None, song=None):
     if song and artist:
         links[song.name] = _make_link(_artist_url(artist) + '#song-' + str(song.id), song.name)
     elif song and _is_misc_song(song.id):
-        # Misc songs have no artist page; link to their /misc anchor instead.
-        links[song.name] = _make_link('/misc#song-' + str(song.id), song.name)
+        # Misc songs have no artist page; link to /misc with ?song= so the page reveals it
+        # even when the viewer's filters would otherwise hide it.
+        links[song.name] = _make_link(
+            '/misc?song=' + str(song.id) + '#song-' + str(song.id), song.name)
 
     # Replace only quoted names — songs first (most specific), then albums, then artists
     # This is safe because quotes are unambiguous delimiters

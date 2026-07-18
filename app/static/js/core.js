@@ -296,7 +296,9 @@ function copyAnchorLink(event, anchorId) {
     if (event) { event.stopPropagation(); event.preventDefault(); }
     var base = window.location.href.split('#')[0].split('?')[0];
     var songMatch = anchorId.match(/^song-(\d+)$/);
-    var url = songMatch ? base + '?song=' + songMatch[1] + '#' + anchorId : base + '#' + anchorId;
+    // ?song= is the misc-page reveal param; on artist pages it's spurious, so only add it on /misc.
+    var onMisc = window.location.pathname === '/misc';
+    var url = (songMatch && onMisc) ? base + '?song=' + songMatch[1] + '#' + anchorId : base + '#' + anchorId;
     function fallback() {
         var ta = document.createElement('textarea');
         ta.value = url;

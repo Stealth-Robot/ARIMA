@@ -161,10 +161,12 @@ def _build_misc_shell(bypass_filters=False, target_song_id=None):
     # the section renders (the country filter is a hard omission the JS can't work around).
     only_song_country = None
     if target_song_id and filters['country_ids']:
+        # A song can have several misc artists (collabs), so this returns multiple rows —
+        # take the first (main artist's country) rather than .scalar(), which raises on >1.
         forced_cid = db.session.query(MiscArtist.country_id).join(
             SongMiscArtist, SongMiscArtist.misc_artist_id == MiscArtist.id
         ).filter(SongMiscArtist.song_id == target_song_id).order_by(
-            SongMiscArtist.artist_is_main.desc()).scalar()
+            SongMiscArtist.artist_is_main.desc()).limit(1).scalar()
         if forced_cid is not None and not any(c[0] == forced_cid for c in country_counts):
             # Section exists only to reveal the one linked song, so it holds just that song.
             only_song_country = forced_cid
