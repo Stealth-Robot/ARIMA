@@ -12,6 +12,7 @@
     <meta property="og:url" content="{{ request.url }}">
     <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
+    <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
     <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
     <style>
         :root {

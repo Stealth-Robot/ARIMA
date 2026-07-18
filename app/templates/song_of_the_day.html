@@ -17,6 +17,9 @@
                 {% for u in cards[0].users %}
                 <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
                 {% endfor %}
+                {% if current_user.is_admin %}
+                <th class="px-1 py-1" style="width: 2rem; border: none;"></th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -30,4 +33,38 @@
     <p class="text-secondary-text text-sm">No songs of the day yet.</p>
     {% endif %}
 </div>
+{% if current_user.is_admin %}
+<script>
+/* Admin-only: change which song is the Song of the Day for a given date.
+   Password prompt first (reuses the account password), then a song picker. */
+function editSotd(date, currentSongId) {
+    showMobilePassword({
+        title: 'Change Song of the Day',
+        message: date + ' — enter your password to edit.',
+        confirmLabel: 'Continue',
+        onConfirm: function(pw, pwUi) {
+            pwUi.close();
+            showMobilePicker({
+                title: 'Pick a song for ' + date,
+                mode: 'search',
+                placeholder: 'Search songs…',
+                searchUrl: function(q) { return '/edit/picker/songs?q=' + encodeURIComponent(q) + '&exclude=' + currentSongId; },
+                mapItems: function(d) { return d.map(function(s) { return { id: s.id, label: s.name + ' — ' + s.artist }; }); },
+                onSelect: function(item) {
+                    fetch('/song-of-the-day/set', {
+                        method: 'POST',
+                        headers: _csrfHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+                        body: 'date=' + encodeURIComponent(date) + '&song_id=' + item.id + '&password=' + encodeURIComponent(pw)
+                    }).then(function(r) {
+                        if (r.status === 403) { showBriefToast('Incorrect password.'); editSotd(date, currentSongId); return; }
+                        if (r.ok) { window.location.reload(); }
+                        else { showBriefToast('Change failed.'); }
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endif %}
 {% endblock %}

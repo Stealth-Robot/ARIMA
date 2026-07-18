@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import and_, func
 
 from app.extensions import db
+from app.decorators import role_required, ADMIN
 from app.models.music import (Artist, ArtistArtist, ArtistSubscription, ArtistSong,
                                AlbumSong, Album, Song, Rating, album_genres)
 from app.models.song_of_day import SongOfDay
@@ -424,6 +425,33 @@ def song_of_the_day():
         if card:
             cards.append(card)
     return render_template('song_of_the_day.html', cards=cards, og_sotd=_get_og_sotd())
+
+
+@home_bp.route('/song-of-the-day/set', methods=['POST'])
+@login_required
+@role_required(ADMIN)
+def set_song_of_the_day():
+    """Admin override: point a given day's Song of the Day at a chosen song."""
+    from app.routes.edit import _verify_password
+    if not _verify_password():
+        return 'Incorrect password', 403
+
+    date_str = (request.form.get('date') or '').strip()
+    song_id = request.form.get('song_id', type=int)
+    entry = db.session.get(SongOfDay, date_str)
+    if entry is None:
+        return 'No Song of the Day for that date', 404
+    song = db.session.get(Song, song_id) if song_id else None
+    if song is None:
+        return 'Song not found', 404
+    # Only songs with a main artist render a card; reject others up front.
+    if not ArtistSong.query.filter(
+            ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True).first():
+        return 'Song has no main artist', 400
+
+    entry.song_id = song.id
+    db.session.commit()
+    return '', 200
 
 
 @home_bp.route('/')

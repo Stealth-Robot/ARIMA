@@ -36,4 +36,12 @@
         {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
     </td>
     {% endfor %}
+    {% if current_user.is_admin %}
+    <td class="text-center px-1 py-1" style="vertical-align: middle; border: none;">
+        <button type="button" class="sotd-edit-btn text-secondary-text hover:text-primary-text"
+                title="Change this Song of the Day"
+                style="border: none; background: none; cursor: pointer; font-size: 0.875rem; line-height: 1;"
+                onclick="editSotd('{{ card.date_str }}', {{ card.song.id }})">&#9998;</button>
+    </td>
+    {% endif %}
 </tr>
