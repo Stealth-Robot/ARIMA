@@ -16,14 +16,9 @@ CATEGORIES = ['tv', 'movie', 'upcoming_seasonal', 'upcoming_movie', 'uncategoriz
 
 
 def _participants():
-    """Grid columns: rateable ARIMA users (stable order) then historical members
-    (Amy/Syd) that appear in the data but have no account."""
-    users = (User.query.filter(User.role_id.in_(tuple(USER_OR_ABOVE)))
-             .order_by(User.sort_order.is_(None), User.sort_order, User.username).all())
-    members = [m[0] for m in db.session.query(SimulStatus.member_name)
-               .filter(SimulStatus.member_name.isnot(None)).distinct()
-               .order_by(SimulStatus.member_name).all()]
-    return users, members
+    """Grid columns: rateable ARIMA users, stable order."""
+    return (User.query.filter(User.role_id.in_(tuple(USER_OR_ABOVE)))
+            .order_by(User.sort_order.is_(None), User.sort_order, User.username).all())
 
 
 def _years():
@@ -60,11 +55,11 @@ def index():
     else:
         year = None
     shows = q.order_by(SimulShow.sort_order).all()
-    users, members = _participants()
+    users = _participants()
     status_types = SimulStatusType.query.order_by(SimulStatusType.sort_order).all()
     return render_template(
         'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years,
-        shows=shows, users=users, members=members, status_map=_status_map(shows),
+        shows=shows, users=users, status_map=_status_map(shows),
         status_types=status_types, categories=CATEGORIES,
         can_edit=current_user.is_editor_or_admin)
 

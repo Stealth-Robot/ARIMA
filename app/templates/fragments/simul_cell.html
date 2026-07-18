@@ -1,33 +1,27 @@
-{#- One grid cell. Rendered inline in the grid and returned standalone for HTMX swaps. -#}
+{#- One grid cell. Rendered inline in the grid and returned standalone for HTMX swaps.
+    Notes mirror ARIMA rating cells: has-note triangle + data-note (hover tooltip),
+    right-click to edit (see simul_base.html). -#}
 {%- set cid = 'cell-' ~ show.id ~ '-' ~ (pkey | replace(':', '_')) -%}
-<td id="{{ cid }}" class="border border-border text-center align-middle p-0"
-    style="min-width:4.5rem;{% if status %}background-color:{{ status.status_type.color_hex }};{% endif %}">
+<td id="{{ cid }}"
+    class="border border-border text-center align-middle p-0{% if status and status.note %} has-note{% endif %}"
+    data-show="{{ show.id }}" data-pkey="{{ pkey }}"
+    data-type="{{ status.status_type_id if status else '' }}"
+    data-editable="{{ '1' if editable else '' }}"
+    {% if status and status.note %}data-note="{{ status.note }}"{% endif %}
+    style="min-width:4.5rem;{% if status %}background-color:{{ status.status_type.color_hex }};color:#fff;{% endif %}">
   {%- if editable -%}
-  <div class="relative flex items-stretch">
-    <select name="status_type_id"
-            class="w-full bg-transparent border-0 text-2xs cursor-pointer appearance-none text-center py-1"
-            style="{% if status %}color:#fff;{% else %}color:var(--text-secondary);{% endif %}"
-            hx-post="{{ url_for('simul.set_status') }}"
-            hx-vals='{"show_id": {{ show.id }}, "pkey": "{{ pkey }}"}'
-            hx-target="#{{ cid }}" hx-swap="outerHTML">
-      <option value="">—</option>
-      {%- for t in status_types -%}
-      <option value="{{ t.id }}" {% if status and status.status_type_id == t.id %}selected{% endif %}>{{ t.label }}</option>
-      {%- endfor -%}
-    </select>
-    {%- if status -%}
-    <button type="button" title="{{ status.note or 'Add note' }}"
-            data-show="{{ show.id }}" data-pkey="{{ pkey }}"
-            data-type="{{ status.status_type_id }}" data-note="{{ status.note or '' }}"
-            onclick="simulEditNote(this)"
-            class="absolute top-0 right-0 bg-transparent border-0 cursor-pointer text-2xs px-0.5"
-            style="color:#fff;opacity:0.75;">{% if status.note %}📝{% else %}✎{% endif %}</button>
-    {%- endif -%}
-  </div>
+  <select name="status_type_id"
+          class="w-full bg-transparent border-0 text-2xs cursor-pointer appearance-none text-center py-1"
+          style="{% if status %}color:#fff;{% else %}color:var(--text-secondary);{% endif %}"
+          hx-post="{{ url_for('simul.set_status') }}"
+          hx-vals='{"show_id": {{ show.id }}, "pkey": "{{ pkey }}"}'
+          hx-target="#{{ cid }}" hx-swap="outerHTML">
+    <option value="">—</option>
+    {%- for t in status_types -%}
+    <option value="{{ t.id }}" {% if status and status.status_type_id == t.id %}selected{% endif %}>{{ t.label }}</option>
+    {%- endfor -%}
+  </select>
   {%- else -%}
-  <div class="text-2xs px-1 py-1" style="{% if status %}color:#fff;{% endif %}"
-       {% if status and status.note %}title="{{ status.note }}"{% endif %}>
-    {{ status.status_type.label if status else '' }}{% if status and status.note %} 📝{% endif %}
-  </div>
+  <div class="text-2xs px-1 py-1">{{ status.status_type.label if status else '' }}</div>
   {%- endif -%}
 </td>

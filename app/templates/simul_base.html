@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Lettuce Simuls{% endblock %}</title>
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
+    <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
     <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
     <link href="{{ url_for('static', filename='vendor/tailwind.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -52,30 +53,113 @@
 
     <main class="px-4 pt-3 pb-8">{% block content %}{% endblock %}</main>
 
+    <!-- Note tooltip (JS-positioned) — same element/styling as ARIMA rating notes -->
+    <div id="note-tooltip"></div>
+
     <script>
     // Send the CSRF token on every HTMX request (Flask-WTF accepts X-CSRFToken).
     document.body.addEventListener('htmx:configRequest', function(e) {
         var m = document.querySelector('meta[name=csrf-token]');
         if (m) e.detail.headers['X-CSRFToken'] = m.getAttribute('content');
     });
-    // Edit a cell's note: prompt, then POST keeping the current status.
-    function simulEditNote(btn) {
-        var note = prompt('Note:', btn.getAttribute('data-note') || '');
-        if (note === null) return;
+
+    // --- Notes: mirror ARIMA. has-note triangle + hover tooltip; right-click to edit. ---
+    var _csrf = document.querySelector('meta[name=csrf-token]').getAttribute('content');
+    var _tip = document.getElementById('note-tooltip');
+    var _tipSel = false;
+    _tip.addEventListener('mousedown', function() { _tipSel = true; });
+    document.addEventListener('mouseup', function() { _tipSel = false; });
+
+    document.addEventListener('mouseover', function(e) {
+        var td = e.target.closest('td.has-note');
+        if (!td) return;
+        var note = td.getAttribute('data-note');
+        if (!note) return;
+        _tip.textContent = note;
+        var r = td.getBoundingClientRect();
+        _tip.style.left = r.right + 'px';
+        _tip.style.transform = 'translateX(-100%)';
+        if (r.top > 40) { _tip.style.top = (r.top - 4) + 'px'; _tip.style.transform += ' translateY(-100%)'; }
+        else { _tip.style.top = (r.bottom + 4) + 'px'; }
+        _tip.style.opacity = '1';
+        _tip.style.display = 'block';
+    });
+    document.addEventListener('mouseout', function(e) {
+        var td = e.target.closest('td.has-note');
+        if (!td) return;
+        if (!td.contains(e.relatedTarget) && e.relatedTarget !== _tip && !_tip.contains(e.relatedTarget)) {
+            if (!_tipSel) { _tip.style.opacity = '0'; _tip.style.display = 'none'; }
+        }
+    });
+    window.addEventListener('scroll', function() {
+        if (_tip.style.display !== 'none') { _tipSel = false; _tip.style.opacity = '0'; _tip.style.display = 'none'; }
+    });
+
+    // Right-click an editable cell with a status to add/edit its note.
+    var _activeNote = null;
+    function _closeNote() { if (_activeNote) { _activeNote.remove(); _activeNote = null; } }
+    document.addEventListener('contextmenu', function(e) {
+        var td = e.target.closest('td[data-editable="1"]');
+        if (!td) return;
+        if (!td.getAttribute('data-type')) return;  // no status set -> no note (matches backend)
+        e.preventDefault();
+        _openNote(td);
+    });
+    document.addEventListener('click', function(e) {
+        if (_activeNote && !_activeNote.contains(e.target)) _closeNote();
+    });
+
+    function _submitNote(td, note) {
         var body = new URLSearchParams();
-        body.set('show_id', btn.getAttribute('data-show'));
-        body.set('pkey', btn.getAttribute('data-pkey'));
-        body.set('status_type_id', btn.getAttribute('data-type') || '');
+        body.set('show_id', td.getAttribute('data-show'));
+        body.set('pkey', td.getAttribute('data-pkey'));
+        body.set('status_type_id', td.getAttribute('data-type') || '');
         body.set('note', note);
-        var td = btn.closest('td');
         fetch('{{ url_for('simul.set_status') }}', {
             method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded',
-                      'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')},
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': _csrf},
             body: body.toString()
         }).then(function(r) { return r.text(); }).then(function(html) {
             td.outerHTML = html;
+            _closeNote();
         });
+    }
+
+    function _openNote(td) {
+        _closeNote();
+        var existing = td.getAttribute('data-note') || '';
+        var ov = document.createElement('div');
+        ov.style.cssText = 'position:fixed; z-index:50; background:var(--bg-secondary,#fff); border:0.125rem solid var(--link,#2563EB); border-radius:0.25rem; padding:0.375rem; box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.2); width:15rem;';
+        var ta = document.createElement('textarea');
+        ta.value = existing; ta.rows = 3; ta.placeholder = 'Add a note...';
+        ta.style.cssText = 'width:100%; border:0.0625rem solid var(--border,#ccc); border-radius:0.1875rem; padding:0.25rem; font-size:0.8125rem; font-family:inherit; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary,#000); box-sizing:border-box;';
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:0.25rem; margin-top:0.25rem; justify-content:flex-end;';
+        function mkBtn(label, bg) {
+            var b = document.createElement('button');
+            b.textContent = label;
+            b.style.cssText = 'padding:0.125rem 0.625rem; font-size:0.75rem; color:#fff; border:none; border-radius:0.1875rem; cursor:pointer; background:' + bg + ';';
+            return b;
+        }
+        var del = mkBtn('Delete', 'var(--delete-button,#DC2626)');
+        del.onclick = function() { _submitNote(td, ''); };
+        var cancel = mkBtn('Cancel', '#6B7280');
+        cancel.onclick = _closeNote;
+        var save = mkBtn('Save', 'var(--link,#2563EB)');
+        save.onclick = function() { _submitNote(td, ta.value.trim()); };
+        row.appendChild(del); row.appendChild(cancel); row.appendChild(save);
+        ov.appendChild(ta); ov.appendChild(row);
+        var r = td.getBoundingClientRect(), w = 240, gap = 4;
+        ov.style.left = (r.right + gap + w < window.innerWidth ? r.right + gap : r.left - gap - w) + 'px';
+        document.body.appendChild(ov);
+        ov.style.top = Math.max(0, Math.min(r.top, window.innerHeight - ov.offsetHeight - 35)) + 'px';
+        ta.focus();
+        ta.addEventListener('keydown', function(e) {
+            e.stopPropagation();
+            if (e.key === 'Escape') _closeNote();
+            else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) _submitNote(td, ta.value.trim());
+        });
+        _activeNote = ov;
     }
     </script>
     {% block scripts %}{% endblock %}

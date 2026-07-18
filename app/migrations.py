@@ -260,6 +260,14 @@ def run_startup_migrations():
         # legend upserts by key; shows import only when simul_show is empty.
         _seed_simuls(db)
 
+        # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
+        # Idempotent: no-op once none remain.
+        if {row[1] for row in db.session.execute(db.text("PRAGMA table_info('simul_status')"))}:
+            n = db.session.execute(db.text(
+                "DELETE FROM simul_status WHERE member_name IS NOT NULL")).rowcount
+            if n:
+                logger.info('Removed %d historical member simul statuses', n)
+
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -308,13 +316,14 @@ def _seed_simuls(database):
             type_row = type_by_key.get(st['status_key'])
             if not type_row:
                 continue
-            uid = users_by_name.get((st['user'] or '').lower()) if st['user'] else None
-            # Skip a mapped-user row we can't resolve; keep member rows as-is.
-            if st['user'] and uid is None:
+            # Only ARIMA accounts are tracked; skip historical member-only rows (Amy/Syd).
+            if not st['user']:
+                continue
+            uid = users_by_name.get(st['user'].lower())
+            if uid is None:
                 continue
             show.statuses.append(SimulStatus(
-                user_id=uid, member_name=st['member_name'],
-                status_type_id=type_row.id, note=st['note']))
+                user_id=uid, status_type_id=type_row.id, note=st['note']))
         database.session.add(show)
         imported += 1
     logger.info('Seeded %d simul shows from xlsx export', imported)
