@@ -2,10 +2,13 @@
 
 {#- Every table in the grid shares these column widths, so the separate group tables stay
     aligned with the date header above them. -#}
-{% macro cols(games) -%}
-<colgroup><col style="width:12rem;">{% for g in games %}<col style="width:4.5rem;">{% endfor %}</colgroup>
+{#- Sized to the longest name or group heading, never to the add-player form below it. -#}
+{% set label_chars = [players | map(attribute='name') | map('length') | max | default(0), 6] | max %}
+{% set name_col = 'calc(' ~ label_chars ~ 'ch + 3.5rem)' %}
+{% macro cols(games, name_col) -%}
+<colgroup><col style="width:{{ name_col }};">{% for g in games %}<col style="width:4.5rem;">{% endfor %}</colgroup>
 {%- endmacro %}
-{% set grid_width = 12 + games | length * 4.5 %}
+{% set grid_width = 'calc(' ~ label_chars ~ 'ch + ' ~ (3.5 + games | length * 4.5) ~ 'rem)' %}
 
 {#- The season controls live in the navbar, so the page starts at the season heading. -#}
 {% block navbar_extra %}
@@ -69,8 +72,8 @@
 
 {% if season and games %}
 <div class="overflow-x-auto">
-  <table class="border-collapse text-sm-" style="width:{{ grid_width }}rem; table-layout:fixed;">
-    {{ cols(games) }}
+  <table class="border-collapse text-sm-" style="width:{{ grid_width }}; table-layout:fixed;">
+    {{ cols(games, name_col) }}
     <thead>
       <tr class="bg-header-row">
         <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1">Date</th>
@@ -107,8 +110,8 @@
 
   {#- One table per group, so each list stands alone rather than sitting inside one box. -#}
   {% for cat in categories %}
-  <table class="border-collapse text-sm- mt-2" style="width:{{ grid_width }}rem; table-layout:fixed;">
-    {{ cols(games) }}
+  <table class="border-collapse text-sm- mt-2" style="width:{{ grid_width }}; table-layout:fixed;">
+    {{ cols(games, name_col) }}
     <tbody>
       <tr class="bg-header-row">
         <td class="sticky left-0 z-10 bg-header-row border border-border px-2 py-1 font-bold">{{ category_labels[cat] }}</td>
@@ -117,8 +120,8 @@
       {% for player in players if player.category == cat %}
       <tr class="{% if loop.index is even %}bg-row-alternate{% endif %}">
         <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}">
-          <div class="flex items-center justify-between gap-1">
-            <span>{{ player.name }}</span>
+          <div class="flex items-center justify-between gap-1 min-w-0">
+            <span class="truncate">{{ player.name }}</span>
             <span class="flex items-center gap-1">
               <button type="button" title="Rename this player"
                       class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
@@ -139,12 +142,12 @@
       {% endfor %}
       <tr>
         <td class="sticky left-0 z-10 bg-primary-bg border border-border px-2 py-1">
-          <form method="post" action="{{ url_for('soccer.add_player') }}" class="m-0 flex items-center gap-1">
+          <form method="post" action="{{ url_for('soccer.add_player') }}" class="m-0 flex flex-wrap items-center gap-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="season_id" value="{{ season.id }}">
             <input type="hidden" name="category" value="{{ cat }}">
             <input type="text" name="name" placeholder="Name…" required maxlength="60"
-                   class="text-2xs py-0.5 px-1 rounded border border-border" style="width:7rem;">
+                   class="text-2xs py-0.5 px-1 rounded border border-border w-full" style="min-width:0;">
             <button type="submit" class="text-2xs py-0.5 px-2 rounded bg-edit-on text-button-text border-0 cursor-pointer whitespace-nowrap">+ Add Player</button>
           </form>
         </td>
