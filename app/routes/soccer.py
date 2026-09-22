@@ -92,6 +92,8 @@ def index():
         cell_colour=cell_colour,
         # inject_theme gives anonymous visitors {}, which would drop every colour var.
         hour_choices=HOUR_CHOICES, minute_choices=MINUTE_CHOICES,
+        # A native date input cannot prefill the year segment alone, so it gets a full date.
+        today=datetime.now(timezone.utc).strftime('%Y-%m-%d'),
         theme=_theme, color_scheme=theme_color_scheme(_theme))
 
 
@@ -259,9 +261,21 @@ def add_season():
         flash(f'There are already {MAX_SEASONS} seasons.', 'error')
         return redirect(url_for('soccer.index'))
 
+    # Captured before the insert, or the new season would be its own most recent.
+    previous = SoccerSeason.query.order_by(SoccerSeason.id.desc()).first()
+
     season = SoccerSeason(name=name, start_date='', end_date='',
                           created_at=datetime.now(timezone.utc).isoformat())
     db.session.add(season)
+    db.session.flush()
+
+    if previous is not None:
+        squad = (SoccerPlayer.query.filter_by(season_id=previous.id)
+                 .order_by(SoccerPlayer.sort_order, SoccerPlayer.id).all())
+        for player in squad:
+            db.session.add(SoccerPlayer(season_id=season.id, name=player.name,
+                                        category=player.category,
+                                        sort_order=player.sort_order))
     db.session.commit()
     return redirect(url_for('soccer.index', season=season.id))
 

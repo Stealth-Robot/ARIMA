@@ -46,7 +46,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="season_id" value="{{ season.id }}">
   <label class="text-sm- text-secondary-text flex items-center gap-1">Date
-    <input type="date" name="date" required
+    <input type="date" name="date" required value="{{ today }}"
            class="text-sm- py-1 px-2 rounded border border-border">
   </label>
   {#- Two selects, not a native time input: 5-minute steps and no am/pm field. -#}
