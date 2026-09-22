@@ -1,0 +1,14 @@
+{#- One date's count cell: four labelled lines, each independently coloured.
+    Rendered inline in the header and returned out-of-band after a cell change. -#}
+<td id="soccer-count-{{ game.id }}"
+    {% if oob %}hx-swap-oob="true"{% endif %}
+    class="border border-border p-0 align-middle" style="min-width:4.5rem;">
+  {%- for line in count_lines -%}
+  {%- set n = counts.get(line, 0) -%}
+  {%- set colour = count_colour(line, n) -%}
+  <div class="flex justify-between text-xxs leading-none px-1 py-0.5"
+       style="background-color:{{ colour[0] }};color:{{ colour[1] }};">
+    <span>{{ line }}</span><span class="font-bold">{{ n }}</span>
+  </div>
+  {%- endfor -%}
+</td>

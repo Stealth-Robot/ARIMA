@@ -1,0 +1,17 @@
+{#- One availability cell. Rendered inline in the grid and returned standalone for HTMX swaps. -#}
+{%- set cid = 'soccer-cell-' ~ game.id ~ '-' ~ player.id -%}
+{%- set value = ('1' if row.available else '0') if row else '' -%}
+{%- set colour = cell_colour(row) -%}
+<td id="{{ cid }}" class="border border-border text-center align-middle p-0"
+    style="min-width:4.5rem;{% if colour[0] %}background-color:{{ colour[0] }};color:{{ colour[1] }};{% endif %}">
+  <select name="available"
+          class="w-full bg-transparent border-0 text-2xs cursor-pointer appearance-none text-center py-1"
+          style="color:{{ colour[1] or 'var(--text-secondary)' }};"
+          hx-post="{{ url_for('soccer.set_availability') }}"
+          hx-vals='{"game_id": {{ game.id }}, "player_id": {{ player.id }}}'
+          hx-target="#{{ cid }}" hx-swap="outerHTML">
+    <option value="" {% if value == '' %}selected{% endif %}>&mdash;</option>
+    <option value="1" {% if value == '1' %}selected{% endif %}>Available</option>
+    <option value="0" {% if value == '0' %}selected{% endif %}>Unavailable</option>
+  </select>
+</td>

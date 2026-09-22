@@ -48,6 +48,17 @@ def run_startup_migrations():
         # 0. Create any missing tables
         db.create_all()
 
+        # 0a'. soccer_game once allowed one fixture per date; several are now permitted, so
+        # the unique index becomes a plain one. create_all cannot alter an existing index.
+        if db.session.execute(db.text(
+                "SELECT 1 FROM sqlite_master WHERE type='index' "
+                "AND name='ux_soccer_game_season_date'")).first():
+            db.session.execute(db.text("DROP INDEX IF EXISTS ux_soccer_game_season_date"))
+            logger.info('Dropped soccer_game unique date index — multiple games per day')
+        db.session.execute(db.text(
+            "CREATE INDEX IF NOT EXISTS ix_soccer_game_season_date "
+            "ON soccer_game (season_id, date)"))
+
         # 0b. Add any new proxy_change columns
         from app.models.proxy_change import ProxyChange
         existing_pc_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('proxy_change')"))}

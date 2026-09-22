@@ -6,9 +6,9 @@ class Config:
     PEPPER = os.environ['PEPPER']
     SQLALCHEMY_DATABASE_URI = 'sqlite:///arima.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Host that serves the simuls surface (Option A: same app, host-based routing).
-    # Override locally (e.g. 'simuls.localhost:8000') to test the split.
-    SIMUL_HOST = os.environ.get('SIMUL_HOST', 'simuls.stealth-robot.com')
+    # Host that serves the soccer surface (Option A: same app, host-based routing).
+    # Override locally (e.g. 'soccer.localhost:5001') — request.host includes the port.
+    SOCCER_HOST = os.environ.get('SOCCER_HOST', 'soccer.stealth-robot.com')
     PERMANENT_SESSION_LIFETIME = 2592000  # 30 days in seconds
     WTF_CSRF_TIME_LIMIT = None            # CSRF token valid for life of session
     SESSION_COOKIE_SAMESITE = 'Lax'

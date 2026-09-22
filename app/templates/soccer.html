@@ -1,0 +1,304 @@
+{% extends "soccer_base.html" %}
+
+{#- Every table in the grid shares these column widths, so the separate group tables stay
+    aligned with the date header above them. -#}
+{% macro cols(games) -%}
+<colgroup><col style="width:12rem;">{% for g in games %}<col style="width:4.5rem;">{% endfor %}</colgroup>
+{%- endmacro %}
+{% set grid_width = 12 + games | length * 4.5 %}
+
+{#- The season controls live in the navbar, so the page starts at the season heading. -#}
+{% block navbar_extra %}
+{% if seasons %}
+<label for="season-select" class="text-sm- text-navbar-text">Season</label>
+<select id="season-select"
+        onchange="window.location = '{{ url_for('soccer.index') }}?season=' + this.value"
+        class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
+  {% for s in seasons %}
+  <option value="{{ s.id }}" {% if season and s.id == season.id %}selected{% endif %}>{{ s.name }} &mdash; {{ s.range_label }}</option>
+  {% endfor %}
+</select>
+{% endif %}
+<form method="post" action="{{ url_for('soccer.add_season') }}" class="m-0 flex items-center gap-1">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="text" name="name" placeholder="New season name…" required maxlength="60"
+         class="text-sm- py-1 px-2 rounded border border-border" style="width:11rem;">
+  <button type="submit" class="text-sm- py-1 px-3 rounded bg-edit-on text-button-text border-0 cursor-pointer whitespace-nowrap">+ Add Season</button>
+</form>
+{% endblock %}
+
+{% block content %}
+{% if season %}
+<div class="flex flex-wrap items-center justify-center gap-3 mb-3">
+  <span class="text-base- font-bold">Season: {{ season.name }}</span>
+  <button type="button" title="Rename this season"
+          class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
+          data-edit-url="{{ url_for('soccer.rename_season', season_id=season.id) }}"
+          data-edit-label="season name" data-edit-value="{{ season.name }}">&#9998;</button>
+  <span class="text-sm- text-secondary-text">{{ season.range_label }}</span>
+  <button type="button" title="Delete this season (admin password)"
+          class="bg-transparent border border-border text-secondary-text text-2xs py-0.5 px-2 rounded cursor-pointer"
+          data-del-url="{{ url_for('soccer.delete_season', season_id=season.id) }}"
+          data-del-label="season {{ season.name }}">Delete season</button>
+</div>
+
+<form method="post" action="{{ url_for('soccer.add_day') }}" class="flex flex-wrap items-center gap-2 mb-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="season_id" value="{{ season.id }}">
+  <label class="text-sm- text-secondary-text flex items-center gap-1">Date
+    <input type="date" name="date" required
+           class="text-sm- py-1 px-2 rounded border border-border">
+  </label>
+  {#- Two selects, not a native time input: 5-minute steps and no am/pm field. -#}
+  <span class="text-sm- text-secondary-text flex items-center gap-1">Time
+    <select name="kickoff_hour" class="text-sm- py-1 px-2 rounded border border-border">
+      {% for value, label in hour_choices %}
+      <option value="{{ value }}" {% if value == 18 %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <span>:</span>
+    <select name="kickoff_minute" class="text-sm- py-1 px-2 rounded border border-border">
+      {% for m in minute_choices %}
+      <option value="{{ m }}" {% if m == '00' %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+  </span>
+  <button type="submit" class="text-sm- py-1 px-3 rounded bg-edit-on text-button-text border-0 cursor-pointer whitespace-nowrap">+ Add Day</button>
+</form>
+{% endif %}
+
+{% if season and games %}
+<div class="overflow-x-auto">
+  <table class="border-collapse text-sm-" style="width:{{ grid_width }}rem; table-layout:fixed;">
+    {{ cols(games) }}
+    <thead>
+      <tr class="bg-header-row">
+        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1">Date</th>
+        {% for game in games %}
+        <th class="border border-border px-1 py-1 text-center leading-none">
+          <div class="flex items-center justify-between gap-1">
+            <span class="whitespace-nowrap">{{ game.date_label }}</span>
+            <button type="button" title="Delete this day (admin password)"
+                    class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
+                    data-del-url="{{ url_for('soccer.delete_day', game_id=game.id) }}"
+                    data-del-label="{{ game.date_label }}">&#10005;</button>
+          </div>
+          {#- The pencil rides the time line, so it adds no height to the header. -#}
+          <div class="flex items-center justify-between gap-1">
+            <span class="whitespace-nowrap text-secondary-text">{{ game.kickoff_label }}</span>
+            <button type="button" title="Edit this day"
+                    class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
+                    data-day-url="{{ url_for('soccer.edit_day', game_id=game.id) }}"
+                    data-day-date="{{ game.date }}" data-day-time="{{ game.kickoff_input }}"
+                    data-day-label="{{ game.date_label }}">&#9998;</button>
+          </div>
+        </th>
+        {% endfor %}
+      </tr>
+      <tr class="bg-header-row">
+        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1">Count</th>
+        {% for game in games %}
+        {% set counts = counts_map.get(game.id, {}) %}
+        {% include 'fragments/soccer_count.html' %}
+        {% endfor %}
+      </tr>
+    </thead>
+  </table>
+
+  {#- One table per group, so each list stands alone rather than sitting inside one box. -#}
+  {% for cat in categories %}
+  <table class="border-collapse text-sm- mt-2" style="width:{{ grid_width }}rem; table-layout:fixed;">
+    {{ cols(games) }}
+    <tbody>
+      <tr class="bg-header-row">
+        <td class="sticky left-0 z-10 bg-header-row border border-border px-2 py-1 font-bold">{{ category_labels[cat] }}</td>
+        <td colspan="{{ games | length }}" class="border border-border"></td>
+      </tr>
+      {% for player in players if player.category == cat %}
+      <tr class="{% if loop.index is even %}bg-row-alternate{% endif %}">
+        <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}">
+          <div class="flex items-center justify-between gap-1">
+            <span>{{ player.name }}</span>
+            <span class="flex items-center gap-1">
+              <button type="button" title="Rename this player"
+                      class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
+                      data-edit-url="{{ url_for('soccer.rename_player', player_id=player.id) }}"
+                      data-edit-label="player name" data-edit-value="{{ player.name }}">&#9998;</button>
+              <button type="button" title="Delete player (admin password)"
+                      class="bg-transparent border-0 text-secondary-text text-xs cursor-pointer p-0"
+                      data-del-url="{{ url_for('soccer.delete_player', player_id=player.id) }}"
+                      data-del-label="{{ player.name }}">&#10005;</button>
+            </span>
+          </div>
+        </td>
+        {% for game in games %}
+        {% set row = availability.get(game.id, {}).get(player.id) %}
+        {% include 'fragments/soccer_cell.html' %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      <tr>
+        <td class="sticky left-0 z-10 bg-primary-bg border border-border px-2 py-1">
+          <form method="post" action="{{ url_for('soccer.add_player') }}" class="m-0 flex items-center gap-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="season_id" value="{{ season.id }}">
+            <input type="hidden" name="category" value="{{ cat }}">
+            <input type="text" name="name" placeholder="Name…" required maxlength="60"
+                   class="text-2xs py-0.5 px-1 rounded border border-border" style="width:7rem;">
+            <button type="submit" class="text-2xs py-0.5 px-2 rounded bg-edit-on text-button-text border-0 cursor-pointer whitespace-nowrap">+ Add Player</button>
+          </form>
+        </td>
+        <td colspan="{{ games | length }}" class="border border-border"></td>
+      </tr>
+    </tbody>
+  </table>
+  {% endfor %}
+</div>
+{% elif season %}
+<p class="text-secondary-text mt-4">No days in this season yet — add one above.</p>
+{% else %}
+<p class="text-secondary-text mt-4">No seasons yet.</p>
+{% endif %}
+
+{#- Rename modal: season and player names. Public, like adding them. -#}
+<div id="soccer-edit-modal"
+     style="position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+  <form id="soccer-edit-form" method="post"
+        class="bg-secondary-bg border border-border rounded p-4"
+        style="min-width:18rem; max-width:90vw;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="text-sm- mb-2">Edit <span id="soccer-edit-what" class="font-bold"></span></p>
+    <input type="text" name="name" id="soccer-edit-value" required maxlength="60"
+           class="text-sm- py-1 px-2 rounded border border-border w-full mb-3">
+    <div class="flex justify-between gap-2">
+      <button type="button" id="soccer-edit-cancel"
+              class="text-sm- py-1 px-3 rounded border border-border bg-transparent text-primary-text cursor-pointer">Cancel</button>
+      <button type="submit" class="text-sm- py-1 px-3 rounded bg-edit-on text-button-text border-0 cursor-pointer">Save</button>
+    </div>
+  </form>
+</div>
+
+{#- Day modal: the date and time of one fixture. -#}
+<div id="soccer-day-modal"
+     style="position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+  <form id="soccer-day-form" method="post"
+        class="bg-secondary-bg border border-border rounded p-4"
+        style="min-width:18rem; max-width:90vw;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="text-sm- mb-2">Edit <span id="soccer-day-what" class="font-bold"></span></p>
+    <label class="text-sm- text-secondary-text flex items-center justify-between gap-2 mb-2">Date
+      <input type="date" name="date" id="soccer-day-date" required
+             class="text-sm- py-1 px-2 rounded border border-border">
+    </label>
+    <span class="text-sm- text-secondary-text flex items-center justify-between gap-2 mb-3">Time
+      <span class="flex items-center gap-1">
+        <select name="kickoff_hour" id="soccer-day-hour"
+                class="text-sm- py-1 px-2 rounded border border-border">
+          <option value="">&mdash;</option>
+          {% for value, label in hour_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span>:</span>
+        <select name="kickoff_minute" id="soccer-day-minute"
+                class="text-sm- py-1 px-2 rounded border border-border">
+          {% for m in minute_choices %}
+          <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+      </span>
+    </span>
+    <div class="flex justify-between gap-2">
+      <button type="button" id="soccer-day-cancel"
+              class="text-sm- py-1 px-3 rounded border border-border bg-transparent text-primary-text cursor-pointer">Cancel</button>
+      <button type="submit" class="text-sm- py-1 px-3 rounded bg-edit-on text-button-text border-0 cursor-pointer">Save</button>
+    </div>
+  </form>
+</div>
+
+{# Everything on this page is public except deletion, which takes the admin password. #}
+{# display is toggled in JS, not via [hidden] — an inline display:flex would beat it. #}
+<div id="soccer-delete-modal"
+     style="position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+  <form id="soccer-delete-form" method="post"
+        class="bg-secondary-bg border border-border rounded p-4"
+        style="min-width:18rem; max-width:90vw;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="text-sm- mb-2">Delete <span id="soccer-delete-what" class="font-bold"></span>?</p>
+    <p class="text-2xs text-secondary-text mb-2">This cannot be undone. Enter the admin password.</p>
+    <input type="password" name="password" id="soccer-delete-pw" required autocomplete="current-password"
+           class="text-sm- py-1 px-2 rounded border border-border w-full mb-3" placeholder="Admin password">
+    <div class="flex justify-between gap-2">
+      <button type="button" id="soccer-delete-cancel"
+              class="text-sm- py-1 px-3 rounded border border-border bg-transparent text-primary-text cursor-pointer">Cancel</button>
+      <button type="submit" class="text-sm- py-1 px-3 rounded bg-delete text-button-text border-0 cursor-pointer">Delete</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  // Three modals, one pattern. Targets ride on data attributes rather than inline onclick
+  // handlers — a name interpolated into an attribute breaks on the first quote in it.
+  var modals = [];
+
+  function register(id, formId, onOpen, focusId) {
+    var modal = document.getElementById(id);
+    var form = document.getElementById(formId);
+    var focus = document.getElementById(focusId);
+    function close() { modal.style.display = 'none'; }
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    modals.push({ modal: modal, close: close });
+    return function (btn) {
+      modals.forEach(function (m) { m.close(); });
+      onOpen(btn, form);
+      modal.style.display = 'flex';
+      if (focus) { focus.focus(); focus.select && focus.select(); }
+    };
+  }
+
+  var openDelete = register('soccer-delete-modal', 'soccer-delete-form', function (btn, form) {
+    form.action = btn.getAttribute('data-del-url');
+    document.getElementById('soccer-delete-what').textContent =
+      btn.getAttribute('data-del-label') || 'this';
+    document.getElementById('soccer-delete-pw').value = '';
+  }, 'soccer-delete-pw');
+
+  var openEdit = register('soccer-edit-modal', 'soccer-edit-form', function (btn, form) {
+    form.action = btn.getAttribute('data-edit-url');
+    document.getElementById('soccer-edit-what').textContent =
+      btn.getAttribute('data-edit-label') || 'name';
+    document.getElementById('soccer-edit-value').value =
+      btn.getAttribute('data-edit-value') || '';
+  }, 'soccer-edit-value');
+
+  var openDay = register('soccer-day-modal', 'soccer-day-form', function (btn, form) {
+    form.action = btn.getAttribute('data-day-url');
+    document.getElementById('soccer-day-what').textContent =
+      btn.getAttribute('data-day-label') || 'day';
+    document.getElementById('soccer-day-date').value = btn.getAttribute('data-day-date') || '';
+    var hhmm = btn.getAttribute('data-day-time') || '';
+    var parts = hhmm.split(':');
+    document.getElementById('soccer-day-hour').value = parts[0] ? String(Number(parts[0])) : '';
+    document.getElementById('soccer-day-minute').value = parts[1] || '00';
+  }, 'soccer-day-date');
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-del-url], [data-edit-url], [data-day-url]');
+    if (!btn) return;
+    if (btn.hasAttribute('data-del-url')) openDelete(btn);
+    else if (btn.hasAttribute('data-edit-url')) openEdit(btn);
+    else openDay(btn);
+  });
+
+  ['soccer-delete-cancel', 'soccer-edit-cancel', 'soccer-day-cancel'].forEach(function (id) {
+    document.getElementById(id).addEventListener('click', function () {
+      modals.forEach(function (m) { m.close(); });
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') modals.forEach(function (m) { m.close(); });
+  });
+})();
+</script>
+{% endblock %}
