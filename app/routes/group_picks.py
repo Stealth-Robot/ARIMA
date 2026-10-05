@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, abort, jsonify
+from flask import Blueprint, render_template, request, abort, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
@@ -234,9 +234,28 @@ def _columns(candidates, user_ids):
     return [current_user] + [u for u in candidates if u.id in selected]
 
 
+SAVED_KEYS = ('user_id', 'match', 'genre_id', 'gender_id', 'year_from', 'year_to', 'respect', 'sort', 'dir')
+
+
+def _saved_settings():
+    if current_user.is_system_or_guest:
+        return None
+    return current_user.settings
+
+
 @group_picks_bp.route('/group-picks')
 @login_required
 def group_picks():
+    settings = _saved_settings()
+    if settings is not None:
+        if request.args:
+            saved = {k: request.args.getlist(k) for k in SAVED_KEYS if k in request.args}
+            if saved != settings.group_picks_filters:
+                settings.group_picks_filters = saved
+                db.session.commit()
+        elif settings.group_picks_filters:
+            # Bare visit: restore the filters saved from any device.
+            return redirect(url_for('group_picks.group_picks', **settings.group_picks_filters))
     candidates, f = _parse_filters()
     results = _build_results(f) if f['user_ids'] else []
     ctx = dict(results=results, user_ids=f['user_ids'],
