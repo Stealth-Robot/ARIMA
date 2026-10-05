@@ -93,18 +93,18 @@
 <script>
 // Tables load on first expand (rendering every artist up front can run to tens of MB), batched into one request.
 function groupPicksLoad(headers) {
+    var inFlight = headers.map(function(el) { return el.nextElementSibling._loading; }).filter(Boolean);
     var pending = headers.filter(function(el) {
         var t = el.nextElementSibling;
-        return !t.dataset.loaded && !t.dataset.loading;
+        return !t.dataset.loaded && !t._loading;
     });
-    if (!pending.length) return;
+    if (!pending.length) return Promise.all(inFlight);
     var byKey = {};
     var qs = pending.map(function(el) {
-        el.nextElementSibling.dataset.loading = '1';
         byKey[el.dataset.groupKey] = el.nextElementSibling;
         return 'key=' + encodeURIComponent(el.dataset.groupKey);
     }).join('&');
-    fetch(document.getElementById('group-picks-groups-url').dataset.url + '&' + qs)
+    var p = fetch(document.getElementById('group-picks-groups-url').dataset.url + '&' + qs)
         .then(function(r) { if (!r.ok) throw r; return r.text(); })
         .then(function(html) {
             var tpl = document.createElement('template');
@@ -118,8 +118,39 @@ function groupPicksLoad(headers) {
         })
         .catch(function() { showToast('Could not load songs. Try again.'); })
         .finally(function() {
-            Object.keys(byKey).forEach(function(k) { delete byKey[k].dataset.loading; });
+            Object.keys(byKey).forEach(function(k) { delete byKey[k]._loading; });
         });
+    Object.keys(byKey).forEach(function(k) { byKey[k]._loading = p; });
+    return Promise.all(inFlight.concat([p]));
+}
+// Arrow/WASD cross artist tables (the shared version stops at a table edge); deferred until core.js loads.
+document.addEventListener('DOMContentLoaded', function() {
+    var _navigateWithinTable = navigateToCell;
+    navigateToCell = function(cell, direction) {
+        if (direction !== 'up' && direction !== 'down') return _navigateWithinTable(cell, direction);
+        var uid = cell.id.split('-')[2];
+        var down = direction === 'down';
+        var cells = Array.prototype.filter.call(
+            document.querySelectorAll('#group-picks-results td[id^="rating-"][onclick]'),
+            function(c) { return c.id.split('-')[2] === uid && c.offsetParent !== null; });
+        var target = cells[cells.indexOf(cell) + (down ? 1 : -1)];
+        var header = cell.closest('.gp-group-body').previousElementSibling;
+        if (target && target.closest('.gp-group-body').previousElementSibling === header) return _goToCell(target);
+        // Next artist down (or previous up): open it if collapsed, then land on its first (or last) song.
+        var headers = Array.prototype.slice.call(document.querySelectorAll('#group-picks-results [data-group-key]'));
+        var next = headers[headers.indexOf(header) + (down ? 1 : -1)];
+        if (!next) return;
+        groupPicksSetOpen(next, true);
+        groupPicksLoad([next]).then(function() {
+            var inNext = next.nextElementSibling.querySelectorAll('td[id^="rating-"][id$="-' + uid + '"][onclick]');
+            if (inNext.length) _goToCell(inNext[down ? 0 : inNext.length - 1]);
+        });
+    };
+});
+function _goToCell(target) {
+    highlightRow(target.closest('tr'), true);
+    target.scrollIntoView({block: 'nearest'});
+    target.click();
 }
 function groupPicksSetOpen(el, open) {
     el.nextElementSibling.style.display = open ? '' : 'none';
