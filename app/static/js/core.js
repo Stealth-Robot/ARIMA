@@ -1088,7 +1088,19 @@ function highlightRow(tr, fast) {
         var hash = location.hash;
         if (!hash) return;
         var el = document.getElementById(hash.slice(1));
-        if (!el) return;
+        var songMatch = hash.match(/^#song-(\d+)$/);
+        if (!el) {
+            // Filtered out server-side: reload asking the artist page to include this song.
+            if (songMatch && location.pathname.indexOf('/artists/') === 0) {
+                var params = new URLSearchParams(location.search);
+                if (params.get('song') !== songMatch[1]) {
+                    params.set('song', songMatch[1]);
+                    location.replace(location.pathname + '?' + params.toString() + hash);
+                }
+            }
+            return;
+        }
+        if (typeof _applyArtistRatingFilter === 'function') _applyArtistRatingFilter();
         // Expand collapsed parent sections so the element is visible
         if (el.style.display === 'none') {
             // Expand child section if song is inside one

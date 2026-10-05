@@ -110,8 +110,10 @@ def _render_artist(artist, htmx=False, push_url=None):
     if bypass_filters:
         _hide_osts = False
 
+    # A linked song (?song=, set by the #song- anchor fallback) is shown whatever the filters
+    reveal_song_id = request.args.get('song', type=int)
     discography = _build_discography(artist, children=(subunits, soloists), hide_osts=_hide_osts,
-                                     bypass_filters=bypass_filters)
+                                     bypass_filters=bypass_filters, reveal_song_id=reveal_song_id)
     users = _get_display_users()
 
     # Compute last updated across artist, albums, and songs (single query)
@@ -148,9 +150,11 @@ def _render_artist(artist, htmx=False, push_url=None):
     children_sections = []
     soloist_ids = {s.id for s in soloists}
     for child in subunits + soloists:
-        if active_country_ids and child.country_id not in active_country_ids:
+        if active_country_ids and child.country_id not in active_country_ids and not (
+                reveal_song_id and db.session.get(ArtistSong, (child.id, reveal_song_id))):
             continue
-        child_disco = _build_discography(child, hide_osts=_hide_osts, bypass_filters=bypass_filters)
+        child_disco = _build_discography(child, hide_osts=_hide_osts, bypass_filters=bypass_filters,
+                                         reveal_song_id=reveal_song_id)
         children_sections.append({
             'artist': child,
             'discography': child_disco,
@@ -530,9 +534,10 @@ def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_art
     return labels
 
 
-def _build_discography(artist, children=None, hide_osts=False, bypass_filters=False):
+def _build_discography(artist, children=None, hide_osts=False, bypass_filters=False, reveal_song_id=None):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
+    reveal = reveal_song_id if reveal_song_id in song_ids else None
 
     # Get filter settings. "Disable Filters" (bypass_filters / nofilter=1) reveals all
     # otherwise-hidden content so editors can reach those rows to edit them.
@@ -586,6 +591,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
 
     if not albums:
         return []
+    unfiltered_albums = albums
 
     # Apply genre filter at album level (OR across selected genres)
     if genre_ids:
@@ -595,6 +601,15 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     # Hide OST albums (unless on an anime artist page)
     if hide_osts and not bypass_filters:
         albums = [a for a in albums if not any(g.genre == 'OST' for g in a.genres)]
+
+    # If every album holding the linked song was filtered out, bring them back with only that song
+    reveal_only_album_ids = set()
+    if reveal:
+        reveal_album_ids = {r[0] for r in db.session.query(AlbumSong.album_id).filter_by(song_id=reveal)}
+        kept_ids = {a.id for a in albums}
+        if reveal_album_ids and not reveal_album_ids & kept_ids:
+            reveal_only_album_ids = reveal_album_ids
+            albums = [a for a in unfiltered_albums if a.id in kept_ids or a.id in reveal_only_album_ids]
 
     # Pre-compute main song IDs for featured filter (once, not per-album)
     main_song_ids = None
@@ -622,6 +637,8 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     album_id_set = {a.id for a in albums}
     songs_by_album = {}
     for album_id, song, track_num in all_album_songs:
+        if album_id in reveal_only_album_ids and song.id != reveal:
+            continue
         if album_id in album_id_set:
             songs_by_album.setdefault(album_id, []).append((song, track_num))
 
@@ -709,16 +726,16 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
         # Filter remixes if setting is off
         if not include_remixes:
             album_songs = [(s, tn) for s, tn in album_songs
-                           if not s.is_remix or s.id in keep_remix_ids]
+                           if not s.is_remix or s.id in keep_remix_ids or s.id == reveal]
 
         # Filter covers if setting is off
         if not include_covers:
-            album_songs = [(s, tn) for s, tn in album_songs if not s.is_cover]
+            album_songs = [(s, tn) for s, tn in album_songs if not s.is_cover or s.id == reveal]
 
         # Filter featured songs if setting is off
         if not include_featured:
             album_songs = [(s, tn) for s, tn in album_songs
-                           if s.id in main_song_ids]
+                           if s.id in main_song_ids or s.id == reveal]
 
         if album_songs or bypass_filters:
             song_obj_ids = [s.id for s, _ in album_songs]
@@ -746,6 +763,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     misc_sids = song_ids - covered_sids
     if misc_sids:
         misc_songs_objs = {s.id: s for s in Song.query.filter(Song.id.in_(misc_sids)).all()}
+        revealed_misc = misc_songs_objs.get(reveal)
         if not include_remixes:
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
                                if not s.is_remix or sid in keep_remix_ids}
@@ -777,6 +795,8 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
                 if all(any(g.genre == 'OST' for g in a.genres) for a in albs):
                     ost_sids.add(sid)
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid not in ost_sids}
+        if revealed_misc is not None:
+            misc_songs_objs[reveal] = revealed_misc
         if misc_songs_objs:
             misc_song_list = sorted(misc_songs_objs.values(), key=lambda s: (s.name or '').lower())
             misc_song_tuples = [(s, None) for s in misc_song_list]
