@@ -265,7 +265,7 @@ def group_picks_groups():
     users = _columns(candidates, f['user_ids'])
     return ''.join(
         f'<div data-group-key="{info["key"]}">'
-        + render_template('fragments/group_picks_group.html', album_groups=album_groups,
+        + render_template('fragments/group_picks_group.html', artist=info, album_groups=album_groups,
                           ratings=ratings_map, users=users)
         + '</div>'
         for info, (_, album_groups) in results)

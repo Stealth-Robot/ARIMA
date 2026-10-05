@@ -27,7 +27,7 @@
             {% for song in songs %}
             <tr>
                 {% set _dn = song_display_name(song) %}
-                <td class="song-name-cell text-primary-text border border-grid-line" title="{{ _dn }}" data-song-id="{{ song.id }}" style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ _dn }}</td>
+                <td class="song-name-cell text-primary-text border border-grid-line" title="{{ _dn }}" data-song-id="{{ song.id }}" style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><a href="{% if artist.key.startswith('a') %}{{ artist.url }}#song-{{ song.id }}{% else %}/misc?song={{ song.id }}#song-{{ song.id }}{% endif %}" class="text-primary-text no-underline hover:underline">{{ _dn }}</a></td>
                 {% for u in users %}
                 {% set r = ratings.get(song.id, {}).get(u.id) %}
                 {% set cell_style = rating_cell_style(r.rating if r else None) %}
