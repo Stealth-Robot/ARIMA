@@ -52,6 +52,13 @@
                    class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 5rem;">
         </div>
         <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Filters</span>
+            <input type="hidden" name="respect" value="0">
+            <label class="flex items-center gap-1 cursor-pointer" title="Country, genre, remix, cover and OST settings from the navbar and your profile">
+                <input type="checkbox" name="respect" value="1"{% if respect %} checked{% endif %}>Respect my filters
+            </label>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
             <span class="font-bold text-secondary-text w-16">Sort</span>
             <select name="sort" class="rounded text-xs border border-border cursor-pointer" style="padding: 0.25rem 0.375rem;">
                 {% for value, label in sorts.items() %}

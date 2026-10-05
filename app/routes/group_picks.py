@@ -8,7 +8,7 @@ from app.models.lookups import Genre, GroupGender
 from app.models.music import (Artist, ArtistSong, AlbumSong, Album, Song, Rating,
                                song_genres, SongMiscArtist, MiscArtist)
 from app.models.user import User
-from app.routes.home import _pick_canonical_album, GENDER_CSS
+from app.routes.home import _pick_canonical_album, GENDER_CSS, ANIME_GENDER_ID
 
 group_picks_bp = Blueprint('group_picks', __name__)
 
@@ -39,7 +39,10 @@ def _parse_filters():
     candidates = User.query.filter(User.sort_order.isnot(None), User.id != current_user.id) \
         .order_by(User.sort_order).all()
     candidate_ids = {u.id for u in candidates}
+    # Hidden respect=0 precedes the checkbox, so the last value wins; absent (fresh visit) means on.
+    respect = request.args.getlist('respect')
     return candidates, {
+        'respect': respect[-1] == '1' if respect else True,
         'user_ids': [uid for uid in _int_list('user_id') if uid in candidate_ids],
         'match': 'all' if request.args.get('match') == 'all' else 'any',
         'genre_ids': _int_list('genre_id'),
@@ -90,6 +93,28 @@ def _sort_results(grouped, f):
     return present + missing
 
 
+def _passes_viewer_filters(viewer, song, credit, artist, song_genre_ids, song_albums):
+    """The viewer's global filters (country, genre, remixes, covers, OSTs), as artist and misc pages apply them."""
+    if viewer['country_ids'] and credit.country_id not in viewer['country_ids']:
+        return False
+    if not viewer['include_remixes'] and song.is_remix and song.id not in viewer['keep_remix_ids']:
+        return False
+    if not viewer['include_covers'] and song.is_cover:
+        return False
+    if viewer['genre_ids']:
+        genres = set(song_genre_ids)
+        for a in song_albums:
+            genres |= {g.id for g in a.genres}
+        if not genres & set(viewer['genre_ids']):
+            return False
+    ost_id = viewer['ost_genre_id']
+    if ost_id is not None and not (artist and artist.gender_id == ANIME_GENDER_ID):
+        if song_genre_ids == {ost_id} or (
+                song_albums and all(any(g.id == ost_id for g in a.genres) for a in song_albums)):
+            return False
+    return True
+
+
 def _build_results(f, only_keys=None):
     """Return [(info, (count, [(album, [songs])]))] for songs the group rated and I haven't."""
     q = db.session.query(Rating.song_id).filter(
@@ -137,8 +162,15 @@ def _build_results(f, only_keys=None):
         albums_by_song.setdefault(sid, []).append(album)
         track_by_song_album[(sid, album.id)] = track
 
+    viewer = None
+    if f['respect']:
+        from app.routes.stats import _get_viewer_settings
+        viewer = _get_viewer_settings()
+        ost = Genre.query.filter_by(genre='OST').first()
+        viewer['ost_genre_id'] = ost.id if ost and viewer['hide_osts'] else None
+
     song_genre_map = {}
-    if f['genre_ids']:
+    if f['genre_ids'] or (viewer and (viewer['genre_ids'] or viewer['ost_genre_id'] is not None)):
         for sid, gid in db.session.execute(
                 song_genres.select().where(song_genres.c.song_id.in_(song_ids))).fetchall():
             song_genre_map.setdefault(sid, set()).add(gid)
@@ -152,6 +184,9 @@ def _build_results(f, only_keys=None):
         misc = misc_by_song.get(song.id)
         song_albums = albums_by_song.get(song.id, [])
 
+        if viewer and not _passes_viewer_filters(viewer, song, artist or misc, artist,
+                                                 song_genre_map.get(song.id, set()), song_albums):
+            continue
         if gender_set and (artist is None or artist.gender_id not in gender_set):
             continue
         if genre_set:
