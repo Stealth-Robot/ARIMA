@@ -331,11 +331,14 @@ def search():
 
             ost_genre_id = None
             anime_misc_sids = set()
+            ost_album_sids = set()
             if hide_osts:
                 from app.models.lookups import Genre
+                from app.routes.misc import ost_album_only_song_ids
                 ost_genre = Genre.query.filter_by(genre='OST').first()
                 ost_genre_id = ost_genre.id if ost_genre else None
                 if ost_genre_id:
+                    ost_album_sids = ost_album_only_song_ids(misc_sids, ost_genre_id)
                     anime_misc_sids = {row[0] for row in db.session.query(ArtistSong.song_id).join(
                         Artist, ArtistSong.artist_id == Artist.id
                     ).filter(
@@ -375,7 +378,8 @@ def search():
                     if not include_featured and not has_main.get(s.id):
                         return False
                 genres = sg_map.get(s.id, set())
-                if hide_osts and ost_genre_id and genres == {ost_genre_id} and s.id not in anime_misc_sids:
+                if (hide_osts and ost_genre_id and (genres == {ost_genre_id} or s.id in ost_album_sids)
+                        and s.id not in anime_misc_sids):
                     return False
                 if genre_ids and not (genres & set(genre_ids)):
                     return False

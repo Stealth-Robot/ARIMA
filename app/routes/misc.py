@@ -60,6 +60,19 @@ def _get_user_filters():
 MISC_SORT_FIELDS = {'name', 'release', 'artist', 'added'}
 
 
+def ost_album_only_song_ids(song_ids, ost_genre_id):
+    """Songs whose every album is OST-tagged: the same OST test artist pages apply to album songs."""
+    if not song_ids or ost_genre_id is None:
+        return set()
+    rows = db.session.query(
+        AlbumSong.song_id,
+        func.min(db.case((AlbumSong.album_id.in_(
+            db.session.query(album_genres.c.album_id).filter(album_genres.c.genre_id == ost_genre_id)
+        ), 1), else_=0)),
+    ).filter(AlbumSong.song_id.in_(song_ids)).group_by(AlbumSong.song_id).all()
+    return {sid for sid, all_ost in rows if all_ost}
+
+
 def get_rated_filter():
     """Shared (misc + artist) rated/unrated filter preference."""
     if current_user.is_authenticated and not current_user.is_system_or_guest and current_user.settings:
@@ -320,6 +333,7 @@ def _build_country_data(country_id, bypass_filters=False, force_song_id=None, on
     all_genres = {g.id: g for g in Genre.query.all()}
     ost_genre = Genre.query.filter_by(genre='OST').first()
     ost_genre_id = ost_genre.id if ost_genre else None
+    ost_album_sids = ost_album_only_song_ids(list(song_map.keys()), ost_genre_id) if filters['hide_osts'] else set()
     ANIME_GENDER_ID = 3
 
     def _is_anime_song(sid):
@@ -355,7 +369,8 @@ def _build_country_data(country_id, bypass_filters=False, force_song_id=None, on
                 if not main_names:
                     continue
         genre_ids = song_genre_map.get(sid, set())
-        if not forced and filters['hide_osts'] and ost_genre_id and genre_ids == {ost_genre_id} and not _is_anime_song(sid):
+        if (not forced and filters['hide_osts'] and ost_genre_id
+                and (genre_ids == {ost_genre_id} or sid in ost_album_sids) and not _is_anime_song(sid)):
             continue
         if not forced and filters['genre_ids']:
             if not genre_ids.intersection(set(filters['genre_ids'])):
@@ -438,7 +453,9 @@ def unrated_count():
     ost_genre_id = ost_genre.id if ost_genre else None
     ANIME_GENDER_ID = 3
     anime_song_ids = set()
+    ost_album_sids = set()
     if filters['hide_osts'] and ost_genre_id:
+        ost_album_sids = ost_album_only_song_ids(list(misc_song_ids), ost_genre_id)
         anime_song_ids = {row[0] for row in db.session.query(ArtistSong.song_id).join(
             Artist, ArtistSong.artist_id == Artist.id
         ).filter(
@@ -476,7 +493,8 @@ def unrated_count():
         if not filters['include_covers'] and song.is_cover:
             continue
         genres = song_genre_map.get(song.id, set())
-        if filters['hide_osts'] and ost_genre_id and genres == {ost_genre_id} and song.id not in anime_song_ids:
+        if (filters['hide_osts'] and ost_genre_id and (genres == {ost_genre_id} or song.id in ost_album_sids)
+                and song.id not in anime_song_ids):
             continue
         if filters['genre_ids'] and not genres.intersection(set(filters['genre_ids'])):
             continue
