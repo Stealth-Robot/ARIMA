@@ -90,7 +90,7 @@ def _sort_results(grouped, f):
     return present + missing
 
 
-def _build_results(f, only_key=None):
+def _build_results(f, only_keys=None):
     """Return [(info, (count, [(album, [songs])]))] for songs the group rated and I haven't."""
     q = db.session.query(Rating.song_id).filter(
         Rating.user_id.in_(f['user_ids']), Rating.rating.isnot(None)).group_by(Rating.song_id)
@@ -123,7 +123,7 @@ def _build_results(f, only_key=None):
             return f'm{misc_by_song[sid].id}'
         return None
 
-    song_ids = {sid for sid in song_ids if key_of(sid) and (only_key is None or key_of(sid) == only_key)}
+    song_ids = {sid for sid in song_ids if key_of(sid) and (only_keys is None or key_of(sid) in only_keys)}
     if not song_ids:
         return []
 
@@ -214,22 +214,26 @@ def group_picks():
                            genders=GroupGender.query.order_by(GroupGender.id).all())
 
 
-@group_picks_bp.route('/group-picks/group/<key>')
+@group_picks_bp.route('/group-picks/groups')
 @login_required
-def group_picks_group(key):
+def group_picks_groups():
+    """Artist tables for the requested keys, built in one pass so Expand N is a single request."""
     candidates, f = _parse_filters()
-    if not f['user_ids']:
+    keys = set(request.args.getlist('key'))
+    if not f['user_ids'] or not keys:
         abort(404)
-    results = _build_results(f, only_key=key)
-    if not results:
-        return ''
-    _, (_, album_groups) = results[0]
-    song_ids = [s.id for _, songs in album_groups for s in songs]
+    results = _build_results(f, only_keys=keys)
+    song_ids = [s.id for _, (_, album_groups) in results for _, songs in album_groups for s in songs]
     ratings_map = {}
     for r in Rating.query.filter(Rating.song_id.in_(song_ids)).all():
         ratings_map.setdefault(r.song_id, {})[r.user_id] = r
-    return render_template('fragments/group_picks_group.html', album_groups=album_groups,
-                           ratings=ratings_map, users=_columns(candidates, f['user_ids']))
+    users = _columns(candidates, f['user_ids'])
+    return ''.join(
+        f'<div data-group-key="{info["key"]}">'
+        + render_template('fragments/group_picks_group.html', album_groups=album_groups,
+                          ratings=ratings_map, users=users)
+        + '</div>'
+        for info, (_, album_groups) in results)
 
 
 @group_picks_bp.route('/group-picks/playlist', methods=['POST'])

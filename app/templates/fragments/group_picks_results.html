@@ -3,6 +3,7 @@
 {% elif not results %}
 <p class="text-sm text-secondary-text">No matching songs.</p>
 {% else %}
+<div id="group-picks-groups-url" data-url="{{ url_for('group_picks.group_picks_groups') }}?{{ query_string }}" hidden></div>
 {% set ns = namespace(total_songs=0) %}
 {% for _, (cnt, _) in results %}{% set ns.total_songs = ns.total_songs + cnt %}{% endfor %}
 <p class="text-xs text-secondary-text mb-3">{{ results|length }} artist{{ 's' if results|length != 1 else '' }} · {{ ns.total_songs }} song{{ 's' if ns.total_songs != 1 else '' }}</p>
@@ -10,7 +11,7 @@
 <div{% if not loop.first %} style="margin-top: 0.5rem;"{% endif %}>
     <div class="flex items-center gap-2 mb-1 px-1 cursor-pointer"
          style="border-left: 0.25rem solid {% if artist.gender_css %}var({{ artist.gender_css }}){% else %}var(--border){% endif %}; padding-left: 0.5rem;"
-         data-group-url="{{ url_for('group_picks.group_picks_group', key=artist.key) }}?{{ query_string }}"
+         data-group-key="{{ artist.key }}" data-song-count="{{ song_count }}"
          onclick="groupPicksToggle(this)">
         <span class="backlog-arrow text-secondary-text" style="font-size: 0.625rem;">▶</span>
         <a href="{{ artist.url }}" class="font-bold text-sm text-primary-text no-underline"

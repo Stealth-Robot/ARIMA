@@ -72,23 +72,74 @@
                class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 4.5rem;">
         <input type="text" id="group-picks-playlist-name" maxlength="100" placeholder="Playlist name"
                class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 15rem;">
+        <button type="button" onclick="groupPicksExpandCount()" title="Expand the artists holding the first N songs"
+                class="cursor-pointer rounded text-xs px-3 py-1 border-0"
+                style="background: var(--edit-off-button); color: var(--button-text);">Expand N</button>
+        <button type="button" onclick="groupPicksCollapseAll()"
+                class="cursor-pointer rounded text-xs px-3 py-1 border-0"
+                style="background: var(--edit-off-button); color: var(--button-text);">Collapse all</button>
     </div>
     <div id="group-picks-results">
         {% include 'fragments/group_picks_results.html' %}
     </div>
 </div>
 <script>
-function groupPicksToggle(el) {
-    var t = el.nextElementSibling;
-    var collapsed = t.style.display !== 'none';
-    t.style.display = collapsed ? 'none' : '';
+// Tables load on first expand (rendering every artist up front can run to tens of MB), batched into one request.
+function groupPicksLoad(headers) {
+    var pending = headers.filter(function(el) {
+        var t = el.nextElementSibling;
+        return !t.dataset.loaded && !t.dataset.loading;
+    });
+    if (!pending.length) return;
+    var byKey = {};
+    var qs = pending.map(function(el) {
+        el.nextElementSibling.dataset.loading = '1';
+        byKey[el.dataset.groupKey] = el.nextElementSibling;
+        return 'key=' + encodeURIComponent(el.dataset.groupKey);
+    }).join('&');
+    fetch(document.getElementById('group-picks-groups-url').dataset.url + '&' + qs)
+        .then(function(r) { if (!r.ok) throw r; return r.text(); })
+        .then(function(html) {
+            var tpl = document.createElement('template');
+            tpl.innerHTML = html;
+            tpl.content.querySelectorAll('[data-group-key]').forEach(function(wrap) {
+                var t = byKey[wrap.dataset.groupKey];
+                if (!t) return;
+                t.innerHTML = wrap.innerHTML;
+                t.dataset.loaded = '1';
+            });
+        })
+        .catch(function() { showToast('Could not load songs. Try again.'); })
+        .finally(function() {
+            Object.keys(byKey).forEach(function(k) { delete byKey[k].dataset.loading; });
+        });
+}
+function groupPicksSetOpen(el, open) {
+    el.nextElementSibling.style.display = open ? '' : 'none';
     var arrow = el.querySelector('.backlog-arrow');
-    if (arrow) arrow.textContent = collapsed ? '▶' : '▼';
-    // Tables load on first expand; rendering every artist up front can run to tens of MB.
-    if (!collapsed && !t.dataset.loaded) {
-        t.dataset.loaded = '1';
-        htmx.ajax('GET', el.getAttribute('data-group-url'), {target: t, swap: 'innerHTML'});
-    }
+    if (arrow) arrow.textContent = open ? '▼' : '▶';
+}
+function groupPicksToggle(el) {
+    var open = el.nextElementSibling.style.display === 'none';
+    groupPicksSetOpen(el, open);
+    if (open) groupPicksLoad([el]);
+}
+function groupPicksExpandCount() {
+    var n = parseInt(document.getElementById('group-picks-playlist-count').value, 10) || 0;
+    var shown = 0;
+    var opened = [];
+    document.querySelectorAll('#group-picks-results [data-group-key]').forEach(function(el) {
+        var open = shown < n;
+        groupPicksSetOpen(el, open);
+        if (open) opened.push(el);
+        shown += parseInt(el.dataset.songCount, 10) || 0;
+    });
+    groupPicksLoad(opened);
+}
+function groupPicksCollapseAll() {
+    document.querySelectorAll('#group-picks-results [data-group-key]').forEach(function(el) {
+        groupPicksSetOpen(el, false);
+    });
 }
 function createGroupPicksPlaylist(btn) {
     var form = document.getElementById('group-picks-form');
