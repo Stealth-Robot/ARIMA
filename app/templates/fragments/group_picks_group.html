@@ -1,0 +1,49 @@
+<div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
+    <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
+        <thead>
+            <tr>
+                <th class="py-1 px-2 text-left text-secondary-text" style="width: 12.5rem; max-width: 12.5rem; border: none;"></th>
+                {% for u in users %}
+                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        {# Rated songs stay visible until refresh so the user can re-edit while listening #}
+        <tbody>
+        {% for album, songs in album_groups %}
+            {% if not loop.first %}
+            <tr><td colspan="{{ 1 + users|length }}" style="height: 0.75rem; border: none;"></td></tr>
+            {% endif %}
+            <tr>
+                <td colspan="{{ 1 + users|length }}" class="text-xs text-primary-text font-bold" style="padding: 0.125rem 0.5rem; border: none; border-bottom: 0.0625rem solid var(--border); background: var(--album-header-bg);">
+                    {% if album %}
+                    {{ album_display_name(album) }}{% if album.release_date %} · {{ album.release_date[:4] }}{% endif %}
+                    <div class="text-xxs font-normal" style="opacity: 0.85;">{{ album.album_type.type }}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}</div>
+                    {% else %}
+                    No album
+                    {% endif %}
+                </td>
+            </tr>
+            {% for song in songs %}
+            <tr>
+                {% set _dn = song_display_name(song) %}
+                <td class="song-name-cell text-primary-text border border-grid-line" title="{{ _dn }}" data-song-id="{{ song.id }}" style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ _dn }}</td>
+                {% for u in users %}
+                {% set r = ratings.get(song.id, {}).get(u.id) %}
+                {% set cell_style = rating_cell_style(r.rating if r else None) %}
+                {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
+                {% set cell_editable = current_user.can_rate and (u.id == current_user.id or rating_all) %}
+                <td id="rating-{{ song.id }}-{{ u.id }}"
+                    class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if u.id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-40{% endif %}"
+                    style="{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+                    {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
+                    {% if cell_editable %}onclick="showRatingInput(event, {{ song.id }}, {{ u.id }})"{% endif %}>
+                    {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

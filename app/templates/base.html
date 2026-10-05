@@ -70,17 +70,18 @@
 <body class="bg-primary-bg text-primary-text" style="font-family: Arial, Helvetica, sans-serif;">
     <!-- Navbar -->
     <nav class="sticky top-0 z-30 h-11 bg-navbar-bg text-navbar-text flex flex-nowrap items-center whitespace-nowrap text-base-" style="gap: 0.625rem; padding: 0 0.75rem; overflow-x: auto; overflow-y: visible; scrollbar-width: none;">
-        <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('home.home') }}" style="display:none;">Home</a>
+        <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day', 'group_picks.group_picks') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('home.home') }}" style="display:none;">Home</a>
         <a class="mobile-show nav-link flex-shrink-0 {% if request.endpoint in ('artists.artists_list', 'artists.artist_detail', 'artists.artist_detail_by_slug', 'misc.misc_page') %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('artists.artists_list') }}" style="display:none;">Artists</a>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
              onmouseenter="_showNavDd(this)"
              onmouseleave="_hideNavDd(this)"
              onclick="_toggleNavDd(this)">
-            <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day') %}border-b-3 border-navbar-active{% endif %}">Home</a>
+            <a href="{{ url_for('home.home') }}" class="nav-link {% if request.endpoint in ('home.home', 'subscriptions.subscriptions_page', 'home.song_of_the_day', 'group_picks.group_picks') %}border-b-3 border-navbar-active{% endif %}">Home</a>
             <div class="home-dd nav-dropdown-panel">
                 <a href="{{ url_for('home.home') }}" class="nav-dropdown-item">Home</a>
                 <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="nav-dropdown-item">Subscriptions</a>
                 <a href="{{ url_for('home.song_of_the_day') }}" class="nav-dropdown-item">Song of the Day</a>
+                <a href="{{ url_for('group_picks.group_picks') }}" class="nav-dropdown-item">Group Picks</a>
             </div>
         </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
@@ -206,6 +207,7 @@
         <a href="{{ url_for('home.home') }}" class="mobile-menu-item">Home</a>
         <a href="{{ url_for('subscriptions.subscriptions_page') }}" class="mobile-menu-item">Subscriptions</a>
         <a href="{{ url_for('home.song_of_the_day') }}" class="mobile-menu-item">Song of the Day</a>
+        <a href="{{ url_for('group_picks.group_picks') }}" class="mobile-menu-item">Group Picks</a>
         <div class="border-t border-border my-1"></div>
         <a href="{{ url_for('stats.artist_stats') }}" class="mobile-menu-item">Artist Stats</a>
         <a href="{{ url_for('stats.global_stats') }}" class="mobile-menu-item">Global Stats</a>

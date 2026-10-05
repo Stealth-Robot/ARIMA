@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}A.R.I.M.A. — Group Picks{% endblock %}
+{% block og_title %}A.R.I.M.A. - Group Picks{% endblock %}
+{% block og_description %}Songs your friends rated that you haven't{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6" style="max-width: 56.25rem; margin: 0 auto;">
+    <h2 class="text-lg font-bold text-primary-text mb-3">Group Picks</h2>
+    <form id="group-picks-form" class="text-xs text-primary-text mb-3 flex flex-col gap-3"
+          hx-get="{{ url_for('group_picks.group_picks') }}" hx-target="#group-picks-results"
+          hx-trigger="change, submit" hx-push-url="true" onsubmit="return false;">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">People</span>
+            {% for u in candidates %}
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" name="user_id" value="{{ u.id }}"{% if u.id in user_ids %} checked{% endif %}>{{ u.username }}
+            </label>
+            {% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Rated by</span>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="match" value="any"{% if match != 'all' %} checked{% endif %}>Any selected
+            </label>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="match" value="all"{% if match == 'all' %} checked{% endif %}>All selected
+            </label>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Genre</span>
+            {% for g in genres %}
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" name="genre_id" value="{{ g.id }}"{% if g.id in genre_ids %} checked{% endif %}>{{ g.genre }}
+            </label>
+            {% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Gender</span>
+            {% for g in genders %}
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" name="gender_id" value="{{ g.id }}"{% if g.id in gender_ids %} checked{% endif %}>{{ g.gender }}
+            </label>
+            {% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Year</span>
+            <input type="number" name="year_from" placeholder="From" value="{{ year_from if year_from is not none else '' }}"
+                   class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 5rem;">
+            <span class="text-secondary-text">to</span>
+            <input type="number" name="year_to" placeholder="To" value="{{ year_to if year_to is not none else '' }}"
+                   class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 5rem;">
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-secondary-text w-16">Sort</span>
+            <select name="sort" class="rounded text-xs border border-border cursor-pointer" style="padding: 0.25rem 0.375rem;">
+                {% for value, label in sorts.items() %}
+                <option value="{{ value }}"{% if value == sort %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="dir" class="rounded text-xs border border-border cursor-pointer" style="padding: 0.25rem 0.375rem;">
+                <option value="asc"{% if dir != 'desc' %} selected{% endif %}>Ascending</option>
+                <option value="desc"{% if dir == 'desc' %} selected{% endif %}>Descending</option>
+            </select>
+        </div>
+    </form>
+    <div class="flex flex-wrap items-center gap-2 text-xs mb-6">
+        <button type="button" id="group-picks-playlist-btn" onclick="createGroupPicksPlaylist(this)"
+                class="cursor-pointer rounded text-xs px-3 py-1 border-0"
+                style="background: var(--edit-on-button); color: var(--button-text);">Make Spotify playlist</button>
+        <input type="number" id="group-picks-playlist-count" min="1" value="50" title="Number of songs"
+               class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 4.5rem;">
+        <input type="text" id="group-picks-playlist-name" maxlength="100" placeholder="Playlist name"
+               class="rounded text-xs border border-border" style="padding: 0.25rem 0.375rem; width: 15rem;">
+    </div>
+    <div id="group-picks-results">
+        {% include 'fragments/group_picks_results.html' %}
+    </div>
+</div>
+<script>
+function groupPicksToggle(el) {
+    var t = el.nextElementSibling;
+    var collapsed = t.style.display !== 'none';
+    t.style.display = collapsed ? 'none' : '';
+    var arrow = el.querySelector('.backlog-arrow');
+    if (arrow) arrow.textContent = collapsed ? '▶' : '▼';
+    // Tables load on first expand; rendering every artist up front can run to tens of MB.
+    if (!collapsed && !t.dataset.loaded) {
+        t.dataset.loaded = '1';
+        htmx.ajax('GET', el.getAttribute('data-group-url'), {target: t, swap: 'innerHTML'});
+    }
+}
+function createGroupPicksPlaylist(btn) {
+    var form = document.getElementById('group-picks-form');
+    var qs = new URLSearchParams(new FormData(form)).toString();
+    var body = {
+        count: document.getElementById('group-picks-playlist-count').value,
+        name: document.getElementById('group-picks-playlist-name').value
+    };
+    btn.disabled = true;
+    fetch('/group-picks/playlist?' + qs, {method: 'POST', headers: _csrfJson(), body: JSON.stringify(body)})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error === 'not_connected') {
+                showConfirm('Connect Spotify',
+                    'You need to log in with Spotify (OAuth) before creating playlists. Connect your account on your profile page.',
+                    function() { window.location = '/profile'; }, 'Go to profile');
+                return;
+            }
+            if (d.error === 'no_tracks') { showToast('None of these songs have a Spotify link.'); return; }
+            if (d.error) { showToast('Could not create playlist: ' + d.error); return; }
+            var msg = 'Playlist created (' + d.added + ' song' + (d.added === 1 ? '' : 's');
+            if (d.skipped) { msg += ', ' + d.skipped + ' skipped (no Spotify link)'; }
+            showToast(msg + ')');
+            if (d.open_in_app && d.app_uri) {
+                window.location.href = d.app_uri;
+            } else if (d.url) {
+                window.open(d.url, '_blank', 'noopener');
+            }
+        })
+        .catch(function() { showToast('Could not create playlist. Try again.'); })
+        .finally(function() { btn.disabled = false; });
+}
+</script>
+{% endblock %}
