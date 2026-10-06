@@ -221,6 +221,9 @@ def create_app():
     def handle_csrf_error(e):
         from flask import request, redirect, flash, url_for, session
         logger.warning('CSRF error on %s %s: %s', request.method, request.path, e.description)
+        # A redirect here gets followed by htmx and the referrer's fragment swapped into the target (e.g. a rating cell).
+        if request.headers.get('HX-Request'):
+            return 'Your session expired. Refresh the page and try again.', 403
         try:
             flash('Your session expired. Please try again.', 'error')
             if request.form:
