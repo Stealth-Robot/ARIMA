@@ -1311,3 +1311,90 @@ function localizeCooldown(s) {
             return 'until ' + d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
         });
 }
+
+/* Pull-to-refresh (mobile) — reloads only if released while still pulled past the threshold */
+(function() {
+    var THRESHOLD = 70;   // px of (damped) pull needed to refresh
+    var MAX_PULL = 110;
+    var startY = null, startX = null, pull = 0, tracking = false, decided = false, indicator = null;
+
+    function isMobileTouch() { return window.innerWidth <= 768; }
+
+    // On mobile the page is a fixed shell and #main-content is the scroll region.
+    function scroller() { return document.getElementById('main-content'); }
+
+    // Only pulls that start in the scroll region, outside any scrolled panel or overlay inside it.
+    function blockedTarget(el) {
+        var main = scroller();
+        if (!main || !main.contains(el)) return true;
+        for (; el && el !== main; el = el.parentElement) {
+            if (el.scrollTop > 0) return true;
+            if (getComputedStyle(el).position === 'fixed') return true;
+        }
+        return false;
+    }
+
+    function ensureIndicator() {
+        if (indicator) return indicator;
+        indicator = document.createElement('div');
+        indicator.className = 'fixed z-40 flex items-center justify-center rounded-full w-9 h-9 border border-border bg-secondary-bg text-primary-text pointer-events-none';
+        indicator.style.cssText = 'left:50%; top:3.25rem; margin-left:-1.125rem; opacity:0; transform:translateY(-3rem);';
+        indicator.innerHTML = '<span style="display:inline-block; font-size:1.125rem; line-height:1;">&#8595;</span>';
+        document.body.appendChild(indicator);
+        return indicator;
+    }
+
+    function render(animate) {
+        var ind = ensureIndicator();
+        var arrow = ind.firstChild;
+        ind.style.transition = animate ? 'transform 0.2s ease, opacity 0.2s ease' : 'none';
+        ind.style.transform = 'translateY(' + (pull - 48) / 16 + 'rem)';
+        ind.style.opacity = Math.min(pull / THRESHOLD, 1);
+        arrow.style.transition = 'transform 0.15s ease';
+        arrow.style.transform = pull >= THRESHOLD ? 'rotate(180deg)' : 'none';
+    }
+
+    function reset() {
+        tracking = false; decided = false; startY = startX = null;
+        if (pull > 0) { pull = 0; render(true); }
+    }
+
+    document.addEventListener('touchstart', function(e) {
+        if (!isMobileTouch() || e.touches.length !== 1 || blockedTarget(e.target) || scroller().scrollTop > 0) return;
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        tracking = true; decided = false; pull = 0;
+    }, {passive: true});
+
+    document.addEventListener('touchmove', function(e) {
+        if (!tracking) return;
+        var dy = e.touches[0].clientY - startY;
+        var dx = e.touches[0].clientX - startX;
+        if (!decided) {
+            if (dx === 0 && dy === 0) return;
+            // Decide on the first move: later moves stop being cancelable once the browser starts scrolling.
+            if (Math.abs(dx) > Math.abs(dy) || dy <= 0) { reset(); return; }
+            decided = true;
+        }
+        if (scroller().scrollTop > 0) { reset(); return; }
+        if (e.cancelable) e.preventDefault();
+        pull = Math.min(Math.max(dy, 0) * 0.5, MAX_PULL);
+        render(false);
+    }, {passive: false});
+
+    function release() {
+        if (!tracking) return;
+        if (decided && pull >= THRESHOLD) {
+            var ind = ensureIndicator();
+            ind.firstChild.style.transform = 'none';
+            ind.firstChild.innerHTML = '&#8635;';
+            ind.firstChild.classList.add('animate-spin');
+            tracking = false;
+            location.reload();
+            return;
+        }
+        reset();
+    }
+    document.addEventListener('touchend', release);
+    document.addEventListener('touchcancel', function() { reset(); });
+})();
