@@ -45,6 +45,8 @@
           data-del-label="season {{ season.name }}">Delete season</button>
 </div>
 
+{#- Table-wide block, centered when it fits; capped at the viewport so the grid scrolls inside it when it doesn't. -#}
+<div class="mx-auto max-w-full" style="width: fit-content;">
 <form method="post" action="{{ url_for('soccer.add_day') }}" class="flex flex-wrap items-center gap-2 mb-3">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="season_id" value="{{ season.id }}">
@@ -162,6 +164,7 @@
 {% else %}
 <p class="text-secondary-text mt-4">No seasons yet.</p>
 {% endif %}
+{% if season %}</div>{% endif %}
 
 {#- Rename modal: season and player names. Public, like adding them. -#}
 <div id="soccer-edit-modal"
