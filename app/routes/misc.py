@@ -1292,7 +1292,7 @@ def get_album_detail(album_id):
     album = db.session.get(Album, album_id)
     if album is None:
         abort(404)
-    genre_ids = [r[0] for r in db.session.execute(
+    genre_ids = [r.genre_id for r in db.session.execute(
         album_genres.select().where(album_genres.c.album_id == album_id)
     ).fetchall()]
     return json.dumps({

@@ -1653,16 +1653,14 @@ function _showAlbumEditor(songId, albumId) {
         var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
             saveBtn.disabled = true;
             var csrf = _csrfJson();
-            var formHeaders = {'Content-Type':'application/x-www-form-urlencoded'};
-            var m = document.querySelector('meta[name="csrf-token"]');
-            if (m) formHeaders['X-CSRFToken'] = m.content;
+            var formHeaders = _csrfHeaders({'Content-Type':'application/x-www-form-urlencoded'});
 
             var promises = [];
             if (nameInp.value.trim() !== album.name) {
-                promises.push(fetch('/edit/album/' + albumId + '/name', {method:'POST', headers:formHeaders, body:'name=' + encodeURIComponent(nameInp.value.trim())}));
+                promises.push(fetch('/edit/album/' + albumId + '/name', {method:'POST', headers:formHeaders, body:'value=' + encodeURIComponent(nameInp.value.trim())}));
             }
             if (dateInp.value !== (album.release_date || '')) {
-                promises.push(fetch('/edit/album/' + albumId + '/release-date', {method:'POST', headers:formHeaders, body:'release_date=' + encodeURIComponent(dateInp.value)}));
+                promises.push(fetch('/edit/album/' + albumId + '/release-date', {method:'POST', headers:formHeaders, body:'value=' + encodeURIComponent(dateInp.value)}));
             }
             if (parseInt(typeSel.value) !== album.album_type_id) {
                 promises.push(fetch('/edit/album/' + albumId + '/type', {method:'POST', headers:formHeaders, body:'album_type_id=' + typeSel.value}));
