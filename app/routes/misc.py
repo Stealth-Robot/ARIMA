@@ -20,6 +20,7 @@ from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
 from app.services.dates import is_valid_release_date
 from app.services.events import publish
+from app.services.search import like_contains, LIKE_ESCAPE
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -524,11 +525,11 @@ def search_misc_artists():
     q = request.args.get('q', '').strip()
     query = MiscArtist.query
     if q:
-        like = f'%{q}%'
+        like = like_contains(q)
         alt_ids = {row[0] for row in db.session.query(MiscArtistAltName.misc_artist_id).filter(
-            MiscArtistAltName.name.ilike(like)).all()}
+            MiscArtistAltName.name.ilike(like, escape=LIKE_ESCAPE)).all()}
         query = query.filter(db.or_(
-            MiscArtist.name.ilike(like), MiscArtist.id.in_(alt_ids)))
+            MiscArtist.name.ilike(like, escape=LIKE_ESCAPE), MiscArtist.id.in_(alt_ids)))
     results = query.order_by(func.lower(MiscArtist.name)).limit(30).all()
     return json.dumps([
         {'id': ma.id, 'name': ma.name, 'country_id': ma.country_id}
@@ -954,14 +955,14 @@ def combine_targets():
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
-    like = f'%{q}%'
+    like = like_contains(q)
     alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(
-        SongAlias.name.ilike(like)).all()}
+        SongAlias.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     rows = db.session.query(Song.id, Song.name, ArtistSong.artist_is_main).join(
         ArtistSong, ArtistSong.song_id == Song.id
     ).filter(
         ArtistSong.artist_id == artist_id,
-        db.or_(Song.name.ilike(like), Song.id.in_(alias_ids)),
+        db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE), Song.id.in_(alias_ids)),
     ).all()
     song_ids = {r[0] for r in rows}
 
@@ -1218,11 +1219,11 @@ def search_real_artists():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
-    like = f'%{q}%'
+    like = like_contains(q)
     alt_ids = {row[0] for row in db.session.query(ArtistAltName.artist_id).filter(
-        ArtistAltName.name.ilike(like)).all()}
+        ArtistAltName.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     results = Artist.query.filter(db.or_(
-        Artist.name.ilike(like), Artist.id.in_(alt_ids))).order_by(
+        Artist.name.ilike(like, escape=LIKE_ESCAPE), Artist.id.in_(alt_ids))).order_by(
         func.lower(Artist.name)
     ).limit(20).all()
     return json.dumps([
@@ -1238,11 +1239,11 @@ def search_albums():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
-    like = f'%{q}%'
+    like = like_contains(q)
     alt_ids = {row[0] for row in db.session.query(AlbumAltName.album_id).filter(
-        AlbumAltName.name.ilike(like)).all()}
+        AlbumAltName.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     results = Album.query.filter(db.or_(
-        Album.name.ilike(like), Album.id.in_(alt_ids))).order_by(
+        Album.name.ilike(like, escape=LIKE_ESCAPE), Album.id.in_(alt_ids))).order_by(
         func.lower(Album.name)
     ).limit(20).all()
     return json.dumps([
