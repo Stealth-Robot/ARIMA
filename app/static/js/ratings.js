@@ -1435,6 +1435,12 @@ var _tooltipSelecting = false;
         body.append('tab', TAB_ID);
         fetch('/presence/leave', { method: 'POST', body: body, headers: _csrfHeaders(), keepalive: true }).catch(function () {});
     });
+    // A back/forward-cache restore revives this page after pagehide, so resume polling.
+    window.addEventListener('pageshow', function (e) {
+        if (!e.persisted) return;
+        leaving = false;
+        poll();
+    });
 
     (function tick() {
         setTimeout(function () {
