@@ -1238,6 +1238,7 @@ var _tooltipSelecting = false;
         split.loose.forEach(function (u) { row.appendChild(stripAvatar(u)); });
         split.groups.forEach(function (g) {
             var sub = stripRow();
+            sub.style.cssText += 'padding:0.0625rem 0.25rem 0.0625rem 0.125rem; border:0.0625rem solid var(--border); border-radius:0.25rem;';
             sub.appendChild(stripLabel(g.loc.name, g.loc.css));
             g.users.forEach(function (u) { sub.appendChild(stripAvatar(u)); });
             row.appendChild(sub);
