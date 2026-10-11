@@ -1,6 +1,6 @@
 """Helpers for building safe SQL LIKE/ILIKE search patterns."""
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_, select, true
 
 # Backslash escape char for LIKE patterns. Pass as `escape=LIKE_ESCAPE` to .ilike().
 LIKE_ESCAPE = '\\'
@@ -35,3 +35,28 @@ def like_contains(term):
     """
     escaped = term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
     return f'%{escaped}%'
+
+
+def alias_field(id_col, alias_id_col, alias_name_col, *where):
+    """text_match field for names stored in another table; `where` holds its join/filter conditions."""
+    return id_col, alias_id_col, alias_name_col, where
+
+
+def text_match(q, *fields, split_words=True):
+    """Every word of q must hit some field, so "song artist" searches match across columns."""
+    terms = q.split() if split_words else [q]
+    if not terms:
+        return true()
+    word_clauses = []
+    for term in terms:
+        pattern = like_contains(term)
+        options = []
+        for field in fields:
+            if isinstance(field, tuple):
+                id_col, alias_id_col, alias_name_col, where = field
+                options.append(id_col.in_(select(alias_id_col).where(
+                    alias_name_col.ilike(pattern, escape=LIKE_ESCAPE), *where)))
+            else:
+                options.append(field.ilike(pattern, escape=LIKE_ESCAPE))
+        word_clauses.append(or_(*options))
+    return and_(*word_clauses)

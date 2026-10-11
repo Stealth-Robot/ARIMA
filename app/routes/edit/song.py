@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
+from sqlalchemy import and_, case, func, null, select, text, union
+
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres, SongAlias, AlbumAltName
 from app.models.duplicate_display_override import DuplicateDisplayOverride
@@ -11,7 +13,7 @@ from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
 from app.services.events import publish
 from app.services.proxy_change import close_orphaned_proxy_changes
-from app.services.search import like_contains, LIKE_ESCAPE
+from app.services.search import text_match, alias_field
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
@@ -633,8 +635,6 @@ def merge_candidates(song_id):
     if song is None:
         abort(404)
     country_ids, genre_ids = _get_filters()
-    like = like_contains(song.name)
-    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -644,7 +644,7 @@ def merge_candidates(song_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE), Song.id.in_(alias_ids)),
+        text_match(song.name, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name), split_words=False),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
     )
@@ -671,8 +671,6 @@ def merge_search(song_id):
     if len(q) < 2:
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
     country_ids, genre_ids = _get_filters()
-    like = like_contains(q)
-    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -682,7 +680,7 @@ def merge_search(song_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE), Song.id.in_(alias_ids)),
+        text_match(q, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name)),
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
     )
@@ -1083,40 +1081,18 @@ def search_albums():
     _require_edit_mode()
     q = request.args.get('q', '').strip()
     exclude_id = request.args.get('exclude', type=int)
-    if q:
-        like = like_contains(q)
-        rows = db.session.execute(db.text(
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN album_song als ON als.album_id = a.id '
-            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'WHERE (a.name LIKE :like ESCAPE :esc OR ar.name LIKE :like ESCAPE :esc '
-            'OR a.id IN (SELECT album_id FROM album_alt_name WHERE name LIKE :like ESCAPE :esc)) '
-            'UNION '
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN artist ar ON ar.id = a.artist_id '
-            'WHERE a.artist_id IS NOT NULL AND (a.name LIKE :like ESCAPE :esc OR ar.name LIKE :like ESCAPE :esc '
-            'OR a.id IN (SELECT album_id FROM album_alt_name WHERE name LIKE :like ESCAPE :esc)) '
-            'ORDER BY 3, 2 '
-            'LIMIT 50'
-        ), {'like': like, 'esc': LIKE_ESCAPE}).fetchall()
-    else:
-        rows = db.session.execute(db.text(
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN album_song als ON als.album_id = a.id '
-            'JOIN artist_song ars ON ars.song_id = als.song_id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'UNION '
-            'SELECT DISTINCT a.id, a.name, ar.name AS artist, ar.id AS artist_id '
-            'FROM album a '
-            'JOIN artist ar ON ar.id = a.artist_id '
-            'WHERE a.artist_id IS NOT NULL '
-            'ORDER BY 3, 2 '
-            'LIMIT 50'
-        )).fetchall()
+    match = text_match(q, Album.name, Artist.name,
+                       alias_field(Album.id, AlbumAltName.album_id, AlbumAltName.name))
+    via_songs = (select(Album.id, Album.name, Artist.name, Artist.id)
+                 .join(AlbumSong, AlbumSong.album_id == Album.id)
+                 .join(ArtistSong, and_(ArtistSong.song_id == AlbumSong.song_id,
+                                        ArtistSong.artist_is_main == True))
+                 .join(Artist, Artist.id == ArtistSong.artist_id)
+                 .where(match))
+    owned = (select(Album.id, Album.name, Artist.name, Artist.id)
+             .join(Artist, Artist.id == Album.artist_id)
+             .where(match))
+    rows = db.session.execute(union(via_songs, owned).order_by(text('3, 2')).limit(50)).fetchall()
     results = [{'id': r[0], 'name': r[1], 'artist': r[2], 'artistId': r[3]}
                for r in rows if r[0] != exclude_id]
     return json.dumps(results), 200, {'Content-Type': 'application/json'}
@@ -1130,73 +1106,43 @@ def search_songs():
     _require_edit_mode()
     q = request.args.get('q', '').strip()
     exclude_id = request.args.get('exclude', type=int)
-    # Look up the kept song's name and main artist so exact-name and same-artist
-    # matches can be ordered first and survive the LIMIT below.
-    kept_name = None
-    kept_artist_id = None
+    # Exact-name and same-artist matches for the kept song sort first so they survive the LIMIT.
+    priority = []
     if exclude_id:
-        kept = db.session.execute(db.text(
-            'SELECT s.name, ars.artist_id '
-            'FROM song s '
-            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
-            'WHERE s.id = :sid LIMIT 1'
-        ), {'sid': exclude_id}).fetchone()
+        kept = db.session.execute(
+            select(Song.name, ArtistSong.artist_id)
+            .join(ArtistSong, and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True))
+            .where(Song.id == exclude_id).limit(1)).fetchone()
         if kept:
-            kept_name = kept[0]
-            kept_artist_id = kept[1]
-    prioritize = (
-        'CASE WHEN :kept_name IS NOT NULL AND lower(s.name) = lower(:kept_name) THEN 0 ELSE 1 END, '
-        'CASE WHEN :kept_artist_id IS NOT NULL AND ar.id = :kept_artist_id THEN 0 ELSE 1 END, '
-    )
-    # Each word may hit a different field so "song artist" searches match.
-    words = q.split()
-    word_params = {'w%d' % i: like_contains(w) for i, w in enumerate(words)}
-    word_params['esc'] = LIKE_ESCAPE
-    if q:
-        word_sql = ' AND '.join(
-            '(s.name LIKE :w%d ESCAPE :esc OR ar.name LIKE :w%d ESCAPE :esc '
-            'OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :w%d ESCAPE :esc))' % (i, i, i)
-            for i in range(len(words)))
-        rows = db.session.execute(db.text(
-            'SELECT s.id, s.name, ar.name, ar.id, al.name '
-            'FROM song s '
-            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'JOIN album_song als ON als.song_id = s.id '
-            'JOIN album al ON al.id = als.album_id '
-            'WHERE ' + word_sql + ' '
-            'ORDER BY ' + prioritize + 'ar.name, s.name '
-            'LIMIT 100'
-        ), {**word_params, 'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
-    else:
-        rows = db.session.execute(db.text(
-            'SELECT s.id, s.name, ar.name, ar.id, al.name '
-            'FROM song s '
-            'JOIN artist_song ars ON ars.song_id = s.id AND ars.artist_is_main = 1 '
-            'JOIN artist ar ON ar.id = ars.artist_id '
-            'JOIN album_song als ON als.song_id = s.id '
-            'JOIN album al ON al.id = als.album_id '
-            'ORDER BY ' + prioritize + 'ar.name, s.name '
-            'LIMIT 100'
-        ), {'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
+            priority = [case((func.lower(Song.name) == func.lower(kept[0]), 0), else_=1),
+                        case((Artist.id == kept[1], 0), else_=1)]
+    song_alias = alias_field(Song.id, SongAlias.song_id, SongAlias.name)
+    rows = db.session.execute(
+        select(Song.id, Song.name, Artist.name, Artist.id, Album.name)
+        .join(ArtistSong, and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True))
+        .join(Artist, Artist.id == ArtistSong.artist_id)
+        .join(AlbumSong, AlbumSong.song_id == Song.id)
+        .join(Album, Album.id == AlbumSong.album_id)
+        .where(text_match(q, Song.name, Artist.name, song_alias))
+        .order_by(*priority, Artist.name, Song.name)
+        .limit(100)).fetchall()
     if request.args.get('include_misc') == '1':
-        word_sql = ''.join(
-            'AND (s.name LIKE :w%d ESCAPE :esc OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :w%d ESCAPE :esc) '
-            'OR EXISTS (SELECT 1 FROM song_misc_artist s3 JOIN misc_artist m3 ON m3.id = s3.misc_artist_id '
-            'WHERE s3.song_id = s.id AND s3.artist_is_main = 1 AND m3.name LIKE :w%d ESCAPE :esc)) ' % (i, i, i)
-            for i in range(len(words)))
-        rows = list(rows) + db.session.execute(db.text(
-            'SELECT s.id, s.name, (SELECT GROUP_CONCAT(m2.name, \', \') FROM song_misc_artist s2 '
-            'JOIN misc_artist m2 ON m2.id = s2.misc_artist_id '
-            'WHERE s2.song_id = s.id AND s2.artist_is_main = 1), NULL, MIN(al.name) '
-            'FROM song s '
-            'LEFT JOIN album_song als ON als.song_id = s.id '
-            'LEFT JOIN album al ON al.id = als.album_id '
-            'WHERE s.id IN (SELECT song_id FROM song_misc_artist WHERE artist_is_main = 1) '
-            'AND s.id NOT IN (SELECT song_id FROM artist_song WHERE artist_is_main = 1) '
-            + word_sql +
-            'GROUP BY s.id ORDER BY s.name LIMIT 100'
-        ), word_params).fetchall()
+        misc_names = (select(func.group_concat(MiscArtist.name, ', '))
+                      .select_from(SongMiscArtist)
+                      .join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id)
+                      .where(SongMiscArtist.song_id == Song.id, SongMiscArtist.artist_is_main == True)
+                      .scalar_subquery())
+        misc_artist = alias_field(Song.id, SongMiscArtist.song_id, MiscArtist.name,
+                                  MiscArtist.id == SongMiscArtist.misc_artist_id,
+                                  SongMiscArtist.artist_is_main == True)
+        rows = list(rows) + db.session.execute(
+            select(Song.id, Song.name, misc_names, null(), func.min(Album.name))
+            .outerjoin(AlbumSong, AlbumSong.song_id == Song.id)
+            .outerjoin(Album, Album.id == AlbumSong.album_id)
+            .where(Song.id.in_(select(SongMiscArtist.song_id).where(SongMiscArtist.artist_is_main == True)),
+                   Song.id.not_in(select(ArtistSong.song_id).where(ArtistSong.artist_is_main == True)),
+                   text_match(q, Song.name, song_alias, misc_artist))
+            .group_by(Song.id).order_by(Song.name).limit(100)).fetchall()
     seen_ids = set()
     results = []
     for r in rows:

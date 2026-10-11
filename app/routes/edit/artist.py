@@ -15,7 +15,7 @@ from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.services.artist import generate_unique_slug, SUBUNIT, SOLOIST, RELATED
 from app.services.audit import log_change
 from app.services.events import publish
-from app.services.search import like_contains, LIKE_ESCAPE
+from app.services.search import text_match, alias_field
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, ADMIN, EDITOR_OR_ADMIN
 
@@ -622,8 +622,6 @@ def global_search_songs():
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
     country_ids, genre_ids = _get_filters()
-    like = like_contains(q)
-    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -633,7 +631,7 @@ def global_search_songs():
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE), Song.id.in_(alias_ids)),
+        text_match(q, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name)),
         ArtistSong.artist_is_main == True,
     )
     if country_ids:
@@ -670,9 +668,6 @@ def global_search_albums():
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
     country_ids, genre_ids = _get_filters()
-    like = like_contains(q)
-    alt_ids = {row[0] for row in db.session.query(AlbumAltName.album_id).filter(
-        AlbumAltName.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     query = db.session.query(Album, Artist).join(
         AlbumSong, Album.id == AlbumSong.album_id
     ).join(
@@ -680,7 +675,7 @@ def global_search_albums():
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        db.or_(Album.name.ilike(like, escape=LIKE_ESCAPE), Album.id.in_(alt_ids)),
+        text_match(q, Album.name, alias_field(Album.id, AlbumAltName.album_id, AlbumAltName.name)),
         ArtistSong.artist_is_main == True,
     )
     if country_ids:
@@ -722,8 +717,6 @@ def artist_search_songs(artist_id):
         return json.dumps([]), 200, {'Content-Type': 'application/json'}
 
     country_ids, genre_ids = _get_filters()
-    like = like_contains(q)
-    alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(SongAlias.name.ilike(like, escape=LIKE_ESCAPE)).all()}
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -733,7 +726,7 @@ def artist_search_songs(artist_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        db.or_(Song.name.ilike(like, escape=LIKE_ESCAPE), Song.id.in_(alias_ids)),
+        text_match(q, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name)),
         ArtistSong.artist_is_main == True,
     )
     if country_ids:
