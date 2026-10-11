@@ -1,14 +1,25 @@
 import re
 
-from flask import Blueprint, request, url_for
+from flask import Blueprint, g, request, url_for
 from flask_login import current_user, login_required
 
 from app.models.music import Artist
 from app.models.user import User
 from app.services import presence
-from app.services.events import get_changes_since
+from app.services.events import get_changes_since, get_current_seq
 
 events_bp = Blueprint('events', __name__)
+
+
+# Taken before the page's data is queried, so the first poll gets only edits the page hasn't seen.
+@events_bp.before_app_request
+def _record_event_seq():
+    g.event_seq = get_current_seq()
+
+
+@events_bp.app_context_processor
+def _inject_event_seq():
+    return {'event_seq': g.get('event_seq', 0)}
 
 GENDER_CSS = {0: '--gender-female', 1: '--gender-male', 2: '--gender-mixed', 3: '--gender-anime'}
 PRESENCE_COLORS = ['#E11D48', '#7C3AED', '#0891B2', '#059669', '#D97706', '#2563EB',

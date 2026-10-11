@@ -214,7 +214,9 @@ def _render_artist(artist, htmx=False, push_url=None):
             emit_edit_globals=emit_edit_globals,
             rated_filter=rated_filter, bypass_filters=bypass_filters))
         if push_url:
-            resp.headers['HX-Push-Url'] = push_url
+            # Live refreshes re-request with the page's query (e.g. nofilter=1); don't strip it from the URL.
+            query = request.query_string.decode()
+            resp.headers['HX-Push-Url'] = push_url + ('?' + query if query else '')
         return resp
 
     og_song = _build_og_song(request.args.get('song'))

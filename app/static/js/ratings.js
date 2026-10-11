@@ -1017,7 +1017,9 @@ var _tooltipSelecting = false;
 
 /* Real-time sync via polling */
 (function () {
-    var pollSeq = 0;
+    // Start from the seq the page was rendered at; 0 would replay the last 5 minutes of edits on load.
+    var seqHost = document.getElementById('presence-strip');
+    var pollSeq = seqHost ? parseInt(seqHost.getAttribute('data-seq'), 10) || 0 : 0;
     var POLL_INTERVAL = 2000;
     var SHARED_PAGE_POLL_INTERVAL = 500;
     var reloadTimers = {};
@@ -1059,7 +1061,8 @@ var _tooltipSelecting = false;
             }
             debounceReload('artist-' + viewing, function () {
                 if (window.htmx && viewingArtistId() === viewing) {
-                    htmx.ajax('GET', '/artists/' + viewing, { target: '#discography', swap: 'innerHTML' });
+                    // Keep ?nofilter=1 (Disable Filters) so the refresh doesn't reapply filters.
+                    htmx.ajax('GET', '/artists/' + viewing + window.location.search, { target: '#discography', swap: 'innerHTML' });
                 }
             });
             return;
