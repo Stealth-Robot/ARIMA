@@ -387,11 +387,8 @@ function _initSongMiscSearch(songDiv) {
     function _createMiscArtist(name) {
         var countrySelect = document.querySelector('[name="country_id"]');
         var cid = countrySelect && countrySelect.value ? parseInt(countrySelect.value) : null;
-        var headers = {'Content-Type': 'application/json'};
-        var m = document.querySelector('meta[name="csrf-token"]');
-        if (m) headers['X-CSRFToken'] = m.content;
         fetch('/misc/add-misc-artist', {
-            method: 'POST', headers: headers,
+            method: 'POST', headers: _csrfHeaders({'Content-Type': 'application/json'}),
             body: JSON.stringify({name: name, country_id: cid}),
         }).then(function(r) { return r.json(); }).then(function(d) {
             _addSongMiscArtist(albumNum, songNum, d.id, d.name);
