@@ -589,14 +589,13 @@ function closeSearchOverlay() {
             return;
         }
         var k = e.key;
+        var active = searchResults.querySelector('.search-result-item.search-active');
         if (k === 'ArrowDown') { e.preventDefault(); moveVertical(1); return; }
         if (k === 'ArrowUp') { e.preventDefault(); moveVertical(-1); return; }
-        if (k === 'ArrowRight') { e.preventDefault(); moveBin(1); return; }
-        if (k === 'ArrowLeft') { e.preventDefault(); moveBin(-1); return; }
-        if (k === 'Enter') {
-            var active = searchResults.querySelector('.search-result-item.search-active');
-            if (active) { e.preventDefault(); window.location.href = active.href; }
-        }
+        // Left/Right move the text caret until a result is highlighted, then they jump sections.
+        if (k === 'ArrowRight' && active) { e.preventDefault(); moveBin(1); return; }
+        if (k === 'ArrowLeft' && active) { e.preventDefault(); moveBin(-1); return; }
+        if (k === 'Enter' && active) { e.preventDefault(); window.location.href = active.href; }
     });
 
     document.addEventListener('click', function (e) {
