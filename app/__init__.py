@@ -4,7 +4,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, session
+from flask import Flask, request, session
+from flask.sessions import SecureCookieSessionInterface
 from flask_login import current_user
 from sqlalchemy import event
 
@@ -16,11 +17,20 @@ from app.extensions import db, login_manager, bcrypt, csrf
 logger = logging.getLogger(__name__)
 
 
+class _SessionInterface(SecureCookieSessionInterface):
+    def should_set_cookie(self, app, session):
+        # A background poll still in flight would otherwise land its stale cookie over a newer one (e.g. the rating-mode toggle).
+        if request.blueprint == 'events' and not session.modified:
+            return False
+        return super().should_set_cookie(app, session)
+
+
 def create_app():
     flask_app = Flask(__name__)
 
     config = ProdConfig if os.environ.get('FLASK_ENV') == 'production' else Config
     flask_app.config.from_object(config)
+    flask_app.session_interface = _SessionInterface()
 
     # Railway terminates TLS at the edge and forwards plain HTTP to gunicorn, so
     # trust its X-Forwarded-Proto/Host — otherwise url_for(_external=True) and
