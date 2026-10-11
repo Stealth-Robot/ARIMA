@@ -292,6 +292,7 @@ function showMobileRatingModal(cell, songId, targetUserId) {
     backdrop.appendChild(modal);
     document.body.appendChild(backdrop);
     activeMobileModal = backdrop;
+    backdrop._presenceCell = cell;
 
     // Close on backdrop click (not modal)
     backdrop.addEventListener('click', function(e) {
@@ -1017,7 +1018,8 @@ var _tooltipSelecting = false;
 /* Real-time sync via polling */
 (function () {
     var pollSeq = 0;
-    var POLL_INTERVAL = 5000;
+    var POLL_INTERVAL = 2000;
+    var SHARED_PAGE_POLL_INTERVAL = 500;
     var reloadTimers = {};
 
     function handleUpdate(data) {
@@ -1076,8 +1078,314 @@ var _tooltipSelecting = false;
         }
     }
 
+    /* Presence: who's online, which artist page they're on, which cell they have open */
+    var TAB_ID = Math.random().toString(36).slice(2, 12);
+    var IDLE_MS = 15 * 60 * 1000;
+    var STATUS_COLORS = { page: '#22C55E', online: '#22C55E', away: '#EAB308', offline: '#6B7280' };
+    var lastInput = Date.now();
+    var presence = null;
+    var presenceVersion = -1;
+    var sentKey = '';
+    var inFlight = false;
+    var pollAgain = false;
+    var changeTimer = null;
+    var leaving = false;
+    var strip = document.getElementById('presence-strip');
+    var myId = strip ? parseInt(strip.getAttribute('data-me'), 10) : null;
+
+    function viewingPage() {
+        if (viewingArtistId() !== null) return 'artist';
+        return window.location.pathname === '/misc' ? 'misc' : 'other';
+    }
+
+    function viewingLocKey() {
+        var page = viewingPage();
+        if (page === 'other') return null;
+        return page === 'misc' ? 'misc' : 'a' + viewingArtistId();
+    }
+
+    // Poll fast only while an active desktop user shares our page; phones stay at 2s both ways.
+    function pollDelay() {
+        var here = !document.hidden && !_isMobile() && viewingLocKey();
+        var shared = here && presence && presence.users.some(function (u) {
+            return u.id !== myId && u.state === 'page' && !u.mobile && u.loc.key === here;
+        });
+        return shared ? SHARED_PAGE_POLL_INTERVAL : POLL_INTERVAL;
+    }
+
+    function selectedCellId() {
+        var cell = null;
+        if (activeInput) cell = activeInput.cell;
+        else if (activeMobileModal && activeMobileModal.isConnected) cell = activeMobileModal._presenceCell;
+        return cell && cell.id && cell.id.indexOf('rating-') === 0 ? cell.id.slice(7) : '';
+    }
+
+    function presenceParams() {
+        var page = viewingPage();
+        var away = document.hidden || Date.now() - lastInput > IDLE_MS;
+        return '&page=' + page +
+            (page === 'artist' ? '&artist=' + viewingArtistId() : '') +
+            (page !== 'other' && !away ? '&cell=' + selectedCellId() : '') +
+            '&away=' + (away ? 1 : 0) + '&hidden=' + (document.hidden ? 1 : 0) + '&m=' + (_isMobile() ? 1 : 0);
+    }
+
+    function pfpImg(u, size) {
+        var img = document.createElement('img');
+        img.src = u.img;
+        img.alt = '';
+        img.onerror = function () { img.onerror = null; img.src = u.default_img; };
+        img.style.cssText = 'width:' + size + '; height:' + size + '; border-radius:50%; object-fit:cover; display:block;';
+        return img;
+    }
+
+    var nameTip = null;
+
+    function showNameTip(el, u) {
+        if (!nameTip) {
+            nameTip = document.createElement('div');
+            nameTip.style.cssText = 'position:fixed; z-index:60; padding:0.1875rem 0.5rem; border-radius:0.25rem; font-size:0.75rem; font-weight:600; white-space:nowrap; pointer-events:none; background:var(--bg-secondary); color:var(--text-primary); border:0.0625rem solid var(--border); box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.3);';
+            document.body.appendChild(nameTip);
+        }
+        nameTip.textContent = u.name;
+        nameTip.style.display = '';
+        var r = el.getBoundingClientRect();
+        var left = r.left + r.width / 2 - nameTip.offsetWidth / 2;
+        nameTip.style.left = Math.max(4, Math.min(left, window.innerWidth - nameTip.offsetWidth - 4)) + 'px';
+        nameTip.style.top = (r.top - nameTip.offsetHeight - 6) + 'px';
+    }
+
+    function hideNameTip() {
+        if (nameTip) nameTip.style.display = 'none';
+    }
+
+    function withNameTip(el, u) {
+        el.addEventListener('mouseenter', function () { showNameTip(el, u); });
+        el.addEventListener('mouseleave', hideNameTip);
+    }
+
+    function stripAvatar(u) {
+        var wrap = document.createElement('span');
+        withNameTip(wrap, u);
+        wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0; width:1.25rem; height:1.25rem;';
+        var img = pfpImg(u, '100%');
+        if (u.state === 'offline') img.style.cssText += 'opacity:0.35; filter:grayscale(1);';
+        else img.style.cssText += 'box-shadow:0 0 0 0.09375rem ' + u.color + ';' + (u.state === 'away' ? 'opacity:0.6;' : '');
+        var dot = document.createElement('span');
+        dot.style.cssText = 'position:absolute; right:-0.125rem; bottom:-0.125rem; width:0.5rem; height:0.5rem; border-radius:50%; border:0.09375rem solid var(--navbar-bg); background:' + STATUS_COLORS[u.state] + ';';
+        wrap.appendChild(img);
+        wrap.appendChild(dot);
+        if (u.loc) {
+            wrap.style.cursor = 'pointer';
+            wrap.addEventListener('click', function () { jumpToUser(u); });
+        }
+        return wrap;
+    }
+
+    // Reuses the #song-<id> deep link, which expands, unfilters, scrolls to and flashes the row.
+    function jumpToUser(u) {
+        var songId = u.cell ? u.cell.split('-')[0] : null;
+        var hash = songId ? '#song-' + songId : '';
+        var here = u.loc.artist_id ? viewingArtistId() === u.loc.artist_id : viewingPage() === 'misc';
+        if (!here) {
+            var path = u.loc.artist_id ? '/artists/' + u.loc.artist_id : '/misc' + (songId ? '?song=' + songId : '');
+            window.location.href = path + hash;
+        } else if (hash && window.location.hash === hash) {
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } else if (hash) {
+            window.location.hash = hash;
+        }
+    }
+
+    function stripRow() {
+        var g = document.createElement('span');
+        g.style.cssText = 'display:inline-flex; align-items:center; gap:0.3125rem; flex-shrink:0;';
+        return g;
+    }
+
+    function stripLabel(text, css) {
+        var tag = document.createElement('span');
+        tag.textContent = text;
+        tag.style.cssText = css
+            ? 'padding:0.0625rem 0.375rem; border-radius:0.1875rem; font-weight:600; color:var(--artist-button-text); background:var(' + css + ');'
+            : 'color:var(--text-secondary);';
+        return tag;
+    }
+
+    // Users with a page, grouped under it in first-seen order; the rest go to `loose`.
+    function groupByLoc(users) {
+        var groups = [];
+        var byLoc = {};
+        var loose = [];
+        users.forEach(function (u) {
+            if (!u.loc) { loose.push(u); return; }
+            if (!byLoc[u.loc.key]) { byLoc[u.loc.key] = { loc: u.loc, users: [] }; groups.push(byLoc[u.loc.key]); }
+            byLoc[u.loc.key].users.push(u);
+        });
+        // Same order as the artist navbar: Misc first, then lowercased name.
+        groups.sort(function (a, b) {
+            if (a.loc.key === 'misc' || b.loc.key === 'misc') return (b.loc.key === 'misc') - (a.loc.key === 'misc');
+            var x = a.loc.name.toLowerCase(), y = b.loc.name.toLowerCase();
+            return x < y ? -1 : x > y ? 1 : 0;
+        });
+        return { groups: groups, loose: loose };
+    }
+
+    function stripSection(users, label) {
+        var row = stripRow();
+        var split = groupByLoc(users);
+        if (label) row.appendChild(stripLabel(label, null));
+        // Page-less users go first so they don't read as part of the last page group.
+        split.loose.forEach(function (u) { row.appendChild(stripAvatar(u)); });
+        split.groups.forEach(function (g) {
+            var sub = stripRow();
+            sub.appendChild(stripLabel(g.loc.name, g.loc.css));
+            g.users.forEach(function (u) { sub.appendChild(stripAvatar(u)); });
+            row.appendChild(sub);
+        });
+        return row;
+    }
+
+    function renderStrip() {
+        if (!strip || !presence) return;
+        var nav = document.querySelector('.artist-nav-container');
+        strip.style.bottom = nav ? nav.offsetHeight + 'px' : '0';
+        var others = presence.users.filter(function (u) { return u.id !== myId; });
+        strip.innerHTML = '';
+        [['page', null], ['online', 'online'], ['away', 'away'], ['offline', 'offline']].forEach(function (s) {
+            var users = others.filter(function (u) { return u.state === s[0]; });
+            if (!users.length) return;
+            if (strip.childNodes.length) {
+                var sep = document.createElement('span');
+                sep.style.cssText = 'width:0.0625rem; height:1rem; flex-shrink:0; background:var(--border);';
+                strip.appendChild(sep);
+            }
+            strip.appendChild(stripSection(users, s[1]));
+        });
+    }
+
+    function renderPillBadges() {
+        document.querySelectorAll('.presence-badges').forEach(function (el) { el.remove(); });
+        if (!presence) return;
+        var byLoc = {};
+        presence.users.forEach(function (u) {
+            if (u.id === myId || !u.loc) return;
+            (byLoc[u.loc.key] = byLoc[u.loc.key] || []).push(u);
+        });
+        Object.keys(byLoc).forEach(function (k) {
+            byLoc[k].sort(function (a, b) { return (a.state === 'away') - (b.state === 'away'); });
+        });
+        document.querySelectorAll('.artist-nav [data-artist-id], .artist-nav [data-presence-misc]').forEach(function (pill) {
+            var key = pill.hasAttribute('data-presence-misc') ? 'misc' : 'a' + pill.getAttribute('data-artist-id');
+            var users = byLoc[key];
+            if (!users) return;
+            var stack = document.createElement('span');
+            stack.className = 'presence-badges';
+            stack.style.cssText = 'display:inline-flex; align-items:center; margin-left:0.3125rem; vertical-align:middle;';
+            users.slice(0, 2).forEach(function (u, i) {
+                var img = pfpImg(u, '1rem');
+                img.style.cssText += 'box-shadow:0 0 0 0.09375rem ' + u.color + ';' + (i ? 'margin-left:-0.25rem;' : '') + (u.state === 'away' ? 'opacity:0.55;' : '');
+                withNameTip(img, u);
+                stack.appendChild(img);
+            });
+            if (users.length > 2) {
+                var more = document.createElement('span');
+                more.textContent = '+' + (users.length - 2);
+                more.style.cssText = 'font-size:0.625rem; margin-left:0.125rem;';
+                stack.appendChild(more);
+            }
+            pill.appendChild(stack);
+        });
+    }
+
+    // Tags live on <body>, not in the cell, so cell.textContent stays the bare rating.
+    var cellTags = [];
+
+    function scrollBox(el) {
+        for (var p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+            if (/(auto|scroll)/.test(getComputedStyle(p).overflowX)) return p.getBoundingClientRect();
+        }
+        return null;
+    }
+
+    function positionCellTags() {
+        cellTags.forEach(function (t) {
+            var r = t.cell.getBoundingClientRect();
+            var box = scrollBox(t.cell);
+            // The sticky header has its own stacking context, so dodge it instead of out-z-indexing it.
+            var head = t.cell.closest('table') && t.cell.closest('table').querySelector('thead tr');
+            var headBottom = head ? head.getBoundingClientRect().bottom : 0;
+            var shown = r.width && r.top >= headBottom && (!box || (r.left >= box.left && r.left < box.right));
+            var above = r.top - t.tag.offsetHeight >= headBottom;
+            t.tag.style.visibility = shown ? '' : 'hidden';
+            t.tag.style.borderRadius = above ? '0.5625rem 0.5625rem 0.5625rem 0' : '0 0.5625rem 0.5625rem 0.5625rem';
+            t.tag.style.left = (r.left + window.scrollX) + 'px';
+            t.tag.style.top = (above ? r.top - t.tag.offsetHeight : r.bottom) + window.scrollY + 'px';
+        });
+    }
+
+    function renderCellOutlines() {
+        document.querySelectorAll('[data-presence-outline]').forEach(function (cell) {
+            cell.style.outline = '';
+            cell.style.outlineOffset = '';
+            cell.removeAttribute('data-presence-outline');
+        });
+        cellTags.forEach(function (t) { t.tag.remove(); });
+        cellTags = [];
+        if (!presence) return;
+        var here = viewingLocKey();
+        if (!here) return;
+        var byCell = {};
+        var cellOrder = [];
+        presence.users.forEach(function (u) {
+            if (u.id === myId || u.state !== 'page' || !u.cell || u.loc.key !== here) return;
+            if (!byCell[u.cell]) { byCell[u.cell] = []; cellOrder.push(u.cell); }
+            byCell[u.cell].push(u);
+        });
+        cellOrder.forEach(function (id) {
+            var cell = document.getElementById('rating-' + id);
+            if (!cell) return;
+            var users = byCell[id];
+            cell.setAttribute('data-presence-outline', '');
+            cell.style.outline = '0.1875rem solid ' + users[0].color;
+            cell.style.outlineOffset = '-0.125rem';
+            var tag = document.createElement('span');
+            tag.style.cssText = 'position:absolute; z-index:15; display:inline-flex; align-items:stretch; border-radius:0.5625rem 0.5625rem 0.5625rem 0; overflow:hidden; color:#fff; font-size:0.625rem; font-weight:700; line-height:1; white-space:nowrap; pointer-events:none;';
+            users.forEach(function (u) {
+                var seg = document.createElement('span');
+                seg.style.cssText = 'display:inline-flex; align-items:center; gap:0.25rem; padding:0.125rem 0.375rem 0.125rem 0.125rem; background:' + u.color + ';';
+                seg.appendChild(pfpImg(u, '0.875rem'));
+                seg.appendChild(document.createTextNode(u.name));
+                tag.appendChild(seg);
+            });
+            document.body.appendChild(tag);
+            cellTags.push({ cell: cell, tag: tag });
+        });
+        positionCellTags();
+    }
+
+    function renderPresence() {
+        hideNameTip();
+        renderStrip();
+        renderPillBadges();
+        renderCellOutlines();
+    }
+
+    // Send our move right away instead of waiting for the next tick.
+    function presenceChanged() {
+        if (_isMobile()) return;
+        if (changeTimer) clearTimeout(changeTimer);
+        changeTimer = setTimeout(function () {
+            changeTimer = null;
+            if (presenceParams() !== sentKey) poll();
+        }, 250);
+    }
+
     function poll() {
-        fetch('/events/poll?since=' + pollSeq)
+        if (leaving) return;
+        if (inFlight) { pollAgain = true; return; }
+        inFlight = true;
+        sentKey = presenceParams();
+        fetch('/events/poll?since=' + pollSeq + '&tab=' + TAB_ID + '&pv=' + presenceVersion + sentKey)
             .then(function (r) { if (!r.ok) return null; return r.json(); })
             .then(function (data) {
                 if (!data) return;
@@ -1086,11 +1394,53 @@ var _tooltipSelecting = false;
                     if (e.event === 'rating-update') handleUpdate(e.data);
                     else handleContentEvent(e.event, e.data);
                 });
+                if (data.presence) {
+                    presence = data.presence;
+                    presenceVersion = presence.v;
+                    renderPresence();
+                }
             })
-            .catch(function () {});
+            .catch(function () {})
+            .then(function () {
+                inFlight = false;
+                if (pollAgain) { pollAgain = false; poll(); }
+            });
     }
 
-    setInterval(poll, POLL_INTERVAL);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+    ['keydown', 'pointerdown', 'scroll', 'touchstart'].forEach(function (type) {
+        document.addEventListener(type, function () {
+            var wasIdle = Date.now() - lastInput > IDLE_MS;
+            lastInput = Date.now();
+            if (wasIdle) presenceChanged();
+        }, { capture: true, passive: true });
+    });
+    ['focusin', 'focusout', 'click'].forEach(function (type) { document.addEventListener(type, presenceChanged, true); });
+    document.addEventListener('htmx:afterSettle', function () { renderPresence(); presenceChanged(); });
+    window.addEventListener('popstate', presenceChanged);
+    // Misc countries and live cell swaps arrive via plain fetch with no htmx event, so watch the DOM.
+    var mainContent = document.getElementById('main-content');
+    if (mainContent) {
+        var outlineTimer = null;
+        new MutationObserver(function () {
+            if (outlineTimer) clearTimeout(outlineTimer);
+            outlineTimer = setTimeout(renderCellOutlines, 100);
+        }).observe(mainContent, { childList: true, subtree: true });
+    }
+    window.addEventListener('scroll', positionCellTags, true);
+    window.addEventListener('resize', positionCellTags);
+    window.addEventListener('pagehide', function () {
+        leaving = true;
+        var body = new FormData();
+        body.append('tab', TAB_ID);
+        fetch('/presence/leave', { method: 'POST', body: body, headers: _csrfHeaders(), keepalive: true }).catch(function () {});
+    });
+
+    (function tick() {
+        setTimeout(function () {
+            if (!inFlight) poll();
+            tick();
+        }, pollDelay());
+    })();
+    document.addEventListener('visibilitychange', poll);
     poll();
 })();

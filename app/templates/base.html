@@ -281,6 +281,13 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if current_user.is_authenticated %}
+    <div class="h-7"></div>
+    <div id="presence-strip" data-me="{{ current_user.id }}" aria-label="Who's online"
+         class="fixed left-0 right-0 bottom-0 z-20 h-7 flex items-center gap-2 px-3 bg-navbar-bg text-navbar-text text-xs whitespace-nowrap overflow-x-auto border-t border-border"
+         style="scrollbar-width: none;"></div>
+    {% endif %}
+
     {% if current_user.is_authenticated and not current_user.is_system_or_guest %}
     <div id="update-notification" onclick="dismissUpdate()" class="hidden fixed z-50 bg-edit-on text-button-text rounded-lg text-sm- cursor-pointer" style="bottom:1.25rem; right:1.25rem; padding:0.75rem 1.75rem 0.75rem 1.125rem; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3); max-width:20rem; line-height:1.5;">
         <div class="font-bold mb-1">A new update to ARIMA was deployed!</div>
