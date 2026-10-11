@@ -481,7 +481,20 @@ function dismissDuplicate(id1, id2, btn) {
 
 function mergeDuplicate(btn) {
     var d = btn.dataset;
-    showMergeDiffModal(parseInt(d.keptId), d.keptName, parseInt(d.absorbedId), d.absorbedName, d.absorbedArtist);
+    var absorbedId = parseInt(d.absorbedId);
+    showMergeDiffModal(parseInt(d.keptId), d.keptName, absorbedId, d.absorbedName, d.absorbedArtist, '', {
+        onSuccess: function() {
+            var groups = document.querySelectorAll('[id^="dup-group-"]');
+            var content = groups.length ? groups[0].closest('.view-content') : null;
+            // The absorbed song is gone, so every pair it was part of is stale, not just this one.
+            groups.forEach(function(g) {
+                var ids = g.id.replace('dup-group-', '').split('-').map(Number);
+                if (ids.indexOf(absorbedId) !== -1) g.remove();
+            });
+            var span = content && content.previousElementSibling && content.previousElementSibling.querySelector('.view-count');
+            if (span) span.textContent = '— ' + content.querySelectorAll('[id^="dup-group-"]').length;
+        }
+    });
 }
 </script>
 {% endblock %}
