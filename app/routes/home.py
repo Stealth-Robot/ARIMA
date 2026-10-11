@@ -49,6 +49,9 @@ def _pick_random_sotd(as_of_date):
     all_song_ids = {sid for (sid,) in db.session.query(ArtistSong.song_id).join(
         Song, Song.id == ArtistSong.song_id).filter(
         ArtistSong.artist_is_main == True, Song.is_remix == False).all()}
+    all_song_ids |= {sid for (sid,) in db.session.query(SongMiscArtist.song_id).join(
+        Song, Song.id == SongMiscArtist.song_id).filter(
+        SongMiscArtist.artist_is_main == True, Song.is_remix == False).all()}
     candidates = all_song_ids - used_ids
 
     if not candidates:
@@ -94,25 +97,31 @@ def _build_sotd_card(entry):
     if not song:
         return None
 
-    as_row = ArtistSong.query.filter(
-        ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True
-    ).first()
-    if not as_row:
-        return None
-    artist = db.session.get(Artist, as_row.artist_id)
-    if not artist:
-        return None
-
     album_row = (db.session.query(AlbumSong.song_id, Album)
                  .join(Album, Album.id == AlbumSong.album_id)
                  .options(selectinload(Album.genres))
                  .filter(AlbumSong.song_id == song.id)
                  .first())
     album = album_row[1] if album_row else None
-
-    artist_url = url_for('artists.artist_detail', artist_id=artist.id)
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
+
+    as_row = ArtistSong.query.filter(
+        ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True
+    ).first()
+    artist = db.session.get(Artist, as_row.artist_id) if as_row else None
+    if not artist:
+        main_names, feat_names = _misc_artist_names(song.id)
+        if not main_names:
+            return None
+        song_url = '/misc?song=%d#song-%d' % (song.id, song.id)
+        return dict(song=song, artist={'name': ', '.join(main_names)}, album=album,
+                    artist_url=song_url, song_url=song_url, artist_id='',
+                    users=users, ratings=ratings,
+                    collab_label='(feat. ' + ', '.join(feat_names) + ')' if feat_names else '',
+                    date_str=entry.date)
+
+    artist_url = url_for('artists.artist_detail', artist_id=artist.id)
 
     song_artists_rows = db.session.query(
         ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
@@ -126,8 +135,18 @@ def _build_sotd_card(entry):
     collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
 
     return dict(song=song, artist=artist, album=album, artist_url=artist_url,
+                song_url=artist_url + '#song-' + str(song.id),
                 artist_id=artist.id, users=users, ratings=ratings,
                 collab_label=collab_label, date_str=entry.date)
+
+
+def _misc_artist_names(song_id):
+    rows = (db.session.query(SongMiscArtist.artist_is_main, MiscArtist.name)
+            .join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id)
+            .filter(SongMiscArtist.song_id == song_id)
+            .order_by(SongMiscArtist.artist_is_main.desc(), MiscArtist.name)
+            .all())
+    return [n for is_main, n in rows if is_main], [n for is_main, n in rows if not is_main]
 
 
 def _get_og_sotd():
@@ -139,9 +158,10 @@ def _get_og_sotd():
         ArtistSong.song_id == entry.song.id, ArtistSong.artist_is_main == True
     ).first()
     artist = db.session.get(Artist, as_row.artist_id) if as_row else None
+    artist_name = artist.name if artist else (', '.join(_misc_artist_names(entry.song.id)[0]) or None)
     return {
         'song': entry.song.name,
-        'artist': artist.name if artist else None,
+        'artist': artist_name,
         'date': entry.date,
     }
 
@@ -486,7 +506,9 @@ def set_song_of_the_day():
         return 'Song not found', 404
     # Only songs with a main artist render a card; reject others up front.
     if not ArtistSong.query.filter(
-            ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True).first():
+            ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True).first() \
+            and not SongMiscArtist.query.filter(
+            SongMiscArtist.song_id == song.id, SongMiscArtist.artist_is_main == True).first():
         return 'Song has no main artist', 400
 
     entry.song_id = song.id

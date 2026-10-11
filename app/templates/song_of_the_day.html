@@ -48,7 +48,7 @@ function editSotd(date, currentSongId) {
                 title: 'Pick a song for ' + date,
                 mode: 'search',
                 placeholder: 'Search songs…',
-                searchUrl: function(q) { return '/edit/picker/songs?q=' + encodeURIComponent(q) + '&exclude=' + currentSongId; },
+                searchUrl: function(q) { return '/edit/picker/songs?q=' + encodeURIComponent(q) + '&exclude=' + currentSongId + '&include_misc=1'; },
                 mapItems: function(d) { return d.map(function(s) { return { id: s.id, label: s.name + ' — ' + s.artist }; }); },
                 onSelect: function(item) {
                     fetch('/song-of-the-day/set', {

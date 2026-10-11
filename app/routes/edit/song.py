@@ -1147,8 +1147,14 @@ def search_songs():
         'CASE WHEN :kept_name IS NOT NULL AND lower(s.name) = lower(:kept_name) THEN 0 ELSE 1 END, '
         'CASE WHEN :kept_artist_id IS NOT NULL AND ar.id = :kept_artist_id THEN 0 ELSE 1 END, '
     )
+    # Each word may hit a different field so "song artist" searches match.
+    words = q.split()
+    word_params = {'w%d' % i: f'%{w}%' for i, w in enumerate(words)}
     if q:
-        like = f'%{q}%'
+        word_sql = ' AND '.join(
+            '(s.name LIKE :w%d OR ar.name LIKE :w%d '
+            'OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :w%d))' % (i, i, i)
+            for i in range(len(words)))
         rows = db.session.execute(db.text(
             'SELECT s.id, s.name, ar.name, ar.id, al.name '
             'FROM song s '
@@ -1156,11 +1162,10 @@ def search_songs():
             'JOIN artist ar ON ar.id = ars.artist_id '
             'JOIN album_song als ON als.song_id = s.id '
             'JOIN album al ON al.id = als.album_id '
-            'WHERE (s.name LIKE :like OR ar.name LIKE :like '
-            'OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :like)) '
+            'WHERE ' + word_sql + ' '
             'ORDER BY ' + prioritize + 'ar.name, s.name '
             'LIMIT 100'
-        ), {'like': like, 'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
+        ), {**word_params, 'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
     else:
         rows = db.session.execute(db.text(
             'SELECT s.id, s.name, ar.name, ar.id, al.name '
@@ -1172,6 +1177,24 @@ def search_songs():
             'ORDER BY ' + prioritize + 'ar.name, s.name '
             'LIMIT 100'
         ), {'kept_name': kept_name, 'kept_artist_id': kept_artist_id}).fetchall()
+    if request.args.get('include_misc') == '1':
+        word_sql = ''.join(
+            'AND (s.name LIKE :w%d OR s.id IN (SELECT song_id FROM song_alias WHERE name LIKE :w%d) '
+            'OR EXISTS (SELECT 1 FROM song_misc_artist s3 JOIN misc_artist m3 ON m3.id = s3.misc_artist_id '
+            'WHERE s3.song_id = s.id AND s3.artist_is_main = 1 AND m3.name LIKE :w%d)) ' % (i, i, i)
+            for i in range(len(words)))
+        rows = list(rows) + db.session.execute(db.text(
+            'SELECT s.id, s.name, (SELECT GROUP_CONCAT(m2.name, \', \') FROM song_misc_artist s2 '
+            'JOIN misc_artist m2 ON m2.id = s2.misc_artist_id '
+            'WHERE s2.song_id = s.id AND s2.artist_is_main = 1), NULL, MIN(al.name) '
+            'FROM song s '
+            'LEFT JOIN album_song als ON als.song_id = s.id '
+            'LEFT JOIN album al ON al.id = als.album_id '
+            'WHERE s.id IN (SELECT song_id FROM song_misc_artist WHERE artist_is_main = 1) '
+            'AND s.id NOT IN (SELECT song_id FROM artist_song WHERE artist_is_main = 1) '
+            + word_sql +
+            'GROUP BY s.id ORDER BY s.name LIMIT 100'
+        ), word_params).fetchall()
     seen_ids = set()
     results = []
     for r in rows:
