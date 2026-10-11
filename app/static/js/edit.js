@@ -1018,7 +1018,6 @@ function _openMergePopover(songId, songName, span) {
     listContainer.parentNode.insertBefore(exactContainer, listContainer);
 
     var songNameLower = songName.toLowerCase();
-    var timer;
 
     function _makeMergeBtn(item, group) {
         var label = !group ? item.name + ' (' + item.artist + ' / ' + item.album + ')'
@@ -1036,93 +1035,92 @@ function _openMergePopover(songId, songName, span) {
         return btn;
     }
 
-    function doSearch() {
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-            _fetchSongs(parts.searchInput.value, songId, function(songs) {
-                exactContainer.innerHTML = '';
-                listContainer.innerHTML = '';
-                var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
-                var currentArtistName = (typeof _pageArtistName !== 'undefined') ? _pageArtistName : null;
-                var exactMatches = [];
-                var grouped = {};
-                var groupOrder = [];
-                songs.forEach(function(s) {
-                    if (s.name.toLowerCase() === songNameLower) {
-                        exactMatches.push(s);
-                    } else {
-                        var group = parentMap[s.artist] || s.artist;
-                        if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
-                        grouped[group].push(s);
-                    }
-                });
-                if (exactMatches.length) {
-                    var sameArtist = [];
-                    var diffArtist = [];
-                    exactMatches.forEach(function(item) {
-                        var resolved = parentMap[item.artist] || item.artist;
-                        if (resolved === currentArtistName) sameArtist.push(item);
-                        else diffArtist.push(item);
-                    });
-                    var sortByArtist = function(a, b) {
-                        return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
-                    };
-                    if (sameArtist.length) {
-                        var h1 = document.createElement('div');
-                        h1.textContent = 'Exact Matches — Same Artist';
-                        h1.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
-                        exactContainer.appendChild(h1);
-                        sameArtist.sort(sortByArtist);
-                        sameArtist.forEach(function(item) {
-                            exactContainer.appendChild(_makeMergeBtn(item, null));
-                        });
-                    }
-                    if (diffArtist.length) {
-                        var h2 = document.createElement('div');
-                        h2.textContent = 'Exact Matches — Different Artist';
-                        h2.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
-                        exactContainer.appendChild(h2);
-                        diffArtist.sort(sortByArtist);
-                        diffArtist.forEach(function(item) {
-                            exactContainer.appendChild(_makeMergeBtn(item, null));
-                        });
-                    }
-                    var sep = document.createElement('div');
-                    sep.style.cssText = 'border-bottom:0.0625rem solid var(--border,#ccc); margin:0.25rem 0;';
-                    exactContainer.appendChild(sep);
-                }
-                groupOrder.sort(function(a, b) {
-                    var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
-                    var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
-                    var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
-                    var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
-                    if (aRank !== bRank) return aRank - bRank;
-                    return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
-                });
-                groupOrder.forEach(function(group) {
-                    var header = document.createElement('div');
-                    header.textContent = group;
-                    header.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
-                    listContainer.appendChild(header);
-                    grouped[group].sort(function(a, b) {
-                        return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
-                    });
-                    grouped[group].forEach(function(item) {
-                        listContainer.appendChild(_makeMergeBtn(item, group));
-                    });
-                });
-                if (!exactMatches.length && !groupOrder.length) {
-                    var empty = document.createElement('div');
-                    empty.textContent = 'No matches';
-                    empty.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;';
-                    listContainer.appendChild(empty);
-                }
+    function renderMerge(songs) {
+        exactContainer.innerHTML = '';
+        listContainer.innerHTML = '';
+        var parentMap = (typeof _artistParentMap !== 'undefined') ? _artistParentMap : {};
+        var currentArtistName = (typeof _pageArtistName !== 'undefined') ? _pageArtistName : null;
+        var exactMatches = [];
+        var grouped = {};
+        var groupOrder = [];
+        songs.forEach(function(s) {
+            if (s.name.toLowerCase() === songNameLower) {
+                exactMatches.push(s);
+            } else {
+                var group = parentMap[s.artist] || s.artist;
+                if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
+                grouped[group].push(s);
+            }
+        });
+        if (exactMatches.length) {
+            var sameArtist = [];
+            var diffArtist = [];
+            exactMatches.forEach(function(item) {
+                var resolved = parentMap[item.artist] || item.artist;
+                if (resolved === currentArtistName) sameArtist.push(item);
+                else diffArtist.push(item);
             });
-        }, 150);
+            var sortByArtist = function(a, b) {
+                return a.artist.toLowerCase() < b.artist.toLowerCase() ? -1 : a.artist.toLowerCase() > b.artist.toLowerCase() ? 1 : 0;
+            };
+            if (sameArtist.length) {
+                var h1 = document.createElement('div');
+                h1.textContent = 'Exact Matches — Same Artist';
+                h1.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
+                exactContainer.appendChild(h1);
+                sameArtist.sort(sortByArtist);
+                sameArtist.forEach(function(item) {
+                    exactContainer.appendChild(_makeMergeBtn(item, null));
+                });
+            }
+            if (diffArtist.length) {
+                var h2 = document.createElement('div');
+                h2.textContent = 'Exact Matches — Different Artist';
+                h2.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
+                exactContainer.appendChild(h2);
+                diffArtist.sort(sortByArtist);
+                diffArtist.forEach(function(item) {
+                    exactContainer.appendChild(_makeMergeBtn(item, null));
+                });
+            }
+            var sep = document.createElement('div');
+            sep.style.cssText = 'border-bottom:0.0625rem solid var(--border,#ccc); margin:0.25rem 0;';
+            exactContainer.appendChild(sep);
+        }
+        groupOrder.sort(function(a, b) {
+            var aIsMisc = a === 'Misc. Artists' && a !== currentArtistName;
+            var bIsMisc = b === 'Misc. Artists' && b !== currentArtistName;
+            var aRank = a === currentArtistName ? 0 : aIsMisc ? 2 : 1;
+            var bRank = b === currentArtistName ? 0 : bIsMisc ? 2 : 1;
+            if (aRank !== bRank) return aRank - bRank;
+            return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0;
+        });
+        groupOrder.forEach(function(group) {
+            var header = document.createElement('div');
+            header.textContent = group;
+            header.style.cssText = 'font-size:0.625rem; font-weight:bold; padding:0.25rem 0.375rem 0.125rem; color:var(--text-secondary); text-transform:uppercase;';
+            listContainer.appendChild(header);
+            grouped[group].sort(function(a, b) {
+                return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
+            });
+            grouped[group].forEach(function(item) {
+                listContainer.appendChild(_makeMergeBtn(item, group));
+            });
+        });
+        if (!exactMatches.length && !groupOrder.length) {
+            var empty = document.createElement('div');
+            empty.textContent = 'No matches';
+            empty.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;';
+            listContainer.appendChild(empty);
+        }
     }
 
-    doSearch();
-    parts.searchInput.addEventListener('input', doSearch);
+    attachSearchDropdown(parts.searchInput, listContainer, {
+        getItems: function(q, cb) { _fetchSongs(q, songId, cb); },
+        debounce: 150,
+        toggleDisplay: false,
+        render: renderMerge,
+    }).search();
     activeMergePopover = parts.popover;
 }
 
@@ -1758,53 +1756,22 @@ function showSongArtists(event, songId, span) {
         input.style.cssText = 'font-size:0.6875rem; width:100%; padding:0.125rem 0.25rem; border:0.0625rem solid var(--border); border-radius:0.1875rem; box-sizing:border-box;';
         var results = document.createElement('div');
         results.style.cssText = 'max-height:9.375rem; overflow-y:auto;';
-        var timer;
-        function refresh() {
-            clearTimeout(timer);
-            var q = input.value.trim();
-            timer = setTimeout(function() {
-                opts.getItems(q, function(items) {
-                    results.innerHTML = '';
-                    var usedIds = opts.getUsedIds();
-                    // Inline "Create" option whenever something is typed
-                    if (opts.onCreate && q) {
-                        var createRow = document.createElement('div');
-                        createRow.textContent = '+ Create "' + q + '"';
-                        createRow.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;';
-                        createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
-                        createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
-                        createRow.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                        });
-                        createRow.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            opts.onCreate(q, function() { input.value = ''; results.innerHTML = ''; });
-                        });
-                        results.appendChild(createRow);
-                    }
-                    items.forEach(function(item) {
-                        if (usedIds.indexOf(item.id) !== -1) return;
-                        var row = document.createElement('div');
-                        row.textContent = item.name;
-                        row.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;';
-                        row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
-                        row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
-                        row.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                        });
-                        row.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            opts.onSelect(item);
-                            input.value = '';
-                            results.innerHTML = '';
-                        });
-                        results.appendChild(row);
-                    });
-                });
-            }, opts.debounce || 0);
-        }
-        input.addEventListener('input', refresh);
-        input.addEventListener('focus', refresh);
+        attachSearchDropdown(input, results, {
+            getItems: opts.getItems,
+            filter: function(items) {
+                var usedIds = opts.getUsedIds();
+                return items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
+            },
+            onSelect: opts.onSelect,
+            onCreate: opts.onCreate,
+            debounce: opts.debounce,
+            searchOnFocus: true,
+            toggleDisplay: false,
+            stopPropagation: true,
+            rowStyle: 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;',
+            hover: { background: 'var(--link,#2563EB)', color: '#fff' },
+            createStyle: 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;',
+        });
         container.appendChild(input);
         container.appendChild(results);
         return container;
@@ -2121,39 +2088,20 @@ function _initNewSongMiscSearch(songNum) {
     var input = songDiv.querySelector('.new-song-misc-search');
     var resultsDiv = songDiv.querySelector('.new-song-misc-results');
     if (!input || !resultsDiv) return;
-    var timer;
-    function refresh() {
-        clearTimeout(timer);
-        var q = input.value.trim();
-        timer = setTimeout(function() {
-            fetch('/misc/search-artists?q=' + encodeURIComponent(q), { headers: _csrfHeaders({}) })
-                .then(function(r) { return r.json(); })
-                .then(function(items) {
-                    resultsDiv.innerHTML = '';
-                    var usedIds = _getNewSongMiscArtistIds(songNum);
-                    var filtered = items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
-                    if (!filtered.length) { resultsDiv.style.display = 'none'; return; }
-                    resultsDiv.style.display = 'block';
-                    filtered.forEach(function(item) {
-                        var row = document.createElement('div');
-                        row.textContent = item.name;
-                        row.style.cssText = 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;';
-                        row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
-                        row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
-                        row.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            _addNewSongMiscArtist(songNum, item.id, item.name);
-                            input.value = '';
-                            resultsDiv.style.display = 'none';
-                        });
-                        resultsDiv.appendChild(row);
-                    });
-                });
-        }, 150);
-    }
-    input.addEventListener('input', refresh);
-    input.addEventListener('focus', refresh);
-    input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
+    attachSearchDropdown(input, resultsDiv, {
+        url: function(q) { return '/misc/search-artists?q=' + encodeURIComponent(q); },
+        filter: function(items) {
+            var usedIds = _getNewSongMiscArtistIds(songNum);
+            return items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
+        },
+        onSelect: function(item) { _addNewSongMiscArtist(songNum, item.id, item.name); },
+        debounce: 150,
+        searchOnFocus: true,
+        closeOnBlur: true,
+        selectOn: 'mousedown',
+        rowStyle: 'font-size:0.6875rem; padding:0.125rem 0.25rem; cursor:pointer; border-radius:0.125rem;',
+        hover: { background: 'var(--link,#2563EB)', color: '#fff' },
+    });
     // + New button with country dropdown (matches misc page pattern)
     var createRow = document.createElement('div');
     createRow.style.cssText = 'display:flex; gap:0.25rem; align-items:center; margin-top:0.125rem;';
@@ -2323,53 +2271,47 @@ document.addEventListener('change', function(e) {
 
 /* Search existing songs for add-album modal */
 
-var _albumSongSearchTimer = null;
+// Attached on first keystroke because the modal's markup is re-rendered with the discography fragment.
 function debouncedAlbumSongSearch(artistId) {
-    clearTimeout(_albumSongSearchTimer);
-    _albumSongSearchTimer = setTimeout(function() { albumSongSearch(artistId); }, 600);
-}
-
-function albumSongSearch(artistId) {
     var input = document.getElementById('album-song-search');
     var results = document.getElementById('album-song-search-results');
-    if (!input || !results) return;
-    var q = input.value.trim();
-    if (q.length < 2) { results.style.display = 'none'; return; }
+    if (!input || !results || input._searchDropdown) return;
+    input._searchDropdown = attachSearchDropdown(input, results, {
+        url: function(q) { return '/edit/artist/' + artistId + '/search-songs?q=' + encodeURIComponent(q); },
+        minLength: 2,
+        debounce: 600,
+        render: _renderAlbumSongResults,
+    });
+    input._searchDropdown.search();
+}
 
-    fetch('/edit/artist/' + artistId + '/search-songs?q=' + encodeURIComponent(q), { headers: _csrfHeaders({ 'Accept': 'application/json' }) })
-        .then(function(r) { return r.json(); })
-        .then(function(songs) {
-            if (!songs.length) {
-                results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">No songs found</div>';
-                results.style.display = 'block';
-                return;
-            }
-            // Filter out songs already added to the album
-            var addedIds = getAddedExistingSongIds();
-            songs = songs.filter(function(s) { return addedIds.indexOf(s.id) === -1; });
-            if (!songs.length) {
-                results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">All matching songs already added</div>';
-                results.style.display = 'block';
-                return;
-            }
-            var html = '';
-            var lastWasCurrent = null;
-            songs.forEach(function(s) {
-                if (lastWasCurrent !== null && lastWasCurrent && !s.is_current_artist) {
-                    html += '<div style="border-top:0.0625rem solid var(--border); margin:0.125rem 0;"></div>';
-                }
-                lastWasCurrent = s.is_current_artist;
-                html += '<div class="px-3 py-1 cursor-pointer album-song-result" style="' +
-                    (s.is_current_artist ? 'font-weight:500;' : '') +
-                    '" data-song-id="' + s.id + '" data-song-name="' + s.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '" data-artist-name="' + s.artist.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '"' +
-                    ' onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
-                    '<span>' + s.name.replace(/</g, '&lt;') + '</span>' +
-                    '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g, '&lt;') + ' (' + s.album.replace(/</g, '&lt;') + ')</span>' +
-                    '</div>';
-            });
-            results.innerHTML = html;
-            results.style.display = 'block';
-        });
+function _renderAlbumSongResults(songs, results) {
+    if (!songs.length) {
+        results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">No songs found</div>';
+        return;
+    }
+    var addedIds = getAddedExistingSongIds();
+    songs = songs.filter(function(s) { return addedIds.indexOf(s.id) === -1; });
+    if (!songs.length) {
+        results.innerHTML = '<div class="px-3 py-2" style="color:var(--text-secondary);">All matching songs already added</div>';
+        return;
+    }
+    var html = '';
+    var lastWasCurrent = null;
+    songs.forEach(function(s) {
+        if (lastWasCurrent !== null && lastWasCurrent && !s.is_current_artist) {
+            html += '<div style="border-top:0.0625rem solid var(--border); margin:0.125rem 0;"></div>';
+        }
+        lastWasCurrent = s.is_current_artist;
+        html += '<div class="px-3 py-1 cursor-pointer album-song-result" style="' +
+            (s.is_current_artist ? 'font-weight:500;' : '') +
+            '" data-song-id="' + s.id + '" data-song-name="' + s.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '" data-artist-name="' + s.artist.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '"' +
+            ' onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
+            '<span>' + s.name.replace(/</g, '&lt;') + '</span>' +
+            '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g, '&lt;') + ' (' + s.album.replace(/</g, '&lt;') + ')</span>' +
+            '</div>';
+    });
+    results.innerHTML = html;
 }
 
 function getAddedExistingSongIds() {
@@ -3342,30 +3284,12 @@ function _miscAutocomplete(input, url, onSelect, minLen) {
     list.style.cssText = 'position:absolute;left:0;right:0;top:100%;background:var(--bg-secondary,#fff);border:0.0625rem solid var(--border,#ccc);border-radius:0 0 0.25rem 0.25rem;max-height:10rem;overflow-y:auto;z-index:10;display:none;';
     input.parentNode.style.position = 'relative';
     input.parentNode.appendChild(list);
-    var timer = null;
-    input.addEventListener('input', function() {
-        clearTimeout(timer);
-        var q = input.value.trim();
-        if (q.length < (minLen || 1)) { list.style.display = 'none'; return; }
-        timer = setTimeout(function() {
-            fetch(url + '?q=' + encodeURIComponent(q)).then(function(r){return r.json();}).then(function(items) {
-                list.innerHTML = '';
-                if (!items.length) { list.style.display = 'none'; return; }
-                items.forEach(function(item) {
-                    var d = document.createElement('div');
-                    d.textContent = item.name;
-                    d.style.cssText = 'padding:0.3125rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);';
-                    d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
-                    d.onmouseleave = function() { d.style.background = ''; };
-                    d.onclick = function() { onSelect(item); input.value = ''; list.style.display = 'none'; };
-                    list.appendChild(d);
-                });
-                list.style.display = 'block';
-            });
-        }, 200);
-    });
-    document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+    attachSearchDropdown(input, list, {
+        url: function(q) { return url + '?q=' + encodeURIComponent(q); },
+        onSelect: onSelect,
+        minLength: minLen || 1,
+        debounce: 200,
+        closeOnOutsideClick: true,
     });
     return list;
 }
@@ -3586,43 +3510,29 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         tList.style.cssText = 'margin-top:0.5rem;max-height:18.75rem;overflow-y:auto;';
         pmodal.appendChild(tList);
 
-        var timer = null;
-        tInp.addEventListener('input', function() {
-            clearTimeout(timer);
-            var q = tInp.value.trim();
-            if (q.length < 2) { tList.innerHTML = ''; return; }
-            timer = setTimeout(function() {
-                fetch('/misc/combine-targets?artist_id=' + realArtist.artist_id + '&q=' + encodeURIComponent(q))
-                    .then(function(r){ return r.json(); })
-                    .then(function(items) {
-                        tList.innerHTML = '';
-                        if (!items.length) {
-                            var none = document.createElement('div');
-                            none.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);padding:0.25rem;';
-                            none.textContent = 'No matching songs for this artist';
-                            tList.appendChild(none);
-                            return;
-                        }
-                        items.forEach(function(it) {
-                            var d = document.createElement('div');
-                            d.style.cssText = 'padding:0.375rem 0.5rem;cursor:pointer;color:var(--text-primary);border-radius:0.1875rem;';
-                            var nmspan = document.createElement('div');
-                            nmspan.textContent = it.name + (it.album ? ' (' + it.album + ')' : '');
-                            nmspan.style.cssText = 'font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-                            d.appendChild(nmspan);
-                            if (it.artists) {
-                                var sub = document.createElement('div');
-                                sub.textContent = it.artists;
-                                sub.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-                                d.appendChild(sub);
-                            }
-                            d.onmouseenter = function(){ d.style.background = 'var(--row-alternate,#f3f4f6)'; };
-                            d.onmouseleave = function(){ d.style.background = ''; };
-                            d.onclick = function() { pbd.remove(); _openMergeForCombine(songObj, it); };
-                            tList.appendChild(d);
-                        });
-                    });
-            }, 200);
+        attachSearchDropdown(tInp, tList, {
+            url: function(q) { return '/misc/combine-targets?artist_id=' + realArtist.artist_id + '&q=' + encodeURIComponent(q); },
+            minLength: 2,
+            debounce: 200,
+            toggleDisplay: false,
+            clearOnSelect: false,
+            emptyMessage: 'No matching songs for this artist',
+            rowStyle: 'padding:0.375rem 0.5rem;cursor:pointer;color:var(--text-primary);border-radius:0.1875rem;',
+            renderItem: function(it) {
+                var frag = document.createDocumentFragment();
+                var nmspan = document.createElement('div');
+                nmspan.textContent = it.name + (it.album ? ' (' + it.album + ')' : '');
+                nmspan.style.cssText = 'font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                frag.appendChild(nmspan);
+                if (it.artists) {
+                    var sub = document.createElement('div');
+                    sub.textContent = it.artists;
+                    sub.style.cssText = 'font-size:0.625rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                    frag.appendChild(sub);
+                }
+                return frag;
+            },
+            onSelect: function(it) { pbd.remove(); _openMergeForCombine(songObj, it); },
         });
         // Prefill with the misc song's name and run the search — usually the matching song shares its name.
         tInp.value = songObj.name;

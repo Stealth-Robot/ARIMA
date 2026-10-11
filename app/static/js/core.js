@@ -54,6 +54,105 @@ function _csrfHeaders(extra) {
     return h;
 }
 
+/* Search-as-you-type dropdown shared by every inline search box; per-site look and timing come from opts. */
+function attachSearchDropdown(input, list, opts) {
+    var timer = null;
+    var latest = 0;
+    var toggle = opts.toggleDisplay !== false;
+    function show() { if (toggle) list.style.display = 'block'; }
+    function hide() { if (toggle) list.style.display = 'none'; }
+    function clear() { list.innerHTML = ''; hide(); }
+    function message(text) {
+        list.innerHTML = '';
+        var m = document.createElement('div');
+        m.textContent = text;
+        m.style.cssText = opts.messageStyle || 'font-size:0.75rem;color:var(--text-secondary);padding:0.25rem;';
+        list.appendChild(m);
+        show();
+    }
+    function makeRow(content, style, hover, onPick) {
+        var row = document.createElement('div');
+        if (typeof content === 'string') row.textContent = content; else row.appendChild(content);
+        row.style.cssText = style;
+        var saved = {};
+        row.addEventListener('mouseenter', function() {
+            var h = typeof hover === 'function' ? hover() : hover;
+            Object.keys(h).forEach(function(k) { saved[k] = row.style[k]; row.style[k] = h[k]; });
+        });
+        row.addEventListener('mouseleave', function() {
+            Object.keys(saved).forEach(function(k) { row.style[k] = saved[k]; });
+        });
+        if (opts.selectOn === 'mousedown') {
+            row.addEventListener('mousedown', function(e) { e.preventDefault(); onPick(); });
+        } else {
+            // Keep focus in the input so a blur-close doesn't remove the row before the click lands.
+            row.addEventListener('mousedown', function(e) { e.preventDefault(); });
+            row.addEventListener('click', function(e) { if (opts.stopPropagation) e.stopPropagation(); onPick(); });
+        }
+        return row;
+    }
+    function afterPick() {
+        if (opts.clearOnSelect === false) return;
+        input.value = '';
+        clear();
+    }
+    function select(item) {
+        opts.onSelect(item);
+        afterPick();
+    }
+    function render(items, q) {
+        if (opts.filter) items = opts.filter(items);
+        list.innerHTML = '';
+        if (opts.render) { opts.render(items, list, q); show(); return; }
+        var canCreate = !!(opts.onCreate && q);
+        if (!items.length && !canCreate) {
+            if (opts.emptyMessage) message(opts.emptyMessage); else hide();
+            return;
+        }
+        if (canCreate) {
+            list.appendChild(makeRow(opts.createLabel ? opts.createLabel(q) : '+ Create "' + q + '"',
+                opts.createStyle || opts.rowStyle, opts.createHover || opts.hover,
+                function() { opts.onCreate(q, afterPick); }));
+        }
+        items.forEach(function(item) {
+            list.appendChild(makeRow(opts.renderItem ? opts.renderItem(item) : item.name,
+                opts.rowStyle || 'padding:0.3125rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--text-primary);',
+                opts.hover || {background: 'var(--row-alternate,#f3f4f6)'},
+                function() { select(item); }));
+        });
+        show();
+    }
+    function search() {
+        clearTimeout(timer);
+        var q = input.value.trim();
+        if (opts.skip && opts.skip(q)) return;
+        if (q.length < (opts.minLength || 0)) {
+            latest++;
+            if (opts.minLengthMessage) message(opts.minLengthMessage); else clear();
+            return;
+        }
+        timer = setTimeout(function() {
+            // Only the newest request may render, so a slow earlier response can't overwrite it.
+            var ticket = ++latest;
+            function done(items) { if (ticket === latest) render(items || [], q); }
+            if (opts.getItems) { opts.getItems(q, done); return; }
+            fetch(opts.url(q), { headers: _csrfHeaders({ 'Accept': 'application/json' }) })
+                .then(function(r) { return r.json(); })
+                .then(done)
+                .catch(function() { done([]); });
+        }, opts.debounce || 0);
+    }
+    input.addEventListener('input', search);
+    if (opts.searchOnFocus) input.addEventListener('focus', search);
+    if (opts.closeOnBlur) input.addEventListener('blur', function() { setTimeout(hide, 200); });
+    if (opts.closeOnOutsideClick) {
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !list.contains(e.target)) hide();
+        });
+    }
+    return { search: search, clear: clear, select: select };
+}
+
 /* Navbar filter multiselect — open/close checkbox panel, POST list on close if changed */
 function _filterGetChecked(panel) {
     return Array.from(panel.querySelectorAll('input[type="checkbox"]:checked'))

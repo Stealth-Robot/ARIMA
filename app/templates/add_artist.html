@@ -122,7 +122,7 @@
                                 + Existing Album
                             </button>
                             <div id="album-search-box" class="absolute bg-secondary-bg border border-border rounded-md p-2 mt-1" style="display:none; right:0; top:100%; z-index:50; width:20rem; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.15);">
-                                <input type="text" id="album-search-input" placeholder="Search albums..." class="w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);" oninput="albumSearchDebounce()">
+                                <input type="text" id="album-search-input" placeholder="Search albums..." class="w-full px-2 py-1 border rounded text-sm" style="border-color: var(--border);">
                                 <div id="album-search-results" class="overflow-y-auto mt-1" style="max-height:15.625rem;"></div>
                             </div>
                         </div>
@@ -382,63 +382,39 @@ function _initSongMiscSearch(songDiv) {
     if (!input || !resultsDiv) return;
     var albumNum = input.dataset.album;
     var songNum = input.dataset.song;
-    var timer;
-    function _csrfH() { var m = document.querySelector('meta[name="csrf-token"]'); var h = {}; if (m) h['X-CSRFToken'] = m.content; return h; }
-    function _createMiscArtist(name) {
-        var countrySelect = document.querySelector('[name="country_id"]');
-        var cid = countrySelect && countrySelect.value ? parseInt(countrySelect.value) : null;
-        fetch('/misc/add-misc-artist', {
-            method: 'POST', headers: _csrfHeaders({'Content-Type': 'application/json'}),
-            body: JSON.stringify({name: name, country_id: cid}),
-        }).then(function(r) { return r.json(); }).then(function(d) {
-            _addSongMiscArtist(albumNum, songNum, d.id, d.name);
-            input.value = '';
-            resultsDiv.style.display = 'none';
-        });
-    }
-    function refresh() {
-        clearTimeout(timer);
-        var q = input.value.trim();
-        timer = setTimeout(function() {
-            fetch('/misc/search-artists?q=' + encodeURIComponent(q), { headers: _csrfH() })
-                .then(function(r) { return r.json(); })
-                .then(function(items) {
-                    resultsDiv.innerHTML = '';
-                    var usedIds = _getSongMiscArtistIds(albumNum, songNum);
-                    var filtered = items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
-                    var showCreate = !!q;
-                    if (!filtered.length && !showCreate) { resultsDiv.style.display = 'none'; return; }
-                    resultsDiv.style.display = 'block';
-                    // Inline "Create" option when the typed name has no exact match
-                    if (showCreate) {
-                        var createRow = document.createElement('div');
-                        createRow.textContent = '+ Create "' + q + '"';
-                        createRow.style.cssText = 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;';
-                        createRow.addEventListener('mouseenter', function() { createRow.style.background = 'var(--link,#2563EB)'; createRow.style.color = '#fff'; });
-                        createRow.addEventListener('mouseleave', function() { createRow.style.background = ''; createRow.style.color = 'var(--link,#2563EB)'; });
-                        createRow.addEventListener('mousedown', function(e) { e.preventDefault(); _createMiscArtist(q); });
-                        resultsDiv.appendChild(createRow);
-                    }
-                    filtered.forEach(function(item) {
-                        var row = document.createElement('div');
-                        row.textContent = item.name;
-                        row.style.cssText = 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem;';
-                        row.addEventListener('mouseenter', function() { row.style.background = 'var(--link,#2563EB)'; row.style.color = '#fff'; });
-                        row.addEventListener('mouseleave', function() { row.style.background = ''; row.style.color = ''; });
-                        row.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            _addSongMiscArtist(albumNum, songNum, item.id, item.name);
-                            input.value = '';
-                            resultsDiv.style.display = 'none';
-                        });
-                        resultsDiv.appendChild(row);
-                    });
-                });
-        }, 150);
-    }
-    input.addEventListener('input', refresh);
-    input.addEventListener('focus', refresh);
-    input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
+    // Rows can be built during draft restore, before core.js has loaded, so attach on first focus.
+    input.addEventListener('focus', function() {
+        if (!input._searchDropdown) _attachSongMiscSearch(input, resultsDiv, albumNum, songNum).search();
+    });
+}
+
+function _attachSongMiscSearch(input, resultsDiv, albumNum, songNum) {
+    return input._searchDropdown = attachSearchDropdown(input, resultsDiv, {
+        url: function(q) { return '/misc/search-artists?q=' + encodeURIComponent(q); },
+        filter: function(items) {
+            var usedIds = _getSongMiscArtistIds(albumNum, songNum);
+            return items.filter(function(item) { return usedIds.indexOf(item.id) === -1; });
+        },
+        onSelect: function(item) { _addSongMiscArtist(albumNum, songNum, item.id, item.name); },
+        onCreate: function(name, done) {
+            var countrySelect = document.querySelector('[name="country_id"]');
+            var cid = countrySelect && countrySelect.value ? parseInt(countrySelect.value) : null;
+            fetch('/misc/add-misc-artist', {
+                method: 'POST', headers: _csrfHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({name: name, country_id: cid}),
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                _addSongMiscArtist(albumNum, songNum, d.id, d.name);
+                done();
+            });
+        },
+        debounce: 150,
+        searchOnFocus: true,
+        closeOnBlur: true,
+        selectOn: 'mousedown',
+        rowStyle: 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem;',
+        hover: { background: 'var(--link,#2563EB)', color: '#fff' },
+        createStyle: 'font-size:0.75rem; padding:0.125rem 0.375rem; cursor:pointer; border-radius:0.125rem; color:var(--link,#2563EB); font-weight:bold;',
+    });
 }
 
 function _getSongMiscArtistIds(albumNum, songNum) {
@@ -512,38 +488,35 @@ function addSong(albumNum) {
     addSongArtist(albumNum, songNum, null, getNewArtistName(), true, true);
 }
 
-var songSearchTimers = {};
+// Attached on first keystroke since song rows are built from HTML strings.
 function songSearchDebounce(input, albumNum, songNum) {
-    var key = albumNum + '-' + songNum;
-    clearTimeout(songSearchTimers[key]);
-    songSearchTimers[key] = setTimeout(function() { songSearch(input, albumNum, songNum); }, 600);
-}
-
-function songSearch(input, albumNum, songNum) {
-    var results = document.getElementById('song-search-results-' + albumNum + '-' + songNum);
-    var q = input.value.trim();
-    if (q.length < 2) { results.style.display = 'none'; return; }
-    // Don't search if this song slot is already linked to an existing song
-    var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
-    if (songDiv && songDiv.dataset.existingSongId) return;
-
-    fetch('/edit/search-songs?q=' + encodeURIComponent(q))
-        .then(function(r) { return r.json(); })
-        .then(function(songs) {
-            if (!songs.length) { results.style.display = 'none'; return; }
-            results.innerHTML = '';
-            songs.forEach(function(s) {
-                var item = document.createElement('div');
-                item.style.cssText = 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);';
-                item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
-                item.onmouseleave = function() { this.style.background = 'none'; };
-                item.innerHTML = '<span style="color:var(--text-primary);">' + s.name.replace(/</g,'&lt;') + '</span>' +
-                    '<span style="color:var(--text-secondary);"> — ' + s.artist.replace(/</g,'&lt;') + ' (' + s.album.replace(/</g,'&lt;') + ')</span>';
-                item.onclick = function() { selectExistingSong(albumNum, songNum, s); };
-                results.appendChild(item);
-            });
-            results.style.display = 'block';
-        });
+    if (input._searchDropdown) return;
+    input._searchDropdown = attachSearchDropdown(input, document.getElementById('song-search-results-' + albumNum + '-' + songNum), {
+        url: function(q) { return '/edit/search-songs?q=' + encodeURIComponent(q); },
+        skip: function() {
+            var songDiv = document.getElementById('song-' + albumNum + '-' + songNum);
+            return !!(songDiv && songDiv.dataset.existingSongId);
+        },
+        minLength: 2,
+        debounce: 600,
+        clearOnSelect: false,
+        rowStyle: 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);',
+        hover: { background: 'var(--row-alternate)' },
+        renderItem: function(s) {
+            var frag = document.createDocumentFragment();
+            var name = document.createElement('span');
+            name.style.color = 'var(--text-primary)';
+            name.textContent = s.name;
+            var meta = document.createElement('span');
+            meta.style.color = 'var(--text-secondary)';
+            meta.textContent = ' — ' + s.artist + ' (' + s.album + ')';
+            frag.appendChild(name);
+            frag.appendChild(meta);
+            return frag;
+        },
+        onSelect: function(s) { selectExistingSong(albumNum, songNum, s); },
+    });
+    input._searchDropdown.search();
 }
 
 function selectExistingSong(albumNum, songNum, song) {
@@ -600,37 +573,35 @@ function toggleAlbumSearch() {
     }
 }
 
-var albumSearchTimer;
-function albumSearchDebounce() {
-    clearTimeout(albumSearchTimer);
-    albumSearchTimer = setTimeout(albumSearch, 600);
-}
+// core.js (which defines attachSearchDropdown) loads after this page script.
+document.addEventListener('DOMContentLoaded', function() {
+    attachSearchDropdown(document.getElementById('album-search-input'), document.getElementById('album-search-results'), {
+        url: function(q) { return '/edit/search-albums?q=' + encodeURIComponent(q); },
+        minLength: 2,
+        debounce: 600,
+        toggleDisplay: false,
+        clearOnSelect: false,
+        minLengthMessage: 'Type at least 2 characters...',
+        emptyMessage: 'No albums found',
+        messageStyle: 'font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;',
+        rowStyle: 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);',
+        hover: { background: 'var(--row-alternate)' },
+        renderItem: function(al) {
+            var frag = document.createDocumentFragment();
+            var name = document.createElement('div');
+            name.style.cssText = 'color:var(--text-primary); font-weight:500;';
+            name.textContent = al.name;
+            var meta = document.createElement('div');
+            meta.style.cssText = 'color:var(--text-secondary); font-size:0.6875rem;';
+            meta.textContent = (al.artist ? al.artist + ' · ' : '') + (al.release_date || 'No date') + ' · ' + al.song_count + ' songs';
+            frag.appendChild(name);
+            frag.appendChild(meta);
+            return frag;
+        },
+        onSelect: addExistingAlbum,
+    });
+});
 
-function albumSearch() {
-    var input = document.getElementById('album-search-input');
-    var results = document.getElementById('album-search-results');
-    var q = input.value.trim();
-    if (q.length < 2) { results.innerHTML = '<div style="font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;">Type at least 2 characters...</div>'; return; }
-
-    fetch('/edit/search-albums?q=' + encodeURIComponent(q))
-        .then(function(r) { return r.json(); })
-        .then(function(albums) {
-            if (!albums.length) { results.innerHTML = '<div style="font-size:0.6875rem; color:var(--text-secondary); padding:0.375rem;">No albums found</div>'; return; }
-            results.innerHTML = '';
-            albums.forEach(function(al) {
-                var item = document.createElement('div');
-                item.style.cssText = 'padding:0.375rem 0.5rem; cursor:pointer; font-size:0.75rem; border-bottom:0.0625rem solid var(--border);';
-                item.onmouseenter = function() { this.style.background = 'var(--row-alternate)'; };
-                item.onmouseleave = function() { this.style.background = 'none'; };
-                item.innerHTML = '<div style="color:var(--text-primary); font-weight:500;">' + al.name.replace(/</g,'&lt;') + '</div>' +
-                    '<div style="color:var(--text-secondary); font-size:0.6875rem;">' +
-                    (al.artist ? al.artist.replace(/</g,'&lt;') + ' · ' : '') +
-                    (al.release_date || 'No date') + ' · ' + al.song_count + ' songs</div>';
-                item.onclick = function() { addExistingAlbum(al); };
-                results.appendChild(item);
-            });
-        });
-}
 
 function addExistingAlbum(al) {
     albumCount++;

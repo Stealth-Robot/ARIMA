@@ -339,38 +339,28 @@ function resolveCollabName(event, songId, chip) {
         createBtn.style.display = isNew ? 'block' : 'none';
         results.style.display = isNew ? 'none' : 'block';
         searchInp.placeholder = isNew ? 'New misc artist name' : 'Search...';
-        if (!isNew) doSearch();
+        if (!isNew) search.search();
     }
 
-    var timer = null;
-    function doSearch() {
-        clearTimeout(timer);
-        if (current === 'misc_new') return;
-        var q = searchInp.value.trim();
-        if (q.length < 1) { results.innerHTML = ''; return; }
-        timer = setTimeout(function() {
-            var url = current === 'misc_existing'
+    var search = attachSearchDropdown(searchInp, results, {
+        url: function(q) {
+            return current === 'misc_existing'
                 ? '/misc/search-artists?q=' + encodeURIComponent(q)
                 : '/misc/search-real-artists?q=' + encodeURIComponent(q);
-            fetch(url, {headers: _csrfHeaders({})}).then(function(r) { return r.json(); }).then(function(items) {
-                results.innerHTML = '';
-                if (!items.length) { results.innerHTML = '<div style="color:var(--text-secondary);padding:0.25rem;">No matches</div>'; return; }
-                items.forEach(function(it) {
-                    var d = document.createElement('div');
-                    d.textContent = it.name;
-                    d.style.cssText = 'padding:0.25rem 0.375rem;cursor:pointer;border-radius:0.1875rem;color:var(--text-primary);';
-                    d.onmouseenter = function() { d.style.background = 'var(--row-alternate,#f3f4f6)'; };
-                    d.onmouseleave = function() { d.style.background = ''; };
-                    d.onclick = function() {
-                        if (current === 'misc_existing') _doLinkCollab(songId, chip, {type: 'misc_existing', misc_artist_id: it.id});
-                        else _doLinkCollab(songId, chip, {type: 'real_existing', artist_id: it.artist_id});
-                    };
-                    results.appendChild(d);
-                });
-            });
-        }, 200);
-    }
-    searchInp.addEventListener('input', doSearch);
+        },
+        skip: function() { return current === 'misc_new'; },
+        minLength: 1,
+        debounce: 200,
+        toggleDisplay: false,
+        clearOnSelect: false,
+        emptyMessage: 'No matches',
+        messageStyle: 'color:var(--text-secondary);padding:0.25rem;',
+        rowStyle: 'padding:0.25rem 0.375rem;cursor:pointer;border-radius:0.1875rem;color:var(--text-primary);',
+        onSelect: function(it) {
+            if (current === 'misc_existing') _doLinkCollab(songId, chip, {type: 'misc_existing', misc_artist_id: it.id});
+            else _doLinkCollab(songId, chip, {type: 'real_existing', artist_id: it.artist_id});
+        },
+    });
 
     document.body.appendChild(pop);
     _collabPopover = pop;
