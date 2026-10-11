@@ -547,6 +547,8 @@ def view_potential_duplicates():
         if existing:
             if album_name and album_name not in existing['albums']:
                 existing['albums'].append(album_name)
+            if artist_id != existing['artist_id'] and artist_name not in existing['with_artists']:
+                existing['with_artists'].append(artist_name)
         else:
             groups[key]['songs'].append({
                 'id': song_id,
@@ -555,6 +557,7 @@ def view_potential_duplicates():
                 'artist_name': artist_name,
                 'artist_id': artist_id,
                 'albums': [album_name] if album_name else [],
+                'with_artists': [],
             })
 
     # Load featured (non-main) artists for these songs
@@ -565,20 +568,21 @@ def view_potential_duplicates():
         ArtistSong.song_id.in_(all_song_ids),
         ArtistSong.artist_is_main == False,
     ).all()
-    misc_feat_rows = db.session.query(
-        SongMiscArtist.song_id, MiscArtist.name
+    misc_rows = db.session.query(
+        SongMiscArtist.song_id, MiscArtist.name, SongMiscArtist.artist_is_main
     ).join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id).filter(
         SongMiscArtist.song_id.in_(all_song_ids),
-        SongMiscArtist.artist_is_main == False,
     ).all()
     feat_map = {}
+    misc_with_map = {}
     for sid, aname in feat_rows:
         feat_map.setdefault(sid, []).append(aname)
-    for sid, mname in misc_feat_rows:
-        feat_map.setdefault(sid, []).append(mname)
+    for sid, mname, is_main in misc_rows:
+        (misc_with_map if is_main else feat_map).setdefault(sid, []).append(mname)
     for g in groups.values():
         for s in g['songs']:
             s['featured_artists'] = feat_map.get(s['id'], [])
+            s['with_artists'] += misc_with_map.get(s['id'], [])
 
     # Load dismissed pairs
     dismissed = {(r.song_id_1, r.song_id_2) for r in NotDuplicate.query.all()}
