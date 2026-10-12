@@ -93,10 +93,6 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing song column: %s', col.name)
 
-        # 1a-theme. One-off: strip theme wording from tagged songs' notes (removed once run in production).
-        from app.theme_note_cleanup import strip_theme_from_notes
-        strip_theme_from_notes(db)
-
         # 1a''. Add any new album columns (e.g. note)
         from app.models.music import Album, Artist
         existing_album_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album')"))}
