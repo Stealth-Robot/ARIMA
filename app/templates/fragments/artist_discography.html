@@ -15,7 +15,8 @@
         
         {{ artist.name }}
         
-        {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span>{% endif %}
+        {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span>
+        <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add album" onclick="showAddAlbumModal()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
         {{ spotify_link_icon(artist.spotify_url) }}
         {% if artist.country %}<span class="text-sm font-normal text-secondary-text">{{ artist.country.country }}</span>{% endif %}
         {% if artist.is_disbanded %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}

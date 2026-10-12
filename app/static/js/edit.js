@@ -1900,6 +1900,11 @@ function _autofillSingleName() {
     }
 }
 
+function showAddAlbumModal() {
+    resetAddAlbumModal();
+    document.getElementById('add-album-modal').style.display = 'flex';
+}
+
 function resetAddAlbumModal() {
     _newAlbumSongCount = 0;
     _newAlbumSpotifyUrl = null;

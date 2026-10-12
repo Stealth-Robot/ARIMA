@@ -889,7 +889,9 @@ function _setupDateGuide(input, pattern) {
     }
 
     // Clone exact box model from real input after layout
-    requestAnimationFrame(function() {
+    function syncGuide() {
+        // A hidden input (e.g. inside a closed modal) measures 0 tall; wait until it's shown.
+        if (!input.offsetHeight) return;
         var cs = getComputedStyle(input);
         guide.style.padding = cs.padding;
         guide.style.font = cs.font;
@@ -902,7 +904,9 @@ function _setupDateGuide(input, pattern) {
         // guide taller and (since inputs vertically center text) push the
         // pattern below the real placeholder.
         guide.style.height = input.offsetHeight + 'px';
-    });
+    }
+    requestAnimationFrame(syncGuide);
+    if (window.ResizeObserver) new ResizeObserver(syncGuide).observe(input);
 
     function updateGuide() {
         var v = input.value;

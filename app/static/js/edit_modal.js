@@ -562,9 +562,7 @@ function artistEditConfig(artistId) {
                         else { r.text().then(function(t) { _emToast(t || 'Could not convert artist'); }); }
                     });
             }
-            var acts = [
-                { label: '+ Add album', run: function() { closeMobileModal(); if (typeof resetAddAlbumModal === 'function') resetAddAlbumModal(); var m = document.getElementById('add-album-modal'); if (m) m.style.display = 'flex'; } },
-            ];
+            var acts = [];
             if (isSubunit) {
                 acts.push({ label: 'Convert to soloist', run: function() { swapRole('soloist'); } });
             } else if (soloistLinks.length >= 1) {
