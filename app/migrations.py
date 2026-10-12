@@ -84,10 +84,6 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing song column: %s', col.name)
 
-        # 1a-theme. One-off: tag anime theme songs from their notes (removed once run in production).
-        from app.theme_backfill import backfill_song_themes
-        backfill_song_themes(db)
-
         # 1a''. Add any new album columns (e.g. note)
         from app.models.music import Album, Artist
         existing_album_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('album')"))}
