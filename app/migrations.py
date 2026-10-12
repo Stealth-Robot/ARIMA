@@ -1,3 +1,12 @@
+"""Schema and data migrations, all run on app startup via run_startup_migrations().
+
+One-time data migrations:
+1. Put the logic in its own module (app/<name>.py) exposing one function that takes `db`.
+2. Call it from run_startup_migrations() under a comment saying it is one-off and removed once run in production.
+3. Make it idempotent (a guard, or logic that no-ops on already-migrated rows), since it runs on every boot until removed.
+4. Verify by booting the app against a copy of the DB. The local dev server's reloader runs it on instance/arima.db as soon as the file is saved.
+5. Deploy; once the production logs show it ran, delete the module and its call in a follow-up commit.
+"""
 import logging
 
 from app.extensions import db
@@ -83,6 +92,10 @@ def run_startup_migrations():
                 else:
                     db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing song column: %s', col.name)
+
+        # 1a-theme. One-off: strip theme wording from tagged songs' notes (removed once run in production).
+        from app.theme_note_cleanup import strip_theme_from_notes
+        strip_theme_from_notes(db)
 
         # 1a''. Add any new album columns (e.g. note)
         from app.models.music import Album, Artist
