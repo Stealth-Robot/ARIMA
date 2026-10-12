@@ -1793,6 +1793,23 @@ function showSongArtists(event, songId, span) {
     renderMiscList();
     miscSection.appendChild(miscListContainer);
 
+    // Artists credited in the title ("(feat. X & Y)") are listed first in both dropdowns.
+    function _nameKey(s) { return foldAccents(s || '').toLowerCase().replace(/[\s\-_.'’]/g, ''); }
+    var _songTitle = span ? (span.getAttribute('data-song-main') || span.getAttribute('title') || '') : '';
+    var featKeys = {};
+    var featNames = [];
+    _songTitle.replace(/\b(?:feat\.?|ft\.?|featuring)\s+([^\)\]]+)/gi, function(_, list) {
+        list.split(/\s*(?:,|&|\band\b)\s*/i).forEach(function(n) {
+            n = n.trim();
+            if (n && !featKeys[_nameKey(n)]) { featKeys[_nameKey(n)] = true; featNames.push(n); }
+        });
+    });
+    function _featFirst(items) {
+        var hit = [], rest = [];
+        items.forEach(function(item) { (featKeys[_nameKey(item.name)] ? hit : rest).push(item); });
+        return hit.concat(rest);
+    }
+
     // Shared filterable dropdown builder
     // opts: { placeholder, getItems(query, callback), getUsedIds(), onSelect(item) }
     function _buildSearchDropdown(opts) {
@@ -1829,9 +1846,25 @@ function showSongArtists(event, songId, span) {
         placeholder: '+ Add misc artist...',
         debounce: 150,
         getItems: function(q, cb) {
-            fetch('/misc/search-artists?q=' + encodeURIComponent(q), {
-                headers: _csrfHeaders({}),
-            }).then(function(r) { return r.json(); }).then(cb);
+            function search(term) {
+                return fetch('/misc/search-artists?q=' + encodeURIComponent(term), {
+                    headers: _csrfHeaders({}),
+                }).then(function(r) { return r.json(); });
+            }
+            // The empty-query list is capped, so look feat artists up by name to guarantee they appear.
+            var extra = q ? [] : featNames.map(search);
+            Promise.all([search(q)].concat(extra)).then(function(lists) {
+                var seen = {}, merged = [];
+                lists.slice(1).concat([lists[0]]).forEach(function(list) {
+                    list.forEach(function(item) {
+                        if (seen[item.id]) return;
+                        if (list !== lists[0] && !featKeys[_nameKey(item.name)]) return;
+                        seen[item.id] = true;
+                        merged.push(item);
+                    });
+                });
+                cb(_featFirst(merged));
+            });
         },
         getUsedIds: function() { return miscArtists.map(function(m) { return m.misc_artist_id; }); },
         onSelect: function(item) {
@@ -1864,8 +1897,8 @@ function showSongArtists(event, songId, span) {
         placeholder: '+ Add artist...',
         getItems: function(q, cb) {
             var lc = foldAccents(q).toLowerCase();
-            cb(allArtists.filter(function(a) { return !lc || foldAccents(a.name).toLowerCase().indexOf(lc) !== -1; })
-               .map(function(a) { return { id: a.id, name: a.name, isSoloist: a.isSoloist, soloistParentIds: a.soloistParentIds }; }));
+            cb(_featFirst(allArtists.filter(function(a) { return !lc || foldAccents(a.name).toLowerCase().indexOf(lc) !== -1; })
+               .map(function(a) { return { id: a.id, name: a.name, isSoloist: a.isSoloist, soloistParentIds: a.soloistParentIds }; })));
         },
         getUsedIds: function() { return artists.map(function(a) { return a.artist_id; }); },
         onSelect: function(item) {
