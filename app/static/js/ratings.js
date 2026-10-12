@@ -104,6 +104,27 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+/* Artist/misc pages: Up/Down with no cell selected jumps to your first/last unrated song */
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    if (activeInput || activeNote) return;
+    var path = window.location.pathname;
+    if (path.indexOf('/artists/') !== 0 && path !== '/misc') return;
+    var el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+    var cells = Array.prototype.filter.call(
+        document.querySelectorAll('td.my-cell[id^="rating-"][onclick]'),
+        function (c) { return c.offsetParent !== null && c.textContent.trim() === ''; }
+    );
+    if (!cells.length) return;
+    e.preventDefault();
+    var target = e.key === 'ArrowUp' ? cells[0] : cells[cells.length - 1];
+    target.scrollIntoView({ block: 'center' });
+    highlightRow(target.closest('tr'), true);
+    target.click();
+});
+
 /* Mobile detection helper */
 function _isMobile() {
     return window.innerWidth <= 768;
