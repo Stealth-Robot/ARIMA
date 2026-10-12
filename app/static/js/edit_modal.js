@@ -1159,6 +1159,23 @@ document.addEventListener('click', function(e) {
     }
 });
 
+/* Keeps the alt-name hover popover (ratings.js showAliasTooltip) in step with a save. */
+function _syncSongAliasAttrs(cell, mainName, aliases) {
+    if (!cell || !cell.hasAttribute('data-alias-tip')) return;
+    var shown = cell.getAttribute('title') || cell.getAttribute('data-song-title') || mainName;
+    if (aliases.length) {
+        cell.removeAttribute('title');
+        cell.setAttribute('data-song-title', shown);
+        cell.setAttribute('data-song-main', mainName);
+        cell.setAttribute('data-song-aliases', JSON.stringify(aliases.map(function(a) { return [a.native_lang || '', a.name]; })));
+    } else {
+        cell.removeAttribute('data-song-title');
+        cell.removeAttribute('data-song-main');
+        cell.removeAttribute('data-song-aliases');
+        cell.setAttribute('title', shown);
+    }
+}
+
 function songEditConfig(cell) {
     var songId = cell.getAttribute('data-song-id');
     var _row = cell.closest('tr');
@@ -1488,7 +1505,7 @@ function songEditConfig(cell) {
                     if (savedName) {
                         var displayName = savedName.trim();
                         data.name = displayName;
-                        cell.setAttribute('title', displayName);
+                        cell.setAttribute(cell.hasAttribute('data-song-aliases') ? 'data-song-title' : 'title', displayName);
                         var editSpan = cell.querySelector('.edit-inline');
                         if (editSpan) editSpan.textContent = displayName;
                     }
@@ -1496,7 +1513,10 @@ function songEditConfig(cell) {
                     if (savedNote) { cell.classList.add('has-song-note'); cell.setAttribute('data-song-note', savedNote); }
                     else { cell.classList.remove('has-song-note'); cell.removeAttribute('data-song-note'); }
                     var aliasRes = results[4];
-                    if (aliasRes.ok) data.aliases = aliasRes.aliases || [];
+                    if (aliasRes.ok) {
+                        data.aliases = aliasRes.aliases || [];
+                        _syncSongAliasAttrs(cell, data.name, data.aliases);
+                    }
                     else ui.toast('Could not save alternative names — Native JP/KR/CN/Other are mutually exclusive, and one each of the others.');
                     var sp = results[2], yt = results[3];
                     var badUrl = (sp.changed && !sp.ok) || (yt.changed && !yt.ok);

@@ -352,7 +352,7 @@ document.addEventListener('click', function(e) {
 
 // Mobile: tap song name cell to see full name and note
 function _getSongNameFromCell(cell) {
-    var title = cell.getAttribute('title');
+    var title = cell.getAttribute('title') || cell.getAttribute('data-song-title');
     if (title) return title;
     var mergeBtn = cell.querySelector('[data-song-name]');
     if (mergeBtn) return mergeBtn.dataset.songName;
@@ -925,7 +925,12 @@ function showTooltip(event, tooltip, closestSelector, attributeName){
     const td = event.target.closest(closestSelector);
     const note = td?.getAttribute(attributeName);
     if (!note) return;
+    _setAliasTipTheme(tooltip, false);
     tooltip.textContent = note;
+    _positionTooltip(tooltip, td);
+}
+
+function _positionTooltip(tooltip, td) {
     const rect = getZoomedRect(td);
     tooltip.style.left = rect.right + 'px';
     tooltip.style.transform = 'translateX(-100%)';
@@ -943,8 +948,77 @@ function showTooltip(event, tooltip, closestSelector, attributeName){
 
 function hideTooltip(tooltip) {
     if (_tooltipSelecting) return;
+    _setAliasTipTheme(tooltip, false);
     tooltip.style.opacity = '0';
     tooltip.style.display = 'none';
+}
+
+// Inline because #note-tooltip's ID rule outranks any utility class
+function _setAliasTipTheme(tooltip, on) {
+    if (!on) tooltip._aliasTd = null;
+    tooltip.style.background = on ? 'var(--bg-secondary)' : '';
+    tooltip.style.color = on ? 'var(--text-primary)' : '';
+    tooltip.style.border = on ? '0.0625rem solid var(--grid-line)' : '';
+    tooltip.style.boxShadow = on ? '0 0.25rem 0.75rem rgba(0,0,0,0.35)' : '';
+    tooltip.style.padding = on ? '0.375rem 0.625rem' : '';
+}
+
+var ALIAS_LABELS = { ja: 'Japanese', ko: 'Korean', zh: 'Chinese', other: 'Native', rom: 'Romanized', en: 'English', '': 'Also' };
+var ALIAS_ORDER = ['ja', 'ko', 'zh', 'other', 'rom', 'en', ''];
+
+function showAliasTooltip(event, tooltip) {
+    if (_isMobile()) return;
+    const td = event.target.closest('td.song-name-cell[data-song-aliases]');
+    // Rebuilding on every mouseover inside the cell would wipe a text selection or the "Copied" state
+    if (!td || tooltip._aliasTd === td) return;
+    let aliases;
+    try { aliases = JSON.parse(td.getAttribute('data-song-aliases')); } catch (err) { return; }
+    const main = td.getAttribute('data-song-main') || '';
+    aliases = aliases.filter(a => a[1] !== main)
+        .sort((a, b) => ALIAS_ORDER.indexOf(a[0]) - ALIAS_ORDER.indexOf(b[0]));
+
+    tooltip.textContent = '';
+    _setAliasTipTheme(tooltip, true);
+    const head = document.createElement('div');
+    head.className = 'font-bold text-sm mb-1';
+    head.textContent = main;
+    tooltip.appendChild(head);
+
+    const footer = document.createElement('div');
+    footer.className = 'text-secondary-text mt-1';
+    footer.textContent = 'Click a name to copy';
+    if (aliases.length) {
+        const grid = document.createElement('div');
+        grid.className = 'grid gap-x-3';
+        grid.style.gridTemplateColumns = 'auto 1fr';
+        aliases.forEach(a => {
+            const label = document.createElement('div');
+            label.className = 'uppercase tracking-wider text-secondary-text';
+            label.style.fontSize = '0.625rem';
+            label.style.paddingTop = '0.125rem';
+            label.textContent = ALIAS_LABELS[a[0]] || 'Also';
+            const name = document.createElement('div');
+            name.className = 'cursor-pointer hover:text-link';
+            name.textContent = a[1];
+            name.addEventListener('click', () => {
+                navigator.clipboard.writeText(a[1]).then(() => { footer.textContent = 'Copied ' + a[1]; }, () => {});
+            });
+            grid.appendChild(label);
+            grid.appendChild(name);
+        });
+        tooltip.appendChild(grid);
+        tooltip.appendChild(footer);
+    }
+
+    const note = td.getAttribute('data-song-note');
+    if (note) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 'mt-1 pt-1 border-t border-grid-line';
+        noteEl.textContent = note;
+        tooltip.appendChild(noteEl);
+    }
+    tooltip._aliasTd = td;
+    _positionTooltip(tooltip, td);
 }
 
 /* Note tooltip — event delegation, works for dynamically added cells */
@@ -968,16 +1042,17 @@ var _tooltipSelecting = false;
 
     // Hide tooltip when mouse leaves the tooltip itself
     tooltip.addEventListener('mouseout', function (e) {
-        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note') && !e.relatedTarget?.closest('td.album-name-cell.has-album-note')) {
+        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note, td.song-name-cell[data-song-aliases]') && !e.relatedTarget?.closest('td.album-name-cell.has-album-note')) {
             hideTooltip(tooltip);
         }
     });
 
-    // set up song name cell tooltip event listeners
-     document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.song-name-cell.has-song-note', 'data-song-note'));
+    // set up song name cell tooltip event listeners (alt-name cells show the note inside their popover)
+     document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.song-name-cell.has-song-note:not([data-song-aliases])', 'data-song-note'));
+     document.addEventListener('mouseover', (e) => showAliasTooltip(e, tooltip));
 
      document.addEventListener('mouseout', function (e) {
-        const td = e.target.closest('td.song-name-cell.has-song-note');
+        const td = e.target.closest('td.song-name-cell.has-song-note, td.song-name-cell[data-song-aliases]');
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
             hideTooltip(tooltip);

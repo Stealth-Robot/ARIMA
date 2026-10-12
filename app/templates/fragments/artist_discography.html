@@ -1,6 +1,8 @@
 {% from "fragments/spotify_macros.html" import song_spotify_icon with context %}
 {% from "fragments/theme_tag.html" import theme_tag %}
 {% macro spotify_link_icon(url) %}{% if url and not hide_all_spotify %}{% if url == 'n/a' %}<span class="spotify-na relative inline-block align-middle" title="Not on Spotify" onclick="event.stopPropagation()" style="width:0.75rem; height:0.75rem; line-height:0;"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle" style="filter: grayscale(1); opacity: 0.6;"><span class="absolute" style="top:50%; left:50%; width:0.9375rem; height:0.125rem; background:var(--delete-button, #e02424); transform: translate(-50%, -50%) rotate(-45deg); transform-origin: center; pointer-events:none; border-radius:0.0625rem;"></span></span>{% else %}<a href="{{ spotify_href(url) }}" target="{{ spotify_link_target }}" rel="noopener" title="Spotify" onclick="event.stopPropagation()"><img src="{{ url_for('static', filename='img/spotify.png') }}" class="inline w-3 h-3 align-middle"></a>{% endif %}{% endif %}{% endmacro %}
+{# Songs with alt names get the hover popover instead of a native title, which would double up on it #}
+{% macro song_name_attrs(song, dn) %}data-alias-tip {% if song.aliases %}{% set _al = [] %}{% for a in song.aliases %}{% set _ = _al.append([a.native_lang or '', a.name]) %}{% endfor %}data-song-title="{{ dn | e }}" data-song-main="{{ song.name | e }}" data-song-aliases='{{ _al | tojson }}'{% else %}title="{{ dn | e }}"{% endif %}{% endmacro %}
 <!-- Artist header -->
 <div class="mb-3 pl-3 flex items-start gap-3" data-current-artist-id="{{ artist.id }}" data-current-artist-name="{{ artist.name | e }}" style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
     {% if artist.image_url %}
@@ -427,7 +429,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
         {% set _dn = song_display_name(song) %}
                         <!-- Song name (no track number) -->
             <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
-                data-song-id="{{ song.id }}" title="{{ _dn | e }}"
+                data-song-id="{{ song.id }}" {{ song_name_attrs(song, _dn) }}
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
                 style="padding: 0.25rem 0.5rem 0.25rem {% if show_track_numbers %}0.5{% else %}1.125{% endif %}rem;
                 {% if song.is_promoted %}border-left: 0.25rem solid var(--promoted-song);{% endif %}">
@@ -544,7 +546,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
         {% set ns.song_idx = ns.song_idx + 1 %}
         {% set _dn = song_display_name(song) %}
                         <td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line relative"
-                data-song-id="{{ song.id }}" title="{{ _dn | e }}"
+                data-song-id="{{ song.id }}" {{ song_name_attrs(song, _dn) }}
                 {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
                 style="padding: 0.25rem 0.5rem 0.25rem {% if show_track_numbers %}0.5{% else %}1.125{% endif %}rem;
                 {% if song.is_promoted %}border-left: 0.25rem solid var(--promoted-song);{% endif %}">
