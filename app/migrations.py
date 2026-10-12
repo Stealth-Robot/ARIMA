@@ -157,6 +157,19 @@ def run_startup_migrations():
                     db.session.execute(db.text(f'ALTER TABLE artist ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing artist column: %s', col.name)
 
+        # 1a-search. Hidden accent-folded search copies on tables the loops above don't cover.
+        for _table, _col in (('misc_artist', 'search_name'), ('artist_alt_name', 'search_name'),
+                             ('song_alias', 'search_name'), ('album_alt_name', 'search_name'),
+                             ('misc_artist_alt_name', 'search_name'), ('changelog', 'search_description')):
+            _cols = {row[1] for row in db.session.execute(db.text(f"PRAGMA table_info('{_table}')"))}
+            if _cols and _col not in _cols:
+                db.session.execute(db.text(f'ALTER TABLE {_table} ADD COLUMN {_col} TEXT'))
+                logger.info('Added missing %s column: %s', _table, _col)
+
+        # 1a-search-backfill. One-off: fill the hidden search copies for existing rows (removed once run in production).
+        from app.search_name_backfill import backfill_search_names
+        backfill_search_names(db)
+
         # 1a'''. Add any new rules columns (e.g. misc_owner_id, misc_image_url)
         from app.models.rules import Rules
         existing_rules_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('rules')"))}

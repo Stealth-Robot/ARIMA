@@ -11,6 +11,7 @@ class Changelog(db.Model):
     change_type_id = db.Column(db.Integer, db.ForeignKey('changelog_type.id'))
     description = db.Column(db.Text, nullable=False)
     description_html = db.Column(db.Text)
+    search_description = db.Column(db.Text)
     justification = db.Column(db.Text)
 
     user = db.relationship('User', foreign_keys=[user_id])
@@ -25,3 +26,12 @@ class Changelog(db.Model):
         db.Index('ix_changelog_song_id', 'song_id'),
         db.Index('ix_changelog_change_type_id', 'change_type_id'),
     )
+
+
+def _sync_search_description(mapper, connection, target):
+    from app.services.search import search_name_for
+    target.search_description = search_name_for(target.description)
+
+
+db.event.listen(Changelog, 'before_insert', _sync_search_description)
+db.event.listen(Changelog, 'before_update', _sync_search_description)

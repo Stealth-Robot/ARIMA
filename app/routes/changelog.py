@@ -14,7 +14,7 @@ from app.cache import clear_stats_cache
 from app.decorators import role_required, ADMIN, USER_OR_ABOVE
 from app.services.events import publish
 from app.services.proxy_change import mark_approved, reject_proxy_change
-from app.services.search import like_contains, LIKE_ESCAPE
+from app.services.search import name_match
 
 changelog_bp = Blueprint('changelog', __name__)
 
@@ -40,7 +40,7 @@ def changelog():
     ).order_by(Changelog.date.desc(), Changelog.id.desc())
 
     if search:
-        query = query.filter(Changelog.description.ilike(like_contains(search), escape=LIKE_ESCAPE))
+        query = query.filter(name_match(Changelog.description, search))
     if user_ids:
         query = query.filter(Changelog.user_id.in_([int(v) for v in user_ids]))
     if include:

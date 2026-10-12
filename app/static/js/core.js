@@ -2,6 +2,23 @@ function getZoomedRect(el) {
     return el.getBoundingClientRect();
 }
 
+/* Accent folding for client-side name filters; mirrors fold_accents in app/services/search.py. */
+var FOLD_MAP = {
+    'ø': 'o', 'Ø': 'O', 'ß': 'ss', 'æ': 'ae', 'Æ': 'AE', 'œ': 'oe', 'Œ': 'OE', 'ł': 'l', 'Ł': 'L',
+    'đ': 'd', 'Đ': 'D', 'ð': 'd', 'Ð': 'D', 'þ': 'th', 'Þ': 'Th', 'ı': 'i'
+};
+function foldAccents(s) {
+    if (!s) return s;
+    var out = '';
+    for (var ch of s.normalize('NFC')) {
+        ch = FOLD_MAP[ch] || ch;
+        // Kana, Hangul and Han pass through; only Latin letters and symbols fold.
+        if (!/\p{L}/u.test(ch) || /\p{Script=Latin}/u.test(ch)) ch = ch.normalize('NFKD').replace(/\p{M}/gu, '');
+        out += ch;
+    }
+    return out;
+}
+
 /* CSRF — inject X-CSRFToken header on every HTMX request */
 
 document.body.addEventListener('htmx:configRequest', function (e) {
@@ -794,7 +811,7 @@ function _initDragScroll(el, opts) {
         if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
 
         e.preventDefault();
-        _searchBuf += e.key.toLowerCase();
+        _searchBuf += foldAccents(e.key).toLowerCase();
         clearTimeout(_searchTimer);
         _searchTimer = setTimeout(function() { _searchBuf = ''; }, 800);
 
@@ -802,7 +819,7 @@ function _initDragScroll(el, opts) {
         var items = menu.querySelectorAll('.artist-menu-item');
         var match = null;
         for (var i = 0; i < items.length; i++) {
-            if (items[i].textContent.trim().toLowerCase().indexOf(_searchBuf) === 0) {
+            if (foldAccents(items[i].textContent.trim()).toLowerCase().indexOf(_searchBuf) === 0) {
                 match = items[i];
                 break;
             }

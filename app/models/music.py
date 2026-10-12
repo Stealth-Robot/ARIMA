@@ -96,6 +96,7 @@ class SongMiscArtist(db.Model):
 class Artist(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     slug = db.Column(db.String(100), unique=True, nullable=True, index=True)
     gender_id = db.Column(db.Integer, db.ForeignKey('group_gender.id'), nullable=False)
     country_id = db.Column(db.Integer, db.ForeignKey('country.id'), nullable=False)
@@ -133,6 +134,7 @@ class ArtistAltName(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete='CASCADE'),
                           nullable=False)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
 
     artist = db.relationship('Artist', back_populates='alt_names')
 
@@ -183,6 +185,7 @@ def resolve_display_name(main, ja=None, kr=None, zh=None, other=None, rom=None, 
 class Song(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     is_promoted = db.Column(db.Boolean, nullable=False, default=False)
     is_lead = db.Column(db.Boolean, nullable=False, default=False)
@@ -236,6 +239,7 @@ class SongAlias(db.Model):
     song_id = db.Column(db.Integer, db.ForeignKey('song.id', ondelete='CASCADE'),
                         nullable=False)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     # NULL = plain searchable alias; 'ja' = native Japanese; 'ko' = native Korean;
     # 'zh' = native Chinese; 'rom' = romanized; 'en' = English; 'other' = native other.
     native_lang = db.Column(db.Text)
@@ -257,6 +261,7 @@ class SongAlias(db.Model):
 class Album(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     release_date = db.Column(db.Text, nullable=True)
     album_type_id = db.Column(db.Integer, db.ForeignKey('album_type.id'), nullable=False)
     submitted_by_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
@@ -305,6 +310,7 @@ class AlbumAltName(db.Model):
     album_id = db.Column(db.Integer, db.ForeignKey('album.id', ondelete='CASCADE'),
                          nullable=False)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     # NULL = plain searchable alt name; 'ja' = native Japanese; 'ko' = native Korean;
     # 'zh' = native Chinese; 'rom' = romanized; 'en' = English; 'other' = native other.
     native_lang = db.Column(db.Text)
@@ -344,6 +350,7 @@ class MiscArtist(db.Model):
     __tablename__ = 'misc_artist'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
     country_id = db.Column(db.Integer, db.ForeignKey('country.id'), nullable=False)
 
     country = db.relationship('Country')
@@ -360,9 +367,21 @@ class MiscArtistAltName(db.Model):
     misc_artist_id = db.Column(db.Integer, db.ForeignKey('misc_artist.id', ondelete='CASCADE'),
                                nullable=False)
     name = db.Column(db.Text, nullable=False)
+    search_name = db.Column(db.Text)
 
     misc_artist = db.relationship('MiscArtist', back_populates='alt_names')
 
     __table_args__ = (
         db.Index('ix_misc_artist_alt_name_misc_artist_id', 'misc_artist_id'),
     )
+
+
+def _sync_search_name(mapper, connection, target):
+    from app.services.search import search_name_for
+    target.search_name = search_name_for(target.name)
+
+
+# Every ORM write recomputes the hidden search copy, so no create/rename path has to remember it.
+for _model in (Artist, ArtistAltName, Song, SongAlias, Album, AlbumAltName, MiscArtist, MiscArtistAltName):
+    db.event.listen(_model, 'before_insert', _sync_search_name)
+    db.event.listen(_model, 'before_update', _sync_search_name)

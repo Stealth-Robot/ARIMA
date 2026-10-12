@@ -411,9 +411,8 @@ def search_track(track_name, artist_name):
 
 
 def _normalize_name(name):
-    import unicodedata
-    s = name.lower().strip()
-    s = unicodedata.normalize('NFKD', s)
+    from app.services.search import fold_accents
+    s = fold_accents(name.lower().strip())
     s = re.sub(r'\s*\(.*?\)', '', s)
     s = re.sub(r'[^\w\s]', '', s)
     s = re.sub(r'\s+', ' ', s).strip()

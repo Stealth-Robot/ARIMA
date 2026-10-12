@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models.music import Artist, Album, Song, ArtistSong, AlbumSong, album_genres, song_genres, MiscArtist, SongMiscArtist, ArtistAltName, SongAlias, AlbumAltName, MiscArtistAltName
-from app.services.search import like_contains, LIKE_ESCAPE, strip_punct, strip_punct_sql
+from app.services.search import fold_accents, name_match, search_column, strip_punct, strip_punct_sql
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +17,11 @@ search_bp = Blueprint('search', __name__)
 
 def _occurrences(fields, term, ignore_punct=False):
     """Count total occurrences of term across all fields using SQLite string math."""
+    term = fold_accents(term)
     term_len = len(term)
     parts = []
     for f in fields:
-        base = strip_punct_sql(f) if ignore_punct else f
+        base = strip_punct_sql(search_column(f)) if ignore_punct else search_column(f)
         lower_f = func.lower(func.coalesce(base, ''))
         parts.append((func.length(lower_f) - func.length(func.replace(lower_f, term, ''))) / term_len)
     return sum(parts)
@@ -68,12 +69,10 @@ def search():
         return render_template('fragments/search_results.html',
                                artists=[], albums=[], songs=[], query=q)
 
-    def field_match(field, pattern):
-        """ilike on a column, stripping punctuation first when the setting is on."""
-        expr = strip_punct_sql(field) if ignore_punct else field
-        return expr.ilike(pattern, escape=LIKE_ESCAPE)
+    def field_match(field, term):
+        """Contains-match on a column, accent-folded, stripping punctuation first when the setting is on."""
+        return name_match(field, term, ignore_punct)
 
-    like = like_contains(norm_q)
     terms = norm_q.lower().split()
     term_counts = Counter(terms)
     show_hidden = request.args.get('show_hidden') == '1'
@@ -98,12 +97,12 @@ def search():
     # Match the main name OR any alternate name (alt names exist to make
     # hard-to-search artists findable).
     alt_match_ids = {row[0] for row in db.session.query(ArtistAltName.artist_id).filter(
-        field_match(ArtistAltName.name, like)).all()}
+        field_match(ArtistAltName.name, norm_q)).all()}
     if alt_match_ids:
         artist_query = Artist.query.filter(db.or_(
-            field_match(Artist.name, like), Artist.id.in_(alt_match_ids)))
+            field_match(Artist.name, norm_q), Artist.id.in_(alt_match_ids)))
     else:
-        artist_query = Artist.query.filter(field_match(Artist.name, like))
+        artist_query = Artist.query.filter(field_match(Artist.name, norm_q))
     if country_ids:
         artist_query = artist_query.filter(Artist.country_id.in_(country_ids))
     if genre_ids:
@@ -138,23 +137,22 @@ def search():
         ))
     # Albums are also findable by any alternate name.
     album_alt_ids = {row[0] for row in db.session.query(AlbumAltName.album_id).filter(
-        field_match(AlbumAltName.name, like)).all()}
+        field_match(AlbumAltName.name, norm_q)).all()}
     if len(terms) > 1:
         album_fields = [Album.name, Artist.name]
         album_conds = []
         for term, count in term_counts.items():
             if count == 1:
-                t = like_contains(term)
-                album_conds.append(db.or_(*(field_match(f, t) for f in album_fields)))
+                album_conds.append(db.or_(*(field_match(f, term) for f in album_fields)))
             else:
                 album_conds.append(_occurrences(album_fields, term, ignore_punct) >= count)
-        name_match = db.and_(*album_conds)
+        album_match = db.and_(*album_conds)
     else:
-        name_match = field_match(Album.name, like)
+        album_match = field_match(Album.name, norm_q)
     if album_alt_ids:
-        album_query = album_query.filter(db.or_(name_match, Album.id.in_(album_alt_ids)))
+        album_query = album_query.filter(db.or_(album_match, Album.id.in_(album_alt_ids)))
     else:
-        album_query = album_query.filter(name_match)
+        album_query = album_query.filter(album_match)
     albums = album_query.order_by(func.lower(Album.name), func.lower(Artist.name)).distinct().all()
 
     # --- Songs ---
@@ -172,16 +170,15 @@ def search():
         song_fields = [Song.name, Artist.name, Album.name]
         for term, count in term_counts.items():
             if count == 1:
-                t = like_contains(term)
                 song_id_q = song_id_q.filter(
-                    db.or_(*(field_match(f, t) for f in song_fields))
+                    db.or_(*(field_match(f, term) for f in song_fields))
                 )
             else:
                 song_id_q = song_id_q.filter(
                     _occurrences(song_fields, term, ignore_punct) >= count
                 )
     else:
-        song_id_q = song_id_q.filter(field_match(Song.name, like))
+        song_id_q = song_id_q.filter(field_match(Song.name, norm_q))
     if ost_album_ids:
         song_id_q = song_id_q.filter(db.or_(
             ~Album.id.in_(ost_album_ids),
@@ -191,7 +188,7 @@ def search():
 
     # Songs are also findable by any alternative name (romanized/native titles).
     alias_song_ids = {row[0] for row in db.session.query(SongAlias.song_id).filter(
-        field_match(SongAlias.name, like)).all()}
+        field_match(SongAlias.name, norm_q)).all()}
 
     # Step 2: display rows — main artist only, with country/genre filters
     song_query = db.session.query(Song, Album, Artist).options(
@@ -255,10 +252,10 @@ def search():
 
     # Rank songs whose own title matches the query phrase above songs that only
     # matched via their album/artist name (stable sort keeps A-Z within tiers).
-    q_lower = norm_q.lower()
+    q_lower = fold_accents(norm_q).lower()
 
     def _title_rank(item):
-        name = item[0].name.lower()
+        name = (item[0].search_name or item[0].name).lower()
         if ignore_punct:
             name = strip_punct(name)
         if name == q_lower:
@@ -282,9 +279,8 @@ def search():
             misc_fields = [Song.name, MiscArtist.name]
             for term, count in term_counts.items():
                 if count == 1:
-                    t = like_contains(term)
                     misc_id_q = misc_id_q.filter(
-                        db.or_(*(field_match(f, t) for f in misc_fields))
+                        db.or_(*(field_match(f, term) for f in misc_fields))
                     )
                 else:
                     misc_id_q = misc_id_q.filter(
@@ -292,21 +288,21 @@ def search():
                     )
         else:
             misc_id_q = misc_id_q.filter(
-                db.or_(field_match(Song.name, like),
-                       field_match(MiscArtist.name, like))
+                db.or_(field_match(Song.name, norm_q),
+                       field_match(MiscArtist.name, norm_q))
             )
         misc_name_song_ids = misc_id_q.distinct()
 
         # Misc songs are also findable by any alternate name of their misc artist.
         misc_alias_song_ids = {row[0] for row in db.session.query(SongMiscArtist.song_id).join(
             MiscArtistAltName, MiscArtistAltName.misc_artist_id == SongMiscArtist.misc_artist_id
-        ).filter(field_match(MiscArtistAltName.name, like)).all()}
+        ).filter(field_match(MiscArtistAltName.name, norm_q)).all()}
 
         # ...and by the song's own alternate names (the regular section can't
         # surface these — album-less misc songs are dropped by its Album join).
         misc_song_alias_ids = {row[0] for row in db.session.query(SongAlias.song_id).join(
             SongMiscArtist, SongMiscArtist.song_id == SongAlias.song_id
-        ).filter(field_match(SongAlias.name, like)).all()}
+        ).filter(field_match(SongAlias.name, norm_q)).all()}
 
         misc_song_rows = db.session.query(Song).options(
             selectinload(Song.aliases)

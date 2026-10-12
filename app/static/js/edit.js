@@ -1863,8 +1863,8 @@ function showSongArtists(event, songId, span) {
     addRow.appendChild(_buildSearchDropdown({
         placeholder: '+ Add artist...',
         getItems: function(q, cb) {
-            var lc = q.toLowerCase();
-            cb(allArtists.filter(function(a) { return !lc || a.name.toLowerCase().indexOf(lc) !== -1; })
+            var lc = foldAccents(q).toLowerCase();
+            cb(allArtists.filter(function(a) { return !lc || foldAccents(a.name).toLowerCase().indexOf(lc) !== -1; })
                .map(function(a) { return { id: a.id, name: a.name, isSoloist: a.isSoloist, soloistParentIds: a.soloistParentIds }; }));
         },
         getUsedIds: function() { return artists.map(function(a) { return a.artist_id; }); },

@@ -119,9 +119,9 @@ function _searchCards() {
 }
 
 function _applyFilters() {
-    var query = (document.getElementById('sub-search').value || '').toLowerCase();
+    var query = foldAccents(document.getElementById('sub-search').value || '').toLowerCase();
     document.querySelectorAll('.sub-card').forEach(function(card) {
-        var nameMatch = !query || card.dataset.name.indexOf(query) !== -1;
+        var nameMatch = !query || foldAccents(card.dataset.name).toLowerCase().indexOf(query) !== -1;
         var filterMatch = _currentFilter === 'all' ||
             (_currentFilter === 'sub' && card.dataset.subscribed === 'true') ||
             (_currentFilter === 'unsub' && card.dataset.subscribed === 'false');

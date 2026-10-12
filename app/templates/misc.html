@@ -763,7 +763,7 @@ function _renderManageMiscArtists(container, onChange) {
 
         function renderList(filter) {
             listDiv.innerHTML = '';
-            var lower = (filter || '').toLowerCase();
+            var lower = foldAccents(filter || '').toLowerCase();
             var dupes = {};
             artists.forEach(function(a) {
                 var k = a.name.toLowerCase().trim();
@@ -774,7 +774,7 @@ function _renderManageMiscArtists(container, onChange) {
                 sorted.sort(function(x, y) { return y.song_count - x.song_count || x.name.toLowerCase().localeCompare(y.name.toLowerCase()); });
             }
             sorted.forEach(function(a) {
-                if (lower && a.name.toLowerCase().indexOf(lower) === -1) return;
+                if (lower && foldAccents(a.name).toLowerCase().indexOf(lower) === -1) return;
                 var row = document.createElement('div');
                 row.style.cssText = 'display:flex;align-items:center;gap:0.375rem;padding:0.3125rem 0.25rem;border-bottom:0.0625rem solid var(--border,#eee);font-size:0.75rem;';
                 var isDupe = dupes[a.name.toLowerCase().trim()] > 1;
