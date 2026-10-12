@@ -865,6 +865,8 @@ def song_info(song_id):
         'is_promoted': song.is_promoted,
         'is_cover': song.is_cover,
         'is_remix': song.is_remix,
+        'theme_type': song.theme_type or '',
+        'theme_number': song.theme_number,
         'note': song.note or '',
         'spotify_url': song.spotify_url or '',
         'youtube_url': song.youtube_url or '',

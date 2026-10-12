@@ -1,0 +1,7 @@
+{# Anime theme-song pill (OP 2 / ED / IN). Class names are written out in full so Tailwind's purge keeps them. #}
+{% macro theme_tag(song) -%}
+{%- set meta = {'op': ('bg-opening', 'OP', 'Opening'), 'ed': ('bg-ending', 'ED', 'Ending'), 'in': ('bg-insert', 'IN', 'Insert')}.get(song.theme_type) -%}
+{%- if meta -%}
+<span class="theme-tag rounded {{ meta[0] }} text-primary-text font-bold ml-1" title="{{ meta[2] }}{% if song.theme_number %} {{ song.theme_number }}{% endif %}" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">{{ meta[1] }}{% if song.theme_number %} {{ song.theme_number }}{% endif %}</span>
+{%- endif -%}
+{%- endmacro %}

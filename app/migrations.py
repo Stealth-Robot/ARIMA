@@ -78,9 +78,15 @@ def run_startup_migrations():
                 if isinstance(col.type, sqlalchemy.Boolean):
                     db.session.execute(db.text(
                         f'ALTER TABLE song ADD COLUMN {col.name} INTEGER NOT NULL DEFAULT 0'))
+                elif isinstance(col.type, sqlalchemy.Integer):
+                    db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} INTEGER'))
                 else:
                     db.session.execute(db.text(f'ALTER TABLE song ADD COLUMN {col.name} TEXT'))
                 logger.info('Added missing song column: %s', col.name)
+
+        # 1a-theme. One-off: tag anime theme songs from their notes (removed once run in production).
+        from app.theme_backfill import backfill_song_themes
+        backfill_song_themes(db)
 
         # 1a''. Add any new album columns (e.g. note)
         from app.models.music import Album, Artist

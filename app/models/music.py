@@ -188,6 +188,8 @@ class Song(db.Model):
     is_lead = db.Column(db.Boolean, nullable=False, default=False)
     is_remix = db.Column(db.Boolean, nullable=False, default=False)
     is_cover = db.Column(db.Boolean, nullable=False, default=False)
+    theme_type = db.Column(db.Text)  # 'op', 'ed' or 'in' (anime Opening / Ending / Insert)
+    theme_number = db.Column(db.Integer)
     note = db.Column(db.Text)
     last_updated = db.Column(db.Text)
     spotify_url = db.Column(db.Text)

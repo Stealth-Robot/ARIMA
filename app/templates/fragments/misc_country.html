@@ -1,4 +1,5 @@
 {% set ns = namespace(song_idx=0) %}
+{% from "fragments/theme_tag.html" import theme_tag %}
 {% from "fragments/spotify_macros.html" import song_spotify_icon with context %}
 {% set is_editable = current_user.can_rate %}
 {% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
@@ -38,6 +39,7 @@
         {% if song.is_promoted %}border-left: 0.25rem solid var(--promoted-song);{% endif %}">
         {{ _dn }}
         {% if row.feat_artists %} <span class="text-secondary-text italic">(feat. {{ row.feat_artists | amp_join }})</span>{% endif %}
+        {{ theme_tag(song) }}
         {% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}
         {% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}
         {% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}

@@ -1177,6 +1177,7 @@ function songEditConfig(cell) {
                 name: seedName, note: cell.getAttribute('data-song-note') || '',
                 main_artists: [], featured_artists: [], albums: [], genres: [], genre_ids: [],
                 is_lead: false, is_promoted: false, is_cover: false, is_remix: false,
+                theme_type: '', theme_number: null,
                 spotify_url: '', youtube_url: '', aliases: [],
             };
             if (!songId) { done(seed); return; }
@@ -1190,6 +1191,7 @@ function songEditConfig(cell) {
                         seed.albums = d.albums || []; seed.genres = d.genres || []; seed.genre_ids = d.genre_ids || [];
                         seed.is_lead = !!d.is_lead; seed.is_promoted = !!d.is_promoted;
                         seed.is_cover = !!d.is_cover; seed.is_remix = !!d.is_remix;
+                        seed.theme_type = d.theme_type || ''; seed.theme_number = d.theme_number || null;
                         seed.note = d.note || ''; seed.spotify_url = d.spotify_url || ''; seed.youtube_url = d.youtube_url || '';
                         seed.aliases = d.aliases || [];
                     }
@@ -1235,6 +1237,9 @@ function songEditConfig(cell) {
             if (data.is_promoted) tags.push('Promoted');
             if (data.is_cover) tags.push('Cover');
             if (data.is_remix) tags.push('Remix');
+            if (data.theme_type && typeof THEME_TAG_META !== 'undefined' && THEME_TAG_META[data.theme_type]) {
+                tags.push(THEME_TAG_META[data.theme_type][2] + (data.theme_number ? ' ' + data.theme_number : ''));
+            }
             if (tags.length) bodyArea.appendChild(ui.infoRow('Tags', tags.join(', ')));
             if (data.note) bodyArea.appendChild(ui.infoRow('Note', data.note));
 
@@ -1344,6 +1349,26 @@ function songEditConfig(cell) {
                 flagsRow.appendChild(flagGroup);
             }
             renderFlags();
+
+            // Anime theme song type, saved immediately like the flags above.
+            var themeLabel = document.createElement('div');
+            themeLabel.textContent = 'Theme song';
+            themeLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
+            bodyArea.appendChild(themeLabel);
+            var themeRow = document.createElement('div');
+            themeRow.style.cssText = 'margin-bottom:0.875rem; padding-left:0.125rem;';
+            var themePicker = themeSongPicker(data.theme_type, data.theme_number, function() {
+                var v = themePicker.getValue();
+                fetch('/edit/song/' + songId + '/theme', { method: 'POST', headers: ui.headers(),
+                    body: 'type=' + encodeURIComponent(v.type) + '&number=' + (v.number || '') })
+                    .then(function(r) { if (!r.ok) throw new Error('failed'); return r.json(); })
+                    .then(function(d) {
+                        data.theme_type = d.theme_type; data.theme_number = d.theme_number;
+                        _setThemeTag(songId, d.theme_type, d.theme_number);
+                    }).catch(function() { ui.toast('Failed to save — try again'); });
+            });
+            themeRow.appendChild(themePicker);
+            bodyArea.appendChild(themeRow);
 
             var aliasLabel = document.createElement('div');
             aliasLabel.textContent = 'Alternative names';

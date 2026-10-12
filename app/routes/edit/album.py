@@ -16,6 +16,7 @@ from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
+from app.routes.edit.song import parse_theme
 
 
 @edit_bp.route('/album/<int:album_id>/name', methods=['POST'])
@@ -355,9 +356,12 @@ def add_album_to_artist(artist_id):
             if not song_name:
                 abort(400)
             new_song_count += 1
+            theme_type, theme_number = parse_theme(song_data.get('theme_type'), song_data.get('theme_number'))
             song = Song(
                 name=song_name,
                 submitted_by_id=current_user.id,
+                theme_type=theme_type,
+                theme_number=theme_number,
                 is_lead=bool(song_data.get('is_lead')),
                 is_promoted=bool(song_data.get('is_promoted') or song_data.get('is_lead')),
                 is_remix=song_data.get('is_remix', False),

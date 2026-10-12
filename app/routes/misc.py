@@ -20,6 +20,7 @@ from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
 from app.services.dates import is_valid_release_date
 from app.services.events import publish
+from app.routes.edit.song import parse_theme
 from app.services.search import text_match, alias_field
 
 misc_bp = Blueprint('misc', __name__)
@@ -604,9 +605,12 @@ def add_misc_song():
             used_langs.add(group)
         aliases.append((name, lang))
 
+    theme_type, theme_number = parse_theme(data.get('theme_type'), data.get('theme_number'))
     song = Song(
         name=song_name,
         submitted_by_id=current_user.id,
+        theme_type=theme_type,
+        theme_number=theme_number,
         is_promoted=bool(data.get('is_promoted')),
         is_remix=bool(data.get('is_remix')),
         is_cover=bool(data.get('is_cover')),

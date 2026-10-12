@@ -979,6 +979,11 @@ function _showAddMiscSong() {
     var nameInp = _miscInput('Song name');
     modal.appendChild(nameInp);
 
+    /* Theme song (optional) */
+    modal.appendChild(_miscLabel('Theme Song (optional)'));
+    var themePicker = themeSongPicker('', null);
+    modal.appendChild(themePicker);
+
     /* YouTube URL (optional) */
     modal.appendChild(_miscLabel('YouTube URL (optional)'));
     var ytInp = _miscInput('https://www.youtube.com/watch?v=...');
@@ -1197,6 +1202,8 @@ function _showAddMiscSong() {
         var spotUrl = spotInp.value.trim();
         var payload = {
             name: sName,
+            theme_type: themePicker.getValue().type,
+            theme_number: themePicker.getValue().number,
             spotify_url: spotUrl || null,
             youtube_url: ytInp.value.trim() || null,
             note: noteInp.value.trim() || null,

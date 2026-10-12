@@ -87,6 +87,54 @@ function updateSongPill(checkbox) {
     }
 }
 
+var THEME_TAG_META = { op: ['bg-opening', 'OP', 'Opening'], ed: ['bg-ending', 'ED', 'Ending'], in: ['bg-insert', 'IN', 'Insert'] };
+
+/* Redraw a song's OP/ED/IN pill in every visible row, matching fragments/theme_tag.html. */
+function _setThemeTag(songId, type, number) {
+    document.querySelectorAll('td.song-name-cell[data-song-id="' + songId + '"]').forEach(function(cell) {
+        var old = cell.querySelector('.theme-tag');
+        if (old) old.remove();
+        var meta = THEME_TAG_META[type];
+        if (!meta) return;
+        var suffix = number ? ' ' + number : '';
+        var tag = document.createElement('span');
+        tag.className = 'theme-tag rounded ' + meta[0] + ' text-primary-text font-bold ml-1';
+        tag.style.cssText = 'font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;';
+        tag.textContent = meta[1] + suffix;
+        tag.title = meta[2] + suffix;
+        var ref = cell.querySelector('.promoted-tag, .cover-tag, .remix-tag, .edit-inline, .song-links');
+        if (ref) ref.insertAdjacentElement('beforebegin', tag);
+        else cell.appendChild(tag);
+    });
+}
+
+/* Theme-song picker (None / Opening / Ending / Insert + optional number) shared by the add/edit dialogs. */
+function themeSongPicker(type, number, onChange) {
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex; align-items:center; gap:0.25rem;';
+    var sel = document.createElement('select');
+    sel.className = 'theme-song-type';
+    sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.25rem; padding:0.125rem 0.25rem; font-size:0.75rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    [['', 'Not a theme song'], ['op', 'Opening'], ['ed', 'Ending'], ['in', 'Insert']].forEach(function(o) {
+        var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
+        if (o[0] === (type || '')) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    var num = document.createElement('input');
+    num.type = 'number'; num.min = '1'; num.max = '999'; num.placeholder = '#';
+    num.className = 'theme-song-number';
+    num.title = 'Number (e.g. 2 for OP 2), optional';
+    num.value = number || '';
+    num.style.cssText = 'width:3.25rem; border:0.0625rem solid var(--border,#ccc); border-radius:0.25rem; padding:0.125rem 0.25rem; font-size:0.75rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    function sync() { num.disabled = !sel.value; if (!sel.value) num.value = ''; }
+    sync();
+    sel.onchange = function() { sync(); if (onChange) onChange(); };
+    num.onchange = function() { if (onChange) onChange(); };
+    wrap.appendChild(sel); wrap.appendChild(num);
+    wrap.getValue = function() { return { type: sel.value, number: sel.value && num.value ? parseInt(num.value, 10) : null }; };
+    return wrap;
+}
+
 function _ensurePromotedVisual(row) {
     var cell = row.querySelector('td:first-child');
     if (!cell) return;
@@ -1999,6 +2047,9 @@ function addNewAlbumSong(currentArtistId) {
             '<span style="cursor:pointer;" onclick="event.stopPropagation();promptLocalUrl(this, \'youtube_url\', \'YouTube URL\')" title="Set YouTube URL"><img src="/static/img/youtube.png" style="width:0.75rem; height:0.75rem; filter:grayscale(1) invert(1);"></span>' +
             '<span style="cursor:pointer; font-size:0.75rem; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
         '</div>' +
+        '<div class="new-song-theme-slot flex items-center gap-2" style="padding: 0.25rem 0.5rem;">' +
+            '<span class="text-xs" style="color:var(--text-secondary);">Theme song:</span>' +
+        '</div>' +
         '<div style="padding: 0.25rem 0.5rem;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Misc artists:</span>' +
             '<div id="new-song-misc-artists-' + n + '" class="flex flex-wrap gap-2" style="margin: 0.125rem 0;"></div>' +
@@ -2007,6 +2058,7 @@ function addNewAlbumSong(currentArtistId) {
                 '<div class="new-song-misc-results" style="max-height:7.5rem; overflow-y:auto; position:absolute; z-index:60; background:var(--bg-secondary,#fff); border:0.0625rem solid var(--border); border-radius:0.1875rem; display:none; width:11.25rem;"></div>' +
             '</div>' +
         '</div>';
+    row.querySelector('.new-song-theme-slot').appendChild(themeSongPicker('', null));
     container.appendChild(row);
     _initNewSongMiscSearch(n);
     // Auto-add target artist (from dropdown or page artist) as main
@@ -2223,6 +2275,8 @@ function submitNewAlbum(artistId) {
         var songEntry = {
             name: n,
             is_lead: songDiv.querySelector('.new-song-lead') ? songDiv.querySelector('.new-song-lead').getAttribute('aria-checked') === 'true' : false,
+            theme_type: songDiv.querySelector('.theme-song-type') ? songDiv.querySelector('.theme-song-type').value : '',
+            theme_number: songDiv.querySelector('.theme-song-number') ? songDiv.querySelector('.theme-song-number').value : '',
             is_promoted: songDiv.querySelector('.new-song-promoted') ? songDiv.querySelector('.new-song-promoted').checked : false,
             is_remix: songDiv.querySelector('.new-song-remix') ? songDiv.querySelector('.new-song-remix').checked : false,
             is_cover: songDiv.querySelector('.new-song-cover') ? songDiv.querySelector('.new-song-cover').checked : false,

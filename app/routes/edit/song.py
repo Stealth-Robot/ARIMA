@@ -91,6 +91,47 @@ def song_is_lead(song_id):
     return json.dumps({'is_lead': song.is_lead, 'is_promoted': song.is_promoted}), 200, {'Content-Type': 'application/json'}
 
 
+THEME_NAMES = {'op': 'Opening', 'ed': 'Ending', 'in': 'Insert'}
+
+
+def parse_theme(theme_type, theme_number):
+    """Validate a theme type/number pair from a form or JSON; abort(400) on bad input."""
+    theme_type = (theme_type or '').strip() or None
+    if theme_type is not None and theme_type not in THEME_NAMES:
+        abort(400)
+    if theme_type is None or theme_number in (None, ''):
+        return theme_type, None
+    try:
+        number = int(theme_number)
+    except (TypeError, ValueError):
+        abort(400)
+    if not 1 <= number <= 999:
+        abort(400)
+    return theme_type, number
+
+
+@edit_bp.route('/song/<int:song_id>/theme', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def song_theme(song_id):
+    _require_edit_mode()
+    song = db.session.get(Song, song_id)
+    if song is None:
+        abort(404)
+    theme_type, number = parse_theme(request.form.get('type'), request.form.get('number'))
+    if (theme_type, number) == (song.theme_type, song.theme_number):
+        return jsonify({'theme_type': song.theme_type or '', 'theme_number': song.theme_number})
+    song.theme_type, song.theme_number = theme_type, number
+    with db.session.no_autoflush:
+        if theme_type:
+            label = THEME_NAMES[theme_type] + (f' {number}' if number else '')
+            log_change(current_user, f'Marked "{song.name}" song as {label}', song=song)
+        else:
+            log_change(current_user, f'Cleared theme song type on "{song.name}"', song=song)
+    db.session.commit()
+    return jsonify({'theme_type': song.theme_type or '', 'theme_number': song.theme_number})
+
+
 @edit_bp.route('/song/<int:song_id>/is-cover', methods=['POST'])
 @login_required
 @role_required(EDITOR_OR_ADMIN)
