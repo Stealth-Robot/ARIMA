@@ -1965,6 +1965,13 @@ function validateAddAlbum() {
     btn.style.cursor = valid ? 'pointer' : 'not-allowed';
 }
 
+// A lead track is always promoted, matching the server's is-lead toggle.
+function setNewSongLead(star, on) {
+    star.setAttribute('aria-checked', on ? 'true' : 'false');
+    star.style.color = on ? 'var(--lead-song,#f5a623)' : '#888';
+    if (on) star.closest('[id^=new-song-]').querySelector('.new-song-promoted').checked = true;
+}
+
 function addNewAlbumSong(currentArtistId) {
     _newAlbumSongCount++;
     var n = _newAlbumSongCount;
@@ -1976,7 +1983,8 @@ function addNewAlbumSong(currentArtistId) {
     row.innerHTML =
         '<div class="flex gap-2 items-center mb-1">' +
             '<input type="text" placeholder="Song name" class="flex-1 px-2 py-1 border rounded text-sm new-album-song-name" style="border-color:var(--border);" oninput="validateAddAlbum()">' +
-            '<label class="text-xs"><input type="checkbox" class="new-song-promoted"> Promoted</label>' +
+            '<span class="new-song-lead" role="checkbox" aria-checked="false" title="Lead track" onclick="setNewSongLead(this, this.getAttribute(\'aria-checked\') !== \'true\')" style="cursor:pointer; font-size:1.1875rem; line-height:1; padding:0 0.125rem; color:#888;">&#9733;</span>' +
+            '<label class="text-xs"><input type="checkbox" class="new-song-promoted" onchange="if(!this.checked)setNewSongLead(this.closest(\'[id^=new-song-]\').querySelector(\'.new-song-lead\'), false)"> Promoted</label>' +
             '<label class="text-xs"><input type="checkbox" class="new-song-remix"> Remix</label>' +
             '<label class="text-xs"><input type="checkbox" class="new-song-cover"> Cover</label>' +
             '<button type="button" onclick="this.closest(\'[id^=new-song-]\').remove();validateAddAlbum()" class="text-xs px-1" style="color:var(--delete-button,#DC2626);">&times;</button>' +
@@ -2214,6 +2222,7 @@ function submitNewAlbum(artistId) {
         });
         var songEntry = {
             name: n,
+            is_lead: songDiv.querySelector('.new-song-lead') ? songDiv.querySelector('.new-song-lead').getAttribute('aria-checked') === 'true' : false,
             is_promoted: songDiv.querySelector('.new-song-promoted') ? songDiv.querySelector('.new-song-promoted').checked : false,
             is_remix: songDiv.querySelector('.new-song-remix') ? songDiv.querySelector('.new-song-remix').checked : false,
             is_cover: songDiv.querySelector('.new-song-cover') ? songDiv.querySelector('.new-song-cover').checked : false,

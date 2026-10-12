@@ -358,7 +358,8 @@ def add_album_to_artist(artist_id):
             song = Song(
                 name=song_name,
                 submitted_by_id=current_user.id,
-                is_promoted=song_data.get('is_promoted', False),
+                is_lead=bool(song_data.get('is_lead')),
+                is_promoted=bool(song_data.get('is_promoted') or song_data.get('is_lead')),
                 is_remix=song_data.get('is_remix', False),
                 is_cover=song_data.get('is_cover', False),
                 spotify_url=song_data.get('spotify_url') or None,
