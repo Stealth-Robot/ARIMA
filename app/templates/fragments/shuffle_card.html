@@ -1,3 +1,4 @@
+{% from "fragments/spotify_macros.html" import song_link_icons with context %}
 <div data-artist-id="{{ artist_id }}">
     <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
     <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
@@ -32,6 +33,7 @@
                         Misc{% if song.genres %} &middot; {{ song.genres | map(attribute='genre') | join(', ') }}{% endif %}
                     </div>
                     {% endif %}
+                    <div class="mt-1">{{ song_link_icons(song, artist.name, album) }}</div>
                 </td>
                 {% for u in users %}
                 {% set r = ratings.get(u.id) %}

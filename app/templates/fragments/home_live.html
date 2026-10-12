@@ -1,3 +1,4 @@
+{% from "fragments/spotify_macros.html" import song_link_icons with context %}
 {% if owned_artists %}
 <h2 class="text-lg font-bold text-primary-text mb-3 mt-6 flex items-center gap-2 cursor-pointer"
     data-collapse-key="home-owned" onclick="homeToggle(this)">
@@ -85,7 +86,7 @@
             {% for song in songs %}
             <tr>
                 {% set _dn = song_display_name(song) %}
-                <td class="song-name-cell text-primary-text border border-grid-line" title="{{ _dn }}" data-song-id="{{ song.id }}" style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ _dn }}</td>
+                <td class="song-name-cell text-primary-text border border-grid-line" title="{{ _dn }}" data-song-id="{{ song.id }}" style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem;"><div class="flex items-center gap-1"><span class="truncate min-w-0">{{ _dn }}</span><span class="flex-shrink-0">{{ song_link_icons(song, artist.name, album) }}</span></div></td>
                 {% for u in users %}
                 {% set r = ratings.get(song.id, {}).get(u.id) %}
                 {% set cell_style = rating_cell_style(r.rating if r else None) %}
