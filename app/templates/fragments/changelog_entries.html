@@ -29,7 +29,7 @@
 </tr>
 {% endfor %}
 {% if not live %}
-<div id="changelog-load-more" hx-swap-oob="true" class="text-center py-4 mt-4"
+<div id="changelog-load-more" hx-swap-oob="true" class="text-center py-4 mt-4">
     {% if has_more %}
     <button hx-get="{{ url_for('changelog.changelog', before=last_id) }}"
             hx-target="#changelog-tbody"
