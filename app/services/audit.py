@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from urllib.parse import quote
 
 from markupsafe import escape
+from sqlalchemy import event
+from sqlalchemy.orm import Session
 
 from app.extensions import db
 from app.models.changelog import Changelog
@@ -21,6 +23,18 @@ def _artist_url(artist):
 
 def _make_link(url, text):
     return '<a href="{}" class="changelog-link">{}</a>'.format(escape(url), escape(text))
+
+
+# Announce new entries only once committed, so a live changelog fetch can't run ahead of the row.
+@event.listens_for(Session, 'after_commit')
+def _publish_changelog(session):
+    if session.info.pop('changelog_added', False):
+        publish('changelog', {})
+
+
+@event.listens_for(Session, 'after_rollback')
+def _drop_changelog_flag(session):
+    session.info.pop('changelog_added', None)
 
 
 def _is_misc_song(song_id):
@@ -174,6 +188,7 @@ def log_change(user, description, artist=None, album=None, song=None, change_typ
         description=full_desc,
         description_html=full_html,
     ))
+    db.session.info['changelog_added'] = True
 
     # Broadcast a real-time content event so other viewers of this artist refresh.
     # Ratings publish their own event (carrying the rated user) from the rating

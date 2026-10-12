@@ -1024,17 +1024,31 @@ var _tooltipSelecting = false;
     var SHARED_PAGE_POLL_INTERVAL = 500;
     var reloadTimers = {};
 
+    function cellRating(cell) {
+        var t = cell.textContent.trim();
+        return /^[0-5]$/.test(t) ? parseInt(t, 10) : null;
+    }
+
     function handleUpdate(data) {
+        var mine = data.user_id === myId;
+        if (mine && typeof window._miscRefreshUnrated === 'function') debounceReload('misc-unrated', window._miscRefreshUnrated);
         var cellId = 'rating-' + data.song_id + '-' + data.user_id;
         var cell = document.getElementById(cellId);
         if (!cell) return;
         if (activeInput && activeInput.cell === cell) return;
+        var prevRating = cellRating(cell);
         fetch('/rate/cell?song_id=' + data.song_id + '&user_id=' + data.user_id)
             .then(function (r) { return r.text(); })
             .then(function (html) {
                 cell.outerHTML = html;
-                var row = document.getElementById(cellId);
-                if (row) row = row.closest('tr');
+                var fresh = document.getElementById(cellId);
+                var row = fresh ? fresh.closest('tr') : null;
+                // Own ratings from another device or a proxy: mirror what a local save does (an echo of a local save is a no-op).
+                if (mine && fresh) {
+                    var newRating = cellRating(fresh);
+                    if (window._updateBacklogCounts) window._updateBacklogCounts(fresh, prevRating, newRating);
+                    if (row && row.hasAttribute('data-my-rated')) row.dataset.myRated = newRating !== null ? '1' : '0';
+                }
                 if (row && row.style.display !== 'none') { row.style.display = 'none'; row.offsetHeight; row.style.display = ''; }
             });
     }
@@ -1051,6 +1065,22 @@ var _tooltipSelecting = false;
     }
 
     function handleContentEvent(eventType, data) {
+        if (eventType === 'changelog') {
+            if (typeof window._changelogLive === 'function') {
+                if (data && data.deleted) window._changelogLive(data);
+                else debounceReload('changelog', window._changelogLive);
+            }
+            return;
+        }
+        if (eventType === 'sotd-update') {
+            if (typeof window._sotdRefresh === 'function') debounceReload('sotd', window._sotdRefresh);
+            return;
+        }
+        if (eventType === 'updates-change') {
+            if (typeof window.checkForUpdates === 'function' && window.location.pathname.indexOf('/updates') !== 0) debounceReload('updates-banner', window.checkForUpdates);
+            if (typeof window._updatesRefresh === 'function') debounceReload('updates', window._updatesRefresh);
+            return;
+        }
         var viewing = viewingArtistId();
         if (viewing !== null) {
             // Artist discography page — only react to events for this artist.
@@ -1078,6 +1108,7 @@ var _tooltipSelecting = false;
         } else if (path === '/misc' && typeof window._miscRefreshExpanded === 'function') {
             // Misc — re-fetch any expanded country in place.
             debounceReload('misc', window._miscRefreshExpanded);
+            if (typeof window._miscRefreshUnrated === 'function') debounceReload('misc-unrated', window._miscRefreshUnrated);
         }
     }
 
@@ -1453,4 +1484,16 @@ var _tooltipSelecting = false;
     })();
     document.addEventListener('visibilitychange', poll);
     poll();
+
+    // Song of the Day rolls over at midnight EST with no edit event, so refresh it on a timer.
+    (function scheduleSotdRollover() {
+        var est = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        var midnight = new Date(est);
+        midnight.setDate(midnight.getDate() + 1);
+        midnight.setHours(0, 0, 0, 0);
+        setTimeout(function () {
+            if (typeof window._sotdRefresh === 'function') window._sotdRefresh();
+            scheduleSotdRollover();
+        }, midnight - est + 5000);
+    })();
 })();

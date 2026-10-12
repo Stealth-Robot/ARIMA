@@ -191,12 +191,17 @@
 </div>
 
 <script>
-/* Unrated count */
-(function() {
+/* Unrated count — also re-fetched by the live poll after your ratings and misc edits */
+var _miscUnratedSeq = 0;
+window._miscRefreshUnrated = function() {
+    // Only the newest request may render, so a slow earlier count can't overwrite a fresher one.
+    var ticket = ++_miscUnratedSeq;
     fetch('/misc/unrated-count').then(function(r) { return r.json(); }).then(function(d) {
+        if (ticket !== _miscUnratedSeq) return;
         document.getElementById('misc-unrated').textContent = 'Unrated: ' + d.unrated + ' / ' + d.total;
-    });
-})();
+    }).catch(function() {});
+};
+window._miscRefreshUnrated();
 
 /* Collapse/expand */
 var _miscLoadedCountries = {};

@@ -15,7 +15,7 @@
     </thead>
     <tbody id="changelog-tbody">
         {% for e in entries %}
-        <tr class="border border-grid-line" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
+        <tr class="border border-grid-line" data-entry-id="{{ e.id }}" style="{% if loop.index0 % 2 == 1 %}background-color: var(--row-alternate);{% endif %}">
             <td class="px-3 py-2 text-xs border border-grid-line">
                 <div class="flex items-center justify-center gap-1.5 whitespace-nowrap px-1">
                     <img src="{{ e.user.profile_image or url_for('static', filename='img/default_image.png') }}"

@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import and_, func
 
 from app.extensions import db
+from app.services.events import publish
 from app.decorators import role_required, ADMIN
 from app.models.music import (Artist, ArtistArtist, ArtistSubscription, ArtistSong,
                                AlbumSong, Album, Song, Rating, album_genres,
@@ -513,6 +514,7 @@ def set_song_of_the_day():
 
     entry.song_id = song.id
     db.session.commit()
+    publish('sotd-update', {})
     return '', 200
 
 

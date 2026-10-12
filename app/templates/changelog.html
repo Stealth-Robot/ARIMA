@@ -117,6 +117,47 @@ document.addEventListener('click', function(e) {
         document.querySelectorAll('.filter-dropdown').forEach(function(d) { d.style.display = 'none'; });
     }
 });
+// Called by the global event poll: prepend entries newer than the top row, or drop a deleted one.
+window._changelogLive = function(data) {
+    if (data && data.deleted) {
+        var gone = document.querySelector('#changelog-tbody tr[data-entry-id="' + data.deleted + '"]');
+        if (gone) { gone.remove(); restripeChangelog(); }
+        return;
+    }
+    var params = new URLSearchParams();
+    document.querySelectorAll('#changelog-filters input[name="q"], #changelog-filters input[name="user_id"]:checked, #changelog-filters input[name="include"]:checked').forEach(function(el) {
+        if (el.value) params.append(el.name, el.value);
+    });
+    var tbody = document.getElementById('changelog-tbody');
+    if (!tbody) {
+        htmx.ajax('GET', '{{ url_for("changelog.changelog") }}?' + params.toString(), { target: '#changelog-list', swap: 'innerHTML' });
+        return;
+    }
+    var newest = 0;
+    tbody.querySelectorAll('tr[data-entry-id]').forEach(function(tr) {
+        newest = Math.max(newest, parseInt(tr.getAttribute('data-entry-id'), 10));
+    });
+    params.set('after', newest);
+    fetch('{{ url_for("changelog.changelog") }}?' + params.toString())
+        .then(function(r) { return r.ok ? r.text() : ''; })
+        .then(function(html) {
+            if (!html.trim()) return;
+            var tmp = document.createElement('tbody');
+            tmp.innerHTML = html;
+            var rows = Array.prototype.filter.call(tmp.children, function(tr) {
+                return !tbody.querySelector('tr[data-entry-id="' + tr.getAttribute('data-entry-id') + '"]');
+            });
+            for (var i = rows.length - 1; i >= 0; i--) tbody.insertBefore(rows[i], tbody.firstChild);
+            rows.forEach(function(tr) { formatUtcDates(tr); htmx.process(tr); });
+            restripeChangelog();
+        })
+        .catch(function() {});
+};
+function restripeChangelog() {
+    document.querySelectorAll('#changelog-tbody tr').forEach(function(tr, i) {
+        tr.style.backgroundColor = i % 2 === 1 ? 'var(--row-alternate)' : '';
+    });
+}
 document.body.addEventListener('htmx:afterRequest', function() {
     var params = new URLSearchParams();
     var q = document.getElementById('changelog-search').value.trim();

@@ -6,6 +6,7 @@
 {% block content %}
 {% if owned_artists or has_any_maintained or backlog or can_rate %}
 <div class="px-4 py-6" style="max-width: 56.25rem; margin: 0 auto;">
+    <div id="home-sotd">
     {% if can_rate and sotd_today %}
     <h2 class="text-lg font-bold text-primary-text mb-3 flex flex-wrap items-center gap-2 cursor-pointer"
         data-collapse-key="home-sotd" onclick="homeToggle(this)">
@@ -49,6 +50,7 @@
         {% endif %}
     </div>
     {% endif %}
+    </div>
     {% if can_rate %}
     <div class="text-center mt-6 mb-3">
         <span id="shuffle-controls">
@@ -249,7 +251,7 @@ window._updateBacklogCounts = function(cell, prevRating, newRating) {
     var isRated = newRating !== null;
     if (wasRated === isRated) return;
     var delta = isRated ? -1 : 1;
-    var wrapper = cell.closest('.mb-4');
+    var wrapper = cell.closest('.backlog-artist');
     if (!wrapper) return;
     var numSpan = wrapper.querySelector('.backlog-count-num');
     if (numSpan) {
@@ -325,12 +327,23 @@ function dismissShuffle() {
     if (container) container.innerHTML = '';
     document.getElementById('shuffle-dismiss').style.visibility = 'hidden';
 }
+// Swap in a fresh Song of the Day section; called by the live poll on overrides and at the midnight rollover.
+window._sotdRefresh = function() {
+    fetch('/').then(function(r) { return r.ok ? r.text() : ''; }).then(function(html) {
+        var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('home-sotd');
+        var cur = document.getElementById('home-sotd');
+        if (!fresh || !cur) return;
+        cur.innerHTML = fresh.innerHTML;
+        window._restoreHomeCollapse();
+    }).catch(function() {});
+};
 (function() {
-    var wrap = document.getElementById('sotd-countdown-wrap');
-    var el = document.getElementById('sotd-countdown');
-    if (!el || !wrap) return;
     function pad(n) { return n < 10 ? '0' + n : n; }
     function tick() {
+        // Looked up each tick since a live refresh replaces these elements.
+        var wrap = document.getElementById('sotd-countdown-wrap');
+        var el = document.getElementById('sotd-countdown');
+        if (!el || !wrap) return;
         var now = new Date();
         var est = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
         var midnight = new Date(est);

@@ -7,6 +7,7 @@
 <div class="px-4 py-6" style="max-width: 56.25rem; margin: 0 auto;">
     <h2 class="text-lg font-bold text-primary-text mb-1">Song of the Day History</h2>
     <p class="text-xs text-secondary-text mb-4">Resets daily at midnight EST</p>
+    <div id="sotd-page">
     {% if cards %}
     <div class="discography-scroll-wrapper overflow-x-auto" style="max-width: fit-content; margin: 0 auto;">
     <table class="text-xs" style="border-collapse: collapse; table-layout: fixed;">
@@ -32,7 +33,18 @@
     {% else %}
     <p class="text-secondary-text text-sm">No songs of the day yet.</p>
     {% endif %}
+    </div>
 </div>
+<script>
+// Swap in fresh history; called by the live poll on overrides and at the midnight rollover.
+window._sotdRefresh = function() {
+    fetch('/song-of-the-day').then(function(r) { return r.ok ? r.text() : ''; }).then(function(html) {
+        var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('sotd-page');
+        var cur = document.getElementById('sotd-page');
+        if (fresh && cur) cur.innerHTML = fresh.innerHTML;
+    }).catch(function() {});
+};
+</script>
 {% if current_user.is_admin %}
 <script>
 /* Admin-only: change which song is the Song of the Day for a given date.

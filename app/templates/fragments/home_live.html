@@ -51,7 +51,7 @@
     <span class="font-normal text-xs text-secondary-text"><span id="backlog-total-artists">{{ backlog|length }}</span> artist{{ 's' if backlog|length != 1 else '' }} · <span id="backlog-total-songs">{{ ns.total_songs }}</span> song{{ 's' if ns.total_songs != 1 else '' }}</span></h2>
 <div>
 {% for artist, (song_count, album_groups) in backlog %}
-<div{% if not loop.first %} style="margin-top: 1rem;"{% endif %}>
+<div class="backlog-artist"{% if not loop.first %} style="margin-top: 1rem;"{% endif %}>
     <div class="flex items-center gap-2 mb-1 px-1 cursor-pointer"
          style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] }}); padding-left: 0.5rem;"
          data-collapse-key="home-backlog-{{ artist.id }}" onclick="homeToggle(this)">

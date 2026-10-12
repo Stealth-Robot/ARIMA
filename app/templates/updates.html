@@ -258,23 +258,28 @@ function editRow(id) {
 </script>
 {% endif %}
 <script>
-document.querySelectorAll('.update-date').forEach(function(td) {
-    var utc = td.dataset.utc;
-    if (!utc) return;
-    var d = new Date(utc.replace(' ', 'T') + 'Z');
-    if (isNaN(d)) return;
-    var pad = function(n) { return n < 10 ? '0' + n : n; };
-    var h = d.getHours();
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
-        + '  ' + pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
-});
+function _formatUpdateDates() {
+    document.querySelectorAll('.update-date').forEach(function(td) {
+        var utc = td.dataset.utc;
+        if (!utc) return;
+        var d = new Date(utc.replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return;
+        var pad = function(n) { return n < 10 ? '0' + n : n; };
+        var h = d.getHours();
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        td.textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+            + '  ' + pad(h) + ':' + pad(d.getMinutes()) + ' ' + ampm;
+    });
+}
+_formatUpdateDates();
 
 // "NEW" badges for updates added since last visit
-(function() {
+// Read once so a live refresh still badges everything that was new when the page opened.
+var _updatesLastSeen = parseInt(localStorage.getItem('arima-updates-last-seen')) || 0;
+function _markNewUpdates() {
     var KEY = 'arima-updates-last-seen';
-    var lastSeen = parseInt(localStorage.getItem(KEY)) || 0;
+    var lastSeen = _updatesLastSeen;
     var maxId = 0;
     document.querySelectorAll('tr[id^="row-"]').forEach(function(row) {
         var id = parseInt(row.id.replace('row-', ''));
@@ -291,7 +296,21 @@ document.querySelectorAll('.update-date').forEach(function(td) {
         }
     });
     if (maxId > lastSeen) localStorage.setItem(KEY, maxId);
-})();
+}
+_markNewUpdates();
+
+// Called by the live poll when an admin adds, edits or deletes an update; skipped mid-edit so a row form isn't wiped.
+window._updatesRefresh = function() {
+    var tbody = document.querySelector('.updates-table tbody');
+    if (!tbody || tbody.querySelector('form input[name=description]')) return;
+    fetch(window.location.href).then(function(r) { return r.ok ? r.text() : ''; }).then(function(html) {
+        var fresh = new DOMParser().parseFromString(html, 'text/html').querySelector('.updates-table tbody');
+        if (!fresh) return;
+        tbody.innerHTML = fresh.innerHTML;
+        _formatUpdateDates();
+        _markNewUpdates();
+    }).catch(function() {});
+};
 
 function toggleTypeDropdown() {
     var dd = document.getElementById('type-filter-dropdown');

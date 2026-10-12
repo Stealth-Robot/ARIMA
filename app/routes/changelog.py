@@ -29,6 +29,7 @@ def changelog():
     user_ids = [v for v in request.args.getlist('user_id') if v.strip()]
     include = request.args.getlist('include')
     before = request.args.get('before', type=int)
+    after = request.args.get('after', type=int)
 
     _type_order = {'Album': 0, 'Artist': 1, 'Link': 2, 'Rating': 3, 'Song': 4, 'Legacy': 99}
     all_types = sorted(ChangelogType.query.all(), key=lambda t: _type_order.get(t.type, 50))
@@ -49,6 +50,13 @@ def changelog():
 
     if before:
         query = query.filter(Changelog.id < before)
+
+    # Live refresh: only rows newer than the page's newest, rendered without the Load More reset.
+    if after is not None:
+        entries = query.filter(Changelog.id > after).limit(PAGE_SIZE).all()
+        for e in entries:
+            e._linked_desc = Markup(e.description_html) if e.description_html else escape(e.description)
+        return render_template('fragments/changelog_entries.html', entries=entries, live=True)
 
     entries = query.limit(PAGE_SIZE + 1).all()
     has_more = len(entries) > PAGE_SIZE
@@ -105,6 +113,7 @@ def delete_entry(entry_id):
         abort(404)
     db.session.delete(entry)
     db.session.commit()
+    publish('changelog', {'deleted': entry_id})
     return ''
 
 

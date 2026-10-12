@@ -5,6 +5,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, abort,
 from flask_login import login_required, current_user
 
 from app.extensions import db
+from app.services.events import publish
 from app.models.update import Update
 from app.models.lookups import UpdateType
 from app.decorators import role_required, ADMIN
@@ -138,6 +139,7 @@ def add_update():
         return redirect(url_for('updates.updates_page'))
     db.session.add(Update(commit_id=commit_id, description=description, date=date_utc, type_id=type_id))
     db.session.commit()
+    publish('updates-change', {})
     return redirect(url_for('updates.updates_page'))
 
 
@@ -163,6 +165,7 @@ def edit_update(update_id):
     if type_id is not None:
         update.type_id = type_id
     db.session.commit()
+    publish('updates-change', {})
     return redirect(url_for('updates.updates_page'))
 
 
@@ -175,6 +178,7 @@ def delete_update(update_id):
         abort(404)
     db.session.delete(update)
     db.session.commit()
+    publish('updates-change', {})
     return redirect(url_for('updates.updates_page'))
 
 
