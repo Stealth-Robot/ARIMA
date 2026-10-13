@@ -488,9 +488,11 @@
         var b = btn(editLabel, 'em-add', function() { onEdit(b); });
         wrap.appendChild(b);
         f.appendChild(wrap);
+        return wrap;
     }
-    function genrePicker(title, selectedIds, onDone) {
+    function genrePicker(title, selectedIds, onDone, onlyIds) {
         _emEnsure('/lookups/genres', function(opts) {
+            if (onlyIds) opts = opts.filter(function(g) { return onlyIds.indexOf(g.id) !== -1; });
             showMobilePicker({ title: title, mode: 'multiselect',
                 options: opts.map(function(g) { return { id: g.id, label: g.name }; }),
                 selectedIds: selectedIds, onDone: onDone });
@@ -979,6 +981,31 @@
         renderPanel();
     }
 
+    // Each item keeps its other genres; only items whose list actually changes are saved.
+    function bulkGenreField(items, noun, pfx) {
+        function setEach(change) {
+            var todo = items.map(function(it) {
+                var cur = it.d.genre_ids || [];
+                return { it: it, next: change(cur), cur: cur };
+            }).filter(function(t) { return t.next.join(',') !== t.cur.join(','); });
+            runEach(todo, function(t) { return post(pfx + t.it.id + '/genres', 'genre_ids=' + t.next.join(',')); })
+                .then(function(failed) { bulkDone(failed, 'updated'); });
+        }
+        var wrap = tokenField('Genres', [], 'Add genre to all', function() {
+            genrePicker('Add genres to ' + items.length + ' ' + noun, [], function(ids) {
+                if (ids.length) setEach(function(cur) { return cur.concat(ids.filter(function(g) { return cur.indexOf(g) === -1; })); });
+            });
+        });
+        wrap.appendChild(btn('Remove genre from all', 'em-add', function() {
+            var present = [];
+            items.forEach(function(it) { (it.d.genre_ids || []).forEach(function(g) { if (present.indexOf(g) === -1) present.push(g); }); });
+            if (!present.length) { toast('None of these ' + noun + ' have genres'); return; }
+            genrePicker('Remove genres from ' + items.length + ' ' + noun, [], function(ids) {
+                if (ids.length) setEach(function(cur) { return cur.filter(function(g) { return ids.indexOf(g) === -1; }); });
+            }, present);
+        }));
+    }
+
     function drawBulkSongs(rows) {
         // Duplicate rows of one song act once; only album moves and removals are per row.
         var items = rows.filter(function(it, i) { return rows.findIndex(function(o) { return o.id === it.id; }) === i; });
@@ -994,15 +1021,7 @@
             }));
         });
 
-        tokenField('Genres', [], 'Add genre to all', function() {
-            genrePicker('Add genres to ' + items.length + ' songs', [], function(ids) {
-                if (!ids.length) return;
-                runEach(items, function(it) {
-                    var merged = (it.d.genre_ids || []).concat(ids.filter(function(g) { return (it.d.genre_ids || []).indexOf(g) === -1; }));
-                    return post('/edit/song/' + it.id + '/genres', 'genre_ids=' + merged.join(','));
-                }).then(function(failed) { bulkDone(failed, 'updated'); });
-            });
-        });
+        bulkGenreField(items, 'songs', '/edit/song/');
         if (!isMiscPage()) {
             tokenField('Artists', [], 'Add featured artist to all', function() {
                 artistPicker('Add which artist?', function(a) {
@@ -1078,15 +1097,7 @@
             runEach(items, function(it) { return post('/edit/album/' + it.id + '/type', 'album_type_id=' + s.value); })
                 .then(function(failed) { bulkDone(failed, 'updated'); });
         };
-        tokenField('Genres', [], 'Add genre to all', function() {
-            genrePicker('Add genres to ' + items.length + ' albums', [], function(ids) {
-                if (!ids.length) return;
-                runEach(items, function(it) {
-                    var merged = (it.d.genre_ids || []).concat(ids.filter(function(g) { return (it.d.genre_ids || []).indexOf(g) === -1; }));
-                    return post('/edit/album/' + it.id + '/genres', 'genre_ids=' + merged.join(','));
-                }).then(function(failed) { bulkDone(failed, 'updated'); });
-            });
-        });
+        bulkGenreField(items, 'albums', '/edit/album/');
         actions([
             isMiscPage() ? null : ['Move songs to artist…', function() {
                 artistPicker('Move these albums\' songs to…', function(a) {
