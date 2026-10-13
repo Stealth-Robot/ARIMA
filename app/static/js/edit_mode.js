@@ -849,9 +849,146 @@
 
     /* ---- several selected ---- */
 
-    function renderBulk() {
+    function renderBulk(seq) {
+        var kind = selKind, keys = sel.slice();
         panel.innerHTML = '';
-        panel.appendChild(el('div', 'em-empty', sel.length + ' ' + selKind + 's selected'));
+        panel.appendChild(el('div', 'em-empty', 'Loading…'));
+        var loads = keys.map(function(k) { return getJSON(kind === 'song' ? '/song/' + idOf(k) + '/info' : '/album/' + idOf(k) + '/songs'); });
+        Promise.all(loads).then(function(datas) {
+            if (seq !== renderSeq) return;
+            panel.innerHTML = '';
+            var items = keys.map(function(k, i) { return { key: k, id: idOf(k), album: albumOf(k), d: datas[i] || {} }; });
+            if (kind === 'song') drawBulkSongs(items); else drawBulkAlbums(items);
+            wrapSelects(panel);
+        });
+    }
+    function bulkHeader(items, noun) {
+        panel.appendChild(el('div', 'em-title', items.length + ' ' + noun));
+        var wrap = el('div', 'em-tokens em-bulk-names');
+        items.forEach(function(it) { wrap.appendChild(el('span', 'em-tok', it.d.name || it.d.album_name || '')); });
+        panel.appendChild(wrap);
+    }
+    function bulkDone(failed, verb) {
+        if (failed) toast(failed + ' could not be ' + verb);
+        refreshPage();
+        renderPanel();
+    }
+
+    function drawBulkSongs(items) {
+        bulkHeader(items, 'songs');
+        var ff = field('Set on all');
+        var chips = el('div', 'em-chips');
+        ff.appendChild(chips);
+        [['★ Lead', 'lead'], ['Promoted', 'promoted'], ['Remix', 'remix'], ['Cover', 'cover']].forEach(function(f) {
+            var n = items.filter(function(it) { return it.d['is_' + f[1]]; }).length;
+            var all = n === items.length;
+            chips.appendChild(btn(f[0], 'em-chip' + (f[1] === 'lead' ? ' em-lead' : '') + (all ? ' on' : (n ? ' em-mixed' : '')), function() {
+                runEach(items, function(it) { return toggleFlag(it.id, f[1], it.d, !all); }).then(function(failed) { bulkDone(failed, 'updated'); });
+            }));
+        });
+
+        tokenField('Genres', [], 'Add genre to all', function() {
+            genrePicker('Add genres to ' + items.length + ' songs', [], function(ids) {
+                if (!ids.length) return;
+                runEach(items, function(it) {
+                    var merged = (it.d.genre_ids || []).concat(ids.filter(function(g) { return (it.d.genre_ids || []).indexOf(g) === -1; }));
+                    return post('/edit/song/' + it.id + '/genres', 'genre_ids=' + merged.join(','));
+                }).then(function(failed) { bulkDone(failed, 'updated'); });
+            });
+        });
+        if (!isMiscPage()) {
+            tokenField('Artists', [], 'Add featured artist to all', function() {
+                artistPicker('Add which artist?', function(a) {
+                    runEach(items, function(it) { return post('/edit/song/' + it.id + '/artists', 'artist_id=' + a.id + '&is_main=false'); })
+                        .then(function(failed) { bulkDone(failed, 'updated'); });
+                });
+            });
+        } else {
+            // Misc songs save their whole artist list at once, so append to each song's current list.
+            var addMiscFeat = function(entry, has) {
+                runEach(items, function(it) {
+                    return getJSON('/misc/song/' + it.id + '/artists').then(function(cur) {
+                        if (!cur) throw new Error('failed');
+                        var misc = cur.misc_artists.map(function(m) { return { id: m.id, is_main: m.is_main }; });
+                        var real = cur.real_artists.map(function(r) { return { artist_id: r.artist_id, is_main: r.is_main }; });
+                        if (has(misc, real)) return null;
+                        (entry.id ? misc : real).push(entry);
+                        return post('/misc/song/' + it.id + '/misc-artists', { misc_artists: misc, real_artists: real }, true);
+                    });
+                }).then(function(failed) { bulkDone(failed, 'updated'); });
+            };
+            tokenField('Artists', [], 'Add featured artist to all', function() {
+                artistPicker('Add which artist?', function(a) {
+                    addMiscFeat({ artist_id: a.id, is_main: false }, function(m, r) { return r.some(function(x) { return x.artist_id === a.id; }); });
+                });
+            });
+            tokenField('Misc artists', [], 'Add featured misc artist to all', function() {
+                searchPicker('Add which misc artist?', 'Search misc artists…', function(q) { return '/misc/search-artists?q=' + encodeURIComponent(q); },
+                    function(d) { return d.map(function(m) { return { id: m.id, label: m.name }; }); },
+                    function(m) { addMiscFeat({ id: m.id, is_main: false }, function(mi) { return mi.some(function(x) { return x.id === m.id; }); }); });
+            });
+        }
+
+        var inAlbum = items.filter(function(it) { return it.album; });
+        actions([
+            ['Move to album…', function() {
+                albumPicker('Move ' + items.length + ' songs to which album?', function(al) {
+                    runEach(items, function(it) { return post('/edit/song/' + it.id + '/move-album', 'album_id=' + al.id + (it.album ? '&from_album_id=' + it.album : '')); })
+                        .then(function(failed) { clearSel(); bulkDone(failed, 'moved'); });
+                });
+            }],
+            ['Add to album…', function() {
+                albumPicker('Add ' + items.length + ' songs to which album?', function(al) {
+                    runEach(items, function(it) { return post('/edit/song/' + it.id + '/add-to-album', 'album_id=' + al.id); })
+                        .then(function(failed) { bulkDone(failed, 'added'); });
+                });
+            }],
+            inAlbum.length ? ['Remove from album', function() {
+                showConfirm('Remove ' + inAlbum.length + ' songs from their album?', 'Songs that are only on this album are deleted.', function() {
+                    runEach(inAlbum, function(it) { return post('/edit/song/' + it.id + '/remove-from-album/' + it.album); })
+                        .then(function(failed) { clearSel(); bulkDone(failed, 'removed'); });
+                }, 'Remove');
+            }] : null,
+            ['Delete ' + items.length + ' songs', function() {
+                passwordConfirm({ title: 'Delete ' + items.length + ' songs?', confirmLabel: 'Delete',
+                    message: 'These songs and their ratings will be permanently deleted. Enter your password to confirm.' },
+                    function(pw) { return deleteEach(items.map(function(it) { return '/edit/song/' + it.id + '/delete'; }), pw); });
+            }, true],
+        ]);
+    }
+
+    function drawBulkAlbums(items) {
+        bulkHeader(items, 'albums');
+        var tf = field('Set type on all');
+        var s = el('select');
+        s.appendChild(el('option', null, '—'));
+        tf.appendChild(s);
+        _emEnsure('/lookups/album-types', function(opts) {
+            opts.forEach(function(o) { var op = el('option', null, o.name); op.value = o.id; s.appendChild(op); });
+        });
+        s.onchange = function() {
+            if (!s.value || s.value === '—') return;
+            runEach(items, function(it) { return post('/edit/album/' + it.id + '/type', 'album_type_id=' + s.value); })
+                .then(function(failed) { bulkDone(failed, 'updated'); });
+        };
+        tokenField('Genres', [], 'Add genre to all', function() {
+            genrePicker('Add genres to ' + items.length + ' albums', [], function(ids) {
+                if (!ids.length) return;
+                runEach(items, function(it) {
+                    var merged = (it.d.genre_ids || []).concat(ids.filter(function(g) { return (it.d.genre_ids || []).indexOf(g) === -1; }));
+                    return post('/edit/album/' + it.id + '/genres', 'genre_ids=' + merged.join(','));
+                }).then(function(failed) { bulkDone(failed, 'updated'); });
+            });
+        });
+        actions([
+            isMiscPage() ? null : ['Move songs to artist…', function() {
+                artistPicker('Move these albums\' songs to…', function(a) {
+                    runEach(items, function(it) { return post('/edit/album/' + it.id + '/move-artist', 'source_artist_id=' + currentArtistId() + '&target_artist_id=' + a.id); })
+                        .then(function(failed) { clearSel(); bulkDone(failed, 'moved'); });
+                });
+            }],
+            ['Delete ' + items.length + ' albums', function() { deleteAlbums(items.map(function(it) { return it.id; })); }, true],
+        ]);
     }
 
     /* ---- link popup ---- */
