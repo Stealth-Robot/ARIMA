@@ -445,13 +445,26 @@ function markRemix(songId) {
         body: 'checked=true',
     }).then(function(r) {
         if (!r.ok) { showToast('Mark as remix failed'); return; }
-        var row = document.getElementById('remix-' + songId);
-        if (!row) return;
-        var content = row.closest('.view-content');
-        row.remove();
-        var span = content && content.previousElementSibling.querySelector('.view-count');
-        if (span) span.textContent = '— ' + content.querySelectorAll('[id^="remix-"]').length;
+        _removeRemixRow(songId);
     });
+}
+function dismissRemix(songId) {
+    fetch('/views/dismiss-remix', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+        body: 'song_id=' + songId,
+    }).then(function(r) {
+        if (!r.ok) { showToast('Dismiss failed'); return; }
+        _removeRemixRow(songId);
+    });
+}
+function _removeRemixRow(songId) {
+    var row = document.getElementById('remix-' + songId);
+    if (!row) return;
+    var content = row.closest('.view-content');
+    row.remove();
+    var span = content && content.previousElementSibling.querySelector('.view-count');
+    if (span) span.textContent = '— ' + content.querySelectorAll('[id^="remix-"]').length;
 }
 function confirmAlbumDate(btn, albumId) {
     fetch('/edit/album/' + albumId + '/confirm-date', {

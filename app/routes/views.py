@@ -14,6 +14,7 @@ from app.models.lookups import Country, AlbumType
 from app.models.not_duplicate import NotDuplicate
 from app.services.artist import SUBUNIT, SOLOIST
 from app.models.not_variant import NotVariant
+from app.models.not_remix import NotRemix
 from app.models.not_collab import NotCollab
 from app.services.dates import is_valid_release_date
 from app.services.search import native_roman_parts
@@ -476,6 +477,7 @@ def _unmarked_remix_query(mine=None):
     return _mine_songs(db.session.query(Song).filter(
         Song.name.ilike('%remix%'),
         Song.is_remix == False,
+        ~Song.id.in_(db.session.query(NotRemix.song_id)),
     ), mine)
 
 
@@ -498,6 +500,21 @@ def view_unmarked_remixes():
     items = [{'id': s.id, 'name': s.name, 'artists': artist_map.get(s.id, [])} for s in songs]
     return render_template('fragments/view_unmarked_remixes.html', items=items,
                            edit_mode=current_user.is_editor_or_admin)
+
+
+@views_bp.route('/views/dismiss-remix', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def dismiss_remix():
+    song_id = request.form.get('song_id', type=int)
+    if not song_id:
+        abort(400)
+    try:
+        db.session.add(NotRemix(song_id=song_id))
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+    return '', 204
 
 
 @views_bp.route('/views/dismiss-variant', methods=['POST'])
