@@ -977,7 +977,7 @@ function hideTooltip(tooltip) {
 
 // Inline because #note-tooltip's ID rule outranks any utility class
 function _setAliasTipTheme(tooltip, on) {
-    if (!on) tooltip._aliasTd = null;
+    if (!on) { tooltip._aliasTd = null; tooltip._truncTd = null; }
     tooltip.style.background = on ? 'var(--bg-secondary)' : '';
     tooltip.style.color = on ? 'var(--text-primary)' : '';
     tooltip.style.border = on ? '0.0625rem solid var(--grid-line)' : '';
@@ -1043,6 +1043,36 @@ function showAliasTooltip(event, tooltip) {
     _positionTooltip(tooltip, td);
 }
 
+/* SOTD / shuffle / group picks / backlog cells ellipsize their lines; hovering one that's cut off shows them all in full */
+function showTruncTooltip(event, tooltip) {
+    if (_isMobile()) return;
+    const td = event.target.closest('td.song-name-cell');
+    if (!td || td.hasAttribute('data-song-aliases') || tooltip._truncTd === td) return;
+    const lines = Array.from(td.querySelectorAll('.cell-trunc'));
+    if (!lines.some(el => el.scrollWidth > el.clientWidth + 1)) return;
+
+    tooltip.textContent = '';
+    _setAliasTipTheme(tooltip, true);
+    lines.forEach(el => {
+        const line = el.cloneNode(true);
+        line.classList.remove('cell-trunc', 'truncate', 'min-w-0');
+        line.style.overflow = 'visible';
+        line.style.whiteSpace = 'normal';
+        line.style.textOverflow = 'clip';
+        tooltip.appendChild(line);
+    });
+    const note = td.getAttribute('data-song-note');
+    if (note) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 'mt-1 pt-1 border-t border-grid-line';
+        noteEl.style.whiteSpace = 'pre-wrap';
+        noteEl.textContent = note;
+        tooltip.appendChild(noteEl);
+    }
+    tooltip._truncTd = td;
+    _positionTooltip(tooltip, td);
+}
+
 /* Note tooltip — event delegation, works for dynamically added cells */
 var _tooltipSelecting = false;
 (function () {
@@ -1064,7 +1094,7 @@ var _tooltipSelecting = false;
 
     // Hide tooltip when mouse leaves the tooltip itself
     tooltip.addEventListener('mouseout', function (e) {
-        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note, td.song-name-cell[data-song-aliases]') && !e.relatedTarget?.closest('td.album-name-cell.has-album-note')) {
+        if (!tooltip.contains(e.relatedTarget) && !e.relatedTarget?.closest('td.has-note') && !e.relatedTarget?.closest('td.song-name-cell.has-song-note, td.song-name-cell[data-song-aliases]') && !e.relatedTarget?.closest('td.album-name-cell.has-album-note') && !(tooltip._truncTd && tooltip._truncTd.contains(e.relatedTarget))) {
             hideTooltip(tooltip);
         }
     });
@@ -1072,6 +1102,15 @@ var _tooltipSelecting = false;
     // set up song name cell tooltip event listeners (alt-name cells show the note inside their popover)
      document.addEventListener('mouseover', (e) => showTooltip(e, tooltip, 'td.song-name-cell.has-song-note:not([data-song-aliases])', 'data-song-note'));
      document.addEventListener('mouseover', (e) => showAliasTooltip(e, tooltip));
+     document.addEventListener('mouseover', (e) => showTruncTooltip(e, tooltip));
+
+     document.addEventListener('mouseout', function (e) {
+        const td = tooltip._truncTd;
+        if (!td || !td.contains(e.target)) return;
+        if (!td.contains(e.relatedTarget) && e.relatedTarget !== tooltip && !tooltip.contains(e.relatedTarget)) {
+            hideTooltip(tooltip);
+        }
+    });
 
      document.addEventListener('mouseout', function (e) {
         const td = e.target.closest('td.song-name-cell.has-song-note, td.song-name-cell[data-song-aliases]');
