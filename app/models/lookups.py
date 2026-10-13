@@ -6,6 +6,13 @@ class Country(db.Model):
     country = db.Column(db.Text, nullable=False, unique=True)
 
 
+# Filter-only shortcuts that select several countries at once; never stored on an artist
+COUNTRY_GROUPS = {
+    'Western': ('American', 'Canadian', 'European'),
+    'Asian': ('Korean', 'Japanese', 'Chinese'),
+}
+
+
 class Genre(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     genre = db.Column(db.Text, nullable=False, unique=True)

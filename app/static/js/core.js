@@ -185,7 +185,7 @@ function _yearRangeValue(section) {
 
 function _filterValue(section) {
     if (section.dataset.kind === 'range') return _yearRangeValue(section);
-    return Array.from(section.querySelectorAll('input[type="checkbox"]:checked'))
+    return Array.from(section.querySelectorAll('input[type="checkbox"]:not(.filter-group):checked'))
         .map(function(cb) { return cb.value; })
         .sort();
 }
@@ -195,9 +195,29 @@ function _filterSummary(section) {
         var r = _yearRangeValue(section);
         return !r.length ? '' : (r[0] === r[1] ? r[0] : r[0] + '–' + r[1]);
     }
-    return Array.from(section.querySelectorAll('input[type="checkbox"]:checked'))
+    var covered = {};
+    var groups = Array.from(section.querySelectorAll('.filter-group:checked'));
+    groups.forEach(function(g) { g.dataset.members.split(',').forEach(function(id) { covered[id] = true; }); });
+    return groups.concat(Array.from(section.querySelectorAll('input[type="checkbox"]:not(.filter-group):checked'))
+        .filter(function(cb) { return !covered[cb.value]; }))
         .map(function(cb) { return cb.parentElement.querySelector('span').textContent.trim(); })
         .join(', ');
+}
+
+/* Group boxes are derived: ticking one ticks its members, and a group stays ticked only while all its members are */
+function _syncFilterGroups(section, changed) {
+    if (changed.classList.contains('filter-group')) {
+        changed.dataset.members.split(',').forEach(function(id) {
+            var cb = section.querySelector('input[type="checkbox"]:not(.filter-group)[value="' + id + '"]');
+            if (cb) cb.checked = changed.checked;
+        });
+    }
+    section.querySelectorAll('.filter-group').forEach(function(g) {
+        g.checked = g.dataset.members.split(',').every(function(id) {
+            var cb = section.querySelector('input[type="checkbox"]:not(.filter-group)[value="' + id + '"]');
+            return cb && cb.checked;
+        });
+    });
 }
 
 function _updateFilterMenu(menu) {
@@ -356,7 +376,9 @@ document.addEventListener('wheel', function(e) {
 document.addEventListener('change', function(e) {
     if (e.target.type !== 'checkbox') return;
     var menu = e.target.closest('.filter-menu');
-    if (menu) _updateFilterMenu(menu);
+    if (!menu) return;
+    _syncFilterGroups(e.target.closest('.filter-section'), e.target);
+    _updateFilterMenu(menu);
 });
 
 /* Year range: dragging a thumb pushes the other along; typed years apply once they're a full in-range year */

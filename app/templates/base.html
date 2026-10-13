@@ -1,15 +1,35 @@
-{%- macro filter_list_section(field, label, items, label_attr, current_ids) -%}
+{%- macro filter_list_row(item, label_attr, current_ids, indent=False) -%}
+<label class="flex items-center gap-2 py-1 {{ 'pl-8 pr-3' if indent else 'px-3' }} cursor-pointer text-sm- text-primary-text" style="white-space:nowrap;">
+    <input type="checkbox" value="{{ item.id }}" {% if item.id in current_ids %}checked{% endif %}>
+    <span>{{ item|attr(label_attr) }}</span>
+</label>
+{%- endmacro -%}
+{%- macro filter_list_section(field, label, items, label_attr, current_ids, groups={}) -%}
 <div class="filter-section border-b border-border" data-field="{{ field }}" data-label="{{ label }}" data-kind="list">
     <div class="flex items-center justify-between px-3 py-1">
         <span class="text-xs font-semibold text-secondary-text">{{ label }}</span>
         <button type="button" onclick="clearFilterSection(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
     </div>
     <div class="filter-scroll pb-1" style="max-height:10rem; overflow-y:auto;">
+        {% set ns = namespace(shown=[]) %}
         {% for item in items %}
+        {% set g = namespace(name=none) %}
+        {% for name, members in groups.items() if item|attr(label_attr) in members %}{% set g.name = name %}{% endfor %}
+        {% if g.name is none %}
+        {{ filter_list_row(item, label_attr, current_ids) }}
+        {% elif g.name not in ns.shown %}
+        {# The group takes the slot of its most-used member, with every member nested under it #}
+        {% set ns.shown = ns.shown + [g.name] %}
+        {% set group_items = items|selectattr(label_attr, 'in', groups[g.name])|list %}
+        {% set ids = group_items|map(attribute='id')|list %}
         <label class="flex items-center gap-2 py-1 px-3 cursor-pointer text-sm- text-primary-text" style="white-space:nowrap;">
-            <input type="checkbox" value="{{ item.id }}" {% if item.id in current_ids %}checked{% endif %}>
-            <span>{{ item|attr(label_attr) }}</span>
+            <input type="checkbox" class="filter-group" data-members="{{ ids|join(',') }}" {% if ids|reject('in', current_ids)|list|length == 0 %}checked{% endif %}>
+            <span>{{ g.name }}</span>
         </label>
+        {% for member in group_items %}
+        {{ filter_list_row(member, label_attr, current_ids, True) }}
+        {% endfor %}
+        {% endif %}
         {% endfor %}
     </div>
 </div>
@@ -54,7 +74,7 @@
             <span class="text-sm- font-semibold text-primary-text">Filters</span>
             <button type="button" onclick="clearAllFilters(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear all</button>
         </div>
-        {{ filter_list_section('country_ids', 'Country', countries, 'country', current_country_ids) }}
+        {{ filter_list_section('country_ids', 'Country', countries, 'country', current_country_ids, country_groups) }}
         {{ filter_list_section('genre_ids', 'Genre', genres, 'genre', current_genre_ids) }}
         {{ filter_year_section('year_range', 'Year', year_bounds, current_year_range) }}
     </div>

@@ -180,6 +180,7 @@ def create_app():
     @flask_app.context_processor
     def inject_filters():
         from app.cache import get_cached_filters, get_cached_year_bounds
+        from app.models.lookups import COUNTRY_GROUPS
         if current_user.is_authenticated:
             if not current_user.is_system_or_guest and current_user.settings:
                 country_ids = list(current_user.settings.country_ids or [])
@@ -206,6 +207,7 @@ def create_app():
                 'current_year_range': year_range,
                 'year_bounds': get_cached_year_bounds(),
                 'countries': countries,
+                'country_groups': COUNTRY_GROUPS,
                 'genres': genres,
                 'genders': genders,
                 'album_types': album_types,
@@ -219,7 +221,7 @@ def create_app():
                 'show_full_album_date': show_full_album_date,
             }
         from app.services.spotify import to_app_uri
-        return {'current_country_ids': [], 'current_genre_ids': [], 'current_year_range': [], 'year_bounds': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'spotify_href': (lambda url: to_app_uri(url)), 'spotify_link_target': '_self', 'show_track_numbers': True, 'show_full_album_date': True}
+        return {'current_country_ids': [], 'current_genre_ids': [], 'current_year_range': [], 'year_bounds': None, 'countries': [], 'country_groups': {}, 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'spotify_href': (lambda url: to_app_uri(url)), 'spotify_link_target': '_self', 'show_track_numbers': True, 'show_full_album_date': True}
 
     @flask_app.after_request
     def sw_no_cache(response):
