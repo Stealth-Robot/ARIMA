@@ -412,12 +412,37 @@
         parent.appendChild(inp);
         return inp;
     }
-    function titleInput(value, url, key) {
+    function titleInput(value, url, key, parent) {
         var inp = el('input', 'em-title');
         inp.type = 'text'; inp.value = value || ''; inp.id = 'em-name';
         inp.setAttribute('aria-label', 'Name');
-        panel.appendChild(inp);
+        (parent || panel).appendChild(inp);
         saveOnChange(inp, url, { required: true, key: key });
+        return inp;
+    }
+    // Title with a 🔄 that moves it into the alternate names; the move only lands once a new title is saved.
+    function convertibleTitle(value, url, key, addAlias) {
+        var row = el('div', 'em-row');
+        panel.appendChild(row);
+        var inp = titleInput(value, url, key, row);
+        var pending = null;
+        var b = btn('🔄', 'em-x', function() {
+            var v = inp.value.trim();
+            if (!v) return;
+            pending = v;
+            inp.value = '';
+            inp.focus();
+        });
+        b.title = 'Convert the title to an alternative name';
+        row.appendChild(b);
+        inp.addEventListener('change', function() {
+            var v = inp.value.trim();
+            if (pending && v && v !== pending) addAlias(pending);
+            pending = null;
+        });
+        inp.addEventListener('blur', function() {
+            if (pending && !inp.value.trim()) { inp.value = pending; pending = null; }
+        });
         return inp;
     }
     function urlField(label, value, url, placeholder, key) {
@@ -555,6 +580,11 @@
                 s.appendChild(op);
             });
             row.appendChild(s);
+            if (readBack.title) {
+                var up = btn('⬆', 'em-x', function() { promote(row, inp, s); });
+                up.title = 'Make this the main name';
+                row.appendChild(up);
+            }
             row.appendChild(btn('✕', 'em-x', function() { row.remove(); _emRefreshLangOpts(wrap, 'select'); save(); }));
             inp.onchange = save;
             s.onchange = function() { _emRefreshLangOpts(wrap, 'select'); save(); };
@@ -562,9 +592,34 @@
             wrapSelects(row);
             return inp;
         }
+        function hasName(name, except) {
+            return Array.prototype.some.call(wrap.querySelectorAll('.em-row'), function(r) {
+                return r !== except && r.querySelector('input').value.trim().toLowerCase() === name.toLowerCase();
+            });
+        }
+        // Same swap as the song modal: a plain alias is consumed, a language-tagged one stays tagged.
+        function promote(row, inp, s) {
+            var title = readBack.title, newMain = inp.value.trim(), oldMain = title.value.trim();
+            if (!newMain) return;
+            title.value = newMain;
+            title.dispatchEvent(new Event('change'));
+            var dup = hasName(oldMain, row);
+            if (!s.value) row.remove();
+            if (oldMain && oldMain.toLowerCase() !== newMain.toLowerCase() && !dup) addRow(oldMain, '');
+            _emRefreshLangOpts(wrap, 'select');
+            save();
+        }
         list.forEach(function(a) { addRow(a.name, a.native_lang); });
         _emRefreshLangOpts(wrap, 'select');
         f.appendChild(btn('+ Add name', 'em-add', function() { addRow('', '').focus(); _emRefreshLangOpts(wrap, 'select'); }));
+        return {
+            add: function(name) {
+                if (hasName(name)) return;
+                addRow(name, '');
+                _emRefreshLangOpts(wrap, 'select');
+                save();
+            },
+        };
     }
 
     /* ---- artist ---- */
@@ -644,7 +699,8 @@
 
     function drawAlbum(id, d) {
         var pfx = '/edit/album/' + id;
-        titleInput(d.album_name, pfx + '/name', 'album_name');
+        var alts;
+        convertibleTitle(d.album_name, pfx + '/name', 'album_name', function(n) { alts.add(n); });
         facts([[{ b: String(d.songs.length) }, ' ' + plural(d.songs.length, 'song')], d.date_confirmed ? ['date ', { b: 'confirmed' }] : ['date unconfirmed']]);
 
         var two = el('div', 'em-two');
@@ -664,7 +720,7 @@
                     .catch(function() { toast('Failed to save — try again'); });
             });
         });
-        aliasEditor('Alternate names', d.alt_names, pfx + '/alt-names', {
+        alts = aliasEditor('Alternate names', d.alt_names, pfx + '/alt-names', {
             wrap: function(out) { return { alt_names: out }; },
             unwrap: function(j) { return j.alt_names; },
         });
@@ -770,7 +826,8 @@
     function drawSong(key, d) {
         var id = idOf(key), albumId = albumOf(key), pfx = '/edit/song/' + id;
         var tr = rowFor(key), cell = nameCell(tr);
-        titleInput(d.name, pfx + '/name', 'name');
+        var aliases;
+        var title = convertibleTitle(d.name, pfx + '/name', 'name', function(n) { aliases.add(n); });
         facts([
             d.rating_count ? [{ b: String(d.rating_count) }, ' ' + plural(d.rating_count, 'rating') + ' · avg ', { b: String(d.rating_avg) }, el('span', 'em-star', '★')] : ['No ratings'],
             d.track ? ['Track ', { b: '#' + d.track.n + '/' + d.track.of }, ' on ' + d.track.album] : null,
@@ -803,9 +860,10 @@
         });
         urlField('Spotify URL', d.spotify_url, pfx + '/spotify-url', 'https://open.spotify.com/… (or n/a)', 'spotify_url');
         urlField('YouTube URL', d.youtube_url, pfx + '/youtube-url', 'https://…', 'youtube_url');
-        aliasEditor('Alternative names', d.aliases, pfx + '/aliases', {
+        aliases = aliasEditor('Alternative names', d.aliases, pfx + '/aliases', {
             wrap: function(out) { return { aliases: out }; },
             unwrap: function(j) { return j; },
+            title: title,
         });
         noteField(d.note, pfx + '/note', 'note');
         var tf = field('Anime OST');
@@ -822,7 +880,10 @@
         picker.querySelectorAll('select, input').forEach(function(n) { n.style.cssText = ''; });
         tf.appendChild(picker);
 
+        // Misc rows are songs only, so their album is edited from here rather than by selecting an album row.
+        var miscAlbum = isMiscPage() && tr ? tr.querySelector('[data-misc-album]') : null;
         actions([
+            miscAlbum ? ['Edit album…', function() { _showAlbumEditor(id, parseInt(miscAlbum.getAttribute('data-misc-album'), 10)); }] : null,
             ['Move to album…', function() { albumPicker('Move to which album?', function(item) { songAlbumAction(pfx + '/move-album', item.id, albumId); }); }],
             ['Add to album…', function() { albumPicker('Add to which album?', function(item) { songAlbumAction(pfx + '/add-to-album', item.id); }); }],
             isMiscPage() ? ['Move to artist…', function() { _showMoveSongToArtist({ stopPropagation: function() {} }, id, d.name); }] : null,
@@ -1153,7 +1214,7 @@
 
     // Capture phase so edit-mode clicks win over the always-on modal openers and link navigation.
     document.addEventListener('click', function(e) {
-        if (e.target.closest('.em-switch')) {
+        if (e.target.closest('.em-toggle') && !_isMobile()) {
             e.preventDefault();
             e.stopPropagation();
             setOn(!on);
@@ -1230,15 +1291,8 @@
                 .catch(function() { toast('Failed'); });
             return;
         }
-        // Keep the lead star / promoted pill shortcut, but without the song modal the click would also open.
-        if (e.target.closest('.lead-star, .promoted-tag') && tr.hasAttribute('data-song-id')) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleLeadTrack(parseInt(tr.getAttribute('data-song-id'), 10), nameCell(tr));
-            refreshPage();
-            return;
-        }
-        var own = e.target.closest('a, button, input, select, textarea, [onclick]');
+        // .mobile-tap handlers only act on mobile, so on desktop they are plain row text.
+        var own = e.target.closest('a, button, input, select, textarea, [onclick]:not(.mobile-tap)');
         if (own && own !== tr && tr.contains(own)) return;
         e.preventDefault();
         e.stopPropagation();

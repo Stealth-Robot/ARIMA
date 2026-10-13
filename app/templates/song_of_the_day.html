@@ -45,38 +45,4 @@ window._sotdRefresh = function() {
     }).catch(function() {});
 };
 </script>
-{% if current_user.is_admin %}
-<script>
-/* Admin-only: change which song is the Song of the Day for a given date.
-   Password prompt first (reuses the account password), then a song picker. */
-function editSotd(date, currentSongId) {
-    showMobilePassword({
-        title: 'Change Song of the Day',
-        message: date + ' — enter your password to edit.',
-        confirmLabel: 'Continue',
-        onConfirm: function(pw, pwUi) {
-            pwUi.close();
-            showMobilePicker({
-                title: 'Pick a song for ' + date,
-                mode: 'search',
-                placeholder: 'Search songs…',
-                searchUrl: function(q) { return '/edit/picker/songs?q=' + encodeURIComponent(q) + '&exclude=' + currentSongId + '&include_misc=1'; },
-                mapItems: function(d) { return d.map(function(s) { return { id: s.id, label: s.name + ' — ' + s.artist }; }); },
-                onSelect: function(item) {
-                    fetch('/song-of-the-day/set', {
-                        method: 'POST',
-                        headers: _csrfHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
-                        body: 'date=' + encodeURIComponent(date) + '&song_id=' + item.id + '&password=' + encodeURIComponent(pw)
-                    }).then(function(r) {
-                        if (r.status === 403) { showBriefToast('Incorrect password.'); editSotd(date, currentSongId); return; }
-                        if (r.ok) { window.location.reload(); }
-                        else { showBriefToast('Change failed.'); }
-                    });
-                }
-            });
-        }
-    });
-}
-</script>
-{% endif %}
 {% endblock %}

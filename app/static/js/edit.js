@@ -206,9 +206,9 @@ document.addEventListener('click', function(e) {
     if (cb) cb.click();
 });
 
-// Clicking a promoted pill or lead star toggles lead status.
+// Tapping a promoted pill or lead star toggles lead status on mobile; desktop sets it in the edit mode panel.
 document.addEventListener('click', function(e) {
-    if (!e.target) return;
+    if (!e.target || !_isMobile()) return;
     var isPill = e.target.classList.contains('promoted-tag');
     var isStar = e.target.classList.contains('lead-star');
     if (!isPill && !isStar) return;
@@ -733,6 +733,37 @@ function showArtistUserEdit(event, artistId, span, kind, onCommit) {
     activeArtistUserPopover = popover;
 }
 
+/* Admin-only: change which song is the Song of the Day for a given date (SOTD page and Home).
+   Password prompt first (reuses the account password), then a song picker. */
+function editSotd(date, currentSongId) {
+    showMobilePassword({
+        title: 'Change Song of the Day',
+        message: date + ' — enter your password to edit.',
+        confirmLabel: 'Continue',
+        onConfirm: function(pw, pwUi) {
+            pwUi.close();
+            showMobilePicker({
+                title: 'Pick a song for ' + date,
+                mode: 'search',
+                placeholder: 'Search songs…',
+                searchUrl: function(q) { return '/edit/picker/songs?q=' + encodeURIComponent(q) + '&exclude=' + currentSongId + '&include_misc=1'; },
+                mapItems: function(d) { return d.map(function(s) { return { id: s.id, label: s.name + ' — ' + s.artist }; }); },
+                onSelect: function(item) {
+                    fetch('/song-of-the-day/set', {
+                        method: 'POST',
+                        headers: _csrfHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+                        body: 'date=' + encodeURIComponent(date) + '&song_id=' + item.id + '&password=' + encodeURIComponent(pw)
+                    }).then(function(r) {
+                        if (r.status === 403) { showBriefToast('Incorrect password.'); editSotd(date, currentSongId); return; }
+                        if (r.ok) { window.location.reload(); }
+                        else { showBriefToast('Change failed.'); }
+                    });
+                }
+            });
+        }
+    });
+}
+
 /* Called from the Complete checkbox to clear the owner span when marking complete */
 function setOwnerSpanComplete(artistId, isComplete) {
     var span = document.getElementById('owner-span-' + artistId);
@@ -743,8 +774,8 @@ function setOwnerSpanComplete(artistId, isComplete) {
         span.onclick = null;
     } else {
         span.style.display = '';
-        span.classList.add('edit-inline', 'cursor-pointer', 'hover:bg-hover-bg');
-        span.onclick = function(e) { showArtistUserEdit(e, artistId, span, 'owner'); };
+        span.classList.add('em-gated', 'edit-inline', 'cursor-pointer', 'hover:bg-hover-bg');
+        span.onclick = function(e) { if (_isMobile() || window._editMode) showArtistUserEdit(e, artistId, span, 'owner'); };
     }
 }
 

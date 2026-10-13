@@ -21,8 +21,8 @@
         {% endif %}
         <div class="min-w-0">
         <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
-            MISC ARTISTS
-            {% if edit_mode %}<span class="inline-flex items-center rounded bg-edit-on align-middle"><span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit misc" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
+            {% if edit_mode %}<span class="em-name" onclick="if (window._editMode) showMiscEdit()">MISC ARTISTS</span>{% else %}MISC ARTISTS{% endif %}
+            {% if edit_mode %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
             <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add song" onclick="_showAddMiscSong()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
         </h2>
         <div class="flex items-center gap-3 mt-1">
@@ -38,8 +38,8 @@
                   data-owner-id="{{ rules.misc_owner_id if rules and rules.misc_owner_id is not none else '' }}"
                   title="Owner"
                   {% if edit_mode %}
-                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
-                  onclick="_miscShowUserEdit(event, this, 'owner')"
+                  class="em-gated edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
+                  onclick="if (_isMobile() || window._editMode) _miscShowUserEdit(event, this, 'owner')"
                   {% else %}
                   class="inline-flex items-center gap-1 px-1"
                   {% endif %}>
@@ -60,8 +60,8 @@
                   data-maintainer-id="{{ rules.misc_maintainer_id if rules and rules.misc_maintainer_id is not none else '' }}"
                   title="Maintainer"
                   {% if edit_mode %}
-                  class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
-                  onclick="_miscShowUserEdit(event, this, 'maintainer')"
+                  class="em-gated edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
+                  onclick="if (_isMobile() || window._editMode) _miscShowUserEdit(event, this, 'maintainer')"
                   {% else %}
                   class="inline-flex items-center gap-1 px-1"
                   {% endif %}>

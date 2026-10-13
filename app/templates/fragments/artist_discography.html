@@ -18,9 +18,9 @@
     <div class="min-w-0">
     <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
         
-        {{ artist.name }}
-        
-        {% if current_user.is_editor_or_admin %}<span class="inline-flex items-center rounded bg-edit-on align-middle"><span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" data-edit-artist="{{ artist.id }}" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
+        {% if current_user.is_editor_or_admin %}<span class="em-name" data-edit-artist="{{ artist.id }}">{{ artist.name }}</span>{% else %}{{ artist.name }}{% endif %}
+
+        {% if current_user.is_editor_or_admin %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" id="em-switch" hx-preserve="true" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
         <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add album" onclick="showAddAlbumModal()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
         {{ spotify_link_icon(artist.spotify_url) }}
         {% if artist.country %}<span class="text-sm font-normal text-secondary-text">{{ artist.country.country }}</span>{% endif %}
@@ -74,8 +74,8 @@
               data-owner-id="{{ artist.owner_id if artist.owner_id is not none else '' }}"
               title="Owner"
               {% if can_edit %}
-              class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
-              onclick="showArtistUserEdit(event, {{ artist.id }}, this, 'owner')"
+              class="em-gated edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
+              onclick="if (_isMobile() || window._editMode) showArtistUserEdit(event, {{ artist.id }}, this, 'owner')"
               {% else %}
               class="inline-flex items-center gap-1 px-1"
               {% endif %}>
@@ -96,8 +96,8 @@
               data-maintainer-id="{{ artist.maintainer_id if artist.maintainer_id is not none else '' }}"
               title="Maintainer"
               {% if can_edit %}
-              class="edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
-              onclick="showArtistUserEdit(event, {{ artist.id }}, this, 'maintainer')"
+              class="em-gated edit-inline cursor-pointer inline-flex items-center gap-1 rounded px-1 hover:bg-hover-bg hover:text-primary-text"
+              onclick="if (_isMobile() || window._editMode) showArtistUserEdit(event, {{ artist.id }}, this, 'maintainer')"
               {% else %}
               class="inline-flex items-center gap-1 px-1"
               {% endif %}>
@@ -483,15 +483,15 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 <span id="child-arrow-{{ child.artist.id }}" class="collapse-arrow text-xxs">&#9660;</span>
                 {% if child.is_soloist %}
                 <a href="{{ url_for('artists.artist_detail', artist_id=child.artist.id) }}"
-                   class="p-1 text-discography-text cursor-pointer no-underline"
+                   class="p-1 text-discography-text cursor-pointer no-underline"{% if current_user.is_editor_or_admin %} data-edit-artist="{{ child.artist.id }}"{% endif %}
                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"
                    onclick="event.stopPropagation()">
                     {{ child.artist.name }}
                 </a>{{ spotify_link_icon(child.artist.spotify_url) }}
                 {% else %}
-                <span class="p-1">{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}
+                <span class="p-1 em-name"{% if current_user.is_editor_or_admin %} data-edit-artist="{{ child.artist.id }}"{% endif %}>{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}
                 {% endif %}
-                {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle ml-1" title="Edit artist" data-edit-artist="{{ child.artist.id }}" onclick="event.stopPropagation();showMobileArtistEdit({{ child.artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.8125rem;">&#9998;</span>{% endif %}
+                {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn mobile-show hidden cursor-pointer rounded bg-edit-on text-button-text align-middle ml-1" title="Edit artist" onclick="event.stopPropagation();showMobileArtistEdit({{ child.artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.8125rem;">&#9998;</span>{% endif %}
                 {% if current_user.is_admin %}
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_tracked %}checked{% endif %} autocomplete="off"

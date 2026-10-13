@@ -56,14 +56,14 @@
         {% endif %}
         <div style="font-size: 0.625rem; color: var(--text-secondary); margin-top: 0.0625rem;">
         {% if edit_mode %}
-        <span class="cursor-pointer" onclick="_showMiscArtistSelector({{ song.id }})" title="Edit artists">{{ row.main_artists | join(', ') }}</span>
+        <span class="mobile-tap" onclick="if (_isMobile()) _showMiscArtistSelector({{ song.id }})">{{ row.main_artists | join(', ') }}</span>
         {% else %}
         {{ row.main_artists | join(', ') }}
         {% endif %}
         {% if row.album %}
         &middot;
         {% if edit_mode %}
-        <span class="cursor-pointer" onclick="_showAlbumEditor({{ song.id }}, {{ row.album.id }})" title="Edit album">{{ row.album.display_name }}</span>
+        <span class="mobile-tap" data-misc-album="{{ row.album.id }}" onclick="if (_isMobile()) _showAlbumEditor({{ song.id }}, {{ row.album.id }})">{{ row.album.display_name }}</span>
         {% else %}
         {{ row.album.display_name }}
         {% endif %}
@@ -73,10 +73,10 @@
         {% endif %}
         {% if row.genres %}
         {% if edit_mode %}
-        &middot; <span class="cursor-pointer genre-edit"
+        &middot; <span class="genre-edit mobile-tap"
              data-song-id="{{ song.id }}"
              data-genre-ids="{{ row.genre_ids | list | tojson }}"
-             onclick="_showSongGenreEdit(event, {{ song.id }}, this)">{{ row.genres | join(', ') }}</span>
+             onclick="if (_isMobile()) _showSongGenreEdit(event, {{ song.id }}, this)">{{ row.genres | join(', ') }}</span>
         {% else %}
         &middot; {{ row.genres | join(', ') }}
         {% endif %}

@@ -459,6 +459,12 @@ textarea {
 .em-switch[aria-checked="true"] { background: rgba(0, 0, 0, 0.55); }
 .em-switch[aria-checked="true"]::after { transform: translateX(0.75rem); }
 .em-switch:focus-visible { outline: 0.125rem solid var(--link); outline-offset: 0.0625rem; }
+body.em-on .em-name { cursor: pointer; }
+/* Owner/maintainer pills only edit in edit mode on desktop, so drop their clickable look outside it. */
+@media (min-width: 769px) {
+    body:not(.em-on) .em-gated { cursor: auto; }
+    body:not(.em-on) .em-gated:hover { background-color: transparent; color: inherit; }
+}
 body.em-on #main-content { padding-right: 21rem; padding-top: var(--em-bar-h, 0); }
 body.em-on .thead-sticky { top: calc(2.75rem + var(--em-bar-h, 0px)); }
 #em-bar {

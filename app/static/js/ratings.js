@@ -396,18 +396,17 @@ function showMobileSongInfoModal(cell) {
 }
 
 document.addEventListener('click', function(e) {
-    // Mobile: anyone can tap a song name for the info view. Desktop: editors
-    // click a song name to open the edit modal (no global edit-mode toggle).
-    if (!_isMobile() && !window._canEdit) return;
+    // Mobile: anyone can tap a song name for the info view. Desktop edits songs through edit mode instead.
+    if (!_isMobile()) return;
     var cell = e.target.closest('td.song-name-cell');
     if (!cell) return;
     if (e.target.closest('a') || e.target.closest('button')) return;
     showMobileSongInfoModal(cell);
 });
 
-// Clicking an album header opens the album edit modal (editors, any width).
+// Tapping an album header opens the album edit modal on mobile; desktop edits albums through edit mode instead.
 document.addEventListener('click', function(e) {
-    if (!window._canEdit) return;
+    if (!window._canEdit || !_isMobile()) return;
     var cell = e.target.closest('td.album-name-cell');
     if (!cell) return;
     if (e.target.closest('a, button, svg, .collapse-arrow, [title="Copy link to album"]')) return;
