@@ -139,6 +139,7 @@ def views_page():
         'no_owner_incomplete': _no_owner_incomplete_query(mine).count(),
         'no_creator_artists': _no_creator_artists_query(mine).count(),
         'variant_songs': len(_variant_songs(mine)),
+        'unmarked_remixes': _unmarked_remix_query(mine).count(),
         'duplicate_songs': '…',
         'collab_candidates': _collab_candidate_query(mine).count(),
     }
@@ -468,6 +469,35 @@ def view_variant_songs():
         artist_names = ', '.join(a.name for a in s.artists) if s.artists else 'no artist'
         items.append({'id': s.id, 'name': s.name, 'artists': artist_names})
     return render_template('fragments/view_variants.html', items=items, edit_mode=edit_mode)
+
+
+def _unmarked_remix_query(mine=None):
+    """Songs with "remix" in the name that aren't flagged as remixes."""
+    return _mine_songs(db.session.query(Song).filter(
+        Song.name.ilike('%remix%'),
+        Song.is_remix == False,
+    ), mine)
+
+
+@views_bp.route('/views/unmarked-remixes')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def view_unmarked_remixes():
+    songs = _unmarked_remix_query(_my_artist_ids()).order_by(func.lower(Song.name)).all()
+    song_ids = [s.id for s in songs]
+    artist_map = {}
+    if song_ids:
+        rows = db.session.query(ArtistSong.song_id, Artist.id, Artist.name).join(
+            Artist, Artist.id == ArtistSong.artist_id
+        ).filter(
+            ArtistSong.song_id.in_(song_ids),
+            ArtistSong.artist_is_main == True,
+        ).order_by(func.lower(Artist.name)).all()
+        for sid, aid, aname in rows:
+            artist_map.setdefault(sid, []).append({'id': aid, 'name': aname})
+    items = [{'id': s.id, 'name': s.name, 'artists': artist_map.get(s.id, [])} for s in songs]
+    return render_template('fragments/view_unmarked_remixes.html', items=items,
+                           edit_mode=current_user.is_editor_or_admin)
 
 
 @views_bp.route('/views/dismiss-variant', methods=['POST'])

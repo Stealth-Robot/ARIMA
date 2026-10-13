@@ -30,6 +30,7 @@
         ('Artists without a creator', counts.no_creator_artists, url_for('views.view_no_creator_artists'), False),
         ('Incomplete artists without an owner', counts.no_owner_incomplete, url_for('views.view_no_owner_incomplete'), False),
         ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs'), False),
+        ('Remixes not marked as remix ("remix" in song name)', counts.unmarked_remixes, url_for('views.view_unmarked_remixes'), False),
         ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates'), False),
         ('Collab candidates (feat/ft/with in song title, no misc artist link)', counts.collab_candidates, url_for('views.view_collab_candidates'), False),
         ('Duplicate misc artists (match a real artist or another misc artist)', counts.dupe_misc_artists, url_for('views.view_dupe_misc_artists'), True),
@@ -435,6 +436,21 @@ function markFeatMain(songId, artistId, kind) {
                 }
             }
         }
+    });
+}
+function markRemix(songId) {
+    fetch('/edit/song/' + songId + '/is-remix', {
+        method: 'POST',
+        headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
+        body: 'checked=true',
+    }).then(function(r) {
+        if (!r.ok) { showToast('Mark as remix failed'); return; }
+        var row = document.getElementById('remix-' + songId);
+        if (!row) return;
+        var content = row.closest('.view-content');
+        row.remove();
+        var span = content && content.previousElementSibling.querySelector('.view-count');
+        if (span) span.textContent = '— ' + content.querySelectorAll('[id^="remix-"]').length;
     });
 }
 function confirmAlbumDate(btn, albumId) {
