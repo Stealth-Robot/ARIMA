@@ -412,6 +412,8 @@ def unrated_count(artist_id):
         include_featured = False
         include_covers = True
         hide_osts = session.get('hide_osts', False)
+    from app.services.preferences import year_range_filter, album_in_year_range
+    year_range = year_range_filter()
 
     song_ids = {r.song_id for r in ArtistSong.query.filter_by(artist_id=artist.id).all()}
     if not song_ids:
@@ -463,6 +465,8 @@ def unrated_count(artist_id):
             genre_set = set(genre_ids)
             if not any(any(g.id in genre_set for g in a.genres) for a in song_albums):
                 continue
+        if year_range and not any(album_in_year_range(a, year_range) for a in song_albums):
+            continue
         total += 1
         if song.id not in rated_ids:
             unrated += 1
@@ -565,8 +569,11 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
         include_featured = False
         include_covers = True
         album_sort_order = session.get('album_sort_order', 'desc')
+    from app.services.preferences import year_range_filter, album_in_year_range, year_range_song_ids
+    year_range = year_range_filter()
     if bypass_filters:
         genre_ids = []
+        year_range = []
         include_remixes = True
         include_featured = True
         include_covers = True
@@ -608,6 +615,8 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
     if genre_ids:
         genre_set = set(genre_ids)
         albums = [a for a in albums if any(g.id in genre_set for g in a.genres)]
+    if year_range:
+        albums = [a for a in albums if album_in_year_range(a, year_range)]
 
     # Hide OST albums (unless on an anime artist page)
     if hide_osts and not bypass_filters:
@@ -792,6 +801,9 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
             genre_set = set(genre_ids)
             misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items()
                                if sg_map.get(sid, set()) & genre_set}
+        if year_range:
+            year_sids = year_range_song_ids(year_range, misc_songs_objs.keys())
+            misc_songs_objs = {sid: s for sid, s in misc_songs_objs.items() if sid in year_sids}
         if hide_osts and not bypass_filters:
             ost_sids = set()
             misc_album_rows = db.session.query(AlbumSong.song_id, Album).join(

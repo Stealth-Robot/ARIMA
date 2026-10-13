@@ -171,12 +171,18 @@ def update_settings():
     def _parse_ids(key):
         return [int(v) for v in request.form.getlist(key) if v and v.strip()]
 
+    def _parse_year_range():
+        years = _parse_ids('year_range')
+        return sorted(years) if len(years) == 2 else []
+
     if current_user.is_system_or_guest:
         # Guest: store in session only
         if 'country_ids' in request.form:
             session['country_ids'] = _parse_ids('country_ids')
         if 'genre_ids' in request.form:
             session['genre_ids'] = _parse_ids('genre_ids')
+        if 'year_range' in request.form:
+            session['year_range'] = _parse_year_range()
         if 'theme' in request.form:
             val = request.form.get('theme')
             session['theme'] = int(val) if val else 0
@@ -209,6 +215,8 @@ def update_settings():
                 settings.country_ids = _parse_ids('country_ids')
             if 'genre_ids' in request.form:
                 settings.genre_ids = _parse_ids('genre_ids')
+            if 'year_range' in request.form:
+                settings.year_range = _parse_year_range()
             if 'theme' in request.form:
                 val = request.form.get('theme')
                 settings.theme = int(val) if val else 0

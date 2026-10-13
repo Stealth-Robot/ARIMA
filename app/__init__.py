@@ -179,15 +179,17 @@ def create_app():
     # Filter context processor — injects country/genre filters + dropdown options
     @flask_app.context_processor
     def inject_filters():
-        from app.cache import get_cached_filters
+        from app.cache import get_cached_filters, get_cached_year_bounds
         if current_user.is_authenticated:
             if not current_user.is_system_or_guest and current_user.settings:
                 country_ids = list(current_user.settings.country_ids or [])
                 genre_ids = list(current_user.settings.genre_ids or [])
+                year_range = list(current_user.settings.year_range or [])
                 song_button_size = current_user.settings.song_button_size
             else:
                 country_ids = list(session.get('country_ids') or [])
                 genre_ids = list(session.get('genre_ids') or [])
+                year_range = list(session.get('year_range') or [])
                 song_button_size = session.get('song_button_size', 13)
             s = current_user.settings if not current_user.is_system_or_guest else None
             hide_autogen_youtube = getattr(s, 'hide_autogen_youtube', False) if s else session.get('hide_autogen_youtube', False)
@@ -201,6 +203,8 @@ def create_app():
             return {
                 'current_country_ids': country_ids,
                 'current_genre_ids': genre_ids,
+                'current_year_range': year_range,
+                'year_bounds': get_cached_year_bounds(),
                 'countries': countries,
                 'genres': genres,
                 'genders': genders,
@@ -215,7 +219,7 @@ def create_app():
                 'show_full_album_date': show_full_album_date,
             }
         from app.services.spotify import to_app_uri
-        return {'current_country_ids': [], 'current_genre_ids': [], 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'spotify_href': (lambda url: to_app_uri(url)), 'spotify_link_target': '_self', 'show_track_numbers': True, 'show_full_album_date': True}
+        return {'current_country_ids': [], 'current_genre_ids': [], 'current_year_range': [], 'year_bounds': None, 'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'song_button_size': 13, 'hide_autogen_youtube': False, 'hide_all_youtube': False, 'hide_all_spotify': False, 'spotify_href': (lambda url: to_app_uri(url)), 'spotify_link_target': '_self', 'show_track_numbers': True, 'show_full_album_date': True}
 
     @flask_app.after_request
     def sw_no_cache(response):

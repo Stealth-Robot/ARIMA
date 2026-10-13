@@ -170,74 +170,131 @@ function attachSearchDropdown(input, list, opts) {
     return { search: search, clear: clear, select: select };
 }
 
-/* Navbar filter multiselect — open/close checkbox panel, POST list on close if changed */
-function _filterGetChecked(panel) {
-    return Array.from(panel.querySelectorAll('input[type="checkbox"]:checked'))
+/* Navbar Filters menu — one panel with Country/Genre/Year sections; every change is POSTed together on close */
+function _filterSections(menu) {
+    return Array.from(menu.querySelectorAll('.filter-section'));
+}
+
+/* Year range: [] when the slider spans every year, so newly added years aren't excluded */
+function _yearRangeValue(section) {
+    var lo = parseInt(section.querySelector('.year-range-lo').value, 10);
+    var hi = parseInt(section.querySelector('.year-range-hi').value, 10);
+    if (lo === parseInt(section.dataset.min, 10) && hi === parseInt(section.dataset.max, 10)) return [];
+    return [String(lo), String(hi)];
+}
+
+function _filterValue(section) {
+    if (section.dataset.kind === 'range') return _yearRangeValue(section);
+    return Array.from(section.querySelectorAll('input[type="checkbox"]:checked'))
         .map(function(cb) { return cb.value; })
         .sort();
 }
 
-function _updateFilterLabel(wrapper) {
-    var panel = wrapper.querySelector('.filter-panel');
-    var labelEl = wrapper.querySelector('.filter-label');
-    if (!panel || !labelEl) return;
-    var label = wrapper.dataset.label || '';
-    var checked = panel.querySelectorAll('input[type="checkbox"]:checked');
-    if (checked.length === 0) {
-        labelEl.textContent = label;
-    } else if (checked.length === 1) {
-        var name = checked[0].parentElement.querySelector('span').textContent.trim();
-        labelEl.textContent = label + ': ' + name;
-    } else {
-        var firstName = checked[0].parentElement.querySelector('span').textContent.trim();
-        labelEl.textContent = label + ': ' + firstName + ' +' + (checked.length - 1);
+function _filterSummary(section) {
+    if (section.dataset.kind === 'range') {
+        var r = _yearRangeValue(section);
+        return !r.length ? '' : (r[0] === r[1] ? r[0] : r[0] + '–' + r[1]);
     }
+    return Array.from(section.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(function(cb) { return cb.parentElement.querySelector('span').textContent.trim(); })
+        .join(', ');
 }
 
-function toggleFilterPanel(btn) {
-    var wrapper = btn.closest('.filter-multiselect');
-    var panel = wrapper.querySelector('.filter-panel');
+function _updateFilterMenu(menu) {
+    var summary = menu.querySelector('.filter-menu-summary');
+    summary.textContent = '';
+    var active = 0;
+    _filterSections(menu).forEach(function(section) {
+        var text = _filterSummary(section);
+        if (!text) return;
+        active++;
+        var line = document.createElement('div');
+        line.style.whiteSpace = 'nowrap';
+        var name = document.createElement('span');
+        name.className = 'font-semibold';
+        name.textContent = section.dataset.label + ': ';
+        line.appendChild(name);
+        line.appendChild(document.createTextNode(text));
+        summary.appendChild(line);
+    });
+    if (!active) summary.textContent = 'No filters active';
+    menu.querySelector('.filter-menu-count').textContent = active ? ' (' + active + ')' : '';
+}
+
+function _showFilterSummary(menu) {
+    if (!menu.querySelector('.filter-panel').classList.contains('hidden')) return;
+    var summary = menu.querySelector('.filter-menu-summary');
+    var rect = menu.querySelector('.filter-menu-trigger').getBoundingClientRect();
+    summary.style.display = 'block';
+    summary.style.top = rect.bottom + 2 + 'px';
+    summary.style.left = '';
+    summary.style.right = (window.innerWidth - rect.right) + 'px';
+}
+
+function _hideFilterSummary(menu) {
+    menu.querySelector('.filter-menu-summary').style.display = 'none';
+}
+
+function toggleFilterMenu(btn) {
+    var menu = btn.closest('.filter-menu');
+    var panel = menu.querySelector('.filter-panel');
     var isOpen = !panel.classList.contains('hidden');
-    // Close any other open panels first (and apply them if dirty)
-    document.querySelectorAll('.filter-multiselect').forEach(function(w) {
-        if (w !== wrapper) _closeFilterPanel(w);
+    document.querySelectorAll('.filter-menu').forEach(function(m) {
+        if (m !== menu) _closeFilterMenu(m);
     });
     if (isOpen) {
-        _closeFilterPanel(wrapper);
+        _closeFilterMenu(menu);
+        return;
+    }
+    _hideFilterSummary(menu);
+    _filterSections(menu).forEach(function(section) {
+        section.dataset.initial = _filterValue(section).join(',');
+    });
+    panel.classList.remove('hidden');
+    var rect = btn.getBoundingClientRect();
+    panel.style.top = rect.bottom + 2 + 'px';
+    panel.style.left = '';
+    panel.style.right = '';
+    if (rect.right - panel.offsetWidth < 0) {
+        panel.style.left = rect.left + 'px';
     } else {
-        panel.dataset.initial = _filterGetChecked(panel).join(',');
-        panel.classList.remove('hidden');
-        var rect = btn.getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.top = rect.bottom + 2 + 'px';
-        panel.style.left = '';
-        panel.style.right = '';
-        var panelWidth = panel.offsetWidth;
-        if (rect.right - panelWidth < 0) {
-            panel.style.left = rect.left + 'px';
-        } else {
-            panel.style.right = (window.innerWidth - rect.right) + 'px';
-        }
+        panel.style.right = (window.innerWidth - rect.right) + 'px';
     }
 }
 
-function clearFilterPanel(btn) {
-    var wrapper = btn.closest('.filter-multiselect');
-    wrapper.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
-    _updateFilterLabel(wrapper);
+function _clearSection(section) {
+    if (section.dataset.kind === 'range') {
+        _setYearRange(section, parseInt(section.dataset.min, 10), parseInt(section.dataset.max, 10));
+    } else {
+        section.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+    }
 }
 
-function _closeFilterPanel(wrapper) {
-    var panel = wrapper.querySelector('.filter-panel');
+function clearFilterSection(btn) {
+    _clearSection(btn.closest('.filter-section'));
+    _updateFilterMenu(btn.closest('.filter-menu'));
+}
+
+function clearAllFilters(btn) {
+    var menu = btn.closest('.filter-menu');
+    _filterSections(menu).forEach(_clearSection);
+    _updateFilterMenu(menu);
+}
+
+function _closeFilterMenu(menu) {
+    var panel = menu.querySelector('.filter-panel');
     if (!panel || panel.classList.contains('hidden')) return;
     panel.classList.add('hidden');
-    var current = _filterGetChecked(panel);
-    var initial = (panel.dataset.initial || '').split(',').filter(Boolean).sort();
-    if (current.join(',') === initial.join(',')) return;
-    var field = wrapper.dataset.field;
-    // Send an empty sentinel so the server always sees the field, even with nothing checked
-    var parts = [encodeURIComponent(field) + '='];
-    current.forEach(function(v) { parts.push(encodeURIComponent(field) + '=' + encodeURIComponent(v)); });
+    var parts = [];
+    _filterSections(menu).forEach(function(section) {
+        var current = _filterValue(section);
+        if (current.join(',') === (section.dataset.initial || '')) return;
+        var field = encodeURIComponent(section.dataset.field);
+        // Empty sentinel so the server always sees the field, even with nothing selected
+        parts.push(field + '=');
+        current.forEach(function(v) { parts.push(field + '=' + encodeURIComponent(v)); });
+    });
+    if (!parts.length) return;
     fetch('/profile/settings', {
         method: 'POST',
         headers: _csrfHeaders({'Content-Type': 'application/x-www-form-urlencoded'}),
@@ -245,10 +302,29 @@ function _closeFilterPanel(wrapper) {
     }).then(function() { window.location.reload(); });
 }
 
-/* Outside click → close any open filter panel (triggers apply) */
+function _setYearRange(section, lo, hi) {
+    var min = parseInt(section.dataset.min, 10), max = parseInt(section.dataset.max, 10);
+    lo = Math.min(Math.max(lo, min), max);
+    hi = Math.min(Math.max(hi, min), max);
+    var loEl = section.querySelector('.year-range-lo'), hiEl = section.querySelector('.year-range-hi');
+    loEl.value = lo;
+    hiEl.value = hi;
+    section.querySelector('.year-range-from').value = lo;
+    section.querySelector('.year-range-to').value = hi;
+    var span = (max - min) || 1;
+    var fill = section.querySelector('.year-range-fill');
+    fill.style.left = ((lo - min) / span * 100) + '%';
+    fill.style.right = ((max - hi) / span * 100) + '%';
+    // Both thumbs parked at the max: the lower one must sit on top or it can never be dragged back
+    loEl.style.zIndex = (lo === max) ? 3 : 1;
+    hiEl.style.zIndex = 2;
+    _updateFilterMenu(section.closest('.filter-menu'));
+}
+
+/* Outside click → close any open Filters menu (triggers apply) */
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.filter-multiselect')) return;
-    document.querySelectorAll('.filter-multiselect').forEach(_closeFilterPanel);
+    if (e.target.closest('.filter-menu')) return;
+    document.querySelectorAll('.filter-menu').forEach(_closeFilterMenu);
 });
 
 /* Mousewheel scroll inside filter panels — nav's overflow-x:auto forces
@@ -260,19 +336,66 @@ document.addEventListener('wheel', function(e) {
     e.preventDefault();
     var delta = e.deltaY;
     if (e.deltaMode === 1) delta *= 28;
-    panel.scrollTop += delta;
+    var list = e.target.closest('.filter-scroll');
+    var el = list && list.scrollHeight > list.clientHeight ? list : panel;
+    el.scrollTop += delta;
 }, { passive: false });
 
-/* Checkbox toggle inside a filter panel updates the button label live */
+/* Checkbox toggle inside the Filters menu updates the count + summary live */
 document.addEventListener('change', function(e) {
     if (e.target.type !== 'checkbox') return;
-    var wrapper = e.target.closest('.filter-multiselect');
-    if (wrapper) _updateFilterLabel(wrapper);
+    var menu = e.target.closest('.filter-menu');
+    if (menu) _updateFilterMenu(menu);
 });
 
-/* Initial label computation on page load */
+/* Year range: dragging a thumb pushes the other along; typed years apply once they're a full in-range year */
+document.addEventListener('input', function(e) {
+    var section = e.target.closest('.filter-section[data-kind="range"]');
+    if (!section) return;
+    var lo = parseInt(section.querySelector('.year-range-lo').value, 10);
+    var hi = parseInt(section.querySelector('.year-range-hi').value, 10);
+    var v = parseInt(e.target.value, 10);
+    if (e.target.classList.contains('year-range-lo')) _setYearRange(section, v, Math.max(v, hi));
+    else if (e.target.classList.contains('year-range-hi')) _setYearRange(section, Math.min(v, lo), v);
+    else if (/^\d{4}$/.test(e.target.value) && v >= parseInt(section.dataset.min, 10) && v <= parseInt(section.dataset.max, 10)) {
+        var loEl = section.querySelector('.year-range-lo'), hiEl = section.querySelector('.year-range-hi');
+        if (e.target.classList.contains('year-range-from')) { loEl.value = v; if (v > hi) hiEl.value = v; }
+        else { hiEl.value = v; if (v < lo) loEl.value = v; }
+        _setYearRange(section, parseInt(loEl.value, 10), parseInt(hiEl.value, 10));
+        e.target.value = v;
+    }
+});
+
+/* Leaving a typed year box snaps it back to the slider (clamped, or reverted if left blank/partial) */
+document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('year-range-from') && !e.target.classList.contains('year-range-to')) return;
+    var section = e.target.closest('.filter-section');
+    var lo = parseInt(section.querySelector('.year-range-lo').value, 10);
+    var hi = parseInt(section.querySelector('.year-range-hi').value, 10);
+    var v = parseInt(e.target.value, 10);
+    if (/^\d{4}$/.test(e.target.value)) {
+        if (e.target.classList.contains('year-range-from')) { lo = v; hi = Math.max(hi, v); }
+        else { hi = v; lo = Math.min(lo, v); }
+    }
+    _setYearRange(section, lo, hi);
+});
+
+/* Enter in a year box applies the filters */
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    if (!e.target.classList.contains('year-range-from') && !e.target.classList.contains('year-range-to')) return;
+    e.preventDefault();
+    e.target.dispatchEvent(new Event('change', { bubbles: true }));
+    _closeFilterMenu(e.target.closest('.filter-menu'));
+});
+
+/* Initial count/summary + slider fill on page load */
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.filter-multiselect').forEach(_updateFilterLabel);
+    document.querySelectorAll('.filter-menu').forEach(function(menu) {
+        var range = menu.querySelector('.filter-section[data-kind="range"]');
+        if (range) _setYearRange(range, parseInt(range.querySelector('.year-range-lo').value, 10), parseInt(range.querySelector('.year-range-hi').value, 10));
+        _updateFilterMenu(menu);
+    });
 });
 
 /* Hover background — reads hex from --hover-bg CSS variable and applies 0.2 opacity */

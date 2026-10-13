@@ -74,6 +74,7 @@ class UserSettings(db.Model):
                         primary_key=True)
     country_ids = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
     genre_ids = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
+    year_range = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
     include_featured = db.Column(db.Boolean, nullable=False, default=False)
     include_remixes = db.Column(db.Boolean, nullable=False, default=False)
     include_covers = db.Column(db.Boolean, nullable=False, default=True, server_default='1')

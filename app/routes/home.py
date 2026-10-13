@@ -209,6 +209,8 @@ def _get_rating_backlog():
     include_covers = getattr(settings, 'include_covers', True) if settings else True
     hide_osts = getattr(settings, 'hide_osts', False) if settings else session.get('hide_osts', False)
     hide_dupes = getattr(settings, 'hide_duplicate_songs', False) if settings else False
+    from app.services.preferences import year_range_filter, album_in_year_range
+    year_range = year_range_filter()
 
     if country_ids:
         country_set = set(country_ids)
@@ -300,6 +302,9 @@ def _get_rating_backlog():
             genre_set = set(genre_ids)
             if not any(any(g.id in genre_set for g in a.genres) for a in song_albums):
                 continue
+
+        if year_range and not any(album_in_year_range(a, year_range) for a in song_albums):
+            continue
 
         if hide_dupes and len(song_albums) > 1:
             pass

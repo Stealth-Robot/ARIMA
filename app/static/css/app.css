@@ -578,6 +578,28 @@ body.em-on .artist-slim-img-spacer { display: block; width: 3.75rem; height: 4re
 @media (max-width: 768px) {
     .artist-slim-bar { display: none; }
 }
+/* Navbar Year filter: two range inputs overlaid on one track (thumb pseudo-elements aren't expressible in Tailwind) */
+.year-range-slider { position: relative; height: 1.5rem; }
+.year-range-slider input[type=range] {
+    position: absolute; left: 0; top: 0; width: 100%; margin: 0; height: 1.5rem;
+    background: none; pointer-events: none; -webkit-appearance: none; appearance: none;
+}
+.year-range-slider input[type=range]::-webkit-slider-thumb {
+    pointer-events: auto; -webkit-appearance: none; appearance: none;
+    width: 0.875rem; height: 0.875rem; border-radius: 50%;
+    background: var(--navbar-active); border: 0.125rem solid var(--bg-secondary); cursor: pointer;
+}
+.year-range-slider input[type=range]::-moz-range-thumb {
+    pointer-events: auto; width: 0.875rem; height: 0.875rem; border-radius: 50%;
+    background: var(--navbar-active); border: 0.125rem solid var(--bg-secondary); cursor: pointer;
+}
+.year-range-slider .year-range-track,
+.year-range-slider .year-range-fill {
+    position: absolute; top: 0.625rem; height: 0.25rem; border-radius: 0.125rem;
+}
+.year-range-slider .year-range-track { left: 0; right: 0; background: var(--border); }
+.year-range-slider .year-range-fill { background: var(--navbar-active); }
+
 @media (prefers-reduced-motion: reduce) {
     .artist-slim-inner, .artist-header { transition: none; }
 }

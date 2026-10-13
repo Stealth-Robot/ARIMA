@@ -1,21 +1,62 @@
-{%- macro filter_multiselect(field, label, items, label_attr, current_ids, trigger_class='bg-navbar-bg text-navbar-text border-border text-sm- py-0.5 px-1.5 rounded border border-border', panel_side='right') -%}
-<div class="filter-multiselect flex-shrink-0 relative" data-field="{{ field }}" data-label="{{ label }}">
-    <button type="button" onclick="toggleFilterPanel(this)"
-            class="filter-trigger cursor-pointer {{ trigger_class }}">
-        <span class="filter-label">{{ label }}</span> <span style="font-size:0.625rem;">&#9662;</span>
-    </button>
-    <div class="filter-panel hidden bg-secondary-bg border border-border rounded z-50"
-         style="position:fixed; min-width:11.25rem; max-height:20rem; overflow-y:auto; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3); padding:0.25rem 0;">
-        <div class="flex items-center justify-between px-3 pb-1 border-b border-border" style="margin-bottom:0.25rem;">
-            <span class="text-xs text-secondary-text">{{ label }}</span>
-            <button type="button" onclick="clearFilterPanel(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
-        </div>
+{%- macro filter_list_section(field, label, items, label_attr, current_ids) -%}
+<div class="filter-section border-b border-border" data-field="{{ field }}" data-label="{{ label }}" data-kind="list">
+    <div class="flex items-center justify-between px-3 py-1">
+        <span class="text-xs font-semibold text-secondary-text">{{ label }}</span>
+        <button type="button" onclick="clearFilterSection(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
+    </div>
+    <div class="filter-scroll pb-1" style="max-height:10rem; overflow-y:auto;">
         {% for item in items %}
         <label class="flex items-center gap-2 py-1 px-3 cursor-pointer text-sm- text-primary-text" style="white-space:nowrap;">
             <input type="checkbox" value="{{ item.id }}" {% if item.id in current_ids %}checked{% endif %}>
             <span>{{ item|attr(label_attr) }}</span>
         </label>
         {% endfor %}
+    </div>
+</div>
+{%- endmacro -%}
+{%- macro filter_year_section(field, label, bounds, current) -%}
+{%- if bounds -%}
+{%- set lo = [[current[0], bounds[0]]|max, bounds[1]]|min if current|length == 2 else bounds[0] -%}
+{%- set hi = [[current[1], bounds[0]]|max, bounds[1]]|min if current|length == 2 else bounds[1] -%}
+<div class="filter-section" data-field="{{ field }}" data-label="{{ label }}"
+     data-kind="range" data-min="{{ bounds[0] }}" data-max="{{ bounds[1] }}">
+    <div class="flex items-center justify-between px-3 py-1">
+        <span class="text-xs font-semibold text-secondary-text">{{ label }}</span>
+        <button type="button" onclick="clearFilterSection(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear</button>
+    </div>
+    <div class="px-3 pb-2">
+        <div class="flex items-center justify-between gap-2">
+            <input type="number" class="year-range-from w-16 px-1 py-0.5 text-sm- text-center border border-border rounded"
+                   min="{{ bounds[0] }}" max="{{ bounds[1] }}" value="{{ lo }}" aria-label="{{ label }} from">
+            <span class="text-secondary-text text-sm-">&ndash;</span>
+            <input type="number" class="year-range-to w-16 px-1 py-0.5 text-sm- text-center border border-border rounded"
+                   min="{{ bounds[0] }}" max="{{ bounds[1] }}" value="{{ hi }}" aria-label="{{ label }} to">
+        </div>
+        <div class="year-range-slider mt-2">
+            <div class="year-range-track"></div>
+            <div class="year-range-fill"></div>
+            <input type="range" class="year-range-lo" min="{{ bounds[0] }}" max="{{ bounds[1] }}" step="1" value="{{ lo }}" aria-label="{{ label }} from">
+            <input type="range" class="year-range-hi" min="{{ bounds[0] }}" max="{{ bounds[1] }}" step="1" value="{{ hi }}" aria-label="{{ label }} to">
+        </div>
+    </div>
+</div>
+{%- endif -%}
+{%- endmacro -%}
+{%- macro filter_menu(trigger_class='bg-navbar-bg text-navbar-text border-border text-sm- py-0.5 px-1.5 rounded border border-border') -%}
+<div class="filter-menu flex-shrink-0 relative" onmouseenter="_showFilterSummary(this)" onmouseleave="_hideFilterSummary(this)">
+    <button type="button" onclick="toggleFilterMenu(this)" class="filter-menu-trigger cursor-pointer {{ trigger_class }}">
+        <span>Filters<span class="filter-menu-count"></span></span> <span style="font-size:0.625rem;">&#9662;</span>
+    </button>
+    <div class="filter-menu-summary nav-dropdown-panel py-1.5 px-3 text-sm- text-navbar-text"></div>
+    <div class="filter-panel hidden bg-secondary-bg border border-border rounded z-50"
+         style="position:fixed; width:17rem; max-height:calc(100vh - 4rem); overflow-y:auto; box-shadow:0 0.25rem 0.75rem rgba(0,0,0,0.3); padding:0.25rem 0;">
+        <div class="flex items-center justify-between px-3 pb-1 border-b border-border">
+            <span class="text-sm- font-semibold text-primary-text">Filters</span>
+            <button type="button" onclick="clearAllFilters(this)" class="bg-transparent border-0 p-0 text-xs text-primary-text cursor-pointer underline">Clear all</button>
+        </div>
+        {{ filter_list_section('country_ids', 'Country', countries, 'country', current_country_ids) }}
+        {{ filter_list_section('genre_ids', 'Genre', genres, 'genre', current_genre_ids) }}
+        {{ filter_year_section('year_range', 'Year', year_bounds, current_year_range) }}
     </div>
 </div>
 {%- endmacro -%}
@@ -153,14 +194,8 @@
 
         <!-- Right: Filters + Profile -->
         <div class="flex-shrink-0 flex items-center gap-2 whitespace-nowrap">
-            <!-- Country filter -->
             <div class="mobile-hide">
-                {{ filter_multiselect('country_ids', 'Country', countries, 'country', current_country_ids) }}
-            </div>
-
-            <!-- Genre filter -->
-            <div class="mobile-hide">
-                {{ filter_multiselect('genre_ids', 'Genre', genres, 'genre', current_genre_ids) }}
+                {{ filter_menu() }}
             </div>
 
             <!-- Profile + Logout -->
@@ -241,14 +276,7 @@
         {% endif %}
         <div class="border-t border-border my-1"></div>
         <div class="py-2 px-4">
-            {{ filter_multiselect('country_ids', 'Country', countries, 'country', current_country_ids,
-                trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
-                panel_side='left') }}
-        </div>
-        <div class="px-4" style="padding-top:0.25rem; padding-bottom:0.5rem;">
-            {{ filter_multiselect('genre_ids', 'Genre', genres, 'genre', current_genre_ids,
-                trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded',
-                panel_side='left') }}
+            {{ filter_menu(trigger_class='w-full flex items-center justify-between py-1.5 px-2 text-sm bg-secondary-bg text-primary-text border border-border rounded') }}
         </div>
         {% if current_user.is_authenticated %}
         <div class="border-t border-border my-1"></div>

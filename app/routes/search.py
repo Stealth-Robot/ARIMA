@@ -76,6 +76,9 @@ def search():
     terms = norm_q.lower().split()
     term_counts = Counter(terms)
     show_hidden = request.args.get('show_hidden') == '1'
+    from app.services.preferences import year_range_filter, year_range_song_ids, album_year_range_clause
+    year_range = [] if show_hidden else year_range_filter()
+    year_sids = year_range_song_ids(year_range) if year_range else None
     if show_hidden:
         country_ids, genre_ids, hide_osts = [], [], False
         include_remixes, include_featured, include_covers = True, True, True
@@ -112,6 +115,9 @@ def search():
             album_genres, AlbumSong.album_id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id.in_(genre_ids)).distinct().all()}
         artist_query = artist_query.filter(Artist.id.in_(artist_ids_with_genre))
+    if year_sids is not None:
+        artist_query = artist_query.filter(Artist.id.in_(
+            db.session.query(ArtistSong.artist_id).filter(ArtistSong.song_id.in_(year_sids))))
     artists = artist_query.order_by(func.lower(Artist.name)).all()
 
     # --- Albums ---
@@ -130,6 +136,8 @@ def search():
         album_query = album_query.join(
             album_genres, Album.id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id.in_(genre_ids))
+    if year_range:
+        album_query = album_query.filter(album_year_range_clause(year_range))
     if ost_album_ids:
         album_query = album_query.filter(db.or_(
             ~Album.id.in_(ost_album_ids),
@@ -211,6 +219,8 @@ def search():
         song_query = song_query.join(
             album_genres, Album.id == album_genres.c.album_id
         ).filter(album_genres.c.genre_id.in_(genre_ids))
+    if year_range:
+        song_query = song_query.filter(album_year_range_clause(year_range))
     if ost_album_ids:
         song_query = song_query.filter(db.or_(
             ~Album.id.in_(ost_album_ids),
@@ -378,6 +388,8 @@ def search():
                         and s.id not in anime_misc_sids):
                     return False
                 if genre_ids and not (genres & set(genre_ids)):
+                    return False
+                if year_sids is not None and s.id not in year_sids:
                     return False
                 return True
 

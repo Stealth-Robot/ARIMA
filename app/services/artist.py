@@ -203,6 +203,8 @@ def get_filtered_navbar():
     else:
         country_ids = list(session.get('country_ids') or [])
         genre_ids = list(session.get('genre_ids') or [])
+    from app.services.preferences import year_range_filter
+    year_range = year_range_filter()
 
     if country_ids:
         country_set = set(country_ids)
@@ -257,6 +259,21 @@ def get_filtered_navbar():
                 valid_ids.add(aid)
             elif aid in child_to_parent:
                 valid_ids.add(child_to_parent[aid])
+        artists = [a for a in artists if a.id in valid_ids]
+
+    if year_range:
+        artist_ids = {a.id for a in artists}
+        child_rels = ArtistArtist.query.filter(
+            ArtistArtist.artist_1.in_(artist_ids),
+            ArtistArtist.relationship.in_((SUBUNIT, SOLOIST))).all()
+        child_to_parent = {rel.artist_2: rel.artist_1 for rel in child_rels}
+        from app.services.preferences import year_range_song_ids
+        year_sids = year_range_song_ids(year_range)
+        matching_artist_ids = {row[0] for row in db.session.query(ArtistSong.artist_id).filter(
+            ArtistSong.artist_id.in_(artist_ids | set(child_to_parent.keys())),
+            ArtistSong.song_id.in_(year_sids),
+        ).distinct().all()} if year_sids else set()
+        valid_ids = {child_to_parent.get(aid, aid) for aid in matching_artist_ids}
         artists = [a for a in artists if a.id in valid_ids]
 
     return [a for a in artists if a.name != 'Misc. Artists']

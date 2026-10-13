@@ -92,7 +92,7 @@ def get_display_users(viewer=None):
 class _BulkData:
     """Pre-loaded stats via SQL aggregation (~5 queries, but returns aggregated rows)."""
 
-    def __init__(self, include_featured, include_remixes, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
+    def __init__(self, include_featured, include_remixes, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None, year_range=None):
         scoped = artist_ids is not None
         keep_remix_ids = set(keep_remix_ids or ())
 
@@ -103,6 +103,10 @@ class _BulkData:
             ).filter(album_genres.c.genre_id.in_(genre_ids)).all()}
         else:
             self._genre_song_ids = None
+        if year_range:
+            from app.services.preferences import year_range_song_ids
+            year_song_ids = year_range_song_ids(year_range)
+            self._genre_song_ids = year_song_ids if self._genre_song_ids is None else self._genre_song_ids & year_song_ids
 
         # 0b. If hiding OSTs, find OST song IDs and anime artist IDs
         if hide_osts:
@@ -411,10 +415,10 @@ def _overall_score_stats(users, bulk, artists=None):
 
 # --- Public API (used by routes) ---
 
-def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None):
+def load_bulk_data(include_featured=False, include_remixes=False, include_covers=True, artist_ids=None, genre_ids=None, hide_osts=False, keep_remix_ids=None, year_range=None):
     """Load data needed for stats pages. If artist_ids given, scope to those artists only."""
     with _BUILD_SEMAPHORE:
-        return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
+        return _BulkData(include_featured, include_remixes, include_covers=include_covers, artist_ids=artist_ids, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids, year_range=year_range)
 
 
 def get_artist_stats(artist_id, users, bulk):

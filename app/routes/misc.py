@@ -19,6 +19,7 @@ from app.models.user import User
 from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
 from app.services.dates import is_valid_release_date
+from app.services.preferences import year_range_song_ids
 from app.services.events import publish, get_current_seq
 from app.routes.edit.song import parse_theme
 from app.services.search import text_match, alias_field
@@ -44,6 +45,7 @@ def _get_user_filters():
         return {
             'country_ids': list(s.country_ids or []),
             'genre_ids': list(s.genre_ids or []),
+            'year_range': list(s.year_range or []),
             'include_remixes': s.include_remixes,
             'include_featured': s.include_featured,
             'include_covers': s.include_covers,
@@ -53,6 +55,7 @@ def _get_user_filters():
     return {
         'country_ids': list(session.get('country_ids') or []),
         'genre_ids': list(session.get('genre_ids') or []),
+        'year_range': list(session.get('year_range') or []),
         'include_remixes': False,
         'include_featured': False,
         'include_covers': True,
@@ -129,7 +132,7 @@ def _sort_misc_songs(songs_list, field, direction):
 
 
 BYPASS_FILTERS = {
-    'country_ids': [], 'genre_ids': [], 'include_remixes': True,
+    'country_ids': [], 'genre_ids': [], 'year_range': [], 'include_remixes': True,
     'include_featured': True, 'include_covers': True, 'hide_osts': False,
     'hide_misc_featured': False,
 }
@@ -359,6 +362,7 @@ def _build_country_data(country_id, bypass_filters=False, force_song_id=None, on
     from app.services.preferences import rated_remix_override_ids
     keep_remix_ids = rated_remix_override_ids(filters['include_remixes'], set(song_map.keys()))
 
+    year_sids = year_range_song_ids(filters['year_range'], song_map.keys()) if filters['year_range'] else None
     genre_data = defaultdict(list)
     for sid, song in song_map.items():
         # A shared link targets one song; force it past content filters that would
@@ -382,6 +386,8 @@ def _build_country_data(country_id, bypass_filters=False, force_song_id=None, on
         if not forced and filters['genre_ids']:
             if not genre_ids.intersection(set(filters['genre_ids'])):
                 continue
+        if not forced and year_sids is not None and sid not in year_sids:
+            continue
 
         genres = genre_ids if genre_ids else {0}
         album_info = song_album_map.get(sid)
@@ -497,6 +503,8 @@ def unrated_count():
     from app.services.preferences import rated_remix_override_ids
     keep_remix_ids = rated_remix_override_ids(filters['include_remixes'], misc_song_ids)
 
+    year_sids = year_range_song_ids(filters['year_range'], misc_song_ids) if filters['year_range'] else None
+
     total = 0
     unrated = 0
     for song in songs:
@@ -511,6 +519,8 @@ def unrated_count():
                 and song.id not in anime_song_ids):
             continue
         if filters['genre_ids'] and not genres.intersection(set(filters['genre_ids'])):
+            continue
+        if year_sids is not None and song.id not in year_sids:
             continue
         total += 1
         if song.id not in rated_ids:

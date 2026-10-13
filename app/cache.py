@@ -5,6 +5,7 @@ Thread-safe enough for Flask's per-request threading model:
 worst case two threads both refresh at the same instant, which is harmless.
 """
 
+import datetime
 import threading
 import time
 from collections import OrderedDict
@@ -20,7 +21,7 @@ except (OSError, AttributeError):
 # Part A — Country / Genre filter lists (shared across all users)
 # ---------------------------------------------------------------------------
 
-_filter_cache = {'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'ts': -9999.0}
+_filter_cache = {'countries': [], 'genres': [], 'genders': [], 'album_types': [], 'year_bounds': None, 'ts': -9999.0}
 _FILTER_TTL = 60  # seconds
 
 def get_cached_filters():
@@ -28,7 +29,7 @@ def get_cached_filters():
     from sqlalchemy import func, desc
     from app.extensions import db
     from app.models.lookups import Country, Genre, GroupGender, AlbumType
-    from app.models.music import Artist, album_genres
+    from app.models.music import Album, Artist, album_genres
 
     now = time.monotonic()
     if now - _filter_cache['ts'] > _FILTER_TTL:
@@ -51,10 +52,22 @@ def get_cached_filters():
             ]
             _filter_cache['genders'] = GroupGender.query.order_by(GroupGender.id).all()
             _filter_cache['album_types'] = AlbumType.query.order_by(AlbumType.id).all()
+            year_col = func.substr(Album.release_date, 1, 4)
+            # Typo'd dates (e.g. 0001, 2050) would stretch the slider into uselessness.
+            max_year = datetime.date.today().year + 1
+            years = [int(y) for (y,) in db.session.query(year_col).filter(Album.release_date.isnot(None)).distinct()
+                     if y and y.isdigit() and 1900 <= int(y) <= max_year]
+            _filter_cache['year_bounds'] = (min(years), max(years)) if years else None
             _filter_cache['ts'] = now
         except Exception:
             pass  # return stale/empty lists rather than None
     return _filter_cache['countries'], _filter_cache['genres'], _filter_cache['genders'], _filter_cache['album_types']
+
+
+def get_cached_year_bounds():
+    """(earliest, latest) album release year for the navbar Year slider, or None."""
+    get_cached_filters()
+    return _filter_cache['year_bounds']
 
 
 def clear_filter_cache():
@@ -118,13 +131,14 @@ _STATS_TTL = 300  # 5 minutes
 # restarts. Cap keeps worst-case cache memory bounded regardless of key cardinality.
 _STATS_MAX = 4
 
-def get_cached_bulk_data(include_featured, include_remixes, include_covers=True, genre_ids=None, hide_osts=False, keep_remix_ids=None):
+def get_cached_bulk_data(include_featured, include_remixes, include_covers=True, genre_ids=None, hide_osts=False, keep_remix_ids=None, year_range=None):
     """Return cached BulkData, refreshing at most once per TTL (LRU-bounded)."""
     from app.services.stats import load_bulk_data
 
     genre_key = tuple(sorted(genre_ids)) if genre_ids else ()
     keep_key = tuple(sorted(keep_remix_ids)) if keep_remix_ids else ()
-    key = (include_featured, include_remixes, include_covers, genre_key, hide_osts, keep_key)
+    year_key = tuple(year_range) if year_range else ()
+    key = (include_featured, include_remixes, include_covers, genre_key, hide_osts, keep_key, year_key)
     now = time.monotonic()
     with _stats_lock:
         entry = _stats_cache.get(key)
@@ -132,7 +146,7 @@ def get_cached_bulk_data(include_featured, include_remixes, include_covers=True,
             _stats_cache.move_to_end(key)
             return entry['data']
 
-    data = load_bulk_data(include_featured=include_featured, include_remixes=include_remixes, include_covers=include_covers, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids)
+    data = load_bulk_data(include_featured=include_featured, include_remixes=include_remixes, include_covers=include_covers, genre_ids=genre_ids, hide_osts=hide_osts, keep_remix_ids=keep_remix_ids, year_range=year_range)
     with _stats_lock:
         _stats_cache[key] = {'data': data, 'ts': time.monotonic()}
         _stats_cache.move_to_end(key)

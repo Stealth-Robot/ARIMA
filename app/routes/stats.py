@@ -27,6 +27,7 @@ def _get_viewer_settings():
             'include_covers': current_user.settings.include_covers,
             'country_ids': list(current_user.settings.country_ids or []),
             'genre_ids': list(current_user.settings.genre_ids or []),
+            'year_range': list(current_user.settings.year_range or []),
             'hide_osts': getattr(current_user.settings, 'hide_osts', False),
             'keep_remix_ids': rated_remix_override_ids(include_remixes),
         }
@@ -36,6 +37,7 @@ def _get_viewer_settings():
         'include_covers': True,
         'country_ids': list(session.get('country_ids') or []),
         'genre_ids': list(session.get('genre_ids') or []),
+        'year_range': list(session.get('year_range') or []),
         'hide_osts': session.get('hide_osts', False),
         'keep_remix_ids': set(),
     }
@@ -63,7 +65,7 @@ def artist_stats():
     artist_rows = []
     for a in artists:
         stats = get_artist_stats(a.id, users, bulk)
-        if (genre_ids or hide_osts) and stats['song_count'] == 0:
+        if (genre_ids or hide_osts or settings['year_range']) and stats['song_count'] == 0:
             continue
         artist_rows.append({
             'artist': a,
@@ -117,7 +119,7 @@ def global_stats():
     artist_rows = []
     for a in artists:
         scores = get_artist_score_stats(a.id, users, bulk)
-        if (genre_ids or hide_osts) and scores['song_count'] == 0:
+        if (genre_ids or hide_osts or settings['year_range']) and scores['song_count'] == 0:
             continue
         artist_rows.append({
             'artist': a,
