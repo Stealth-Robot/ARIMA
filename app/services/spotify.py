@@ -307,6 +307,7 @@ def fetch_artist(url, on_progress=None, cancel=None):
         artist_data = _api_get(f'/artists/{artist_id}')
         artist_name = artist_data['name']
         artist_spotify_url = artist_data.get('external_urls', {}).get('spotify', url)
+        images = artist_data.get('images') or []
         _progress(f'Found: {artist_name}', 10)
 
         albums_raw = []
@@ -362,6 +363,7 @@ def fetch_artist(url, on_progress=None, cancel=None):
         return {
             'name': artist_name,
             'spotify_url': artist_spotify_url,
+            'image_url': images[0].get('url', '') if images else '',
             'albums': albums,
         }
     finally:

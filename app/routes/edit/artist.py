@@ -794,10 +794,13 @@ def add_artist_submit():
     gender_id = request.form.get('gender_id', '').strip()
     country_id = request.form.get('country_id', '').strip()
     artist_spotify_url = request.form.get('artist_spotify_url', '').strip() or None
+    artist_image_url = request.form.get('artist_image_url', '').strip() or None
     albums_json = request.form.get('albums_data', '[]')
 
     if not name:
         errors['artist_name'] = 'Name is required.'
+    if artist_image_url and not artist_image_url.startswith('https://'):
+        errors['artist_image_url'] = 'Image URL must start with https://'
     if not gender_id:
         errors['gender_id'] = 'Gender is required.'
     if not country_id:
@@ -862,6 +865,7 @@ def add_artist_submit():
             'is_complete': request.form.get('is_complete'),
             'is_tracked': request.form.get('is_tracked'),
             'artist_spotify_url': artist_spotify_url or '',
+            'artist_image_url': artist_image_url or '',
             'albums_json': albums_json,
         }
         return render_template('add_artist.html',
@@ -890,6 +894,7 @@ def add_artist_submit():
             is_complete=bool(request.form.get('is_complete')),
             is_tracked=bool(request.form.get('is_tracked')),
             spotify_url=artist_spotify_url,
+            image_url=artist_image_url,
         )
         db.session.add(artist)
         db.session.flush()

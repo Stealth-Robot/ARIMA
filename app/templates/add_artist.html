@@ -91,6 +91,17 @@
                         {% endif %}
                     </div>
 
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Image URL</label>
+                        <input type="url" name="artist_image_url" id="artist-image-url" placeholder="https://…"
+                               value="{{ form_data.get('artist_image_url', '') }}"
+                               class="w-full px-3 py-2 border rounded" style="border-color: var(--border);">
+                        <p class="text-xs mt-1 text-secondary-text">Cropped to a 2:3 portrait ratio (centered). Filled automatically by Spotify import.</p>
+                        {% if errors.get('artist_image_url') %}
+                        <p class="text-xs text-red-400 mt-1">{{ errors['artist_image_url'] }}</p>
+                        {% endif %}
+                    </div>
+
                     <div class="mb-3 flex gap-4">
                         <label class="text-sm cursor-pointer">
                             <input type="checkbox" name="is_disbanded" value="1" class="mr-1"
@@ -657,6 +668,7 @@ document.getElementById('add-artist-form').addEventListener('submit', function(e
     var state = collectFormState();
     document.getElementById('albums-data').value = state.albums_json;
     document.getElementById('artist-spotify-url').value = state.artist_spotify_url || '';
+    document.getElementById('artist-image-url').value = state.artist_image_url || '';
 });
 
 // Close search results when clicking outside
@@ -747,6 +759,7 @@ function collectFormState() {
         gender_id: document.querySelector('[name="gender_id"]').value,
         country_id: document.querySelector('[name="country_id"]').value,
         artist_spotify_url: document.getElementById('artist-spotify-url').value || '',
+        artist_image_url: document.getElementById('artist-image-url').value || '',
         albums_json: JSON.stringify(albums),
     };
 }
@@ -893,6 +906,9 @@ new MutationObserver(function() { setTimeout(validateForm, 0); }).observe(
                 }
                 if (draft.artist_spotify_url && !document.getElementById('artist-spotify-url').value) {
                     document.getElementById('artist-spotify-url').value = draft.artist_spotify_url;
+                }
+                if (draft.artist_image_url && !document.getElementById('artist-image-url').value) {
+                    document.getElementById('artist-image-url').value = draft.artist_image_url;
                 }
             }
         } catch(e) {}
@@ -1068,6 +1084,7 @@ function populateArtistFromSpotify(data) {
         nameEl.dispatchEvent(new Event('input'));
     }
     document.getElementById('artist-spotify-url').value = data.spotify_url || '';
+    document.getElementById('artist-image-url').value = data.image_url || '';
     document.getElementById('albums-container').innerHTML = '';
     albumCount = 0;
     songCounters = {};
