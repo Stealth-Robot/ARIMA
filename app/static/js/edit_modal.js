@@ -1383,7 +1383,12 @@ function songEditConfig(cell) {
                 tags.push(THEME_TAG_META[data.theme_type][2] + (data.theme_number ? ' ' + data.theme_number : ''));
             }
             if (tags.length) bodyArea.appendChild(ui.infoRow('Tags', tags.join(', ')));
-            if (data.note) bodyArea.appendChild(ui.infoRow('Note', data.note));
+            if (data.note) {
+                var noteVal = document.createElement('div');
+                noteVal.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; line-height:1.4; word-wrap:break-word;';
+                setLinkifiedText(noteVal, data.note);
+                bodyArea.appendChild(ui.infoRow('Note', noteVal));
+            }
 
             if (data.spotify_url || data.youtube_url) {
                 var links = document.createElement('div');

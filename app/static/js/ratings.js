@@ -342,7 +342,7 @@ function showMobileNoteModal(cell) {
     modal.appendChild(title);
 
     var noteDiv = document.createElement('div');
-    noteDiv.textContent = note;
+    setLinkifiedText(noteDiv, note);
     noteDiv.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow-y:auto;';
     modal.appendChild(noteDiv);
 
@@ -942,13 +942,35 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Builds text nodes and anchors rather than innerHTML so note text can never inject markup
+function setLinkifiedText(el, text) {
+    el.textContent = '';
+    // Bare domains need a known TLD so ordinary text like "e.g." or "lol.jk" stays plain
+    const re = /https?:\/\/[^\s<>"]+|(?<![\w@.\/-])(?:www\.[^\s<>"]+|(?:[a-z0-9-]+\.)+(?:com|net|org|io|co|be|ly|gg|me|tv|fm|kr|jp|cn|uk|de|fr|app|dev|xyz|info)(?![\w-])(?:[\/?#][^\s<>"]*)?)/gi;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+        const url = m[0].replace(/[.,;:!?)\]'"]+$/, '');
+        if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const a = document.createElement('a');
+        a.href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'underline';
+        a.textContent = url;
+        el.appendChild(a);
+        last = m.index + url.length;
+        re.lastIndex = last;
+    }
+    if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+}
+
 function showTooltip(event, tooltip, closestSelector, attributeName){
     if (_isMobile()) return;
     const td = event.target.closest(closestSelector);
     const note = td?.getAttribute(attributeName);
     if (!note) return;
     _setAliasTipTheme(tooltip, false);
-    tooltip.textContent = note;
+    setLinkifiedText(tooltip, note);
     _positionTooltip(tooltip, td);
 }
 
@@ -1036,7 +1058,7 @@ function showAliasTooltip(event, tooltip) {
     if (note) {
         const noteEl = document.createElement('div');
         noteEl.className = 'mt-1 pt-1 border-t border-grid-line';
-        noteEl.textContent = note;
+        setLinkifiedText(noteEl, note);
         tooltip.appendChild(noteEl);
     }
     tooltip._aliasTd = td;
@@ -1066,7 +1088,7 @@ function showTruncTooltip(event, tooltip) {
         const noteEl = document.createElement('div');
         noteEl.className = 'mt-1 pt-1 border-t border-grid-line';
         noteEl.style.whiteSpace = 'pre-wrap';
-        noteEl.textContent = note;
+        setLinkifiedText(noteEl, note);
         tooltip.appendChild(noteEl);
     }
     tooltip._truncTd = td;
