@@ -343,7 +343,7 @@ function showMobileNoteModal(cell) {
 
     var noteDiv = document.createElement('div');
     setLinkifiedText(noteDiv, note);
-    noteDiv.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow-y:auto;';
+    noteDiv.style.cssText = 'font-size:0.875rem; color:var(--text-primary); white-space:pre-wrap; word-wrap:break-word; line-height:1.5; max-height:60vh; overflow-y:auto;';
     modal.appendChild(noteDiv);
 
     var closeBtn = document.createElement('button');
@@ -959,6 +959,7 @@ function setLinkifiedText(el, text) {
         a.textContent = url;
         // Links natively drag instead of selecting, which made notes with URLs uncopyable
         a.draggable = false;
+        a.style.userSelect = 'text';
         a.addEventListener('click', (e) => { if (String(window.getSelection())) e.preventDefault(); });
         el.appendChild(a);
         last = m.index + url.length;
