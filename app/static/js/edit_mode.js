@@ -653,6 +653,8 @@
         var dateInp = textInput(df, d.release_date, 'YYYY-MM-DD');
         dateInp.setAttribute('data-date-format', '');
         if (typeof applyDateFormat === 'function') applyDateFormat(dateInp);
+        // The formatter rewrites every keystroke from script, so the browser never fires change on its own.
+        dateInp.addEventListener('blur', function() { dateInp.dispatchEvent(new Event('change')); });
         saveOnChange(dateInp, pfx + '/release-date', { key: 'release_date', error: 'Invalid date' });
         lookupSelect(field('Type', two), '/lookups/album-types', d.album_type_id, pfx + '/type', 'album_type_id', 'album_type_id');
 
