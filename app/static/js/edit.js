@@ -2679,6 +2679,18 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl, onSu
     });
 })();
 
+// Opens below the cell, or above it when the fixed bottom bars would cover it
+function _placeNoteOverlay(overlay, rect) {
+    var limit = window.innerHeight;
+    ['presence-strip', 'artist-nav-container'].forEach(function (key) {
+        var el = document.getElementById(key) || document.querySelector('.' + key);
+        var r = el ? el.getBoundingClientRect() : null;
+        if (r && r.height) limit = Math.min(limit, r.top);
+    });
+    var fitsBelow = rect.bottom + 6 + overlay.offsetHeight <= limit;
+    overlay.style.top = (fitsBelow ? rect.bottom + 6 : Math.max(0, rect.top - 6 - overlay.offsetHeight)) + 'px';
+}
+
 // Song note editor — edit-mode only, triggered by right-click on song name cell
 var activeSongNote = null;
 
@@ -2723,7 +2735,7 @@ function showSongNoteInput(event, tdEl) {
 
     var rect = getZoomedRect(tdEl);
     overlay.style.left = Math.min(rect.right - 240, window.innerWidth - 260) + 'px';
-    overlay.style.top = (rect.bottom + 6) + 'px';
+    _placeNoteOverlay(overlay, rect);
 
     textarea.focus();
     textarea.addEventListener('keydown', function (e) {
@@ -2831,7 +2843,7 @@ function showAlbumNoteInput(event, tdEl) {
 
     var rect = getZoomedRect(tdEl);
     overlay.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
-    overlay.style.top = (rect.bottom + 6) + 'px';
+    _placeNoteOverlay(overlay, rect);
 
     textarea.focus();
     textarea.addEventListener('keydown', function (e) {
