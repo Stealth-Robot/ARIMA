@@ -1,0 +1,81 @@
+{# Shared song-table pieces for Song of the Day, shuffle, Group Picks and the home backlog. Import "with context". #}
+{% from "fragments/spotify_macros.html" import song_link_icons with context %}
+
+{% macro user_header_cells(users) -%}
+{% for u in users %}
+<th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
+{% endfor %}
+{%- endmacro %}
+
+{# One rating cell; also what /rate, /rate/delete and /rate/cell send back to swap in after a change #}
+{% macro rating_cell(song_id, user_id, r) -%}
+{% set rating_all = session.get('rating_mode', 'self') == 'all' and current_user.is_editor_or_admin %}
+{% set cell_style = rating_cell_style(r.rating if r else None) %}
+{% set cell_editable = current_user.can_rate and (user_id == current_user.id or rating_all) %}
+<td id="rating-{{ song_id }}-{{ user_id }}"
+    class="text-center px-1 py-1 border border-grid-line relative min-h-5{% if r and r.note %} has-note{% endif %}{% if user_id == current_user.id %} my-cell{% endif %}{% if cell_editable %} cursor-pointer hover:opacity-40{% endif %}"
+    style="vertical-align: middle;{% if cell_style %}background-color: {{ cell_style.bg }}; color: {{ cell_style.text }};{% endif %}"
+    {% if r and r.note %}data-note="{{ r.note }}"{% endif %}
+    {% if cell_editable %}onclick="showRatingInput(event, {{ song_id }}, {{ user_id }})"{% endif %}>
+    {% if r and r.rating is not none %}{{ r.rating }}{% else %}&nbsp;{% endif %}
+</td>
+{%- endmacro %}
+
+{# ratings: {user_id: Rating} for this one song #}
+{% macro rating_cells(song_id, users, ratings) -%}
+{% for u in users %}
+{{ rating_cell(song_id, u.id, ratings.get(u.id)) }}
+{% endfor %}
+{%- endmacro %}
+
+{# Three-line card cell: artist, song + tags, album/year/genres, then links. card comes from home._build_song_card. #}
+{% macro song_card_cell(card) -%}
+{% set song = card.song %}
+{% set album = card.album %}
+{% set _dn = song_display_name(song) %}
+<td class="song-name-cell{% if song.note %} has-song-note{% endif %} border border-grid-line"
+    data-song-id="{{ song.id }}"
+    {% if song.note %}data-song-note="{{ song.note | e }}"{% endif %}
+    style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem;{% if song.is_promoted %} border-left: 0.25rem solid var(--promoted-song);{% endif %}">
+    <div class="cell-trunc" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <a href="{{ card.artist_url }}" class="text-secondary-text italic no-underline">{{ card.artist.name }}</a>{% if card.collab_label %} <span class="text-secondary-text italic">{{ card.collab_label }}</span>{% endif %}
+    </div>
+    <div class="cell-trunc" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <a href="{{ card.song_url }}" class="no-underline" style="color: var(--link);">{{ _dn }}</a>{% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); line-height: 1;">★</span>{% endif %}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
+    </div>
+    {% if album %}
+    <div class="cell-trunc text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        {{ album_display_name(album) }}{% if album.release_date %} ({{ album.release_date[:4] }}){% endif %}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}
+    </div>
+    {% else %}
+    {# Album-less songs live in the artist's virtual "Misc" section, so tag them the same here. #}
+    <div class="cell-trunc text-secondary-text" style="font-size: 0.625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        Misc{% if song.genres %} &middot; {{ song.genres | map(attribute='genre') | join(', ') }}{% endif %}
+    </div>
+    {% endif %}
+    <div class="mt-1">{{ song_link_icons(song, card.artist.name, album) }}</div>
+</td>
+{%- endmacro %}
+
+{# One-line song cell; href=None renders the name as plain text #}
+{% macro song_line_cell(song, artist_name, album, href=None) -%}
+{% set _dn = song_display_name(song) %}
+<td class="song-name-cell text-primary-text border border-grid-line" data-song-id="{{ song.id }}"{% if song.note %} data-song-note="{{ song.note | e }}"{% endif %} style="padding: 0.25rem 0.375rem 0.25rem 1rem; width: 12.5rem; max-width: 12.5rem;"><div class="flex items-center gap-1"><span class="cell-trunc truncate min-w-0">{% if href %}<a href="{{ href }}" class="text-primary-text no-underline hover:underline">{{ _dn }}</a>{% else %}{{ _dn }}{% endif %}</span><span class="flex-shrink-0">{{ song_link_icons(song, artist_name, album) }}</span></div></td>
+{%- endmacro %}
+
+{# Album header row (plus a spacer above it unless first); editable adds the album-name-cell hooks for notes/edit mode #}
+{% macro album_header_row(album, colspan, first=true, editable=false) -%}
+{% if not first %}
+<tr><td colspan="{{ colspan }}" style="height: 0.75rem; border: none;"></td></tr>
+{% endif %}
+<tr>
+    <td colspan="{{ colspan }}" class="text-xs text-primary-text font-bold{% if editable and album %} album-name-cell{% if current_user.is_editor_or_admin %} cursor-pointer{% endif %}{% endif %}"{% if editable and album %} data-album-id="{{ album.id }}"{% endif %} style="padding: 0.125rem 0.5rem; border: none; border-bottom: 0.0625rem solid var(--border); background: var(--album-header-bg);">
+        {% if album %}
+        {{ album_display_name(album) }}{% if album.release_date %} · {{ album.release_date[:4] }}{% endif %}
+        <div class="text-xxs font-normal" style="opacity: 0.85;">{{ album.album_type.type }}{% if album.genres %} &middot; {{ album.genres | map(attribute='genre') | join(', ') }}{% endif %}</div>
+        {% else %}
+        No album
+        {% endif %}
+    </td>
+</tr>
+{%- endmacro %}

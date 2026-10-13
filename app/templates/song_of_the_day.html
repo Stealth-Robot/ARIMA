@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "fragments/song_table_macros.html" import user_header_cells with context %}
 
 {% block og_title %}A.R.I.M.A. - Song of the Day{% endblock %}
 {% block og_description %}{% if og_sotd %}{{ og_sotd.date }} · {{ og_sotd.song }}{% if og_sotd.artist %} — {{ og_sotd.artist }}{% endif %}{% else %}Daily random song picks{% endif %}{% endblock %}
@@ -15,9 +16,7 @@
             <tr class="sotd-row">
                 <th class="py-1 px-2 text-left text-secondary-text" style="width: 5rem; min-width: 5rem; border: none;">Date</th>
                 <th class="py-1 px-2 text-left text-secondary-text" style="width: 12.5rem; min-width: 12.5rem; max-width: 12.5rem; border: none;">Song</th>
-                {% for u in cards[0].users %}
-                <th class="px-1 py-1 text-center th-cell bg-header-user-bg font-bold{% if u.id == current_user.id %} my-cell{% endif %}" style="width: 2.8125rem;">{{ u.username }}</th>
-                {% endfor %}
+                {{ user_header_cells(cards[0].users) }}
                 {% if current_user.is_admin %}
                 <th class="px-1 py-1" style="width: 2rem; border: none;"></th>
                 {% endif %}

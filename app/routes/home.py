@@ -90,27 +90,35 @@ def _ensure_sotd_through_today():
 
 
 def _build_sotd_card(entry):
+    if not entry.song:
+        return None
+    card = _build_song_card(entry.song)
+    if card:
+        card['date_str'] = entry.date
+    return card
+
+
+def _build_song_card(song, artist=None, album=None):
+    """Data for the shared song card (SOTD + shuffle); artist/album default to the song's main artist and first album."""
     from app.services.stats import get_display_users
     from app.routes.artists import _collab_labels_from_song_artists
     from app.services.artist import soloist_parent_map
 
-    song = entry.song
-    if not song:
-        return None
-
-    album_row = (db.session.query(AlbumSong.song_id, Album)
-                 .join(Album, Album.id == AlbumSong.album_id)
-                 .options(selectinload(Album.genres))
-                 .filter(AlbumSong.song_id == song.id)
-                 .first())
-    album = album_row[1] if album_row else None
+    if album is None:
+        album_row = (db.session.query(AlbumSong.song_id, Album)
+                     .join(Album, Album.id == AlbumSong.album_id)
+                     .options(selectinload(Album.genres))
+                     .filter(AlbumSong.song_id == song.id)
+                     .first())
+        album = album_row[1] if album_row else None
     users = get_display_users()
     ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
 
-    as_row = ArtistSong.query.filter(
-        ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True
-    ).first()
-    artist = db.session.get(Artist, as_row.artist_id) if as_row else None
+    if artist is None:
+        as_row = ArtistSong.query.filter(
+            ArtistSong.song_id == song.id, ArtistSong.artist_is_main == True
+        ).first()
+        artist = db.session.get(Artist, as_row.artist_id) if as_row else None
     if not artist:
         main_names, feat_names = _misc_artist_names(song.id)
         if not main_names:
@@ -119,8 +127,7 @@ def _build_sotd_card(entry):
         return dict(song=song, artist={'name': ', '.join(main_names)}, album=album,
                     artist_url=song_url, song_url=song_url, artist_id='',
                     users=users, ratings=ratings,
-                    collab_label='(feat. ' + ', '.join(feat_names) + ')' if feat_names else '',
-                    date_str=entry.date)
+                    collab_label='(feat. ' + ', '.join(feat_names) + ')' if feat_names else '')
 
     artist_url = url_for('artists.artist_detail', artist_id=artist.id)
 
@@ -138,7 +145,7 @@ def _build_sotd_card(entry):
     return dict(song=song, artist=artist, album=album, artist_url=artist_url,
                 song_url=artist_url + '#song-' + str(song.id),
                 artist_id=artist.id, users=users, ratings=ratings,
-                collab_label=collab_label, date_str=entry.date)
+                collab_label=collab_label)
 
 
 def _misc_artist_names(song_id):
@@ -391,59 +398,15 @@ def _render_shuffle_any(song_id):
         album = db.session.get(Album, alb_row[0]) if alb_row else None
         if artist and album:
             return _render_shuffle_card(song, artist, album)
-    return _render_shuffle_misc_card(song)
-
-
-def _render_shuffle_misc_card(song):
-    """Shuffle card for a misc-artist song — links to the /misc page (no artist page)."""
-    from app.services.stats import get_display_users
-    users = get_display_users()
-    ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
-    rows = (db.session.query(SongMiscArtist.artist_is_main, MiscArtist.name)
-            .join(MiscArtist, MiscArtist.id == SongMiscArtist.misc_artist_id)
-            .filter(SongMiscArtist.song_id == song.id)
-            .order_by(SongMiscArtist.artist_is_main.desc(), MiscArtist.name)
-            .all())
-    main_names = [n for is_main, n in rows if is_main]
-    feat_names = [n for is_main, n in rows if not is_main]
-    artist_name = ', '.join(main_names) or 'Unknown'
-    collab_label = '(feat. ' + ', '.join(feat_names) + ')' if feat_names else ''
-    alb_row = (db.session.query(AlbumSong.album_id)
-               .filter(AlbumSong.song_id == song.id).first())
-    album = db.session.get(Album, alb_row[0]) if alb_row else None
-    song_url = '/misc?song=%d#song-%d' % (song.id, song.id)
-    return render_template('fragments/shuffle_card.html',
-                           song=song, artist={'name': artist_name}, album=album,
-                           artist_url=song_url, song_url=song_url, artist_id='',
-                           users=users, ratings=ratings,
-                           collab_label=collab_label, gender_css=GENDER_CSS)
+    # Misc-artist song: the card links to the /misc page (no artist page)
+    card = _build_song_card(song)
+    if card is None:
+        return '', 204
+    return render_template('fragments/shuffle_card.html', card=card)
 
 
 def _render_shuffle_card(song, artist, album):
-    from app.services.stats import get_display_users
-    from app.routes.artists import _collab_labels_from_song_artists
-    from app.services.artist import soloist_parent_map
-    artist_url = url_for('artists.artist_detail', artist_id=artist.id)
-    users = get_display_users()
-    ratings = {r.user_id: r for r in Rating.query.filter_by(song_id=song.id).all()}
-    song_artists_rows = db.session.query(
-        ArtistSong.artist_id, ArtistSong.artist_is_main, Artist.name, Artist.gender_id
-    ).join(Artist, Artist.id == ArtistSong.artist_id).filter(
-        ArtistSong.song_id == song.id
-    ).all()
-    solo_parents = soloist_parent_map({a for a, m, n, g in song_artists_rows})
-    sa_map = {song.id: [{'artist_id': a, 'name': n, 'is_main': m, 'gender_id': g,
-                         'is_soloist': a in solo_parents, 'soloist_parent_ids': solo_parents.get(a, [])}
-                        for a, m, n, g in song_artists_rows]}
-    collab_label = _collab_labels_from_song_artists(sa_map, artist).get(song.id, '')
-    return render_template('fragments/shuffle_card.html',
-                           song=song, artist=artist, album=album,
-                           artist_url=artist_url,
-                           song_url=artist_url + '#song-' + str(song.id),
-                           artist_id=artist.id,
-                           users=users, ratings=ratings,
-                           collab_label=collab_label,
-                           gender_css=GENDER_CSS)
+    return render_template('fragments/shuffle_card.html', card=_build_song_card(song, artist, album))
 
 
 @home_bp.route('/shuffle')
