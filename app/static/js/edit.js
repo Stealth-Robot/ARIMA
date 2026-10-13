@@ -415,6 +415,8 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
     event.stopPropagation();
 
     const original = span.textContent.trim();
+    // Some lists render the full date, others only the year; redraw the saved value the same way.
+    const showsFullDate = !!currentFullDate && original === currentFullDate;
     const input = document.createElement('input');
     input.value = currentFullDate || '';
     input.style.cssText = `
@@ -452,7 +454,7 @@ function showInlineDateEdit(event, endpoint, span, currentFullDate) {
             return r.text();
         }).then(function(text) {
             if (text === undefined) return;
-            var displayYear = text ? text.substring(0, 4) : 'date';
+            var displayYear = text ? (showsFullDate ? text : text.substring(0, 4)) : 'date';
             const newSpan = document.createElement('span');
             newSpan.className = 'edit-inline';
             newSpan.style.cursor = 'pointer';
