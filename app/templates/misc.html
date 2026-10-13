@@ -8,7 +8,7 @@
 {% block content %}
 <div class="mb-4 pb-9">
     <!-- Page header -->
-    <div class="mb-3 pl-3 flex items-start gap-3" style="border-left: 0.25rem solid var(--gender-mixed);" data-misc-header>
+    <div id="artist-header" class="artist-header mb-3 py-1 pl-3 pr-3 flex items-start gap-3" style="border-left: 0.25rem solid var(--gender-mixed);" data-misc-header>
         {% if rules and rules.misc_image_url %}
         <a href="{{ rules.misc_image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab" data-em-image>
         <img src="{{ rules.misc_image_url }}" alt="Misc Artists"
@@ -23,10 +23,10 @@
         <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
             {% if edit_mode %}<span class="em-name" onclick="if (window._editMode) showMiscEdit()">MISC ARTISTS</span>{% else %}MISC ARTISTS{% endif %}
             {% if edit_mode %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
-            <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add song" onclick="_showAddMiscSong()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
+            <span class="artist-add-album align-middle" title="Add song" onclick="_showAddMiscSong()">+ Song</span>{% endif %}
         </h2>
         <div class="flex items-center gap-3 mt-1">
-            <span id="misc-unrated" class="text-xs text-secondary-text">Loading...</span>
+            <span id="misc-unrated" class="text-xs text-secondary-text" data-misc-unrated>Loading...</span>
         </div>
         {% set _show_creator = rules and rules.misc_creator %}
         {% set _show_owner = edit_mode or (rules and rules.misc_owner) %}
@@ -96,6 +96,48 @@
             {% endif %}
         </div>
         {% endif %}
+        {% if edit_mode %}<div class="em-hints em-hints-line text-xs text-secondary-text items-center whitespace-nowrap" data-em-hints></div>{% endif %}
+        </div>
+    </div>
+
+    <!-- Slim bar — slides in under the navbar once the header above scrolls away (desktop) -->
+    <div id="artist-slim-bar" class="artist-slim-bar">
+        <div class="artist-slim-inner" style="border-left: 0.25rem solid var(--gender-mixed);">
+            {# Photo column and name line copy the header's widths, sizes and spacing so the toggle and + Song sit at the same spot on screen #}
+            {% if rules and rules.misc_image_url %}
+            <img src="{{ rules.misc_image_url }}" alt="" referrerpolicy="no-referrer"
+                 onerror="this.onerror=null;this.style.display='none';"
+                 class="rounded object-cover flex-shrink-0" style="width:3.75rem; height:4rem; object-position:center;">
+            {% elif edit_mode %}
+            <span class="artist-slim-img-spacer flex-shrink-0" aria-hidden="true"></span>
+            {% endif %}
+            <div class="artist-slim-id">
+                <div class="artist-slim-l1 text-2xl font-bold text-primary-text">
+                    {% if edit_mode %}<span class="em-name" onclick="if (window._editMode) showMiscEdit()">MISC ARTISTS</span>{% else %}MISC ARTISTS{% endif %}
+                    {% if edit_mode %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
+                    <span class="artist-add-album align-middle" title="Add song" onclick="_showAddMiscSong()">+ Song</span>{% endif %}
+                </div>
+                <div class="artist-slim-l2">
+                    <span class="artist-slim-meta">
+                        <span data-misc-unrated>Loading...</span>
+                        {% set people = [('Owner', '👑', rules.misc_owner if rules and _show_owner else none), ('Maintainer', '🔧', rules.misc_maintainer if rules and _show_maintainer else none), ('Creator', '✍️', rules.misc_creator if rules and _show_creator else none)] | selectattr(2) | list %}
+                        {% if people %}
+                        <span class="artist-slim-people">
+                            {% for role, icon, u in people %}
+                            <span title="{{ role }}" class="inline-flex items-center gap-1">
+                                <span aria-label="{{ role }}">{{ icon }}</span>
+                                <img src="{{ u.profile_image or url_for('static', filename='img/default_image.png') }}" referrerpolicy="no-referrer"
+                                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                                     class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">
+                                {{ u.username }}
+                            </span>
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+                    </span>
+                    {% if edit_mode %}<span class="em-hints artist-slim-hints items-center" data-em-hints></span>{% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -201,7 +243,7 @@ window._miscRefreshUnrated = function() {
     var ticket = ++_miscUnratedSeq;
     fetch('/misc/unrated-count').then(function(r) { return r.json(); }).then(function(d) {
         if (ticket !== _miscUnratedSeq) return;
-        document.getElementById('misc-unrated').textContent = 'Unrated: ' + d.unrated + ' / ' + d.total;
+        document.querySelectorAll('[data-misc-unrated]').forEach(function(el) { el.textContent = 'Unrated: ' + d.unrated + ' / ' + d.total; });
     }).catch(function() {});
 };
 window._miscRefreshUnrated();

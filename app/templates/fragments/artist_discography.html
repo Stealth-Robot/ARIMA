@@ -4,7 +4,7 @@
 {# Songs with alt names get the hover popover instead of a native title, which would double up on it #}
 {% macro song_name_attrs(song, dn) %}data-alias-tip {% if song.aliases %}{% set _al = [] %}{% for a in song.aliases %}{% set _ = _al.append([a.native_lang or '', a.name]) %}{% endfor %}data-song-title="{{ dn | e }}" data-song-main="{{ song.name | e }}" data-song-aliases='{{ _al | tojson }}'{% else %}title="{{ dn | e }}"{% endif %}{% endmacro %}
 <!-- Artist header -->
-<div class="mb-3 pl-3 flex items-start gap-3" data-current-artist-id="{{ artist.id }}" data-current-artist-name="{{ artist.name | e }}" style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
+<div id="artist-header" class="artist-header mb-3 py-1 pl-3 pr-3 flex items-start gap-3" data-current-artist-id="{{ artist.id }}" data-current-artist-name="{{ artist.name | e }}" style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
     {% if artist.image_url %}
     <a href="{{ artist.image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab" data-em-image>
     <img src="{{ artist.image_url }}" alt="{{ artist.name }}"
@@ -21,7 +21,7 @@
         {% if current_user.is_editor_or_admin %}<span class="em-name" data-edit-artist="{{ artist.id }}">{{ artist.name }}</span>{% else %}{{ artist.name }}{% endif %}
 
         {% if current_user.is_editor_or_admin %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" id="em-switch" hx-preserve="true" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
-        <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add album" onclick="showAddAlbumModal()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
+        <span class="artist-add-album align-middle" title="Add album" onclick="showAddAlbumModal()">+ Album</span>{% endif %}
         {{ spotify_link_icon(artist.spotify_url) }}
         {% if artist.country %}<span class="text-sm font-normal text-secondary-text">{{ artist.country.country }}</span>{% endif %}
         {% if artist.is_disbanded %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
@@ -35,7 +35,7 @@
         {% endif %}
         {% if current_user.can_rate %}
         <label class="text-sm font-normal text-secondary-text ml-2 cursor-pointer">
-            <input type="checkbox" {% if is_subscribed %}checked{% endif %} autocomplete="off"
+            <input type="checkbox" id="artist-subscribe-cb" {% if is_subscribed %}checked{% endif %} autocomplete="off"
                    onchange="handleSubscribeToggle(this, {{ artist.id }})"
                    class="cursor-pointer"> Subscribe
         </label>
@@ -142,7 +142,62 @@
         Last updated: <span class="changelog-date" data-utc="{{ last_updated }}">{{ last_updated[:10] }}</span>
     </span>
     {% endif %}
+    {% if can_edit %}<div class="em-hints em-hints-line text-xs text-secondary-text items-center whitespace-nowrap" data-em-hints></div>{% endif %}
 
+    </div>
+</div>
+
+<!-- Slim artist bar — slides in under the navbar once the header above scrolls away (desktop) -->
+<div id="artist-slim-bar" class="artist-slim-bar">
+    <div class="artist-slim-inner" style="border-left: 0.25rem solid var({{ gender_css[artist.gender_id] if gender_css else '--text-primary' }});">
+        {# Photo column and name line copy the header's widths, sizes and spacing so the toggle and + Album sit at the same spot on screen #}
+        {% if artist.image_url %}
+        <img src="{{ artist.image_url }}" alt="" referrerpolicy="no-referrer"
+             onerror="this.onerror=null;this.style.display='none';"
+             class="rounded object-cover flex-shrink-0" style="width:3.75rem; height:4rem; object-position:center;">
+        {% elif can_edit %}
+        <span class="artist-slim-img-spacer flex-shrink-0" aria-hidden="true"></span>
+        {% endif %}
+        <div class="artist-slim-id">
+            <div class="artist-slim-l1 text-2xl font-bold text-primary-text">
+                <span class="{% if can_edit %}em-name{% endif %}"{% if can_edit %} data-edit-artist="{{ artist.id }}"{% endif %}>{{ artist.name }}</span>
+                {% if can_edit %}<span class="em-toggle inline-flex items-center rounded bg-edit-on align-middle cursor-pointer" title="Edit mode"><span class="mobile-artist-edit-btn rounded bg-edit-on text-button-text align-middle" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" id="em-switch-bar" hx-preserve="true" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
+                <span class="artist-add-album align-middle" title="Add album" onclick="showAddAlbumModal()">+ Album</span>{% endif %}
+                {{ spotify_link_icon(artist.spotify_url) }}
+                {% if artist.country %}<span class="text-sm font-normal text-secondary-text">{{ artist.country.country }}</span>{% endif %}
+                {% if artist.is_disbanded %}<span class="text-sm font-normal text-secondary-text">(inactive)</span>{% endif %}
+                {% if artist.alt_names %}<span class="text-xs font-normal text-secondary-text">AKA {% for an in artist.alt_names %}{% if not loop.first %}, {% endif %}{{ an.name }}{% endfor %}</span>{% endif %}
+            </div>
+            <div class="artist-slim-l2">
+                <span class="artist-slim-meta">
+                    {% set people = [('Owner', '👑', artist.owner if show_owner else none), ('Maintainer', '🔧', artist.maintainer if show_maintainer else none), ('Creator', '✍️', creator)] | selectattr(2) | list %}
+                    {% if people %}
+                    <span class="artist-slim-people">
+                        {% for role, icon, u in people %}
+                        <span title="{{ role }}" class="inline-flex items-center gap-1">
+                            <span aria-label="{{ role }}">{{ icon }}</span>
+                            <img src="{{ u.profile_image or url_for('static', filename='img/default_image.png') }}" referrerpolicy="no-referrer"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/default_image.png') }}'"
+                                 class="rounded-full object-cover" style="width:1.125rem;height:1.125rem;">
+                            {{ u.username }}
+                        </span>
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                    {% if soloist_parents %}<span>Soloist from {% for sp in soloist_parents %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=sp.id) }}" class="text-link">{{ sp.name }}</a>{% endfor %}</span>{% endif %}
+                    {% if related_artists %}<span>Related Group {% for ra in related_artists %}{% if not loop.first %}, {% endif %}<a href="{{ url_for('artists.artist_detail', artist_id=ra.id) }}" class="text-link">{{ ra.name }}</a>{% endfor %}</span>{% endif %}
+                    {% if last_updated %}<span>Updated <span class="changelog-date" data-utc="{{ last_updated }}">{{ last_updated[:10] }}</span></span>{% endif %}
+                </span>
+                {% if can_edit %}<span class="em-hints artist-slim-hints items-center" data-em-hints></span>{% endif %}
+            </div>
+        </div>
+        <div class="artist-slim-acts">
+            {% if current_user.can_rate %}
+            {# Label drives the header checkbox so there is one source of truth; the box mirrors it via :has() #}
+            <label for="artist-subscribe-cb" class="artist-slim-sub"><span class="artist-slim-sub-box" aria-hidden="true"></span> Subscribe</label>
+            <button type="button" onclick="createArtistPlaylist({{ artist.id }}, this)" class="artist-slim-playlist">Create Playlist</button>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -590,7 +645,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
 </table>
 
 <!-- Key tables — standard (if enabled) + user's key (if enabled), sticky sidebar -->
-<div class="sticky top-11 self-start">
+<div class="artist-key-sidebar sticky top-11 self-start">
     {% set my = current_user.settings if current_user.is_authenticated and current_user.settings else None %}
     {% set show_default = my.show_default_key_bool if my else True %}
     {% set is_first_table = True %}

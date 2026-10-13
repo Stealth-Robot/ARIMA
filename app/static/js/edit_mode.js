@@ -136,18 +136,16 @@
             pageArtistId = currentArtistId();
             ensurePanel();
             panel.hidden = false;
-            hintBar.hidden = false;
             positionPanel();
         } else {
             cur = null; anchor = null; sel = []; selKind = null; loaded = null;
             closeLinkPop();
-            if (panel) { panel.hidden = true; hintBar.hidden = true; }
+            if (panel) panel.hidden = true;
         }
         decorate();
         if (v) renderPanel();
     }
 
-    var hintBar = null;
     function ensurePanel() {
         if (panel) return;
         panel = el('aside');
@@ -155,23 +153,21 @@
         panel.setAttribute('aria-label', 'Inspector');
         panel.addEventListener('keydown', onPanelKey);
         document.body.appendChild(panel);
-        // Ctrl-click on a Mac opens the context menu, so name the key that actually works there.
-        var multi = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
-        hintBar = el('div');
-        hintBar.id = 'em-bar';
-        hintBar.innerHTML = '<b>Edit mode</b><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> edit name</span>' +
-            '<span><kbd>Shift</kbd>+<kbd>↑</kbd><kbd>↓</kbd>, <kbd>' + multi + '</kbd>+click or checkboxes to select several</span><span><kbd>Esc</kbd> back</span>';
-        document.body.appendChild(hintBar);
+    }
+    // Hints live in the page header and slim bar, so turning edit mode on never pushes the toggle down.
+    // Ctrl-click on a Mac opens the context menu, so name the key that actually works there.
+    var HINTS_HTML = '<b>Edit mode</b><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> edit name</span>' +
+        '<span><kbd>Shift</kbd>+<kbd>↑</kbd><kbd>↓</kbd>, <kbd>' + (/Mac/.test(navigator.platform) ? '⌘' : 'Ctrl') +
+        '</kbd>+click or checkboxes to select several</span><span><kbd>Esc</kbd> back</span>';
+    function fillHints() {
+        document.querySelectorAll('[data-em-hints]').forEach(function(h) { if (!h.firstChild) h.innerHTML = HINTS_HTML; });
     }
     function positionPanel() {
         if (!panel) return;
         var nav = document.querySelector('body > nav');
         var bar = document.querySelector('.artist-nav-container');
-        var navH = nav ? nav.offsetHeight : 0;
-        hintBar.style.top = navH + 'px';
-        panel.style.top = (navH + hintBar.offsetHeight) + 'px';
+        panel.style.top = (nav ? nav.offsetHeight : 0) + 'px';
         panel.style.bottom = (bar ? bar.offsetHeight : 0) + 'px';
-        document.documentElement.style.setProperty('--em-bar-h', hintBar.offsetHeight + 'px');
     }
 
     /* ---- row decoration ---- */
@@ -197,6 +193,7 @@
             tr.classList.toggle('em-sel', on && sel.indexOf(key) !== -1);
         });
         document.querySelectorAll('.em-switch').forEach(function(s) { s.setAttribute('aria-checked', on ? 'true' : 'false'); });
+        if (on) fillHints();
     }
 
     function scrollToCur() {

@@ -1328,6 +1328,24 @@ function doSubscribe(cb, artistId) {
         .then(function(r) { if (!r.ok) cb.checked = !cb.checked; });
 }
 
+// Shows the slim artist bar once the full artist header has scrolled under the navbar (desktop only).
+(function() {
+    var raf = 0;
+    function update() {
+        raf = 0;
+        var hdr = document.getElementById('artist-header');
+        var nav = document.querySelector('body > nav');
+        var stuck = !!(hdr && document.getElementById('artist-slim-bar') && window.innerWidth > 768 &&
+            hdr.getBoundingClientRect().bottom < (nav ? nav.offsetHeight : 0));
+        document.body.classList.toggle('artist-bar-stuck', stuck);
+    }
+    function schedule() { if (!raf) raf = requestAnimationFrame(update); }
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', schedule);
+    document.addEventListener('htmx:afterSwap', schedule);
+    document.addEventListener('DOMContentLoaded', schedule);
+})();
+
 // Build a Spotify playlist of every unrated song currently on the page, in the
 // exact top-to-bottom order the rows are rendered (data-my-rated="0" = unrated).
 function createArtistPlaylist(artistId, btn) {
