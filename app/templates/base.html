@@ -104,6 +104,11 @@
             <div class="artists-dd nav-dropdown-panel">
                 <a href="{{ url_for('misc.misc_page') }}" class="nav-dropdown-item">Misc</a>
                 <a href="{{ url_for('artists.artists_list') }}" class="nav-dropdown-item">Artists</a>
+                {% if current_user.is_authenticated and current_user.is_editor_or_admin %}
+                <div class="px-3.5 py-2">
+                    <a id="add-artist-link" href="{{ url_for('edit.add_artist_form') }}" class="block text-center text-sm- py-0.5 px-2 rounded bg-edit-on text-button-text no-underline hover:opacity-90">+ Add Artist</a>
+                </div>
+                {% endif %}
             </div>
         </div>
         <div class="mobile-hide flex-shrink-0 relative nav-dd-trigger"
@@ -135,9 +140,6 @@
             </button>
         </form>
         <span class="nav-spacer flex-1"></span>
-        <a id="add-artist-link" class="mobile-hide flex-shrink-0 text-sm- py-0.5 px-2 rounded bg-edit-on text-button-text no-underline" href="{{ url_for('edit.add_artist_form') }}">
-            + Artist
-        </a>
         <a id="views-link" class="mobile-hide nav-link {% if request.endpoint == 'views.views_page' %}border-b-3 border-navbar-active{% endif %}" href="{{ url_for('views.views_page') }}">Views</a>
         {% endif %}
 
