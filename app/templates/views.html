@@ -227,7 +227,7 @@ function mergeMiscDupe(btn) {
         }).then(function(r) {
             if (!r.ok) throw new Error();
             _reloadDupeMiscSection();
-        }).catch(function() { alert('Merge failed — make sure edit mode is on.'); });
+        }).catch(function() { showToast('Merge failed — make sure edit mode is on.'); });
     });
 }
 
@@ -319,7 +319,7 @@ function resolveCollabName(event, songId, chip) {
     createBtn.style.cssText = 'width:100%;margin-top:0.375rem;padding:0.375rem;border:none;border-radius:0.25rem;background:#2563EB;color:#fff;cursor:pointer;display:none;';
     createBtn.onclick = function() {
         var nm = searchInp.value.trim();
-        if (!nm) { alert('Enter a name'); return; }
+        if (!nm) { showToast('Enter a name'); return; }
         _doLinkCollab(songId, chip, {type: 'misc_new', name: nm, country_id: parseInt(countrySel.value)});
     };
     pop.appendChild(createBtn);
@@ -379,7 +379,7 @@ function _doLinkCollab(songId, chip, payload) {
     }).then(function(r) {
         return r.json().catch(function() { return {}; }).then(function(j) { return {ok: r.ok, j: j}; });
     }).then(function(res) {
-        if (!res.ok || (res.j && res.j.error)) { alert((res.j && res.j.error) || 'Link failed'); return; }
+        if (!res.ok || (res.j && res.j.error)) { showToast((res.j && res.j.error) || 'Link failed'); return; }
         _closeCollabPopover();
         if (res.j.new_title) {
             var row = document.getElementById('collab-' + songId);

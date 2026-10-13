@@ -558,7 +558,7 @@ function artistEditConfig(artistId) {
             function swapRole(to) {
                 fetch(pfx + '/swap-role', { method: 'POST', headers: _emHeaders(), body: 'to=' + to })
                     .then(function(r) {
-                        if (r.ok) { closeMobileModal(); window.location.reload(); }
+                        if (r.ok) { closeMobileModal(); reloadOrRefresh(); }
                         else { r.text().then(function(t) { _emToast(t || 'Could not convert artist'); }); }
                     });
             }
@@ -586,8 +586,8 @@ function artistEditConfig(artistId) {
                     confirm: { title: 'Unlink from ' + lnk.name + '?', confirmLabel: 'Unlink',
                         message: 'Removes the ' + lnk.rel + ' link to "' + lnk.name + '". Their songs and albums are unaffected. Enter your password to confirm.' },
                     run: function(ctx, pw, helpers) {
-                        fetch(pfx + '/unlink?parent_id=' + lnk.id, { method: 'POST', headers: _emHeaders(), body: 'password=' + encodeURIComponent(pw), redirect: 'manual' })
-                            .then(function(r) { if (r.status === 403) { helpers.error('Incorrect password.'); return; } helpers.close(); window.location.reload(); });
+                        fetch(pfx + '/unlink?parent_id=' + lnk.id + '&rel=' + lnk.rel, { method: 'POST', headers: _emHeaders(), body: 'password=' + encodeURIComponent(pw), redirect: 'manual' })
+                            .then(function(r) { if (r.status === 403) { helpers.error('Incorrect password.'); return; } helpers.close(); reloadOrRefresh(); });
                     } });
             });
             acts.push({ label: 'Delete artist', kind: 'danger',
@@ -826,7 +826,7 @@ function showCreateSongSheet(pfx) {
                 if (r.ok) return r.json();
                 return r.json().catch(function() { return {}; }).then(function(j) { throw new Error(j.error || 'Create failed'); });
             })
-            .then(function() { window.location.reload(); })
+            .then(function() { close(); reloadOrRefresh(); })
             .catch(function(err) { _emToast(err.message || 'Create failed'); createBtn.disabled = false; updateCreateState(); });
     }
 
@@ -1369,7 +1369,7 @@ function songEditConfig(cell) {
 
             // Anime theme song type, saved immediately like the flags above.
             var themeLabel = document.createElement('div');
-            themeLabel.textContent = 'Theme song';
+            themeLabel.textContent = 'Anime OST';
             themeLabel.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); margin-bottom:0.375rem;';
             bodyArea.appendChild(themeLabel);
             var themeRow = document.createElement('div');

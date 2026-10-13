@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlencode
 
 from flask import Blueprint, request, render_template, redirect, url_for, abort, session
 from flask_login import login_required, current_user
@@ -7,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
+from app.services.events import get_current_seq
 from app.models.music import Artist, Album, Song, Rating, AlbumSong, ArtistSong, ArtistSubscription, album_genres, song_genres, SongMiscArtist, MiscArtist
 from app.models.lookups import Country, Genre, AlbumType, GroupGender
 from app.models.duplicate_display_override import DuplicateDisplayOverride
@@ -96,8 +98,12 @@ def _render_artist(artist, htmx=False, push_url=None):
 
     session['last_artist_id'] = artist.id
     artist_id = artist.id
+    # Read before any query so a live event published mid-render is never counted as already shown.
+    rendered_seq = get_current_seq()
     # Per-page, non-persistent bypass of all viewing filters (?nofilter=1)
     bypass_filters = request.args.get('nofilter') == '1'
+    # Desktop edit mode lists a song under every album it's on (?dupes=1), like the old edit mode.
+    show_dupes = request.args.get('dupes') == '1'
     # Fetch children early so parent _build_discography can reuse them
     subunits, soloists = get_children(artist.id)
 
@@ -113,7 +119,8 @@ def _render_artist(artist, htmx=False, push_url=None):
     # A linked song (?song=, set by the #song- anchor fallback) is shown whatever the filters
     reveal_song_id = request.args.get('song', type=int)
     discography = _build_discography(artist, children=(subunits, soloists), hide_osts=_hide_osts,
-                                     bypass_filters=bypass_filters, reveal_song_id=reveal_song_id)
+                                     bypass_filters=bypass_filters, reveal_song_id=reveal_song_id,
+                                     show_dupes=show_dupes)
     users = _get_display_users()
 
     # Compute last updated across artist, albums, and songs (single query)
@@ -154,7 +161,7 @@ def _render_artist(artist, htmx=False, push_url=None):
                 reveal_song_id and db.session.get(ArtistSong, (child.id, reveal_song_id))):
             continue
         child_disco = _build_discography(child, hide_osts=_hide_osts, bypass_filters=bypass_filters,
-                                         reveal_song_id=reveal_song_id)
+                                         reveal_song_id=reveal_song_id, show_dupes=show_dupes)
         children_sections.append({
             'artist': child,
             'discography': child_disco,
@@ -212,10 +219,11 @@ def _render_artist(artist, htmx=False, push_url=None):
             edit_genres=edit_genres, edit_album_types=edit_album_types,
             edit_countries=edit_countries, edit_genders=edit_genders,
             emit_edit_globals=emit_edit_globals,
-            rated_filter=rated_filter, bypass_filters=bypass_filters))
+            rated_filter=rated_filter, bypass_filters=bypass_filters, show_dupes=show_dupes))
+        resp.headers['X-Event-Seq'] = str(rendered_seq)
         if push_url:
             # Live refreshes re-request with the page's query (e.g. nofilter=1); don't strip it from the URL.
-            query = request.query_string.decode()
+            query = urlencode([(k, v) for k, v in request.args.items(multi=True) if k != 'dupes'])
             resp.headers['HX-Push-Url'] = push_url + ('?' + query if query else '')
         return resp
 
@@ -536,7 +544,8 @@ def _collab_labels_from_song_artists(all_song_artists, artist, all_song_misc_art
     return labels
 
 
-def _build_discography(artist, children=None, hide_osts=False, bypass_filters=False, reveal_song_id=None):
+def _build_discography(artist, children=None, hide_osts=False, bypass_filters=False, reveal_song_id=None,
+                       show_dupes=False):
     """Build discography data for an artist (own songs only, not children)."""
     song_ids = {row.song_id for row in ArtistSong.query.filter_by(artist_id=artist.id).all()}
     reveal = reveal_song_id if reveal_song_id in song_ids else None
@@ -685,7 +694,7 @@ def _build_discography(artist, children=None, hide_osts=False, bypass_filters=Fa
                 canonical = sorted_aids[0]
         for aid in aid_list:
             if aid != canonical:
-                if bypass_filters:
+                if bypass_filters or show_dupes:
                     duplicate_song_album.add((sid, aid))
                 else:
                     songs_by_album[aid] = [(s, tn) for s, tn in songs_by_album[aid] if s.id != sid]
@@ -854,6 +863,9 @@ def song_info(song_id):
         'genres': [g.genre for g in a.genres],
     } for a in song.albums]
 
+    rating_count, rating_avg = db.session.query(func.count(Rating.rating), func.avg(Rating.rating)).filter(
+        Rating.song_id == song_id, Rating.rating.isnot(None)).one()
+
     return json.dumps({
         'name': song.name,
         'main_artists': main_artists,
@@ -871,6 +883,8 @@ def song_info(song_id):
         'spotify_url': song.spotify_url or '',
         'youtube_url': song.youtube_url or '',
         'aliases': [{'name': a.name, 'native_lang': a.native_lang} for a in song.aliases],
+        'rating_count': rating_count,
+        'rating_avg': round(rating_avg, 1) if rating_avg is not None else None,
     }), 200, {'Content-Type': 'application/json'}
 
 
@@ -887,6 +901,8 @@ def album_songs(album_id):
     return json.dumps({
         'album_name': album.name,
         'release_date': album.release_date or '',
+        'date_confirmed': bool(album.date_confirmed),
+        'note': album.note or '',
         'album_type': album.album_type.type if album.album_type else '',
         'album_type_id': album.album_type_id,
         'spotify_url': album.spotify_url or '',
@@ -956,6 +972,13 @@ def artist_edit_info(artist_id):
         links.append({'id': sp.id, 'name': sp.name, 'rel': 'soloist'})
     for ra in get_related_artists(artist_id):
         links.append({'id': ra.id, 'name': ra.name, 'rel': 'related'})
+    song_count = ArtistSong.query.filter_by(artist_id=artist_id).count()
+    # Own albums only: ones they're the album artist of or lead a song on, not features elsewhere.
+    album_count = db.session.query(func.count(func.distinct(Album.id))).outerjoin(
+        AlbumSong, AlbumSong.album_id == Album.id).outerjoin(
+        ArtistSong, db.and_(ArtistSong.song_id == AlbumSong.song_id, ArtistSong.artist_id == artist_id,
+                            ArtistSong.artist_is_main.is_(True))).filter(
+        db.or_(Album.artist_id == artist_id, ArtistSong.artist_id.isnot(None))).scalar()
     return json.dumps({
         'name': a.name,
         'spotify_url': a.spotify_url or '',
@@ -973,4 +996,6 @@ def artist_edit_info(artist_id):
         'is_tracked': a.is_tracked,
         'alt_names': [n.name for n in a.alt_names],
         'links': links,
+        'song_count': song_count,
+        'album_count': album_count,
     }), 200, {'Content-Type': 'application/json'}

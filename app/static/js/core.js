@@ -392,6 +392,19 @@ function showConfirm(title, msg, onConfirm, btnLabel) {
     modal.style.display = 'flex';
 }
 
+/* Edit mode swaps in fresh rows instead of reloading, so the selection and open sections survive. */
+function reloadOrRefresh() {
+    if (window._editMode && typeof window._emRefresh === 'function') window._emRefresh();
+    else window.location.reload();
+}
+
+/* Styled stand-in for onsubmit="return confirm(...)": ask first, then submit for real. */
+function confirmSubmit(form, title, msg, btnLabel) {
+    if (form.dataset.confirmed) return true;
+    showConfirm(title, msg, function() { form.dataset.confirmed = '1'; form.submit(); }, btnLabel);
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var modal = document.getElementById('generic-confirm-modal');
     if (!modal) return;

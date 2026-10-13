@@ -405,9 +405,14 @@ def unlink_artist(artist_id):
     if artist is None:
         abort(404)
     parent_id = request.args.get('parent_id', type=int)
+    # One pair can be both soloist and related, so the caller names which link to remove.
+    rel = {'subunit': SUBUNIT, 'soloist': SOLOIST, 'related': RELATED}.get(request.args.get('rel'))
     if parent_id:
-        link = ArtistArtist.query.filter_by(artist_2=artist_id, artist_1=parent_id).first()
-        if link is None:
+        query = ArtistArtist.query.filter_by(artist_2=artist_id, artist_1=parent_id)
+        if rel is not None:
+            query = query.filter_by(relationship=rel)
+        link = query.first()
+        if link is None and rel in (None, RELATED):
             # Related links are symmetric and may be stored in either direction
             link = ArtistArtist.query.filter_by(
                 artist_1=artist_id, artist_2=parent_id, relationship=RELATED).first()

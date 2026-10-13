@@ -18,7 +18,7 @@
         
         {{ artist.name }}
         
-        {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span>
+        {% if current_user.is_editor_or_admin %}<span class="inline-flex items-center rounded bg-edit-on align-middle"><span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit artist" data-edit-artist="{{ artist.id }}" onclick="showMobileArtistEdit({{ artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
         <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add album" onclick="showAddAlbumModal()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
         {{ spotify_link_icon(artist.spotify_url) }}
         {% if artist.country %}<span class="text-sm font-normal text-secondary-text">{{ artist.country.country }}</span>{% endif %}
@@ -436,6 +436,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
 
                 {{ _dn }}
+                {% if show_dupes and album and song.id in entry.get('duplicate_songs', ()) %}<span class="duplicate-tag cursor-pointer" data-dup-override="{{ song.id }}:{{ album.id }}:{{ artist.id }}">duplicate<span class="duplicate-tooltip">Click to show this version</span></span>{% endif %}
                 {% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); line-height: 1;">★</span>{% endif %}{{ theme_tag(song) }}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + _dn + ' ' + artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
@@ -488,7 +489,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% else %}
                 <span class="p-1">{{ child.artist.name }}</span>{{ spotify_link_icon(child.artist.spotify_url) }}
                 {% endif %}
-                {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle ml-1" title="Edit artist" onclick="event.stopPropagation();showMobileArtistEdit({{ child.artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.8125rem;">&#9998;</span>{% endif %}
+                {% if current_user.is_editor_or_admin %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle ml-1" title="Edit artist" data-edit-artist="{{ child.artist.id }}" onclick="event.stopPropagation();showMobileArtistEdit({{ child.artist.id }})" style="padding:0.0625rem 0.4375rem; font-size:0.8125rem;">&#9998;</span>{% endif %}
                 {% if current_user.is_admin %}
                 <label class="font-normal text-2xs text-secondary-text ml-2 cursor-pointer" onclick="event.stopPropagation()">
                     <input type="checkbox" {% if child.artist.is_tracked %}checked{% endif %} autocomplete="off"
@@ -553,6 +554,7 @@ document.addEventListener('DOMContentLoaded', _applyArtistRatingFilter);
                 {% if show_track_numbers %}<span class="text-secondary-text text-xxs mr-1">{{ loop.index }}.</span>{% endif %}
 
                 {{ _dn }}
+                {% if show_dupes and album and song.id in entry.get('duplicate_songs', ()) %}<span class="duplicate-tag cursor-pointer" data-dup-override="{{ song.id }}:{{ album.id }}:{{ child.artist.id }}">duplicate<span class="duplicate-tooltip">Click to show this version</span></span>{% endif %}
                 {% if song.is_lead %}<span class="lead-star mr-1" style="color: var(--lead-song); line-height: 1;">★</span>{% endif %}{{ theme_tag(song) }}{% if song.is_promoted %}<span class="promoted-tag rounded bg-promoted text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">promoted</span>{% endif %}{% if song.is_cover %}<span class="cover-tag rounded bg-cover text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">cover</span>{% endif %}{% if song.is_remix %}<span class="remix-tag rounded bg-remix text-primary-text ml-1" style="font-size: 0.5625rem; padding: 0.0625rem 0.3125rem;">remix</span>{% endif %}
                 {% if collab_labels and collab_labels.get(song.id) %} <span class="text-secondary-text italic">{{ collab_labels[song.id] }}</span>{% endif %}
                 {% set search_terms = song.name + ' ' + _dn + ' ' + child.artist.name + (' ' + album_date_safe[:4] if album_date_safe else '') + (' ' + album_name_safe if album_name_safe else '') %}
@@ -687,7 +689,7 @@ function showConvertArtist(type) {
 }
 function submitConvertArtist() {
     var parentId = document.getElementById('convert-parent').value;
-    if (!parentId) { alert(_convertType === 'related' ? 'Select a related artist' : 'Select a parent artist'); return; }
+    if (!parentId) { showToast(_convertType === 'related' ? 'Select a related artist' : 'Select a parent artist'); return; }
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
     var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (csrfToken) headers['X-CSRFToken'] = csrfToken.content;
@@ -700,7 +702,8 @@ function submitConvertArtist() {
         if (!r.ok) return r.text().then(function(msg) {
             showToast(msg || 'Convert failed');
         });
-        window.location.reload();
+        document.getElementById('convert-artist-modal').style.display = 'none';
+        reloadOrRefresh();
     }).catch(function() {
         showToast('Convert failed — try again');
     });

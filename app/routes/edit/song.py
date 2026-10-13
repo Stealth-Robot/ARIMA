@@ -234,6 +234,8 @@ def song_move_album(song_id):
     new_album = db.session.get(Album, new_album_id)
     if new_album is None:
         abort(400)
+    # Edit mode moves the song off the one album row it was picked from, keeping its other albums.
+    from_album_id = request.form.get('from_album_id', type=int)
 
     now = datetime.now(timezone.utc).isoformat()
 
@@ -241,6 +243,10 @@ def song_move_album(song_id):
     old_album_ids = [r[0] for r in db.session.execute(
         db.text('SELECT album_id FROM album_song WHERE song_id = :sid'),
         {'sid': song_id}).fetchall()]
+    if from_album_id is not None:
+        if from_album_id not in old_album_ids:
+            abort(400)
+        old_album_ids = [from_album_id]
     source_artist_ids = {r[0] for r in db.session.execute(
         db.text('SELECT artist_id FROM artist_song WHERE song_id = :sid'),
         {'sid': song_id}).fetchall()}
@@ -259,15 +265,20 @@ def song_move_album(song_id):
         ), {'aid': new_album_id}).scalar()
 
     # Move the song: delete old album links, insert new one
-    db.session.execute(
-        db.text('DELETE FROM album_song WHERE song_id = :sid'),
-        {'sid': song_id})
-    next_track = (db.session.execute(db.text(
-        'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
-    ), {'aid': new_album_id}).scalar())
-    db.session.execute(db.text(
-        'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
-    ), {'aid': new_album_id, 'sid': song_id, 'tn': next_track})
+    for old_id in old_album_ids:
+        db.session.execute(
+            db.text('DELETE FROM album_song WHERE song_id = :sid AND album_id = :aid'),
+            {'sid': song_id, 'aid': old_id})
+    already_there = db.session.execute(db.text(
+        'SELECT 1 FROM album_song WHERE album_id = :aid AND song_id = :sid'
+    ), {'aid': new_album_id, 'sid': song_id}).first() is not None
+    if not already_there:
+        next_track = (db.session.execute(db.text(
+            'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+        ), {'aid': new_album_id}).scalar())
+        db.session.execute(db.text(
+            'INSERT INTO album_song (album_id, song_id, track_number) VALUES (:aid, :sid, :tn)'
+        ), {'aid': new_album_id, 'sid': song_id, 'tn': next_track})
 
     # Cross-artist handling: update ArtistSong links
     if target_artist_id and target_artist_id not in source_artist_ids:
@@ -278,7 +289,10 @@ def song_move_album(song_id):
         ), {'aid': target_artist_id, 'sid': song_id})
 
         # Remove source artist links — the song now belongs to the target artist
-        for src_id in source_artist_ids:
+        still_on_other_albums = db.session.execute(db.text(
+            'SELECT 1 FROM album_song WHERE song_id = :sid AND album_id != :aid LIMIT 1'
+        ), {'sid': song_id, 'aid': new_album_id}).first() is not None
+        for src_id in ([] if still_on_other_albums else source_artist_ids):
             if src_id != target_artist_id:
                 db.session.execute(db.text(
                     'DELETE FROM artist_song WHERE artist_id = :aid AND song_id = :sid'

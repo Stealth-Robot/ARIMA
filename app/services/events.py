@@ -27,7 +27,7 @@ def publish(event_type, data):
 def get_changes_since(seq):
     """Return (events_list, current_seq) for all events after the given seq."""
     with _lock:
-        events = [{'event': c['event'], 'data': c['data']} for c in _changes if c['seq'] > seq]
+        events = [{'event': c['event'], 'data': c['data'], 'seq': c['seq']} for c in _changes if c['seq'] > seq]
         return events, _seq
 
 

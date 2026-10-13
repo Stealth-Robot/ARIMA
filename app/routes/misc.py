@@ -19,7 +19,7 @@ from app.models.user import User
 from app.models.rules import Rules
 from app.services.artist import get_filtered_navbar
 from app.services.dates import is_valid_release_date
-from app.services.events import publish
+from app.services.events import publish, get_current_seq
 from app.routes.edit.song import parse_theme
 from app.services.search import text_match, alias_field
 
@@ -427,10 +427,12 @@ def misc_page():
 @misc_bp.route('/misc/country/<int:country_id>')
 @login_required
 def misc_country(country_id):
+    # Read before any query so a live event published mid-render is never counted as already shown.
+    rendered_seq = get_current_seq()
     data = _build_country_data(country_id, bypass_filters=request.args.get('nofilter') == '1',
                                force_song_id=request.args.get('include', type=int),
                                only_song_id=request.args.get('only', type=int))
-    return render_template('fragments/misc_country.html', **data)
+    return render_template('fragments/misc_country.html', **data), 200, {'X-Event-Seq': str(rendered_seq)}
 
 
 @misc_bp.route('/misc/unrated-count')

@@ -109,6 +109,8 @@ document.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
     if (activeInput || activeNote) return;
+    // Edit mode drives its own row highlight with the arrows (edit_mode.js).
+    if (window._editMode) return;
     var path = window.location.pathname;
     if (path.indexOf('/artists/') !== 0 && path !== '/misc') return;
     var el = document.activeElement;
@@ -1160,7 +1162,15 @@ var _tooltipSelecting = false;
         reloadTimers[key] = setTimeout(function () { delete reloadTimers[key]; fn(); }, 500);
     }
 
-    function handleContentEvent(eventType, data) {
+    // A refresh rendered after an event already shows it, so its live redraw would only repeat the swap.
+    function alreadyShown(seq) { return seq && seq <= (window._liveRenderedSeq || 0); }
+    document.addEventListener('htmx:afterRequest', function (e) {
+        var t = e.detail && e.detail.target, xhr = e.detail && e.detail.xhr;
+        var s = t && t.id === 'discography' && xhr ? parseInt(xhr.getResponseHeader('X-Event-Seq'), 10) : NaN;
+        if (!isNaN(s)) window._liveRenderedSeq = Math.max(window._liveRenderedSeq || 0, s);
+    });
+
+    function handleContentEvent(eventType, data, seq) {
         if (eventType === 'changelog') {
             if (typeof window._changelogLive === 'function') {
                 if (data && data.deleted) window._changelogLive(data);
@@ -1186,9 +1196,10 @@ var _tooltipSelecting = false;
                 return;
             }
             debounceReload('artist-' + viewing, function () {
+                if (alreadyShown(seq)) return;
                 if (window.htmx && viewingArtistId() === viewing) {
                     // Keep ?nofilter=1 (Disable Filters) so the refresh doesn't reapply filters.
-                    htmx.ajax('GET', '/artists/' + viewing + window.location.search, { target: '#discography', swap: 'innerHTML' });
+                    htmx.ajax('GET', '/artists/' + viewing + (typeof window._discoQuery === 'function' ? window._discoQuery() : window.location.search), { target: '#discography', swap: 'innerHTML' });
                 }
             });
             return;
@@ -1203,7 +1214,7 @@ var _tooltipSelecting = false;
             });
         } else if (path === '/misc' && typeof window._miscRefreshExpanded === 'function') {
             // Misc — re-fetch any expanded country in place.
-            debounceReload('misc', window._miscRefreshExpanded);
+            debounceReload('misc', function () { if (!alreadyShown(seq)) window._miscRefreshExpanded(); });
             if (typeof window._miscRefreshUnrated === 'function') debounceReload('misc-unrated', window._miscRefreshUnrated);
         }
     }
@@ -1523,7 +1534,7 @@ var _tooltipSelecting = false;
                 pollSeq = data.seq;
                 data.events.forEach(function (e) {
                     if (e.event === 'rating-update') handleUpdate(e.data);
-                    else handleContentEvent(e.event, e.data);
+                    else handleContentEvent(e.event, e.data, e.seq);
                 });
                 if (data.presence) {
                     presence = data.presence;

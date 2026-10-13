@@ -115,7 +115,7 @@ function themeSongPicker(type, number, onChange) {
     var sel = document.createElement('select');
     sel.className = 'theme-song-type';
     sel.style.cssText = 'border:0.0625rem solid var(--border,#ccc); border-radius:0.25rem; padding:0.125rem 0.25rem; font-size:0.75rem; background:var(--bg-primary,#fff); color:var(--text-primary);';
-    [['', 'Not a theme song'], ['op', 'Opening'], ['ed', 'Ending'], ['in', 'Insert']].forEach(function(o) {
+    [['', 'Not an Anime OST'], ['op', 'Opening'], ['ed', 'Ending'], ['in', 'Insert']].forEach(function(o) {
         var opt = document.createElement('option'); opt.value = o[0]; opt.textContent = o[1];
         if (o[0] === (type || '')) opt.selected = true;
         sel.appendChild(opt);
@@ -1465,7 +1465,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
     mergeBtn.style.cssText = 'padding:0.5rem 1rem;border-radius:0.25rem;font-size:0.8125rem;cursor:pointer;border:none;background:var(--button-primary);color:#fff;font-weight:bold;';
 
     mergeBtn.addEventListener('click', function() {
-        if (!inputs.name.value.trim()) { alert('Song name is required.'); return; }
+        if (!inputs.name.value.trim()) { showToast('Song name is required.'); return; }
         mergeBtn.disabled = true;
         mergeBtn.textContent = 'Merging...';
 
@@ -1502,7 +1502,7 @@ function _buildMergeDiff(overlay, container, header, data, keptId, absorbedId, o
             return r.json().catch(function() { return {}; });
         }).then(function(resp) {
             if (opts.onSuccess) { _closeMergeModal(overlay); opts.onSuccess(resp); }
-            else { window.location.reload(); }
+            else { _closeMergeModal(overlay); reloadOrRefresh(); }
         }).catch(function() {
             showToast('Merge failed \u2014 try again');
             mergeBtn.disabled = false;
@@ -1694,7 +1694,7 @@ function showSongArtists(event, songId, span) {
                         // If removed artist is the page artist or a child, the song leaves this discography
                         var childIds = (typeof _childArtists !== 'undefined') ? _childArtists.map(function(c) { return c.id; }) : [];
                         if (a.artist_id === _currentArtistId || childIds.indexOf(a.artist_id) !== -1) {
-                            window.location.reload();
+                            reloadOrRefresh();
                             return;
                         }
                         artists = artists.filter(function(x) { return x.artist_id !== a.artist_id; });
@@ -2081,7 +2081,7 @@ function addNewAlbumSong(currentArtistId) {
             '<span style="cursor:pointer; font-size:0.75rem; color:var(--text-secondary);" onclick="event.stopPropagation();promptLocalUrl(this, \'note\', \'Note\', {placeholder:\'Note...\', multiline:true})" title="Set note">&#9998;</span>' +
         '</div>' +
         '<div class="new-song-theme-slot flex items-center gap-2" style="padding: 0.25rem 0.5rem;">' +
-            '<span class="text-xs" style="color:var(--text-secondary);">Theme song:</span>' +
+            '<span class="text-xs" style="color:var(--text-secondary);">Anime OST:</span>' +
         '</div>' +
         '<div style="padding: 0.25rem 0.5rem;">' +
             '<span class="text-xs" style="color:var(--text-secondary);">Misc artists:</span>' +
@@ -2630,7 +2630,7 @@ function showDeleteConfirm(title, msg, action, ajax, btnLabel, redirectUrl, onSu
             headers: headers,
             body: body,
         }).then(function(r) {
-            if (r.status === 403) { alert('Incorrect password'); return; }
+            if (r.status === 403) { showToast('Incorrect password'); return; }
             if (!r.ok) throw new Error('failed');
             document.getElementById('confirm-delete-modal').style.display = 'none';
             if (_deleteOnSuccess) {
@@ -3184,12 +3184,12 @@ function autoSpotifyConfirm() {
         document.getElementById('auto-spotify-modal').style.display = 'none';
         btn.disabled = false;
         btn.textContent = 'Confirm & Save';
-        window.location.reload();
+        reloadOrRefresh();
     })
     .catch(function () {
         btn.disabled = false;
         btn.textContent = 'Confirm & Save';
-        alert('Failed to save. Please try again.');
+        showToast('Failed to save. Please try again.');
     });
 }
 
@@ -3676,7 +3676,7 @@ function _showCombineMiscArtist(miscArtist, onDone) {
         fetch('/misc/swap-credit', {method: 'POST', headers: _csrfJson(), body: JSON.stringify(body)})
             .then(function(r){ return r.json(); })
             .then(function(res) {
-                if (res.error) { alert(res.error === 'album_required' ? 'This song needs an album.' : res.error); return; }
+                if (res.error) { showToast(res.error === 'album_required' ? 'This song needs an album.' : res.error); return; }
                 songObj.state = 'swapped';
                 if (res.deleted) {
                     bd.remove();
@@ -3741,11 +3741,11 @@ function _showCombineMiscArtist(miscArtist, onDone) {
             var payload;
             if (albumSel.value === '__new') {
                 var an = newName.value.trim();
-                if (!an) { alert('Enter album name'); return; }
+                if (!an) { showToast('Enter album name'); return; }
                 payload = {name: an, release_date: newDate.value || null, album_type_id: parseInt(newType.value)};
             } else if (albumSel.value) {
                 payload = {existing_id: parseInt(albumSel.value)};
-            } else { alert('Pick an album'); return; }
+            } else { showToast('Pick an album'); return; }
             abd.remove();
             _doSwap(songObj, payload);
         }));

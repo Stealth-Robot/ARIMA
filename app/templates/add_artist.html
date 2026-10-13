@@ -758,10 +758,11 @@ function saveDraft() {
 
 var _clearing = false;
 function clearAddArtistDraft() {
-    if (!confirm('Clear all data?')) return;
-    _clearing = true;
-    localStorage.removeItem(_draftKey);
-    window.location.reload();
+    showConfirm('Clear all data?', 'Everything entered on this form will be discarded.', function() {
+        _clearing = true;
+        localStorage.removeItem(_draftKey);
+        window.location.reload();
+    }, 'Clear');
 }
 
 var _saveDraftTimer = null;

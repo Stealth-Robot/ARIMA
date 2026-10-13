@@ -90,7 +90,7 @@
                     <button type="button" class="text-xs hover:underline text-link"
                             onclick="editRow({{ u.id }})">Edit</button>
                     <form method="POST" action="{{ url_for('updates.delete_update', update_id=u.id) }}" class="inline"
-                          onsubmit="return confirm('Delete this update?')">
+                          onsubmit="return confirmSubmit(this, 'Delete update?', 'This update will be removed.', 'Delete')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-xs hover:underline text-delete">Delete</button>
                     </form>

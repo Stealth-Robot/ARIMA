@@ -27,7 +27,7 @@
                 <h2 class="font-semibold">{{ data.display_name }}</h2>
                 {% if data.theme.user_id != current_user.id %}
                 <form method="POST" action="{{ url_for('themes.theme_copy', theme_id=data.theme.id) }}" class="m-0"
-                      onsubmit="return confirm('This will overwrite your personal theme colours. This cannot be undone. Continue?');">
+                      onsubmit="return confirmSubmit(this, 'Copy theme?', 'This will overwrite your personal theme colours. This cannot be undone.', 'Copy to mine');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="text-xs px-2 py-1 rounded bg-button-secondary text-primary-text cursor-pointer border-0">
                         Copy to mine

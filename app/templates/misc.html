@@ -20,7 +20,7 @@
         <div class="min-w-0">
         <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">
             MISC ARTISTS
-            {% if edit_mode %}<span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit misc" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span>
+            {% if edit_mode %}<span class="inline-flex items-center rounded bg-edit-on align-middle"><span class="mobile-artist-edit-btn cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Edit misc" onclick="showMiscEdit()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">&#9998;</span><button type="button" class="em-switch mobile-hide" role="switch" aria-checked="false" aria-label="Edit mode" title="Edit mode"></button></span>
             <span class="cursor-pointer rounded bg-edit-on text-button-text align-middle" title="Add song" onclick="_showAddMiscSong()" style="padding:0.0625rem 0.4375rem; font-size:0.875rem;">+</span>{% endif %}
         </h2>
         <div class="flex items-center gap-3 mt-1">
@@ -255,7 +255,8 @@ function _miscToggleCountry(cid) {
 /* Live refresh: re-fetch every expanded+loaded country in place (triggered by
    the poll loop when another tab/user mutates misc data). */
 window._miscRefreshExpanded = function() {
-    Object.keys(_miscLoadedCountries).forEach(function(cid) {
+    var seqs = [];
+    var pending = Object.keys(_miscLoadedCountries).map(function(cid) {
         if (!_miscLoadedCountries[cid]) return;
         var arrow = document.getElementById('misc-country-arrow-' + cid);
         if (!arrow || arrow.innerHTML !== '▼') return;
@@ -267,7 +268,10 @@ window._miscRefreshExpanded = function() {
         if (!q && location.hash.indexOf('#song-') === 0) {
             q = '?include=' + location.hash.slice(6);
         }
-        fetch('/misc/country/' + cid + q).then(function(r) { return r.text(); }).then(function(html) {
+        return fetch('/misc/country/' + cid + q).then(function(r) {
+            seqs.push(parseInt(r.headers.get('X-Event-Seq'), 10) || 0);
+            return r.text();
+        }).then(function(html) {
             document.querySelectorAll('.misc-country-row-' + cid).forEach(function(r) { r.remove(); });
             header.insertAdjacentHTML('afterend', html);
             _miscApplyFilters();
@@ -277,6 +281,9 @@ window._miscRefreshExpanded = function() {
                 if (t && typeof highlightRow === 'function') highlightRow(t);
             }
         });
+    });
+    Promise.all(pending).then(function() {
+        if (seqs.length) window._liveRenderedSeq = Math.max(window._liveRenderedSeq || 0, Math.min.apply(null, seqs));
     });
 };
 
@@ -827,12 +834,13 @@ function _renderManageMiscArtists(container, onChange) {
                 delBtn.disabled = a.song_count > 0;
                 delBtn.style.cssText = 'border:none;background:none;color:' + (a.song_count > 0 ? 'var(--text-secondary)' : 'var(--delete,red)') + ';cursor:pointer;font-size:1rem;padding:0 0.125rem;';
                 delBtn.onclick = function() {
-                    if (!confirm('Delete "' + a.name + '"?')) return;
-                    fetch('/misc/delete-artist/' + a.id, {method:'POST', headers:_csrfJson()})
-                        .then(function(r){return r.json();}).then(function(d) {
-                            if (d.ok) { onChange(); artists = artists.filter(function(x){return x.id !== a.id;}); renderList(search.value); }
-                            else { alert(d.error || 'Failed'); }
-                        });
+                    showConfirm('Delete "' + a.name + '"?', 'This misc artist will be removed.', function() {
+                        fetch('/misc/delete-artist/' + a.id, {method:'POST', headers:_csrfJson()})
+                            .then(function(r){return r.json();}).then(function(d) {
+                                if (d.ok) { onChange(); artists = artists.filter(function(x){return x.id !== a.id;}); renderList(search.value); }
+                                else { showToast(d.error || 'Failed'); }
+                            });
+                    }, 'Delete');
                 };
 
                 var combineBtn = document.createElement('button');
@@ -980,7 +988,7 @@ function _showAddMiscSong() {
     modal.appendChild(nameInp);
 
     /* Theme song (optional) */
-    modal.appendChild(_miscLabel('Theme Song (optional)'));
+    modal.appendChild(_miscLabel('Anime OST (optional)'));
     var themePicker = themeSongPicker('', null);
     modal.appendChild(themePicker);
 
@@ -1191,13 +1199,13 @@ function _showAddMiscSong() {
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var saveBtn = _miscBtn('Add Song', 'var(--link,#2563EB)', function() {
         var sName = nameInp.value.trim();
-        if (!sName) { alert('Song name is required'); return; }
-        if (!miscArtists.length) { alert('At least one misc artist is required'); return; }
+        if (!sName) { showToast('Song name is required'); return; }
+        if (!miscArtists.length) { showToast('At least one misc artist is required'); return; }
         var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
-        if (!hasMain) { alert('At least one artist must be main'); return; }
+        if (!hasMain) { showToast('At least one artist must be main'); return; }
 
         var scoreVal = scoreInp.value.trim();
-        if (scoreVal && !/^[0-6]$/.test(scoreVal)) { alert('Score must be 0-5'); return; }
+        if (scoreVal && !/^[0-6]$/.test(scoreVal)) { showToast('Score must be 0-5'); return; }
 
         var spotUrl = spotInp.value.trim();
         var payload = {
@@ -1220,7 +1228,7 @@ function _showAddMiscSong() {
         saveBtn.disabled = true;
         fetch('/misc/add-song', {method:'POST', headers:_csrfJson(), body:JSON.stringify(payload)})
             .then(function(r){return r.json();}).then(function(d) {
-                if (d.error) { alert(d.error); saveBtn.disabled = false; return; }
+                if (d.error) { showToast(d.error); saveBtn.disabled = false; return; }
                 bd.remove();
                 // Navigate to the new song: hash triggers handleHash to expand + scroll after reload.
                 location.hash = '#song-' + d.song_id;
@@ -1258,7 +1266,7 @@ function _showSpotifyImport(albumUrl) {
 
     var fetchBtn = _miscBtn('Fetch Tracks', 'var(--link,#2563EB)', function() {
         var u = urlInp.value.trim();
-        if (!u) { alert('Paste a Spotify album URL'); return; }
+        if (!u) { showToast('Paste a Spotify album URL'); return; }
         fetchBtn.disabled = true;
         statusDiv.textContent = 'Fetching...';
         fetch('/edit/spotify-album?url=' + encodeURIComponent(u), {headers: _csrfHeaders()})
@@ -1388,21 +1396,21 @@ function _showSpotifyImport(albumUrl) {
     btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var importBtn = _miscBtn('Import', 'var(--link,#2563EB)', function() {
-        if (!fetchedTracks.length) { alert('Fetch tracks first'); return; }
-        if (!miscArtists.length) { alert('At least one misc artist is required'); return; }
-        if (!miscArtists.some(function(a){return a.is_main;})) { alert('At least one artist must be main'); return; }
+        if (!fetchedTracks.length) { showToast('Fetch tracks first'); return; }
+        if (!miscArtists.length) { showToast('At least one misc artist is required'); return; }
+        if (!miscArtists.some(function(a){return a.is_main;})) { showToast('At least one artist must be main'); return; }
         var selected = [];
         trackDiv.querySelectorAll('input[type="checkbox"][data-idx]').forEach(function(cb) {
             if (cb.checked) selected.push(fetchedTracks[parseInt(cb.dataset.idx)]);
         });
-        if (!selected.length) { alert('Select at least one track'); return; }
+        if (!selected.length) { showToast('Select at least one track'); return; }
         importBtn.disabled = true;
         fetch('/misc/spotify-import', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
             tracks: selected.map(function(t) { return {name: t.name, spotify_url: t.spotify_url, youtube_url: t.youtube_url || null, note: t.note || null}; }),
             misc_artists: miscArtists.map(function(a) { return {id: a.id, name: a.name, country_id: a.country_id, is_main: a.is_main}; }),
             genre_ids: selectedGenres,
         })}).then(function(r) { return r.json(); }).then(function(d) {
-            if (d.error) { alert(d.error); importBtn.disabled = false; return; }
+            if (d.error) { showToast(d.error); importBtn.disabled = false; return; }
             bd.remove(); location.reload();
         }).catch(function() { importBtn.disabled = false; });
     });
@@ -1509,13 +1517,13 @@ function _showMiscArtistSelector(songId) {
         var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
         var saveBtn = _miscBtn('Save', 'var(--link,#2563EB)', function() {
             var hasMain = miscArtists.some(function(a){return a.is_main;}) || realArtists.some(function(a){return a.is_main;});
-            if (!hasMain) { alert('At least one artist must be main'); return; }
+            if (!hasMain) { showToast('At least one artist must be main'); return; }
             saveBtn.disabled = true;
             fetch('/misc/song/' + songId + '/misc-artists', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
                 misc_artists: miscArtists.map(function(a){return {id:a.id,is_main:a.is_main};}),
                 real_artists: realArtists.map(function(a){return {artist_id:a.artist_id,is_main:a.is_main};}),
             })}).then(function(r){return r.json();}).then(function(d) {
-                if (d.ok) { bd.remove(); location.reload(); } else { saveBtn.disabled = false; }
+                if (d.ok) { bd.remove(); reloadOrRefresh(); } else { saveBtn.disabled = false; }
             }).catch(function(){ saveBtn.disabled = false; });
         });
         btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
@@ -1625,26 +1633,28 @@ function _showMoveSongToArtist(event, songId, songName) {
     btnRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;';
     var cancelBtn = _miscBtn('Cancel', '#6B7280', function() { bd.remove(); });
     var moveBtn = _miscBtn('Move', 'var(--link,#2563EB)', function() {
-        if (!realArtists.length) { alert('Add at least one artist'); return; }
-        if (!realArtists.some(function(a){return a.is_main;})) { alert('At least one artist must be main'); return; }
+        if (!realArtists.length) { showToast('Add at least one artist'); return; }
+        if (!realArtists.some(function(a){return a.is_main;})) { showToast('At least one artist must be main'); return; }
         var names = realArtists.map(function(a){return a.name;}).join(', ');
-        if (!confirm('Move "' + songName + '" to ' + names + '? This removes it from Misc.')) return;
         var albumPayload = {};
         if (albumSel.value === '__new') {
             var an = newAlbumName.value.trim();
-            if (!an) { alert('Enter album name'); return; }
+            if (!an) { showToast('Enter album name'); return; }
             albumPayload = {name: an, release_date: newAlbumDate.value || null, album_type_id: parseInt(newAlbumType.value), note: newAlbumNote.value.trim() || null};
         } else if (albumSel.value) {
             albumPayload = {existing_id: parseInt(albumSel.value)};
         }
-        moveBtn.disabled = true;
-        fetch('/misc/song/' + songId + '/move-to-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
-            artists: realArtists.map(function(a){return {artist_id:a.artist_id, is_main:a.is_main};}),
-            album: albumPayload,
-        })}).then(function(r) { return r.json(); }).then(function(d) {
-            if (d.error) { alert(d.error); moveBtn.disabled = false; return; }
-            bd.remove(); location.reload();
-        }).catch(function() { moveBtn.disabled = false; });
+        showConfirm('Move "' + songName + '"?', 'Moves it to ' + names + ' and removes it from Misc.', function() {
+            moveBtn.disabled = true;
+            fetch('/misc/song/' + songId + '/move-to-artist', {method:'POST', headers:_csrfJson(), body:JSON.stringify({
+                artists: realArtists.map(function(a){return {artist_id:a.artist_id, is_main:a.is_main};}),
+                album: albumPayload,
+            })}).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.error) { showToast(d.error); moveBtn.disabled = false; return; }
+                bd.remove();
+                reloadOrRefresh();
+            }).catch(function() { moveBtn.disabled = false; });
+        }, 'Move');
     });
     btnRow.appendChild(cancelBtn); btnRow.appendChild(moveBtn);
     modal.appendChild(btnRow);
