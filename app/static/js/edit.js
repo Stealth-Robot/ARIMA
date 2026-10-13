@@ -155,7 +155,7 @@ function _setLeadVisual(row, songId, isLead) {
         if (!star) {
             star = document.createElement('span');
             star.className = 'lead-star mr-1';
-            star.style.cssText = 'color: var(--lead-song); font-size: 1.1875rem; cursor: pointer; line-height: 1;';
+            star.style.cssText = 'color: var(--lead-song); cursor: pointer; line-height: 1;';
             star.textContent = '★';
             star.setAttribute('data-song-id', songId);
             var pill = cell.querySelector('.promoted-tag');
