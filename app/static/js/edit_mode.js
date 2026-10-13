@@ -238,6 +238,26 @@
         decorate();
         renderPanel();
     }
+    // Shift-checkbox: the whole range takes the clicked box's new state, keeping checks outside it.
+    function checkRange(key) {
+        var keys = visibleRows().map(keyOf), kind = kindOf(key);
+        var a = anchor ? keys.indexOf(anchor) : -1, b = keys.indexOf(key);
+        if (a === -1 || b === -1 || kindOf(anchor) !== kind || (selKind && selKind !== 'artist' && selKind !== kind)) { toggleInSel(key); return; }
+        var want = sel.indexOf(key) === -1;
+        if (selKind === 'artist') sel = [];
+        keys.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(function(k) {
+            if (kindOf(k) !== kind) return;
+            var i = sel.indexOf(k);
+            if (want && i === -1) sel.push(k);
+            else if (!want && i !== -1) sel.splice(i, 1);
+        });
+        sortSel();
+        selKind = sel.length ? kind : null;
+        cur = key;
+        anchor = key;
+        decorate();
+        renderPanel();
+    }
     function clearSel() { sel = []; selKind = null; decorate(); renderPanel(); }
 
     function move(dir, extend) {
@@ -856,8 +876,15 @@
         var kind = selKind, keys = sel.slice();
         var missing = keys.map(idOf).filter(function(id, i, a) { return !bulkCache[kind + ':' + id] && a.indexOf(id) === i; });
         if (missing.length) {
-            var req = getJSON('/edit/bulk-info?kind=' + kind + '&ids=' + missing.join(','));
-            missing.forEach(function(id) { bulkCache[kind + ':' + id] = req.then(function(res) { return (res && res[id]) || {}; }); });
+            // POST because a large range of ids overflows gunicorn's request-line limit as a query string.
+            var req = post('/edit/bulk-info', { kind: kind, ids: missing }, true).then(okOrThrow).then(function(r) { return r.json(); });
+            missing.forEach(function(id) {
+                var k = kind + ':' + id;
+                bulkCache[k] = req.then(function(res) {
+                    if (!res[id]) throw new Error('missing');
+                    return res[id];
+                }).catch(function(err) { delete bulkCache[k]; throw err; });
+            });
         }
         if (!panel.querySelector('.em-bulk-names')) { panel.innerHTML = ''; panel.appendChild(el('div', 'em-empty', 'Loading…')); }
         else panel.classList.add('em-loading');
@@ -868,6 +895,12 @@
             var items = keys.map(function(k, i) { return { key: k, id: idOf(k), album: albumOf(k), d: datas[i] }; });
             if (kind === 'song') drawBulkSongs(items); else drawBulkAlbums(items);
             wrapSelects(panel);
+        }, function() {
+            // Drawing with empty data would let "Add genre to all" overwrite each song's existing genres.
+            if (seq !== renderSeq) return;
+            panel.classList.remove('em-loading');
+            panel.innerHTML = '';
+            panel.appendChild(el('div', 'em-empty', 'Failed to load.'));
         });
     }
     function bulkHeader(items, noun) {
@@ -883,7 +916,9 @@
         renderPanel();
     }
 
-    function drawBulkSongs(items) {
+    function drawBulkSongs(rows) {
+        // Duplicate rows of one song act once; only album moves and removals are per row.
+        var items = rows.filter(function(it, i) { return rows.findIndex(function(o) { return o.id === it.id; }) === i; });
         bulkHeader(items, 'songs');
         var ff = field('Set on all');
         var chips = el('div', 'em-chips');
@@ -938,11 +973,11 @@
             });
         }
 
-        var inAlbum = items.filter(function(it) { return it.album; });
+        var inAlbum = rows.filter(function(it) { return it.album; });
         actions([
             ['Move to album…', function() {
                 albumPicker('Move ' + items.length + ' songs to which album?', function(al) {
-                    runEach(items, function(it) { return post('/edit/song/' + it.id + '/move-album', 'album_id=' + al.id + (it.album ? '&from_album_id=' + it.album : '')); })
+                    runEach(rows, function(it) { return post('/edit/song/' + it.id + '/move-album', 'album_id=' + al.id + (it.album ? '&from_album_id=' + it.album : '')); })
                         .then(function(failed) { clearSel(); bulkDone(failed, 'moved'); });
                 });
             }],
@@ -1179,7 +1214,7 @@
         if (e.target.classList.contains('em-ck')) {
             e.stopPropagation();
             e.target.blur();
-            toggleInSel(key);
+            if (e.shiftKey) checkRange(key); else toggleInSel(key);
             return;
         }
         if (e.target.closest('.collapse-arrow')) return;
