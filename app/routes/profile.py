@@ -47,6 +47,7 @@ def profile():
             'hide_osts': session.get('hide_osts', False),
             'search_show_hidden': session.get('search_show_hidden', False),
             'search_ignore_punctuation': session.get('search_ignore_punctuation', False),
+            'hide_misc_on_artist': session.get('misc_scope_filter') == 'misc-only',
             'display_native': session.get('display_native', False),
             'display_romanized': session.get('display_romanized', False),
             'display_english': session.get('display_english', False),
@@ -75,6 +76,7 @@ def profile():
             'hide_osts': getattr(s, 'hide_osts', False) if s else False,
             'search_show_hidden': getattr(s, 'search_show_hidden', False) if s else False,
             'search_ignore_punctuation': getattr(s, 'search_ignore_punctuation', False) if s else False,
+            'hide_misc_on_artist': (getattr(s, 'misc_scope_filter', 'all') == 'misc-only') if s else False,
             'display_native': getattr(s, 'display_native', False) if s else False,
             'display_romanized': getattr(s, 'display_romanized', False) if s else False,
             'display_english': getattr(s, 'display_english', False) if s else False,
@@ -151,6 +153,14 @@ def _valid_choice(val, valid, default):
     return val if val in valid else default
 
 
+def _profile_misc_scope(current, form):
+    """Map the profile's hide-misc-on-artist checkbox onto the misc page's 'Show' filter."""
+    if form.get('hide_misc_on_artist') == 'on':
+        return 'misc-only'
+    # Unchecking only clears 'misc-only' so an 'On artist pages' choice made on the misc page survives.
+    return 'all' if current == 'misc-only' else (current or 'all')
+
+
 @profile_bp.route('/profile/settings', methods=['POST'])
 @login_required
 def update_settings():
@@ -183,6 +193,8 @@ def update_settings():
             session['rated_filter'] = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
         if 'misc_scope_filter' in request.form:
             session['misc_scope_filter'] = _valid_choice(request.form.get('misc_scope_filter'), ('all', 'misc-only', 'on-artist'), 'all')
+        if 'theme' in request.form:
+            session['misc_scope_filter'] = _profile_misc_scope(session.get('misc_scope_filter'), request.form)
     else:
         settings = current_user.settings
         if not settings:
@@ -224,6 +236,8 @@ def update_settings():
                 settings.rated_filter = _valid_choice(request.form.get('rated_filter'), ('all', 'unrated', 'rated'), 'all')
             if 'misc_scope_filter' in request.form:
                 settings.misc_scope_filter = _valid_choice(request.form.get('misc_scope_filter'), ('all', 'misc-only', 'on-artist'), 'all')
+            if 'theme' in request.form:
+                settings.misc_scope_filter = _profile_misc_scope(settings.misc_scope_filter, request.form)
             db.session.commit()
 
     # If from profile page, redirect back; if HTMX, empty 200

@@ -121,6 +121,13 @@
         </div>
         <div class="mb-3">
             <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="hide_misc_on_artist"
+                       {% if settings.hide_misc_on_artist %}checked{% endif %}>
+                Hide songs from misc if they're on a real artist page
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="search_show_hidden"
                        {% if settings.search_show_hidden %}checked{% endif %}>
                 Show hidden songs in search by default
