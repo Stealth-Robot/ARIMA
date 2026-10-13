@@ -888,6 +888,27 @@ def song_info(song_id):
     }), 200, {'Content-Type': 'application/json'}
 
 
+@artists_bp.route('/edit/bulk-info')
+@login_required
+def bulk_info():
+    """Flags and genres for several songs or albums in one request — for the edit-mode bulk inspector."""
+    ids = [int(i) for i in request.args.get('ids', '').split(',') if i.isdigit()]
+    if request.args.get('kind') == 'album':
+        rows = db.session.query(Album).options(selectinload(Album.genres)).filter(Album.id.in_(ids)).all()
+        out = {a.id: {'album_name': a.name, 'genre_ids': [g.id for g in a.genres]} for a in rows}
+    else:
+        rows = db.session.query(Song).options(selectinload(Song.genres)).filter(Song.id.in_(ids)).all()
+        out = {s.id: {
+            'name': s.name,
+            'genre_ids': [g.id for g in s.genres],
+            'is_lead': s.is_lead,
+            'is_promoted': s.is_promoted,
+            'is_cover': s.is_cover,
+            'is_remix': s.is_remix,
+        } for s in rows}
+    return json.dumps(out), 200, {'Content-Type': 'application/json'}
+
+
 @artists_bp.route('/album/<int:album_id>/songs')
 @login_required
 def album_songs(album_id):

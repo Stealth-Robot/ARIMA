@@ -8,14 +8,16 @@
 {% block content %}
 <div class="mb-4 pb-9">
     <!-- Page header -->
-    <div class="mb-3 pl-3 flex items-start gap-3" style="border-left: 0.25rem solid var(--gender-mixed);">
+    <div class="mb-3 pl-3 flex items-start gap-3" style="border-left: 0.25rem solid var(--gender-mixed);" data-misc-header>
         {% if rules and rules.misc_image_url %}
-        <a href="{{ rules.misc_image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab">
+        <a href="{{ rules.misc_image_url }}" target="_blank" rel="noopener" class="flex-shrink-0" title="Open image in new tab" data-em-image>
         <img src="{{ rules.misc_image_url }}" alt="Misc Artists"
              referrerpolicy="no-referrer"
              onerror="this.onerror=null;this.style.display='none';"
              class="rounded object-cover" style="width:3.75rem; height:5.625rem; object-position:center;">
         </a>
+        {% elif edit_mode %}
+        <span class="em-img-add flex-shrink-0" title="Add image" data-em-image>+ Image</span>
         {% endif %}
         <div class="min-w-0">
         <h2 class="text-2xl font-bold text-primary-text m-0" style="line-height: 1.2;">

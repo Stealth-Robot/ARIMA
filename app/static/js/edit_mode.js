@@ -287,6 +287,7 @@
         var seq = ++renderSeq;
         closeLinkPop();
         panel.classList.remove('em-loading');
+        if (sel.length < 2) bulkCache = {};
         if (!sel.length) {
             loaded = null;
             panel.innerHTML = '';
@@ -849,15 +850,22 @@
 
     /* ---- several selected ---- */
 
+    // Per-item promises, so growing a selection only fetches the rows it adds, even mid-flight.
+    var bulkCache = {};
     function renderBulk(seq) {
         var kind = selKind, keys = sel.slice();
-        panel.innerHTML = '';
-        panel.appendChild(el('div', 'em-empty', 'Loading…'));
-        var loads = keys.map(function(k) { return getJSON(kind === 'song' ? '/song/' + idOf(k) + '/info' : '/album/' + idOf(k) + '/songs'); });
-        Promise.all(loads).then(function(datas) {
+        var missing = keys.map(idOf).filter(function(id, i, a) { return !bulkCache[kind + ':' + id] && a.indexOf(id) === i; });
+        if (missing.length) {
+            var req = getJSON('/edit/bulk-info?kind=' + kind + '&ids=' + missing.join(','));
+            missing.forEach(function(id) { bulkCache[kind + ':' + id] = req.then(function(res) { return (res && res[id]) || {}; }); });
+        }
+        if (!panel.querySelector('.em-bulk-names')) { panel.innerHTML = ''; panel.appendChild(el('div', 'em-empty', 'Loading…')); }
+        else panel.classList.add('em-loading');
+        Promise.all(keys.map(function(k) { return bulkCache[kind + ':' + idOf(k)]; })).then(function(datas) {
             if (seq !== renderSeq) return;
+            panel.classList.remove('em-loading');
             panel.innerHTML = '';
-            var items = keys.map(function(k, i) { return { key: k, id: idOf(k), album: albumOf(k), d: datas[i] || {} }; });
+            var items = keys.map(function(k, i) { return { key: k, id: idOf(k), album: albumOf(k), d: datas[i] }; });
             if (kind === 'song') drawBulkSongs(items); else drawBulkAlbums(items);
             wrapSelects(panel);
         });
@@ -870,6 +878,7 @@
     }
     function bulkDone(failed, verb) {
         if (failed) toast(failed + ' could not be ' + verb);
+        bulkCache = {};
         refreshPage();
         renderPanel();
     }
@@ -995,45 +1004,34 @@
 
     function closeLinkPop() { if (linkPop) { linkPop.remove(); linkPop = null; } }
 
-    // target is an item row, or { kind: 'artist', id } for the page header's icon.
-    function openLinkPop(link, target) {
+    // Small anchored popup holding one URL field: Enter saves, Esc cancels, empty removes.
+    function valuePop(anchorEl, spec) {
         closeLinkPop();
-        var isYt = /YouTube/.test(link.getAttribute('title') || '');
-        var kind = target.kind || rowKind(target);
-        var id = target.id && target.kind ? target.id : (kind === 'song' ? target.getAttribute('data-song-id') : target.id.slice(6));
-        var label = isYt ? 'YouTube link' : 'Spotify link';
         var pop = el('div', 'em-linkpop');
         var head = el('div', 'em-linkhead');
-        head.appendChild(el('span', null, label));
+        head.appendChild(el('span', null, spec.label));
         var open = el('a', null, 'Open ↗');
         open.target = '_blank'; open.rel = 'noopener'; open.hidden = true;
         head.appendChild(open);
         pop.appendChild(head);
         var inp = el('input');
         inp.type = 'text'; inp.disabled = true; inp.placeholder = 'Loading…';
-        inp.setAttribute('aria-label', label);
+        inp.setAttribute('aria-label', spec.label);
         pop.appendChild(inp);
         pop.appendChild(el('div', 'em-linkhint', 'Enter saves · Esc cancels · clear it to remove the link'));
-        if (kind === 'artist') {
-            pop.appendChild(btn('Auto-fill Spotify', 'em-btn em-autofill', function() {
-                closeLinkPop();
-                autoPopulateSpotify(id, inp.value.trim());
-            }));
-        }
+        if (spec.extra) spec.extra(pop, inp);
         document.body.appendChild(pop);
-        var r = link.getBoundingClientRect();
+        var r = anchorEl.getBoundingClientRect();
         pop.style.top = (r.bottom + 6) + 'px';
         pop.style.left = Math.max(8, Math.min(r.left - 16, window.innerWidth - pop.offsetWidth - 8)) + 'px';
         linkPop = pop;
 
-        var urlKey = isYt ? 'youtube_url' : 'spotify_url';
         var saved = '';
-        var infoUrl = { song: '/song/' + id + '/info', album: '/album/' + id + '/songs', artist: '/artist/' + id + '/edit-info' }[kind];
-        getJSON(infoUrl).then(function(d) {
+        spec.load().then(function(v) {
             if (linkPop !== pop) return;
-            saved = (d && d[urlKey]) || '';
+            saved = v || '';
             inp.disabled = false;
-            inp.placeholder = isYt ? 'https://youtube.com/…' : 'https://open.spotify.com/…' + (kind === 'song' ? ' (or n/a)' : '');
+            inp.placeholder = spec.placeholder;
             inp.value = saved;
             if (saved && saved !== 'n/a') { open.href = saved; open.hidden = false; }
             inp.focus();
@@ -1046,10 +1044,62 @@
                 e.preventDefault();
                 var v = inp.value.trim();
                 if (v === saved) { closeLinkPop(); return; }
-                post('/edit/' + kind + '/' + id + '/' + (isYt ? 'youtube-url' : 'spotify-url'), 'value=' + encodeURIComponent(v)).then(okOrThrow)
-                    .then(function() { closeLinkPop(); refreshPage(); softRefreshAfter(); })
+                post(spec.saveUrl, 'value=' + encodeURIComponent(v)).then(okOrThrow)
+                    .then(function() { closeLinkPop(); spec.onSaved(v); })
                     .catch(function() { toast('Invalid URL — must start with https://'); });
             }
+        });
+    }
+
+    // target is an item row, or { kind: 'artist', id } for the page header's icon.
+    function openLinkPop(link, target) {
+        var isYt = /YouTube/.test(link.getAttribute('title') || '');
+        var kind = target.kind || rowKind(target);
+        var id = target.id && target.kind ? target.id : (kind === 'song' ? target.getAttribute('data-song-id') : target.id.slice(6));
+        var urlKey = isYt ? 'youtube_url' : 'spotify_url';
+        var infoUrl = { song: '/song/' + id + '/info', album: '/album/' + id + '/songs', artist: '/artist/' + id + '/edit-info' }[kind];
+        valuePop(link, {
+            label: isYt ? 'YouTube link' : 'Spotify link',
+            placeholder: isYt ? 'https://youtube.com/…' : 'https://open.spotify.com/…' + (kind === 'song' ? ' (or n/a)' : ''),
+            load: function() { return getJSON(infoUrl).then(function(d) { return d && d[urlKey]; }); },
+            saveUrl: '/edit/' + kind + '/' + id + '/' + (isYt ? 'youtube-url' : 'spotify-url'),
+            onSaved: function() { refreshPage(); softRefreshAfter(); },
+            extra: kind !== 'artist' ? null : function(pop, inp) {
+                pop.appendChild(btn('Auto-fill Spotify', 'em-btn em-autofill', function() {
+                    closeLinkPop();
+                    autoPopulateSpotify(id, inp.value.trim());
+                }));
+            },
+        });
+    }
+
+    // The header image (or its "+ Image" stand-in) on an artist page or the misc page.
+    function openImagePop(anchorEl) {
+        var artistId = currentArtistId();
+        var current = anchorEl.tagName === 'A' ? anchorEl.getAttribute('href') : '';
+        valuePop(anchorEl, {
+            label: 'Image link',
+            placeholder: 'https://… (cropped to 2:3 portrait)',
+            load: function() { return Promise.resolve(current); },
+            saveUrl: artistId ? '/edit/artist/' + artistId + '/image-url' : '/misc/set-image',
+            onSaved: function(v) {
+                if (artistId) { refreshPage(); softRefreshAfter(); return; }
+                // The misc header isn't part of any refreshed fragment, so swap the image in place.
+                var a;
+                if (v) {
+                    a = el('a', 'flex-shrink-0');
+                    a.href = v; a.target = '_blank'; a.rel = 'noopener'; a.title = 'Open image in new tab';
+                    var img = el('img', 'rounded object-cover');
+                    img.src = v; img.alt = 'Misc Artists'; img.referrerPolicy = 'no-referrer';
+                    img.style.cssText = 'width:3.75rem; height:5.625rem; object-position:center;';
+                    a.appendChild(img);
+                } else {
+                    a = el('span', 'em-img-add flex-shrink-0', '+ Image');
+                    a.title = 'Add image';
+                }
+                a.setAttribute('data-em-image', '');
+                anchorEl.replaceWith(a);
+            },
         });
     }
 
@@ -1082,6 +1132,22 @@
             e.preventDefault();
             e.stopPropagation();
             selectOnly('artist:' + pencil.getAttribute('data-edit-artist'));
+            return;
+        }
+        var img = e.target.closest('[data-em-image]');
+        if (img) {
+            e.preventDefault();
+            e.stopPropagation();
+            openImagePop(img);
+            return;
+        }
+        var miscHead = e.target.closest('[data-misc-header] h2');
+        if (miscHead) {
+            if (!e.target.closest('a, button, input, label, [onclick]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                showMiscEdit();
+            }
             return;
         }
         var head = e.target.closest('#discography [data-current-artist-id] h2');

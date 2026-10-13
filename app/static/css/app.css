@@ -593,6 +593,15 @@ body.em-on tr[id] { scroll-margin-bottom: 3rem; }
 #em-panel .em-track span:first-child { color: var(--text-secondary); width: 1.25rem; font-variant-numeric: tabular-nums; }
 #em-panel .em-track.em-drop-above { box-shadow: inset 0 0.125rem 0 var(--link); }
 #em-panel .em-track.em-drop-below { box-shadow: inset 0 -0.125rem 0 var(--link); }
+/* Empty image slot in the page header, only offered while edit mode is on. */
+.em-img-add { display: none; }
+body.em-on .em-img-add {
+    display: flex; align-items: center; justify-content: center;
+    width: 3.75rem; height: 5.625rem; border: 0.0625rem dashed var(--border); border-radius: 0.25rem;
+    font-size: 0.6875rem; color: var(--text-secondary); cursor: pointer;
+}
+body.em-on .em-img-add:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+body.em-on [data-current-artist-id] h2, body.em-on [data-misc-header] h2 { cursor: pointer; }
 .em-linkpop {
     position: fixed;
     z-index: 60;
