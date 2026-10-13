@@ -252,7 +252,18 @@ function toggleFilterMenu(btn) {
     });
     panel.classList.remove('hidden');
     var rect = btn.getBoundingClientRect();
-    panel.style.top = rect.bottom + 2 + 'px';
+    var below = window.innerHeight - rect.bottom - 10, above = rect.top - 10;
+    panel.style.maxHeight = '';
+    panel.style.top = '';
+    panel.style.bottom = '';
+    // The mobile-menu trigger sits low on the screen, so open upward when the panel won't fit below
+    if (panel.scrollHeight > below && above > below) {
+        panel.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
+        panel.style.maxHeight = above + 'px';
+    } else {
+        panel.style.top = rect.bottom + 2 + 'px';
+        panel.style.maxHeight = below + 'px';
+    }
     panel.style.left = '';
     panel.style.right = '';
     if (rect.right - panel.offsetWidth < 0) {
