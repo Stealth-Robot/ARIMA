@@ -957,6 +957,9 @@ function setLinkifiedText(el, text) {
         a.rel = 'noopener noreferrer';
         a.className = 'underline';
         a.textContent = url;
+        // Links natively drag instead of selecting, which made notes with URLs uncopyable
+        a.draggable = false;
+        a.addEventListener('click', (e) => { if (String(window.getSelection())) e.preventDefault(); });
         el.appendChild(a);
         last = m.index + url.length;
         re.lastIndex = last;
