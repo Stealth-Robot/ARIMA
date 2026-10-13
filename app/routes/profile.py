@@ -45,6 +45,7 @@ def profile():
             'show_track_numbers': session.get('show_track_numbers', True),
             'show_full_album_date': session.get('show_full_album_date', True),
             'hide_osts': session.get('hide_osts', False),
+            'hide_misc_featured': session.get('hide_misc_featured', False),
             'search_show_hidden': session.get('search_show_hidden', False),
             'search_ignore_punctuation': session.get('search_ignore_punctuation', False),
             'hide_misc_on_artist': session.get('misc_scope_filter') == 'misc-only',
@@ -74,6 +75,7 @@ def profile():
             'show_track_numbers': getattr(s, 'show_track_numbers', True) if s else True,
             'show_full_album_date': getattr(s, 'show_full_album_date', True) if s else True,
             'hide_osts': getattr(s, 'hide_osts', False) if s else False,
+            'hide_misc_featured': getattr(s, 'hide_misc_featured', False) if s else False,
             'search_show_hidden': getattr(s, 'search_show_hidden', False) if s else False,
             'search_ignore_punctuation': getattr(s, 'search_ignore_punctuation', False) if s else False,
             'hide_misc_on_artist': (getattr(s, 'misc_scope_filter', 'all') == 'misc-only') if s else False,
@@ -112,6 +114,7 @@ def _apply_theme_settings(set_field, form):
         set_field('show_track_numbers', form.get('show_track_numbers') == 'on')
         set_field('show_full_album_date', form.get('show_full_album_date') == 'on')
         set_field('hide_osts', form.get('hide_osts') == 'on')
+        set_field('hide_misc_featured', form.get('hide_misc_featured') == 'on')
         set_field('search_show_hidden', form.get('search_show_hidden') == 'on')
         set_field('search_ignore_punctuation', form.get('search_ignore_punctuation') == 'on')
         set_field('display_native', form.get('display_native') == 'on')

@@ -48,6 +48,7 @@ def _get_user_filters():
             'include_featured': s.include_featured,
             'include_covers': s.include_covers,
             'hide_osts': getattr(s, 'hide_osts', False),
+            'hide_misc_featured': getattr(s, 'hide_misc_featured', False),
         }
     return {
         'country_ids': list(session.get('country_ids') or []),
@@ -56,6 +57,7 @@ def _get_user_filters():
         'include_featured': False,
         'include_covers': True,
         'hide_osts': session.get('hide_osts', False),
+        'hide_misc_featured': session.get('hide_misc_featured', False),
     }
 
 
@@ -129,6 +131,7 @@ def _sort_misc_songs(songs_list, field, direction):
 BYPASS_FILTERS = {
     'country_ids': [], 'genre_ids': [], 'include_remixes': True,
     'include_featured': True, 'include_covers': True, 'hide_osts': False,
+    'hide_misc_featured': False,
 }
 
 
@@ -370,6 +373,8 @@ def _build_country_data(country_id, bypass_filters=False, force_song_id=None, on
                 main_names, _ = _collab_labels(sid)
                 if not main_names:
                     continue
+            if filters['hide_misc_featured'] and not any(m['is_main'] for m in song_misc_artists.get(sid, [])):
+                continue
         genre_ids = song_genre_map.get(sid, set())
         if (not forced and filters['hide_osts'] and ost_genre_id
                 and (genre_ids == {ost_genre_id} or sid in ost_album_sids) and not _is_anime_song(sid)):
@@ -479,6 +484,11 @@ def unrated_count():
         valid_song_ids = {sid for sid, cid in sma_countries if cid in country_set}
     else:
         valid_song_ids = misc_song_ids
+
+    if filters['hide_misc_featured']:
+        valid_song_ids = valid_song_ids & {r[0] for r in db.session.query(SongMiscArtist.song_id).filter(
+            SongMiscArtist.song_id.in_(misc_song_ids), SongMiscArtist.artist_is_main == True,
+        ).distinct().all()}
 
     rated_ids = {r.song_id for r in Rating.query.filter(
         Rating.user_id == current_user.id,
