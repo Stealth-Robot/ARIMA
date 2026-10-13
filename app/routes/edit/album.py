@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 
 from flask import request, abort, jsonify, redirect, url_for
@@ -10,7 +11,7 @@ from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating,
 from app.models.lookups import Genre, AlbumType
 from app.services.audit import log_change
 from app.services.events import publish
-from app.services.search import text_match, alias_field
+from app.services.search import text_match, alias_field, fold_accents
 from app.services.dates import is_valid_release_date
 from app.services.proxy_change import close_orphaned_proxy_changes
 from app.decorators import role_required, EDITOR_OR_ADMIN
@@ -563,6 +564,110 @@ def album_create_song(album_id):
     db.session.commit()
 
     return json.dumps({'ok': True, 'song_id': song.id}), 200, {'Content-Type': 'application/json'}
+
+
+def _spotify_track_id(url):
+    m = re.search(r'/track/([A-Za-z0-9]+)', url or '')
+    return m.group(1) if m else None
+
+
+def _import_name_key(name):
+    # Exact-ish match only: stripping parentheticals would collapse "Song" and "Song (Inst.)"
+    return ' '.join(fold_accents((name or '').lower()).split())
+
+
+def _classify_spotify_tracks(album_id, tracks):
+    """Tag each track: 'in_album' (skip), 'existing' (link that song), or 'new' (create)."""
+    in_album = db.session.query(Song).join(AlbumSong, Song.id == AlbumSong.song_id).filter(AlbumSong.album_id == album_id).all()
+    by_id = {tid: s for s in in_album for tid in [_spotify_track_id(s.spotify_url)] if tid}
+    by_name = {_import_name_key(s.name): s for s in in_album}
+    seen = set()
+    out = []
+    for t in tracks:
+        name = (t.get('name') or '').strip()
+        url = (t.get('spotify_url') or '').strip()
+        tid = _spotify_track_id(url)
+        key = tid or _import_name_key(name)
+        row = {'name': name, 'spotify_url': url}
+        match = (by_id.get(tid) if tid else None) or by_name.get(_import_name_key(name))
+        if not name or key in seen or match:
+            row['status'] = 'in_album'
+            if match:
+                row['song_name'] = match.name
+        else:
+            existing = Song.query.filter(Song.spotify_url.like(f'%/track/{tid}%')).first() if tid else None
+            if existing:
+                row.update(status='existing', song_id=existing.id, song_name=existing.name)
+            else:
+                row['status'] = 'new'
+        seen.add(key)
+        out.append(row)
+    return out
+
+
+@edit_bp.route('/album/<int:album_id>/spotify-import-preview')
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_spotify_import_preview(album_id):
+    _require_edit_mode()
+    if db.session.get(Album, album_id) is None:
+        abort(404)
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    from app.services.spotify import fetch_album, SpotifyError
+    try:
+        data = fetch_album(url)
+    except SpotifyError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify({'name': data['name'], 'tracks': _classify_spotify_tracks(album_id, data['tracks'])})
+
+
+@edit_bp.route('/album/<int:album_id>/spotify-import', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def album_spotify_import(album_id):
+    """Append previewed Spotify tracks to this album, skipping songs it already has."""
+    _require_edit_mode()
+    album = db.session.get(Album, album_id)
+    if album is None:
+        abort(404)
+    data = request.get_json(silent=True) or {}
+    artist_id = data.get('artist_id') or album.artist_id
+    if not artist_id or db.session.get(Artist, int(artist_id)) is None:
+        abort(400)
+    artist_id = int(artist_id)
+
+    rows = _classify_spotify_tracks(album_id, data.get('tracks') or [])
+    next_track = db.session.execute(db.text(
+        'SELECT COALESCE(MAX(track_number), 0) + 1 FROM album_song WHERE album_id = :aid'
+    ), {'aid': album_id}).scalar()
+    created = linked = 0
+    for row in rows:
+        if row['status'] == 'in_album':
+            continue
+        if row['status'] == 'existing':
+            song_id = row['song_id']
+            if not ArtistSong.query.filter_by(artist_id=artist_id, song_id=song_id).first():
+                db.session.add(ArtistSong(artist_id=artist_id, song_id=song_id, artist_is_main=False))
+            linked += 1
+        else:
+            song = Song(name=row['name'], submitted_by_id=current_user.id, spotify_url=row['spotify_url'] or None)
+            db.session.add(song)
+            db.session.flush()
+            song_id = song.id
+            db.session.add(ArtistSong(artist_id=artist_id, song_id=song_id, artist_is_main=True))
+            created += 1
+        db.session.add(AlbumSong(album_id=album_id, song_id=song_id, track_number=next_track))
+        next_track += 1
+
+    skipped = len(rows) - created - linked
+    if created or linked:
+        log_change(current_user,
+                   f'Imported {created} new and {linked} existing songs from Spotify into "{album.name}" album',
+                   album=album)
+        db.session.commit()
+    return jsonify({'ok': True, 'created': created, 'linked': linked, 'skipped': skipped})
 
 
 @edit_bp.route('/album/<int:album_id>/move-song', methods=['POST'])

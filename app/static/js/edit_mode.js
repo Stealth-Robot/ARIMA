@@ -734,6 +734,7 @@
                     function(item) { post(pfx + '/add-song', 'song_id=' + item.id).then(okOrThrow).then(refreshPage).catch(function() { toast('Add failed'); }); });
             }],
             ['Create new song…', function() { showCreateSongSheet(pfx); }],
+            ['Import from Spotify album…', function() { showSpotifyAlbumImportSheet(pfx); }],
             isMiscPage() ? null : ['Move songs to artist…', function() {
                 artistPicker('Move all songs to…', function(item) {
                     post(pfx + '/move-artist', 'source_artist_id=' + currentArtistId() + '&target_artist_id=' + item.id)

@@ -836,6 +836,128 @@ function showCreateSongSheet(pfx) {
     setTimeout(function() { nameInput.focus(); }, 60);
 }
 
+/* Append a Spotify album's tracks to this album: preview first, then import only
+   the tracks it doesn't already have (matched by Spotify link or name). */
+function showSpotifyAlbumImportSheet(pfx) {
+    var backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center;';
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:var(--bg-secondary,#fff); border-top-left-radius:0.75rem; border-top-right-radius:0.75rem; width:100%; max-width:30rem; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 -0.25rem 1rem rgba(0,0,0,0.3);';
+    function close() { backdrop.remove(); }
+    backdrop.addEventListener('click', function(e) { if (e.target === backdrop) close(); });
+
+    var head = document.createElement('div');
+    head.style.cssText = 'padding:0.875rem 1rem 0.5rem; display:flex; align-items:center; gap:0.5rem; flex-shrink:0;';
+    var h = document.createElement('div');
+    h.textContent = 'Import songs from Spotify album';
+    h.style.cssText = 'font-size:0.9375rem; font-weight:600; color:var(--text-primary); flex:1;';
+    var x = document.createElement('button');
+    x.innerHTML = '&#10005;';
+    x.style.cssText = 'border:none; background:none; font-size:1.125rem; color:var(--text-secondary,#6B7280); cursor:pointer;';
+    x.onclick = close;
+    head.appendChild(h); head.appendChild(x);
+    sheet.appendChild(head);
+
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:0 1rem 1rem; overflow-y:auto; flex:1;';
+    sheet.appendChild(body);
+
+    var urlRow = document.createElement('div');
+    urlRow.style.cssText = 'display:flex; gap:0.375rem; align-items:center;';
+    var urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = 'https://open.spotify.com/album/…';
+    urlInput.style.cssText = 'flex:1; border:0.0625rem solid var(--border,#ccc); border-radius:0.375rem; padding:0.5625rem; font-size:0.875rem; box-sizing:border-box; background:var(--bg-primary,#fff); color:var(--text-primary);';
+    var fetchBtn = _emBtn('Fetch', 'secondary');
+    urlRow.appendChild(urlInput); urlRow.appendChild(fetchBtn);
+    body.appendChild(urlRow);
+
+    var status = document.createElement('div');
+    status.style.cssText = 'font-size:0.75rem; color:var(--text-secondary,#6B7280); min-height:0.875rem; margin:0.375rem 0;';
+    body.appendChild(status);
+    var list = document.createElement('div');
+    body.appendChild(list);
+
+    var footer = document.createElement('div');
+    footer.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;';
+    var cancelBtn = _emBtn('Cancel', 'secondary'); cancelBtn.onclick = close;
+    var importBtn = _emBtn('Import', 'primary');
+    footer.appendChild(cancelBtn); footer.appendChild(importBtn);
+    body.appendChild(footer);
+
+    var tracks = [];
+    function setImportState() {
+        var ok = tracks.some(function(t) { return t.status !== 'in_album'; });
+        importBtn.disabled = !ok;
+        importBtn.style.opacity = ok ? '1' : '0.5';
+        importBtn.style.cursor = ok ? 'pointer' : 'default';
+    }
+    var TAGS = { 'new': 'New', existing: 'Link existing', in_album: 'Already in album' };
+    function render() {
+        list.innerHTML = '';
+        tracks.forEach(function(t, i) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex; gap:0.5rem; align-items:baseline; font-size:0.875rem; padding:0.1875rem 0; color:var(--text-primary);' + (t.status === 'in_album' ? ' opacity:0.5;' : '');
+            var num = document.createElement('span');
+            num.textContent = (i + 1) + '.';
+            num.style.cssText = 'color:var(--text-secondary,#6B7280); font-size:0.75rem; min-width:1.125rem; flex-shrink:0;';
+            var nm = document.createElement('span');
+            nm.textContent = t.name;
+            nm.style.cssText = 'flex:1; word-break:break-word;' + (t.status === 'in_album' ? ' text-decoration:line-through;' : '');
+            var tag = document.createElement('span');
+            tag.textContent = TAGS[t.status] + (t.song_name && t.song_name !== t.name ? ': ' + t.song_name : '');
+            tag.style.cssText = 'font-size:0.6875rem; color:var(--text-secondary,#6B7280); flex-shrink:0; max-width:45%; text-align:right;';
+            row.appendChild(num); row.appendChild(nm); row.appendChild(tag);
+            list.appendChild(row);
+        });
+        setImportState();
+    }
+
+    function doFetch() {
+        var u = urlInput.value.trim();
+        if (!u) return;
+        fetchBtn.disabled = true;
+        status.textContent = 'Fetching…';
+        fetch(pfx + '/spotify-import-preview?url=' + encodeURIComponent(u), { headers: _emHeaders({ 'Accept': 'application/json' }) })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.error) { status.textContent = typeof localizeCooldown === 'function' ? localizeCooldown(d.error) : d.error; tracks = []; render(); return; }
+                tracks = d.tracks || [];
+                var c = { 'new': 0, existing: 0, in_album: 0 };
+                tracks.forEach(function(t) { c[t.status]++; });
+                status.textContent = d.name + ': ' + c['new'] + ' new, ' + c.existing + ' to link, ' + c.in_album + ' already in album';
+                render();
+            })
+            .catch(function() { status.textContent = 'Fetch failed'; })
+            .then(function() { fetchBtn.disabled = false; });
+    }
+    fetchBtn.onclick = doFetch;
+    urlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doFetch(); } });
+
+    importBtn.onclick = function() {
+        if (importBtn.disabled) return;
+        var seed = document.querySelector('[data-current-artist-id]');
+        var payload = {
+            artist_id: seed ? parseInt(seed.getAttribute('data-current-artist-id'), 10) || null : null,
+            tracks: tracks.map(function(t) { return { name: t.name, spotify_url: t.spotify_url }; }),
+        };
+        importBtn.disabled = true;
+        fetch(pfx + '/spotify-import', { method: 'POST', headers: _emHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) })
+            .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+            .then(function(d) {
+                close();
+                _emToast('Added ' + (d.created + d.linked) + ' songs' + (d.skipped ? ', skipped ' + d.skipped + ' already in album' : ''));
+                reloadOrRefresh();
+            })
+            .catch(function() { _emToast('Import failed'); setImportState(); });
+    };
+
+    render();
+    backdrop.appendChild(sheet);
+    document.body.appendChild(backdrop);
+    setTimeout(function() { urlInput.focus(); }, 60);
+}
+
 function albumEditConfig(albumId, albumName) {
     var id = albumId;
     var pfx = '/edit/album/' + id;
@@ -1097,6 +1219,9 @@ function albumEditConfig(albumId, albumName) {
             });
             _act('Create new song', 'secondary', function() {
                 showCreateSongSheet(pfx);
+            });
+            _act('Import from Spotify album', 'secondary', function() {
+                showSpotifyAlbumImportSheet(pfx);
             });
             _act('Move songs to artist', 'secondary', function() {
                 var srcEl = document.querySelector('[data-current-artist-id]');
