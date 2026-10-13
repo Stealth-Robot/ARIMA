@@ -6,32 +6,38 @@
 <div class="max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold m-0">Data Integrity Views</h1>
-        <button id="hide-empty-btn" onclick="toggleEmptyViews(this)"
-                class="px-3 py-1 rounded text-sm bg-button-secondary text-primary-text border-0 cursor-pointer">Hide empty views</button>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('views.views_page', mine=0 if mine else 1) }}"
+               class="px-3 py-1 rounded text-sm bg-button-secondary text-primary-text no-underline">{{ 'Show all artists' if mine else 'Only my artists' }}</a>
+            <button id="hide-empty-btn" onclick="toggleEmptyViews(this)"
+                    class="px-3 py-1 rounded text-sm bg-button-secondary text-primary-text border-0 cursor-pointer">Hide empty views</button>
+        </div>
     </div>
 
     {% set sections = [
-        ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs')),
-        ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs')),
-        ('Feat-only songs (no main artist)', counts.feat_only_songs, url_for('views.view_feat_only')),
-        ('Orphaned albums (no songs, no artist)', counts.orphan_albums, url_for('views.view_orphan_albums')),
-        ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums')),
-        ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists')),
-        ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums')),
-        ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums')),
-        ('Albums with invalid date (impossible or malformed)', counts.invalid_date_albums, url_for('views.view_invalid_date_albums')),
-        ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded')),
-        ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs')),
-        ('Artists without a maintainer', counts.no_maintainer_artists, url_for('views.view_no_maintainer_artists')),
-        ('Artists without a creator', counts.no_creator_artists, url_for('views.view_no_creator_artists')),
-        ('Incomplete artists without an owner', counts.no_owner_incomplete, url_for('views.view_no_owner_incomplete')),
-        ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs')),
-        ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates')),
-        ('Collab candidates (feat/ft/with in song title, no misc artist link)', counts.collab_candidates, url_for('views.view_collab_candidates')),
-        ('Duplicate misc artists (match a real artist or another misc artist)', counts.dupe_misc_artists, url_for('views.view_dupe_misc_artists')),
+        ('Orphaned Songs (no album link)', counts.orphan_songs, url_for('views.view_orphan_songs'), True),
+        ('Songs without artist link', counts.no_artist_songs, url_for('views.view_no_artist_songs'), True),
+        ('Feat-only songs (no main artist)', counts.feat_only_songs, url_for('views.view_feat_only'), False),
+        ('Orphaned albums (no songs, no artist)', counts.orphan_albums, url_for('views.view_orphan_albums'), True),
+        ('Empty albums (no songs)', counts.empty_albums, url_for('views.view_empty_albums'), False),
+        ('Empty artists (no songs)', counts.empty_artists, url_for('views.view_empty_artists'), False),
+        ('Albums without release date', counts.undated_albums, url_for('views.view_undated_albums'), False),
+        ('Albums with incomplete date (year only)', counts.incomplete_date_albums, url_for('views.view_incomplete_date_albums'), False),
+        ('Albums with invalid date (impossible or malformed)', counts.invalid_date_albums, url_for('views.view_invalid_date_albums'), False),
+        ('Potentially inactive artists (no releases in 5 years)', counts.potentially_disbanded, url_for('views.view_potentially_disbanded'), False),
+        ('Incomplete tabs', counts.incomplete_tabs, url_for('views.view_incomplete_tabs'), False),
+        ('Artists without a maintainer', counts.no_maintainer_artists, url_for('views.view_no_maintainer_artists'), False),
+        ('Artists without a creator', counts.no_creator_artists, url_for('views.view_no_creator_artists'), False),
+        ('Incomplete artists without an owner', counts.no_owner_incomplete, url_for('views.view_no_owner_incomplete'), False),
+        ('Song variants (TV, LIVE, instrumental)', counts.variant_songs, url_for('views.view_variant_songs'), False),
+        ('Potential song duplicates (same name + artist, or same name + release date within 3 days)', counts.duplicate_songs, url_for('views.view_potential_duplicates'), False),
+        ('Collab candidates (feat/ft/with in song title, no misc artist link)', counts.collab_candidates, url_for('views.view_collab_candidates'), False),
+        ('Duplicate misc artists (match a real artist or another misc artist)', counts.dupe_misc_artists, url_for('views.view_dupe_misc_artists'), True),
     ] %}
 
-    {% for title, count, url in sections %}
+    {# Artist-less views are hidden in "Only my artists" mode; index stays stable for sessionStorage #}
+    {% for title, count, url, artistless in sections %}
+    {% if not (mine and artistless) %}
     <div class="mb-4 border rounded border-border">
         <h2 class="font-semibold p-4 cursor-pointer m-0"
             onclick="toggleView(this)"
@@ -44,6 +50,7 @@
         </h2>
         <div class="view-content pt-0 px-4 pb-3" style="display: none;"></div>
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 

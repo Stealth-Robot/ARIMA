@@ -33,6 +33,41 @@ def _misc_artist_ids():
     return ids
 
 
+def _my_artist_ids():
+    """Artist IDs the current user owns or maintains when the 'Only my artists' toggle is on, else None."""
+    if not session.get('views_mine'):
+        return None
+    return {r[0] for r in db.session.query(Artist.id).filter(db.or_(
+        Artist.owner_id == current_user.id, Artist.maintainer_id == current_user.id)).all()}
+
+
+def _mine_artists(q, mine):
+    return q if mine is None else q.filter(Artist.id.in_(mine))
+
+
+def _mine_albums(q, mine):
+    if mine is None:
+        return q
+    return q.filter(db.or_(
+        Album.artist_id.in_(mine),
+        Album.id.in_(db.session.query(AlbumSong.album_id).join(
+            ArtistSong, ArtistSong.song_id == AlbumSong.song_id
+        ).filter(ArtistSong.artist_id.in_(mine), ArtistSong.artist_is_main == True)),
+    ))
+
+
+def _mine_songs(q, mine):
+    if mine is None:
+        return q
+    # Album artist covers misc-only songs that have no real artist link
+    return q.filter(db.or_(
+        Song.id.in_(db.session.query(ArtistSong.song_id).filter(ArtistSong.artist_id.in_(mine))),
+        Song.id.in_(db.session.query(AlbumSong.song_id).join(
+            Album, Album.id == AlbumSong.album_id
+        ).filter(Album.artist_id.in_(mine))),
+    ))
+
+
 def _album_artists(album_ids):
     """Return {album_id: [{'id': .., 'name': ..}, ...]} for main artists."""
     if not album_ids:
@@ -56,6 +91,9 @@ def _album_artists(album_ids):
 @role_required(EDITOR_OR_ADMIN)
 def views_page():
     """Data integrity monitoring page — shows collapsed sections with counts."""
+    if request.args.get('mine') in ('0', '1'):
+        session['views_mine'] = request.args['mine'] == '1'
+    mine = _my_artist_ids()
     misc_ids = _misc_artist_ids()
     counts = {
         'orphan_songs': db.session.query(Song).filter(
@@ -67,42 +105,42 @@ def views_page():
             ~Song.id.in_(db.session.query(ArtistSong.song_id)),
             ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ).count(),
-        'feat_only_songs': _feat_only_query().count(),
+        'feat_only_songs': _feat_only_query(mine).count(),
         'dupe_misc_artists': len(_dupe_misc_artists()),
         'orphan_albums': db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
             Album.artist_id.is_(None),
         ).count(),
-        'empty_albums': db.session.query(Album).filter(
+        'empty_albums': _mine_albums(db.session.query(Album).filter(
             ~Album.id.in_(db.session.query(AlbumSong.album_id)),
             Album.artist_id.isnot(None),
             ~Album.artist_id.in_(misc_ids),
-        ).count(),
-        'empty_artists': db.session.query(Artist).filter(
+        ), mine).count(),
+        'empty_artists': _mine_artists(db.session.query(Artist).filter(
             ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
             ~Artist.id.in_(db.session.query(ArtistArtist.artist_1).filter(
                 ArtistArtist.relationship.in_((SUBUNIT, SOLOIST)))),
-        ).count(),
-        'undated_albums': db.session.query(Album).filter(
+        ), mine).count(),
+        'undated_albums': _mine_albums(db.session.query(Album).filter(
             db.or_(Album.release_date.is_(None), Album.release_date == ''),
             db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-        ).count(),
-        'incomplete_date_albums': db.session.query(Album).filter(
+        ), mine).count(),
+        'incomplete_date_albums': _mine_albums(db.session.query(Album).filter(
             Album.release_date.like('%-01-01'),
             Album.date_confirmed == False,
             db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-        ).count(),
-        'invalid_date_albums': len(_invalid_date_albums()),
-        'potentially_disbanded': _potentially_disbanded_query().count(),
-        'incomplete_tabs': db.session.query(Artist).filter(
+        ), mine).count(),
+        'invalid_date_albums': len(_invalid_date_albums(mine)),
+        'potentially_disbanded': _potentially_disbanded_query(mine).count(),
+        'incomplete_tabs': _mine_artists(db.session.query(Artist).filter(
             Artist.is_complete == False,
-        ).count(),
-        'no_maintainer_artists': _no_maintainer_artists_query().count(),
-        'no_owner_incomplete': _no_owner_incomplete_query().count(),
-        'no_creator_artists': _no_creator_artists_query().count(),
-        'variant_songs': len(_variant_songs()),
+        ), mine).count(),
+        'no_maintainer_artists': _no_maintainer_artists_query(mine).count(),
+        'no_owner_incomplete': _no_owner_incomplete_query(mine).count(),
+        'no_creator_artists': _no_creator_artists_query(mine).count(),
+        'variant_songs': len(_variant_songs(mine)),
         'duplicate_songs': '…',
-        'collab_candidates': _collab_candidate_query().count(),
+        'collab_candidates': _collab_candidate_query(mine).count(),
     }
     from app.models.user import User
     assignable_users = User.query.filter(
@@ -111,7 +149,7 @@ def views_page():
     countries = Country.query.order_by(Country.country).all()
     album_types = AlbumType.query.order_by(AlbumType.id).all()
     return render_template('views.html', counts=counts, assignable_users=assignable_users,
-                           countries=countries, album_types=album_types)
+                           countries=countries, album_types=album_types, mine=mine is not None)
 
 
 @views_bp.route('/views/orphan-songs')
@@ -141,24 +179,24 @@ def view_no_artist_songs():
     ])
 
 
-def _feat_only_query():
+def _feat_only_query(mine=None):
     """Songs that have artist links (real and/or misc) but no main artist of any
     kind — i.e. feat-only songs that need a main assigned."""
-    return db.session.query(Song).filter(
+    return _mine_songs(db.session.query(Song).filter(
         db.or_(
             Song.id.in_(db.session.query(ArtistSong.song_id)),
             Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ),
         ~Song.id.in_(db.session.query(ArtistSong.song_id).filter(ArtistSong.artist_is_main == True)),
         ~Song.id.in_(db.session.query(SongMiscArtist.song_id).filter(SongMiscArtist.artist_is_main == True)),
-    )
+    ), mine)
 
 
 @views_bp.route('/views/feat-only')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_feat_only():
-    songs = _feat_only_query().order_by(func.lower(Song.name)).all()
+    songs = _feat_only_query(_my_artist_ids()).order_by(func.lower(Song.name)).all()
     song_ids = [s.id for s in songs]
     artist_map = {}
     link_id = {}
@@ -235,11 +273,11 @@ def view_empty_albums():
     from markupsafe import Markup
     from flask import url_for
     misc_ids = _misc_artist_ids()
-    items = db.session.query(Album).filter(
+    items = _mine_albums(db.session.query(Album).filter(
         ~Album.id.in_(db.session.query(AlbumSong.album_id)),
         Album.artist_id.isnot(None),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).all()
+    ), _my_artist_ids()).all()
     edit_mode = current_user.is_editor_or_admin
     result = []
     for a in items:
@@ -256,11 +294,11 @@ def view_empty_albums():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_empty_artists():
-    items = db.session.query(Artist).filter(
+    items = _mine_artists(db.session.query(Artist).filter(
         ~Artist.id.in_(db.session.query(ArtistSong.artist_id)),
         ~Artist.id.in_(db.session.query(ArtistArtist.artist_1).filter(
             ArtistArtist.relationship.in_((SUBUNIT, SOLOIST)))),
-    ).all()
+    ), _my_artist_ids()).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'id={a.id} — "{a.name}"'} for a in items
     ])
@@ -271,12 +309,12 @@ def view_empty_artists():
 @role_required(EDITOR_OR_ADMIN)
 def view_undated_albums():
     misc_ids = _misc_artist_ids()
-    albums = db.session.query(Album).options(
+    albums = _mine_albums(db.session.query(Album).options(
         selectinload(Album.genres),
     ).filter(
         db.or_(Album.release_date.is_(None), Album.release_date == ''),
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(func.lower(Album.name)).all()
+    ), _my_artist_ids()).order_by(func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = current_user.is_editor_or_admin
     return render_template('fragments/view_album_dates.html',
@@ -289,13 +327,13 @@ def view_undated_albums():
 @role_required(EDITOR_OR_ADMIN)
 def view_incomplete_date_albums():
     misc_ids = _misc_artist_ids()
-    albums = db.session.query(Album).options(
+    albums = _mine_albums(db.session.query(Album).options(
         selectinload(Album.genres),
     ).filter(
         Album.release_date.like('%-01-01'),
         Album.date_confirmed == False,
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(func.lower(Album.name)).all()
+    ), _my_artist_ids()).order_by(func.lower(Album.name)).all()
     album_artists = _album_artists([a.id for a in albums])
 
     def _artist_key(a):
@@ -310,15 +348,15 @@ def view_incomplete_date_albums():
                            show_confirm=True)
 
 
-def _invalid_date_albums():
+def _invalid_date_albums(mine=None):
     """Albums whose release_date is set but isn't a real YYYY-MM-DD calendar date
     (malformed strings or impossible dates like 2021-02-30)."""
     misc_ids = _misc_artist_ids()
-    candidates = db.session.query(Album).filter(
+    candidates = _mine_albums(db.session.query(Album).filter(
         Album.release_date.isnot(None),
         Album.release_date != '',
         db.or_(Album.artist_id.is_(None), ~Album.artist_id.in_(misc_ids)),
-    ).order_by(func.lower(Album.name)).all()
+    ), mine).order_by(func.lower(Album.name)).all()
     return [a for a in candidates if not is_valid_release_date(a.release_date)]
 
 
@@ -326,7 +364,7 @@ def _invalid_date_albums():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_invalid_date_albums():
-    albums = _invalid_date_albums()
+    albums = _invalid_date_albums(_my_artist_ids())
     album_artists = _album_artists([a.id for a in albums])
     edit_mode = current_user.is_editor_or_admin
     return render_template('fragments/view_invalid_dates.html',
@@ -378,7 +416,7 @@ def view_dupe_misc_artists():
     return render_template('fragments/view_dupe_misc.html', items=_dupe_misc_artists())
 
 
-def _potentially_disbanded_query():
+def _potentially_disbanded_query(mine=None):
     """Artists with no songs on albums released in the last 5 years, not already marked disbanded."""
     cutoff = f'{datetime.now(timezone.utc).year - 5}-01-01'
     recent_artist_ids = db.session.query(ArtistSong.artist_id).join(
@@ -389,33 +427,33 @@ def _potentially_disbanded_query():
         Album.release_date >= cutoff,
         ArtistSong.artist_is_main == True,
     ).distinct()
-    return db.session.query(Artist).filter(
+    return _mine_artists(db.session.query(Artist).filter(
         ~Artist.id.in_(recent_artist_ids),
         Artist.is_disbanded == False,
-    )
+    ), mine)
 
 
 @views_bp.route('/views/potentially-disbanded')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_potentially_disbanded():
-    artists = _potentially_disbanded_query().order_by(func.lower(Artist.name)).all()
+    artists = _potentially_disbanded_query(_my_artist_ids()).order_by(func.lower(Artist.name)).all()
     return render_template('fragments/view_potentially_disbanded.html', artists=artists)
 
 
 _VARIANT_RE = re.compile(r'\b(TV|LIVE|instrumental)\b', re.IGNORECASE)
 
 
-def _variant_songs():
+def _variant_songs(mine=None):
     """Songs with TV, LIVE, or instrumental as whole words, excluding dismissed."""
-    candidates = db.session.query(Song).filter(
+    candidates = _mine_songs(db.session.query(Song).filter(
         db.or_(
             Song.name.ilike('%TV%'),
             Song.name.ilike('%LIVE%'),
             Song.name.ilike('%instrumental%'),
         ),
         ~Song.id.in_(db.session.query(NotVariant.song_id)),
-    ).order_by(func.lower(Song.name)).all()
+    ), mine).order_by(func.lower(Song.name)).all()
     return [s for s in candidates if _VARIANT_RE.search(s.name)]
 
 
@@ -423,7 +461,7 @@ def _variant_songs():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_variant_songs():
-    songs = _variant_songs()
+    songs = _variant_songs(_my_artist_ids())
     edit_mode = current_user.is_editor_or_admin
     items = []
     for s in songs:
@@ -539,6 +577,7 @@ def _subsumed_song_pairs():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_potential_duplicates():
+    mine = _my_artist_ids()
     subsumed_pairs = _subsumed_song_pairs()
     song_ids = _duplicate_song_ids() | {sid for pair in subsumed_pairs for sid in pair}
     if not song_ids:
@@ -633,6 +672,8 @@ def view_potential_duplicates():
         if a and b and (lo, hi) not in dismissed:
             pair_groups.append({'name': a['name'], 'songs': [a, b], 'id_lo': lo, 'id_hi': hi})
 
+    if mine is not None:
+        pair_groups = [g for g in pair_groups if any(s['artist_id'] in mine for s in g['songs'])]
     pair_groups.sort(key=lambda g: g['name'].lower())
     return render_template('fragments/view_duplicates.html', groups=pair_groups)
 
@@ -683,16 +724,16 @@ def merge_duplicate():
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_incomplete_tabs():
-    artists = db.session.query(Artist).filter(
+    artists = _mine_artists(db.session.query(Artist).filter(
         Artist.is_complete == False,
-    ).order_by(Artist.name).all()
+    ), _my_artist_ids()).order_by(Artist.name).all()
     return render_template('fragments/view_list.html', items=[
         {'label': f'<a href="/artists/{a.id}" style="color: var(--link);">{a.name}</a>', 'safe': True}
         for a in artists
     ])
 
 
-def _no_owner_incomplete_query():
+def _no_owner_incomplete_query(mine=None):
     """Incomplete artists (tab not finished) with no owner assigned.
     Excludes the Misc. Artists bucket and its subunits."""
     misc_ids = _misc_artist_ids()
@@ -702,14 +743,14 @@ def _no_owner_incomplete_query():
     )
     if misc_ids:
         q = q.filter(~Artist.id.in_(misc_ids))
-    return q.order_by(Artist.name)
+    return _mine_artists(q, mine).order_by(Artist.name)
 
 
 @views_bp.route('/views/no-owner-incomplete')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_no_owner_incomplete():
-    artists = _no_owner_incomplete_query().all()
+    artists = _no_owner_incomplete_query(_my_artist_ids()).all()
     ids = [a.id for a in artists]
     song_counts = {}
     if ids:
@@ -724,7 +765,7 @@ def view_no_owner_incomplete():
     return render_template('fragments/view_no_owner.html', items=items)
 
 
-def _no_creator_artists_query():
+def _no_creator_artists_query(mine=None):
     """Artists with a real discography (at least one main-artist song) and no
     creator attributed (submitted_by is unset, System, or Guest). Excludes the
     Misc. Artists bucket and its subunits."""
@@ -737,14 +778,14 @@ def _no_creator_artists_query():
     )
     if misc_ids:
         q = q.filter(~Artist.id.in_(misc_ids))
-    return q.order_by(Artist.name)
+    return _mine_artists(q, mine).order_by(Artist.name)
 
 
 @views_bp.route('/views/no-creator-artists')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_no_creator_artists():
-    artists = _no_creator_artists_query().all()
+    artists = _no_creator_artists_query(_my_artist_ids()).all()
     ids = [a.id for a in artists]
     song_counts = {}
     if ids:
@@ -759,7 +800,7 @@ def view_no_creator_artists():
     return render_template('fragments/view_no_creator.html', items=items)
 
 
-def _no_maintainer_artists_query():
+def _no_maintainer_artists_query(mine=None):
     """Artists with a real discography (at least one main-artist song) and no
     maintainer assigned. Excludes the Misc. Artists bucket and its subunits."""
     misc_ids = _misc_artist_ids()
@@ -771,14 +812,14 @@ def _no_maintainer_artists_query():
     )
     if misc_ids:
         q = q.filter(~Artist.id.in_(misc_ids))
-    return q.order_by(Artist.name)
+    return _mine_artists(q, mine).order_by(Artist.name)
 
 
 @views_bp.route('/views/no-maintainer-artists')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_no_maintainer_artists():
-    artists = _no_maintainer_artists_query().all()
+    artists = _no_maintainer_artists_query(_my_artist_ids()).all()
     ids = [a.id for a in artists]
     song_counts = {}
     if ids:
@@ -803,13 +844,13 @@ _COLLAB_LIKE = [
 ]
 
 
-def _collab_candidate_query():
+def _collab_candidate_query(mine=None):
     """Songs with feat/ft/with markers in title that don't already have misc artist links."""
-    return db.session.query(Song).filter(
+    return _mine_songs(db.session.query(Song).filter(
         ~Song.id.in_(db.session.query(SongMiscArtist.song_id)),
         ~Song.id.in_(db.session.query(NotCollab.song_id)),
         db.or_(*[Song.name.ilike(p) for p in _COLLAB_LIKE]),
-    )
+    ), mine)
 
 
 @views_bp.route('/views/collab-candidates')
@@ -817,7 +858,7 @@ def _collab_candidate_query():
 @role_required(EDITOR_OR_ADMIN)
 def view_collab_candidates():
     from app.migrations import _extract_collab_names
-    songs = _collab_candidate_query().order_by(Song.name).all()
+    songs = _collab_candidate_query(_my_artist_ids()).order_by(Song.name).all()
     song_ids = [s.id for s in songs]
     if not song_ids:
         return render_template('fragments/view_collab_candidates.html', items=[])
