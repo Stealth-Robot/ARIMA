@@ -16,6 +16,7 @@ from app.services.artist import SUBUNIT, SOLOIST
 from app.models.not_variant import NotVariant
 from app.models.not_collab import NotCollab
 from app.services.dates import is_valid_release_date
+from app.services.search import native_roman_parts
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 views_bp = Blueprint('views', __name__)
@@ -513,11 +514,33 @@ def _duplicate_song_ids():
     return ids_1 | ids_2
 
 
+def _subsumed_song_pairs():
+    """Return (combined_id, part_id) pairs where a "踊 Odo" song and a "踊" or "Odo" song share a main artist."""
+    rows = db.session.query(Song.id, Song.name, ArtistSong.artist_id).join(
+        ArtistSong, db.and_(ArtistSong.song_id == Song.id, ArtistSong.artist_is_main == True)
+    ).all()
+    by_key = {}
+    for song_id, name, artist_id in rows:
+        by_key.setdefault((artist_id, ' '.join(name.lower().split())), set()).add(song_id)
+    pairs = set()
+    for song_id, name, artist_id in rows:
+        parts = native_roman_parts(name)
+        if not parts:
+            continue
+        for part in parts:
+            key = ' '.join(part.lower().split())
+            if key in _DUPLICATE_IGNORE:
+                continue
+            pairs |= {(song_id, other) for other in by_key.get((artist_id, key), ()) if other != song_id}
+    return pairs
+
+
 @views_bp.route('/views/potential-duplicates')
 @login_required
 @role_required(EDITOR_OR_ADMIN)
 def view_potential_duplicates():
-    song_ids = _duplicate_song_ids()
+    subsumed_pairs = _subsumed_song_pairs()
+    song_ids = _duplicate_song_ids() | {sid for pair in subsumed_pairs for sid in pair}
     if not song_ids:
         return render_template('fragments/view_duplicates.html', groups=[])
 
@@ -602,6 +625,13 @@ def view_potential_duplicates():
                         'id_lo': lo,
                         'id_hi': hi,
                     })
+
+    by_id = {s['id']: s for g in groups.values() for s in g['songs']}
+    for combined_id, part_id in sorted(subsumed_pairs):
+        a, b = by_id.get(combined_id), by_id.get(part_id)
+        lo, hi = min(combined_id, part_id), max(combined_id, part_id)
+        if a and b and (lo, hi) not in dismissed:
+            pair_groups.append({'name': a['name'], 'songs': [a, b], 'id_lo': lo, 'id_hi': hi})
 
     pair_groups.sort(key=lambda g: g['name'].lower())
     return render_template('fragments/view_duplicates.html', groups=pair_groups)

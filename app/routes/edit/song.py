@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from flask import request, abort, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 
-from sqlalchemy import and_, case, func, null, select, text, union
+from sqlalchemy import and_, case, func, null, or_, select, text, union
 
 from app.extensions import db
 from app.models.music import Album, Song, Artist, ArtistSong, AlbumSong, Rating, SongMiscArtist, MiscArtist, album_genres, song_genres, SongAlias, AlbumAltName
@@ -13,7 +13,7 @@ from app.models.not_duplicate import NotDuplicate
 from app.services.audit import log_change
 from app.services.events import publish
 from app.services.proxy_change import close_orphaned_proxy_changes
-from app.services.search import text_match, alias_field
+from app.services.search import text_match, alias_field, native_roman_parts
 from app.decorators import role_required, EDITOR_OR_ADMIN
 
 from app.routes.edit import edit_bp, _require_edit_mode, _get_filters, _verify_password, _parse_id_list
@@ -690,6 +690,11 @@ def merge_candidates(song_id):
     if song is None:
         abort(404)
     country_ids, genre_ids = _get_filters()
+    name_filter = text_match(song.name, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name), split_words=False)
+    parts = native_roman_parts(song.name)
+    if parts:
+        # "踊 Odo" subsumes "踊" and "Odo", which the contains match above can't reach.
+        name_filter = or_(name_filter, func.lower(func.trim(Song.name)).in_([p.lower() for p in parts]))
     query = db.session.query(Song, Album, Artist).join(
         AlbumSong, Song.id == AlbumSong.song_id
     ).join(
@@ -699,7 +704,7 @@ def merge_candidates(song_id):
     ).join(
         Artist, ArtistSong.artist_id == Artist.id
     ).filter(
-        text_match(song.name, Song.name, alias_field(Song.id, SongAlias.song_id, SongAlias.name), split_words=False),
+        name_filter,
         Song.id != song_id,
         ArtistSong.artist_is_main == True,
     )

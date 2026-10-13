@@ -38,6 +38,20 @@ def fold_accents(text):
     return ''.join(out)
 
 
+def native_roman_parts(name):
+    """Split a native-script name followed by its romanization ("踊 Odo" -> ("踊", "Odo")); None for any other name."""
+    if not name:
+        return None
+    start = next((i for i, ch in enumerate(name) if ch.isalpha() and _is_latin_or_symbol(ch)), None)
+    # Requiring whitespace before the romanization skips version tails like "光追いかけて -Crystal Lake mix -".
+    if not start or not name[start - 1].isspace():
+        return None
+    native, roman = name[:start].strip(), name[start:].strip()
+    if not any(not _is_latin_or_symbol(ch) for ch in native) or any(not _is_latin_or_symbol(ch) for ch in roman):
+        return None
+    return native, roman
+
+
 def search_name_for(name):
     """The hidden search copy of a name or text: None when folding changes nothing (e.g. fully native names)."""
     folded = fold_accents(name)
