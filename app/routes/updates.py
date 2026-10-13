@@ -16,31 +16,17 @@ ET = ZoneInfo('America/New_York')
 UTC = ZoneInfo('UTC')
 
 
-def _et_to_utc(date_str):
-    """Convert 'YYYY-MM-DD HH:MM' in Eastern to UTC ISO string. Returns None if invalid."""
+def _local_to_utc(date_str, tz_name):
+    """Convert 'YYYY-MM-DD HH:MM' in the submitting browser's timezone to UTC ISO string. Returns None if invalid."""
     try:
         dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
     except ValueError:
         return None
-    dt_et = dt.replace(tzinfo=ET)
-    dt_utc = dt_et.astimezone(UTC)
-    return dt_utc.strftime('%Y-%m-%d %H:%M:%S')
-
-
-def _utc_to_et(utc_str):
-    """Convert UTC datetime string to Eastern 'YYYY-MM-DD HH:MM'."""
-    # Handle both 'YYYY-MM-DD HH:MM:SS' and 'YYYY-MM-DD HH:MM'
-    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
-        try:
-            dt = datetime.strptime(utc_str, fmt)
-            break
-        except ValueError:
-            continue
-    else:
-        return utc_str
-    dt_utc = dt.replace(tzinfo=UTC)
-    dt_et = dt_utc.astimezone(ET)
-    return dt_et.strftime('%Y-%m-%d %H:%M')
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = ET
+    return dt.replace(tzinfo=tz).astimezone(UTC).strftime('%Y-%m-%d %H:%M:%S')
 
 
 @updates_bp.route('/updates')
@@ -59,10 +45,10 @@ def updates_page():
 
     updates = query.order_by(Update.date.desc(), Update.id.desc()).all()
     latest_date = Update.query.order_by(Update.date.desc(), Update.id.desc()).first()
-    latest_et = _utc_to_et(latest_date.date) if latest_date else ''
     saved_form = session.pop('_csrf_form_data', {})
     return render_template('updates.html', updates=updates, saved_form=saved_form,
-                           all_types=all_types, include=include, latest_et=latest_et)
+                           all_types=all_types, include=include,
+                           latest_utc=latest_date.date if latest_date else '')
 
 
 @updates_bp.route('/updates/timeline')
@@ -133,7 +119,7 @@ def add_update():
         flash('An update with that commit ID already exists.', 'error')
         return redirect(url_for('updates.updates_page'))
 
-    date_utc = _et_to_utc(date)
+    date_utc = _local_to_utc(date, request.form.get('tz', ''))
     if not date_utc:
         flash('Invalid date — use YYYY-MM-DD HH:MM format.', 'error')
         return redirect(url_for('updates.updates_page'))
@@ -159,7 +145,7 @@ def edit_update(update_id):
     if commit_id:
         update.commit_id = commit_id
     if date:
-        date_utc = _et_to_utc(date)
+        date_utc = _local_to_utc(date, request.form.get('tz', ''))
         if date_utc:
             update.date = date_utc
     if type_id is not None:

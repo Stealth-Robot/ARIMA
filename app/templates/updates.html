@@ -14,6 +14,7 @@
         <form method="POST" action="{{ url_for('updates.add_update') }}" class="flex flex-col gap-2"
               id="add-update-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="tz">
             <div class="flex gap-2">
                 <input type="text" name="commit_id" placeholder="Commit ID" required value="{{ saved_form.get('commit_id', '') }}"
                        class="text-xs px-3 py-1 rounded border flex-1 bg-secondary-bg text-primary-text border-border" style="font-family: monospace;">
@@ -109,13 +110,24 @@
 
 {% if current_user.is_admin %}
 <script>
+/* Dates are typed in the browser's timezone (the same one the table shows); the server converts using this zone */
+function _browserTz() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; }
+}
+
+function _localDateInput(d) {
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
 (function() {
     var form = document.getElementById('add-update-form');
     var btn = document.getElementById('add-update-btn');
     var commitInput = form.querySelector('[name=commit_id]');
     var dateInput = form.querySelector('[name=date]');
     var descInput = form.querySelector('[name=description]');
-    var latestEt = {{ latest_et | tojson }};
+    var latestUtc = {{ latest_utc | tojson }};
+    form.querySelector('[name=tz]').value = _browserTz();
     var commitOk = false;
     var commitChecked = '';
     var debounceTimer = null;
@@ -131,9 +143,10 @@
     }
 
     function isDateNewer() {
-        if (!latestEt || !isDateValid()) return true;
-        var input = dateInput.value.trim();
-        return input >= latestEt;
+        if (!latestUtc || !isDateValid()) return true;
+        // Minute precision on both sides, since the box can't express the seconds stored on the latest update
+        var latest = new Date(latestUtc.slice(0, 16).replace(' ', 'T') + 'Z');
+        return new Date(dateInput.value.trim().replace(' ', 'T') + ':00') >= latest;
     }
 
     function updateBtn() {
@@ -178,27 +191,11 @@
     dateInput.addEventListener('input', validateDate);
     descInput.addEventListener('input', function() { updateBtn(); });
 
-    // Prefill date with current ET time if empty
-    if (!dateInput.value.trim()) {
-        var now = new Date();
-        var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        var y = et.getFullYear();
-        var mo = String(et.getMonth() + 1).padStart(2, '0');
-        var d = String(et.getDate()).padStart(2, '0');
-        var h = String(et.getHours()).padStart(2, '0');
-        var mi = String(et.getMinutes()).padStart(2, '0');
-        dateInput.value = y + '-' + mo + '-' + d + ' ' + h + ':' + mi;
-    }
+    // Prefill date with the current local time if empty
+    if (!dateInput.value.trim()) dateInput.value = _localDateInput(new Date());
 
     document.getElementById('refresh-date-btn').addEventListener('click', function() {
-        var now = new Date();
-        var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        var y = et.getFullYear();
-        var mo = String(et.getMonth() + 1).padStart(2, '0');
-        var d = String(et.getDate()).padStart(2, '0');
-        var h = String(et.getHours()).padStart(2, '0');
-        var mi = String(et.getMinutes()).padStart(2, '0');
-        dateInput.value = y + '-' + mo + '-' + d + ' ' + h + ':' + mi;
+        dateInput.value = _localDateInput(new Date());
         validateDate();
     });
 
@@ -225,10 +222,7 @@ function editRow(id) {
     var localDate = '';
     if (rawDate) {
         var d = new Date(rawDate.replace(' ', 'T') + 'Z');
-        if (!isNaN(d)) {
-            var pad = function(n) { return n < 10 ? '0' + n : n; };
-            localDate = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-        }
+        if (!isNaN(d)) localDate = _localDateInput(d);
     }
     var td = document.getElementById('desc-' + id);
     var csrf = document.querySelector('meta[name="csrf-token"]');
@@ -241,6 +235,7 @@ function editRow(id) {
     form.dataset.orig = td.innerHTML;
     form.style.cssText = 'display:flex; flex-direction:column; gap:0.25rem;';
     form.innerHTML = '<input type="hidden" name="csrf_token" value="' + (csrf ? csrf.content : '') + '">'
+        + '<input type="hidden" name="tz" value="' + _browserTz() + '">'
         + '<div style="display:flex; gap:0.25rem;">'
         + '<input type="text" name="commit_id" value="' + commit.replace(/"/g, '&quot;') + '" class="text-xs px-2 py-1 rounded border" style="width:6.25rem; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="Commit ID">'
         + '<input type="text" name="date" value="' + localDate + '" class="text-xs px-2 py-1 rounded border" style="width:8.75rem; font-family:monospace; background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border);" placeholder="YYYY-MM-DD HH:MM">'
