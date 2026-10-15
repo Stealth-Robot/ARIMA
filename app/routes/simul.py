@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, render_template, redirect, url_for, abort
@@ -149,6 +150,47 @@ def add_show():
                                  sort_order=max_sort + 1, created_at=now, last_updated=now))
         db.session.commit()
     return redirect(url_for('simul.index', bucket=bucket, year=year))
+
+
+@simul_bp.route('/show/<int:show_id>/note', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def set_show_note(show_id):
+    show = db.session.get(SimulShow, show_id)
+    if not show:
+        abort(404)
+    show.notes = (request.form.get('note') or '').strip() or None
+    show.last_updated = datetime.now(timezone.utc).isoformat()
+    db.session.commit()
+    return '', 204
+
+
+@simul_bp.route('/show/<int:show_id>/edit', methods=['POST'])
+@login_required
+@role_required(EDITOR_OR_ADMIN)
+def edit_show(show_id):
+    show = db.session.get(SimulShow, show_id)
+    if not show:
+        abort(404)
+    title = (request.form.get('title') or '').strip()
+    if title:
+        show.title = title
+    url = (request.form.get('url') or '').strip()
+    # Only web links: a bare domain gets https://, anything else (e.g. javascript:) is never an href.
+    if url and not re.match(r'https?://', url, re.IGNORECASE):
+        url = 'https://' + url
+    show.url = url or None
+    show.notes = (request.form.get('note') or '').strip() or None
+    bucket = request.form.get('bucket')
+    if bucket in BUCKETS:
+        show.bucket = bucket
+    if show.bucket == 'planning':
+        show.year = None
+    else:
+        show.year = request.form.get('year', type=int) or show.year or datetime.now(timezone.utc).year
+    show.last_updated = datetime.now(timezone.utc).isoformat()
+    db.session.commit()
+    return redirect(url_for('simul.index', bucket=show.bucket, year=show.year))
 
 
 @simul_bp.route('/show/<int:show_id>/delete', methods=['POST'])

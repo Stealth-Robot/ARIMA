@@ -95,13 +95,31 @@
         if (_tip.style.display !== 'none') { _tipSel = false; _tip.style.opacity = '0'; _tip.style.display = 'none'; }
     });
 
-    // Right-click an editable cell with a status to add/edit its note.
+    // Right-click a title to open its editor; right-click a status cell, or 'n' over either, to edit its note.
     var _activeNote = null;
     function _closeNote() { if (_activeNote) { _activeNote.remove(); _activeNote = null; } }
+    function _noteTarget(td) {
+        if (!td || td.getAttribute('data-editable') !== '1') return null;
+        if (td.hasAttribute('data-title-show')) return td;
+        return td.getAttribute('data-type') ? td : null;  // no status set -> no note (matches backend)
+    }
     document.addEventListener('contextmenu', function(e) {
-        var td = e.target.closest('td[data-editable="1"]');
+        var td = _noteTarget(e.target.closest('td[data-editable]'));
         if (!td) return;
-        if (!td.getAttribute('data-type')) return;  // no status set -> no note (matches backend)
+        e.preventDefault();
+        if (td.hasAttribute('data-title-show') && window.openShowEditor) { _closeNote(); window.openShowEditor(td); }
+        else _openNote(td);
+    });
+    var _hoveredCell = null;
+    document.addEventListener('mouseover', function(e) { _hoveredCell = e.target.closest('td[data-editable]'); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || _activeNote || !_hoveredCell) return;
+        var t = e.target;
+        if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+        // An HTMX swap replaces the hovered status cell; pick up its replacement by id.
+        var td = _hoveredCell.isConnected ? _hoveredCell : document.getElementById(_hoveredCell.id);
+        td = _noteTarget(td);
+        if (!td) return;
         e.preventDefault();
         _openNote(td);
     });
@@ -109,7 +127,25 @@
         if (_activeNote && !_activeNote.contains(e.target)) _closeNote();
     });
 
+    function _submitTitleNote(td, note) {
+        var body = new URLSearchParams();
+        body.set('note', note);
+        var url = '{{ url_for('simul.set_show_note', show_id=0) }}'.replace('/0/', '/' + td.getAttribute('data-title-show') + '/');
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': _csrf},
+            body: body.toString()
+        }).then(function(r) {
+            if (!r.ok) return;
+            if (note) { td.setAttribute('data-note', note); td.classList.add('has-note'); }
+            else { td.removeAttribute('data-note'); td.classList.remove('has-note'); }
+            _tip.style.display = 'none';
+            _closeNote();
+        });
+    }
+
     function _submitNote(td, note) {
+        if (td.hasAttribute('data-title-show')) { _submitTitleNote(td, note); return; }
         var body = new URLSearchParams();
         body.set('show_id', td.getAttribute('data-show'));
         body.set('pkey', td.getAttribute('data-pkey'));

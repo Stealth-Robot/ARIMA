@@ -65,10 +65,12 @@
       {% set multi = block|length > 1 %}
       {% for show in block %}
       {# Same-titled shows on a page are separate watches: one title, a sub-row per watch. #}
-      <tr {% if loop.first and not block_loop.first %}style="border-top:2px solid var(--text-secondary);"{% endif %}>
+      <tr {% if loop.first and not block_loop.first %}style="border-top:2px solid var(--border);"{% endif %}>
+        {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
         <td class="sticky left-0 z-10 border border-border pl-2 pr-8 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
-            {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
-            {% if show.notes %}data-note="{{ show.notes }}" style="position:sticky;"{% endif %}>
+            data-title-show="{{ show.id }}" data-editable="{{ '1' if can_edit else '' }}"
+            data-title="{{ show.title }}" data-url="{{ show.url or '' }}" data-bucket="{{ show.bucket }}" data-year="{{ show.year or '' }}"
+            {% if show.notes %}data-note="{{ show.notes }}"{% endif %} style="position:sticky;">
           {% if multi %}
           <span class="absolute right-2 w-3 border-l border-secondary-text {{ 'top-1/2' if loop.first else 'top-0' }} {{ 'bottom-1/2' if loop.last else 'bottom-0' }}"></span>
           <span class="absolute right-2 w-3 top-1/2 border-t border-secondary-text"></span>
@@ -79,12 +81,6 @@
             {% if cat_labels[show.category] %}<span class="text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
             {% if show.years_running %}<span class="text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
             {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="text-2xs">▶</a>{% endif %}
-            {% endif %}
-            {% if can_edit %}
-            <form method="post" action="{{ url_for('simul.delete_show', show_id=show.id) }}" class="m-0 inline" onsubmit="return confirm('Delete this title?');">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="px-2 py-1 rounded text-xs border-0 cursor-pointer bg-delete text-button-text" title="Delete">&#10005;</button>
-            </form>
             {% endif %}
           </div>
         </td>
@@ -102,4 +98,92 @@
   </table>
 </div>
 {% if not shows %}<p class="text-secondary-text mt-4">No titles in this list yet.</p>{% endif %}
+
+{% if can_edit %}
+{# Right-click a title to edit it (see openShowEditor below). #}
+<div id="show-editor" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+  <form id="show-editor-form" method="post" action=""
+        class="w-full max-w-md flex flex-col gap-3 p-4 rounded border border-border bg-secondary-bg text-primary-text">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2 class="text-base- font-bold m-0">Edit title</h2>
+    <label class="flex flex-col gap-1 text-sm- text-secondary-text">Name
+      <input id="show-editor-title" type="text" name="title" required
+             class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
+    </label>
+    <label class="flex flex-col gap-1 text-sm- text-secondary-text">Link
+      <input id="show-editor-url" type="text" name="url" placeholder="https://anilist.co/…"
+             class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
+    </label>
+    <label class="flex flex-col gap-1 text-sm- text-secondary-text">Note
+      <textarea id="show-editor-note" name="note" rows="3"
+                class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text"></textarea>
+    </label>
+    <div class="flex gap-3">
+      <label class="flex flex-col gap-1 text-sm- text-secondary-text flex-1">Status
+        <select id="show-editor-bucket" name="bucket"
+                class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
+          {% for b in buckets %}<option value="{{ b }}">{{ b|capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+      <label id="show-editor-year-label" class="flex flex-col gap-1 text-sm- text-secondary-text flex-1">Year
+        <input id="show-editor-year" type="number" name="year" min="2000" max="2100"
+               class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
+      </label>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="submit" form="show-editor-delete" class="text-sm- py-1 px-3 rounded border-0 cursor-pointer bg-delete text-button-text">Delete</button>
+      <span class="flex-1"></span>
+      <button type="button" id="show-editor-cancel" class="text-sm- py-1 px-3 rounded border-0 cursor-pointer bg-button-secondary text-button-text">Cancel</button>
+      <button type="submit" class="text-sm- py-1 px-3 rounded border-0 cursor-pointer bg-edit-on text-button-text">Save</button>
+    </div>
+  </form>
+  <form id="show-editor-delete" method="post" action="" class="hidden" onsubmit="return confirm('Delete this title?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if can_edit %}
+<script>
+(function() {
+    var modal = document.getElementById('show-editor');
+    var form = document.getElementById('show-editor-form');
+    var del = document.getElementById('show-editor-delete');
+    var bucket = document.getElementById('show-editor-bucket');
+    var year = document.getElementById('show-editor-year');
+    var yearLabel = document.getElementById('show-editor-year-label');
+    var editUrl = '{{ url_for('simul.edit_show', show_id=0) }}';
+    var deleteUrl = '{{ url_for('simul.delete_show', show_id=0) }}';
+
+    function syncYear() {
+        var planning = bucket.value === 'planning';
+        yearLabel.classList.toggle('hidden', planning);
+        year.required = !planning;
+    }
+    function close() { modal.classList.add('hidden'); }
+
+    window.openShowEditor = function(td) {
+        var id = td.getAttribute('data-title-show');
+        form.action = editUrl.replace('/0/', '/' + id + '/');
+        del.action = deleteUrl.replace('/0/', '/' + id + '/');
+        document.getElementById('show-editor-title').value = td.getAttribute('data-title');
+        document.getElementById('show-editor-url').value = td.getAttribute('data-url');
+        document.getElementById('show-editor-note').value = td.getAttribute('data-note') || '';
+        bucket.value = td.getAttribute('data-bucket');
+        year.value = td.getAttribute('data-year') || '{{ year or (years[0] if years else '') }}';
+        syncYear();
+        modal.classList.remove('hidden');
+        document.getElementById('show-editor-title').focus();
+    };
+    bucket.addEventListener('change', syncYear);
+    document.getElementById('show-editor-cancel').addEventListener('click', close);
+    modal.addEventListener('mousedown', function(e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}
