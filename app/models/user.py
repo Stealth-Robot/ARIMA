@@ -129,6 +129,7 @@ class UserSettings(db.Model):
     display_nat_scope_other = db.Column(db.Boolean, nullable=False, server_default='0')
     edit_buttons = db.Column(db.JSON, nullable=False, default=list, server_default='[]')
     group_picks_filters = db.Column(db.JSON, nullable=False, default=dict, server_default='{}')
+    simul_title_width = db.Column(db.Integer, nullable=False, default=320, server_default='320')
 
     EDIT_BUTTON_DEFAULTS = [
         'move_album', 'add_album', 'delete', 'unlink',

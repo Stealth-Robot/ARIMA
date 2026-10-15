@@ -40,11 +40,11 @@ def _status_map(shows):
 
 
 def _merge_blocks(shows):
-    """Group same-titled shows on one page into one block (one row per separate watch),
-    placed where the first of them sorts."""
+    """Group same-titled shows of the same type on one page into one block (one row per
+    separate watch), placed where the first of them sorts."""
     blocks = {}
     for s in shows:
-        blocks.setdefault(s.title.strip().casefold(), []).append(s)
+        blocks.setdefault((s.title.strip().casefold(), s.category), []).append(s)
     return list(blocks.values())
 
 
@@ -71,7 +71,28 @@ def index():
         'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years,
         shows=shows, blocks=_merge_blocks(shows), users=users, status_map=_status_map(shows),
         status_types=status_types, categories=CATEGORIES,
-        can_edit=current_user.is_editor_or_admin)
+        can_edit=current_user.is_editor_or_admin, title_width=_title_width())
+
+
+TITLE_WIDTH_RANGE = (120, 900)
+
+
+def _title_width():
+    s = current_user.settings
+    # SQLite may hand the auto-migrated column back as text.
+    return int(s.simul_title_width) if s and s.simul_title_width else 320
+
+
+@simul_bp.route('/title-width', methods=['POST'])
+@login_required
+def set_title_width():
+    width = request.form.get('width', type=int)
+    if not width or not current_user.settings:
+        abort(400)
+    lo, hi = TITLE_WIDTH_RANGE
+    current_user.settings.simul_title_width = max(lo, min(hi, width))
+    db.session.commit()
+    return '', 204
 
 
 def _render_cell(show, participant_key, status_types):

@@ -70,22 +70,27 @@
     _tip.addEventListener('mousedown', function() { _tipSel = true; });
     document.addEventListener('mouseup', function() { _tipSel = false; });
 
+    // Title cells also show the full name here when it is cut off by the column width.
+    var _TIP_CELLS = 'td.has-note, td[data-title-show]';
     document.addEventListener('mouseover', function(e) {
-        var td = e.target.closest('td.has-note');
+        var td = e.target.closest(_TIP_CELLS);
         if (!td) return;
-        var note = td.getAttribute('data-note');
-        if (!note) return;
-        _tip.textContent = note;
+        var parts = [];
+        var name = td.querySelector('.simul-title');
+        if (name && name.scrollWidth > name.clientWidth) parts.push(td.getAttribute('data-title'));
+        if (td.getAttribute('data-note')) parts.push(td.getAttribute('data-note'));
+        if (!parts.length) return;
+        _tip.textContent = parts.join('\n\n');
         var r = td.getBoundingClientRect();
-        _tip.style.left = r.right + 'px';
-        _tip.style.transform = 'translateX(-100%)';
+        if (td.hasAttribute('data-title-show')) { _tip.style.left = r.left + 'px'; _tip.style.transform = ''; }
+        else { _tip.style.left = r.right + 'px'; _tip.style.transform = 'translateX(-100%)'; }
         if (r.top > 40) { _tip.style.top = (r.top - 4) + 'px'; _tip.style.transform += ' translateY(-100%)'; }
         else { _tip.style.top = (r.bottom + 4) + 'px'; }
         _tip.style.opacity = '1';
         _tip.style.display = 'block';
     });
     document.addEventListener('mouseout', function(e) {
-        var td = e.target.closest('td.has-note');
+        var td = e.target.closest(_TIP_CELLS);
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== _tip && !_tip.contains(e.relatedTarget)) {
             if (!_tipSel) { _tip.style.opacity = '0'; _tip.style.display = 'none'; }

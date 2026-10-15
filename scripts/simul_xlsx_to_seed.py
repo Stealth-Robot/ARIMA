@@ -30,11 +30,20 @@ CATEGORY_BY_FILL = {
 # Watch sheets reuse only the TV/movie fills; other title highlights there carry no category.
 WATCH_CATEGORY_BY_FILL = {'FFD9D2E9': 'tv', 'FFFCE5CD': 'movie'}
 NO_STATUS_FILLS = {None, 'FFFFFFFF'}
-PLANNING_NOT_INTERESTED_FILL = 'FFEA9999'
+PLANNING_INTERESTED_FILL = 'FFEA9999'
 WATCHED_FILLS = {'FFFF0000', 'FFE06666'}
 WATCH_SHEET_RE = re.compile(r'^(OngoingPaused|Completed|Dropped) (\d{4})$')
 BUCKET_BY_PREFIX = {'OngoingPaused': 'ongoing', 'Completed': 'completed', 'Dropped': 'dropped'}
+# On the OngoingPaused tabs a pale yellow title marks a paused show.
+PAUSED_TITLE_FILL = 'FFFFE599'
+# No accounts in ARIMA, so their watches are kept as a note on the title instead.
 HISTORICAL_MEMBERS = {'Amy', 'Syd'}
+# Section labels in the title column, not shows.
+NON_SHOW_ROWS = {'COMPLETED AFTER THE END OF YEAR VIDEO', 'See end of Completed 2024 for EOY video'}
+
+
+def historical_note(names):
+    return 'Also watched by ' + ' and '.join(names)
 
 
 def fill_of(cell):
@@ -66,6 +75,7 @@ def status_for(cell, planning):
     note_parts = []
     youtube = None
     is_not_interested = False
+    written = False
     if value:
         if 'youtube.com' in value or 'youtu.be' in value:
             youtube = value
@@ -73,13 +83,17 @@ def status_for(cell, planning):
             is_not_interested = True
         else:
             note_parts.append(value)
+            written = True
     if comment_of(cell):
         note_parts.append(comment_of(cell))
     note = '\n'.join(note_parts) or None
 
     if planning:
-        if fill == PLANNING_NOT_INTERESTED_FILL or is_not_interested:
+        # Red marks interest ("Who's Interested?"), but "Not Interested" text decides even under red; red with other writing is unclear.
+        if is_not_interested:
             key = 'not_interested'
+        elif fill == PLANNING_INTERESTED_FILL:
+            key = 'other' if written else 'interested'
         elif fill not in NO_STATUS_FILLS or note:
             key = 'other'
         else:
@@ -121,13 +135,14 @@ def convert(xlsx_path):
 
         for row in ws.iter_rows(min_row=header_row + 1):
             title = text(row[0].value)
-            if not title:
+            if not title or title in NON_SHOW_ROWS:
                 continue
+            title_fill = fill_of(row[0])
             show = {
                 'title': title,
                 'category': (CATEGORY_BY_FILL if planning else WATCH_CATEGORY_BY_FILL).get(
-                    fill_of(row[0]), 'uncategorized'),
-                'bucket': bucket,
+                    title_fill, 'uncategorized'),
+                'bucket': 'paused' if bucket == 'ongoing' and title_fill == PAUSED_TITLE_FILL else bucket,
                 'year': year,
                 'youtube_url': None,
                 'url': text(row[0].hyperlink.target) if row[0].hyperlink else None,
@@ -138,6 +153,7 @@ def convert(xlsx_path):
             }
             # Watch tabs colour each separate watch differently; red is the main one.
             groups = {'main': show['statuses']}
+            historical = []
             for cell in row[1:]:
                 name = members.get(cell.column)
                 if not name:
@@ -150,17 +166,21 @@ def convert(xlsx_path):
                     show['youtube_url'] = youtube
                 if key is None:
                     continue
+                if name in HISTORICAL_MEMBERS:
+                    historical.append(name)
+                    continue
                 group = 'main'
                 fill = fill_of(cell)
                 if not planning and key == 'other' and fill not in NO_STATUS_FILLS:
                     group, key = fill, 'watched'
-                historical = name in HISTORICAL_MEMBERS
                 groups.setdefault(group, []).append({
-                    'user': None if historical else name,
-                    'member_name': name if historical else None,
+                    'user': name,
+                    'member_name': None,
                     'status_key': key,
                     'note': note,
                 })
+            if historical:
+                show['notes'] = '\n'.join(filter(None, [show['notes'], historical_note(historical)]))
             colour_groups = [g for k, g in groups.items() if k != 'main']
             if colour_groups and not show['statuses']:
                 # No red watch on this row: the first colour becomes its main row.
@@ -168,7 +188,7 @@ def convert(xlsx_path):
             shows.append(show)
             for statuses in colour_groups:
                 shows.append({
-                    'title': title, 'category': show['category'], 'bucket': bucket, 'year': year,
+                    'title': title, 'category': show['category'], 'bucket': show['bucket'], 'year': year,
                     'youtube_url': None, 'url': show['url'], 'notes': None, 'years_running': None,
                     'sort_order': len(shows) + 1, 'statuses': statuses,
                 })

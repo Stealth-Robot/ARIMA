@@ -50,10 +50,14 @@
 {% endif %}
 
 <div class="overflow-x-auto border border-border rounded">
-  <table class="border-collapse text-sm-" style="width:max-content;">
+  {# Title column width is a per-user setting; cells size to --simul-title-w so dragging only updates the variable. #}
+  <table id="simul-grid" class="border-collapse text-sm-" style="width:max-content;--simul-title-w:{{ title_width }}px;">
     <thead>
       <tr class="bg-header-row">
-        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1" style="min-width:16rem;">Title</th>
+        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1">
+          <div style="width:var(--simul-title-w);">Title</div>
+          <span id="simul-title-resizer" class="absolute top-0 bottom-0 right-0 w-2" style="cursor:col-resize;touch-action:none;" title="Drag to resize"></span>
+        </th>
         {% for u in users %}
         <th class="border border-border px-1 py-1 text-center" style="min-width:4.5rem;">{{ u.username }}</th>
         {% endfor %}
@@ -65,22 +69,29 @@
       {% set multi = block|length > 1 %}
       {% for show in block %}
       {# Same-titled shows on a page are separate watches: one title, a sub-row per watch. #}
-      <tr {% if loop.first and not block_loop.first %}style="border-top:2px solid var(--border);"{% endif %}>
+      <tr {% if loop.first and not block_loop.first %}style="border-top:3px solid var(--border);"{% endif %}>
         {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
-        <td class="sticky left-0 z-10 border border-border pl-2 pr-8 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
+        <td class="sticky left-0 z-10 border border-border px-2 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
             data-title-show="{{ show.id }}" data-editable="{{ '1' if can_edit else '' }}"
             data-title="{{ show.title }}" data-url="{{ show.url or '' }}" data-bucket="{{ show.bucket }}" data-year="{{ show.year or '' }}"
             {% if show.notes %}data-note="{{ show.notes }}"{% endif %} style="position:sticky;">
           {% if multi %}
-          <span class="absolute right-2 w-3 border-l border-secondary-text {{ 'top-1/2' if loop.first else 'top-0' }} {{ 'bottom-1/2' if loop.last else 'bottom-0' }}"></span>
-          <span class="absolute right-2 w-3 top-1/2 border-t border-secondary-text"></span>
+          <span class="absolute right-10 w-3 border-l border-secondary-text {{ 'top-1/2' if loop.first else 'top-0' }} {{ 'bottom-1/2' if loop.last else 'bottom-0' }}"></span>
+          <span class="absolute right-10 w-3 top-1/2 border-t border-secondary-text"></span>
           {% endif %}
-          <div class="flex items-center gap-2{% if not loop.first %} pl-4{% endif %}">
-            {% if loop.first %}
-            {% if show.url %}<a href="{{ show.url }}" target="_blank" rel="noopener" class="text-link">{{ show.title }}</a>{% else %}<span>{{ show.title }}</span>{% endif %}
-            {% if cat_labels[show.category] %}<span class="text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
-            {% if show.years_running %}<span class="text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
-            {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="text-2xs">▶</a>{% endif %}
+          <div class="flex items-center gap-2" style="width:var(--simul-title-w);">
+            <div class="flex items-center gap-2 flex-1 min-w-0{% if not loop.first %} pl-4{% endif %}{% if multi %} pr-6{% endif %}">
+              {% if loop.first %}
+              {% if show.url %}<a href="{{ show.url }}" target="_blank" rel="noopener" class="simul-title text-link truncate">{{ show.title }}</a>{% else %}<span class="simul-title truncate">{{ show.title }}</span>{% endif %}
+              {% if cat_labels[show.category] %}<span class="flex-shrink-0 text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
+              {% if show.years_running %}<span class="flex-shrink-0 text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
+              {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="flex-shrink-0 text-2xs">▶</a>{% endif %}
+              {% endif %}
+            </div>
+            {% if can_edit %}
+            <button type="button" class="simul-edit-btn flex-shrink-0 w-6 h-6 flex items-center justify-center rounded border border-border bg-secondary-bg text-secondary-text hover:text-primary-text cursor-pointer p-0" aria-label="Edit {{ show.title }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
             {% endif %}
           </div>
         </td>
@@ -177,6 +188,10 @@
         modal.classList.remove('hidden');
         document.getElementById('show-editor-title').focus();
     };
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.simul-edit-btn');
+        if (btn) window.openShowEditor(btn.closest('td'));
+    });
     bucket.addEventListener('change', syncYear);
     document.getElementById('show-editor-cancel').addEventListener('click', close);
     modal.addEventListener('mousedown', function(e) { if (e.target === modal) close(); });
@@ -186,4 +201,40 @@
 })();
 </script>
 {% endif %}
+<script>
+(function() {
+    var grid = document.getElementById('simul-grid');
+    var handle = document.getElementById('simul-title-resizer');
+    if (!grid || !handle) return;
+    var MIN = 120, MAX = 900;
+    var startX = 0, startW = 0, width = parseInt(grid.style.getPropertyValue('--simul-title-w'), 10);
+    function move(e) {
+        width = Math.max(MIN, Math.min(MAX, Math.round(startW + e.clientX - startX)));
+        grid.style.setProperty('--simul-title-w', width + 'px');
+    }
+    function up(e) {
+        handle.releasePointerCapture(e.pointerId);
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', up);
+        document.body.style.cursor = '';
+        if (width === startW) return;
+        var body = new URLSearchParams();
+        body.set('width', width);
+        fetch('{{ url_for('simul.set_title_width') }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': _csrf},
+            body: body.toString()
+        });
+    }
+    handle.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = width;
+        handle.setPointerCapture(e.pointerId);
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        document.body.style.cursor = 'col-resize';
+    });
+})();
+</script>
 {% endblock %}

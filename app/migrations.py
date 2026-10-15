@@ -300,6 +300,10 @@ def run_startup_migrations():
         # legend upserts by key; shows import only when simul_show is empty.
         _seed_simuls(db)
 
+        # 4a. One-off: apply the reviewed corrections from the live simuls sheet; removed once run in production.
+        from app.simul_sheet_fixes import apply_simul_sheet_fixes
+        apply_simul_sheet_fixes(db)
+
         # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
         # Idempotent: no-op once none remain.
         if {row[1] for row in db.session.execute(db.text("PRAGMA table_info('simul_status')"))}:
