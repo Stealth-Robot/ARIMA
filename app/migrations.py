@@ -291,9 +291,18 @@ def run_startup_migrations():
                         if dark_val:
                             setattr(pt, col, dark_val)
 
+        existing_ss_cols = {row[1] for row in db.session.execute(db.text("PRAGMA table_info('simul_show')"))}
+        if existing_ss_cols and 'url' not in existing_ss_cols:
+            db.session.execute(db.text('ALTER TABLE simul_show ADD COLUMN url TEXT'))
+            logger.info('Added missing simul_show column: url')
+
         # 4. Seed simuls (status legend + first-time xlsx import). Idempotent:
         # legend upserts by key; shows import only when simul_show is empty.
         _seed_simuls(db)
+
+        # 4a. One-off: wipe simuls and reimport the refreshed xlsx export; removed once run in production.
+        from app.simul_reseed import reseed_simuls
+        reseed_simuls(db)
 
         # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
         # Idempotent: no-op once none remain.
@@ -344,8 +353,8 @@ def _seed_simuls(database):
     imported = 0
     for s in data['shows']:
         show = SimulShow(title=s['title'], category=s['category'], bucket=s['bucket'],
-                         year=s['year'], youtube_url=s['youtube_url'],
-                         years_running=s['years_running'], sort_order=s['sort_order'],
+                         year=s['year'], youtube_url=s['youtube_url'], url=s.get('url'),
+                         notes=s.get('notes'), years_running=s['years_running'], sort_order=s['sort_order'],
                          created_at=now, last_updated=now)
         for st in s['statuses']:
             type_row = type_by_key.get(st['status_key'])

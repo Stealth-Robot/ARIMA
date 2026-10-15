@@ -62,9 +62,11 @@
     <tbody>
       {% for show in shows %}
       <tr class="{% if loop.index is even %}bg-row-alternate{% endif %}">
-        <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}">
+        <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}{% if show.notes %} has-note{% endif %}"
+            {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
+            {% if show.notes %}data-note="{{ show.notes }}" style="position:sticky;"{% endif %}>
           <div class="flex items-center gap-2">
-            <span>{{ show.title }}</span>
+            {% if show.url %}<a href="{{ show.url }}" target="_blank" rel="noopener" class="text-link">{{ show.title }}</a>{% else %}<span>{{ show.title }}</span>{% endif %}
             {% if cat_labels[show.category] %}<span class="text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
             {% if show.years_running %}<span class="text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
             {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="text-2xs">▶</a>{% endif %}
