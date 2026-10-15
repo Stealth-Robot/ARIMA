@@ -316,6 +316,19 @@ def run_startup_migrations():
         from app.simul_type_fill import fill_simul_types
         fill_simul_types(db)
 
+        # 4a''. Video links moved from a ▶ next to the title into the title note. No-op once moved.
+        if 'youtube_url' in existing_ss_cols:
+            rows = db.session.execute(db.text(
+                "SELECT id, youtube_url, notes FROM simul_show WHERE youtube_url IS NOT NULL AND youtube_url != ''")).all()
+            for show_id, video, notes in rows:
+                if video not in (notes or ''):
+                    notes = '\n'.join(filter(None, [notes, video]))
+                db.session.execute(db.text(
+                    "UPDATE simul_show SET notes = :notes, youtube_url = NULL WHERE id = :id"),
+                    {'notes': notes, 'id': show_id})
+            if rows:
+                logger.info('Moved %d simul video links into title notes', len(rows))
+
         # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
         # Idempotent: no-op once none remain.
         if {row[1] for row in db.session.execute(db.text("PRAGMA table_info('simul_status')"))}:
@@ -365,7 +378,7 @@ def _seed_simuls(database):
     imported = 0
     for s in data['shows']:
         show = SimulShow(title=s['title'], category=s['category'], upcoming=s.get('upcoming', False), bucket=s['bucket'],
-                         year=s['year'], youtube_url=s['youtube_url'], url=s.get('url'),
+                         year=s['year'], url=s.get('url'),
                          notes=s.get('notes'), years_running=s['years_running'], sort_order=s['sort_order'],
                          created_at=now, last_updated=now)
         for st in s['statuses']:

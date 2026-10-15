@@ -14,6 +14,7 @@ simul_bp = Blueprint('simul', __name__, url_prefix='/simuls')
 
 BUCKETS = ['planning', 'ongoing', 'paused', 'completed', 'dropped']
 CATEGORIES = ['tv', 'movie', 'uncategorized']
+UPCOMING_FILTERS = ('', 'only', 'exclude')  # '' = include upcoming
 
 
 def _participants():
@@ -56,10 +57,17 @@ def index():
         bucket = 'ongoing'
     years = _years()
     year = request.args.get('year', type=int)
-    upcoming_only = request.args.get('upcoming') == '1'
+    upcoming_filter = request.args.get('upcoming', '')
+    if upcoming_filter not in UPCOMING_FILTERS:
+        upcoming_filter = ''
+    type_filter = request.args.get('type', '')
+    if type_filter not in CATEGORIES:
+        type_filter = ''
     q = SimulShow.query.filter_by(bucket=bucket)
-    if upcoming_only:
-        q = q.filter_by(upcoming=True)
+    if upcoming_filter:
+        q = q.filter_by(upcoming=(upcoming_filter == 'only'))
+    if type_filter:
+        q = q.filter_by(category=type_filter)
     if bucket != 'planning':
         if year not in years:
             year = years[0] if years else None
@@ -71,7 +79,8 @@ def index():
     users = _participants()
     status_types = SimulStatusType.query.order_by(SimulStatusType.sort_order).all()
     return render_template(
-        'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years, upcoming_only=upcoming_only,
+        'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years,
+        upcoming_filter=upcoming_filter, type_filter=type_filter,
         shows=shows, blocks=_merge_blocks(shows), users=users, status_map=_status_map(shows),
         status_types=status_types, categories=CATEGORIES,
         can_edit=current_user.is_editor_or_admin, title_width=_title_width())
@@ -171,6 +180,7 @@ def add_show():
         now = datetime.now(timezone.utc).isoformat()
         max_sort = db.session.query(db.func.max(SimulShow.sort_order)).scalar() or 0
         db.session.add(SimulShow(title=title, category=category, bucket=bucket, year=year,
+                                 upcoming=request.form.get('upcoming') == '1',
                                  sort_order=max_sort + 1, created_at=now, last_updated=now))
         db.session.commit()
     return redirect(url_for('simul.index', bucket=bucket, year=year))

@@ -71,7 +71,7 @@ def comment_of(cell):
 
 
 def status_for(cell, planning):
-    """Return (status_key, note, youtube_url) for one participant cell, or None when blank."""
+    """Return (status_key, note, video_url) for one participant cell, or None when blank."""
     fill = fill_of(cell)
     value = text(cell.value)
     note_parts = []
@@ -147,7 +147,6 @@ def convert(xlsx_path):
                 'upcoming': planning and title_fill in UPCOMING_FILLS,
                 'bucket': 'paused' if bucket == 'ongoing' and title_fill == PAUSED_TITLE_FILL else bucket,
                 'year': year,
-                'youtube_url': None,
                 'url': text(row[0].hyperlink.target) if row[0].hyperlink else None,
                 'notes': comment_of(row[0]),
                 'years_running': None if planning else text(row[extra_col - 1].value) if len(row) >= extra_col else None,
@@ -166,7 +165,7 @@ def convert(xlsx_path):
                     continue
                 key, note, youtube = result
                 if youtube:
-                    show['youtube_url'] = youtube
+                    show['notes'] = '\n'.join(filter(None, [show['notes'], youtube]))  # video links live in the title note
                 if key is None:
                     continue
                 if name in HISTORICAL_MEMBERS:
@@ -192,7 +191,7 @@ def convert(xlsx_path):
             for statuses in colour_groups:
                 shows.append({
                     'title': title, 'category': show['category'], 'upcoming': show['upcoming'], 'bucket': show['bucket'], 'year': year,
-                    'youtube_url': None, 'url': show['url'], 'notes': None, 'years_running': None,
+                    'url': show['url'], 'notes': None, 'years_running': None,
                     'sort_order': len(shows) + 1, 'statuses': statuses,
                 })
     # The sheet only types planning titles; looked-up types (scripts/simul_fill_types.py) fill the rest.

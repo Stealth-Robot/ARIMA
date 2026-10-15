@@ -3,7 +3,8 @@
 {# Pill colours follow the sheet's own legend (TV lavender, movie peach, upcoming green). #}
 {% set cat_colors = {'tv': '#D9D2E9', 'movie': '#FCE5CD', 'uncategorized': '#D1D5DB'} %}
 {% set upcoming_color = '#B6D7A8' %}
-{% set up_arg = '1' if upcoming_only else None %}
+{# Active filters ride along on tab and year links. #}
+{% set fargs = {'upcoming': upcoming_filter or None, 'type': type_filter or None} %}
 
 {% set page_label = bucket|capitalize ~ ((' ' ~ year) if year else '') %}
 {% block og_title %}Lettuce Simuls - {{ page_label }}{% endblock %}
@@ -16,19 +17,31 @@
 <div class="flex flex-wrap items-center gap-2">
   <h1 class="text-base- font-bold mr-2">🥬 Lettuce Simuls</h1>
   {% for b in buckets %}
-  <a href="{{ url_for('simul.index', bucket=b, year=(None if b == 'planning' else year), upcoming=up_arg) }}"
+  <a href="{{ url_for('simul.index', bucket=b, year=(None if b == 'planning' else year), **fargs) }}"
      class="text-sm- py-1 px-3 rounded no-underline {% if b == bucket %}bg-edit-on text-button-text{% else %}bg-secondary-bg text-primary-text border border-border{% endif %}">
     {{ b|capitalize }}
   </a>
   {% endfor %}
-  <a href="{{ url_for('simul.index', bucket=bucket, year=year, upcoming=(None if upcoming_only else '1')) }}"
-     class="text-sm- py-1 px-3 rounded no-underline ml-2 flex items-center gap-2 {% if upcoming_only %}bg-edit-on text-button-text{% else %}bg-secondary-bg text-primary-text border border-border{% endif %}"
-     aria-pressed="{{ 'true' if upcoming_only else 'false' }}">
-    <span class="inline-block rounded-full" style="width:0.625rem;height:0.625rem;background-color:{{ upcoming_color }};"></span>Upcoming only
-  </a>
+  <form method="get" action="{{ url_for('simul.index') }}" class="flex items-center gap-2 m-0 ml-2">
+    <input type="hidden" name="bucket" value="{{ bucket }}">
+    {% if year %}<input type="hidden" name="year" value="{{ year }}">{% endif %}
+    <label class="sr-only" for="simul-type-filter">Type</label>
+    <select id="simul-type-filter" name="type" onchange="this.form.submit()"
+            class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
+      <option value="" {% if not type_filter %}selected{% endif %}>All types</option>
+      {% for c in categories %}<option value="{{ c }}" {% if type_filter == c %}selected{% endif %}>{{ cat_labels[c] }}</option>{% endfor %}
+    </select>
+    <label class="sr-only" for="simul-upcoming-filter">Upcoming</label>
+    <select id="simul-upcoming-filter" name="upcoming" onchange="this.form.submit()"
+            class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
+      <option value="" {% if not upcoming_filter %}selected{% endif %}>Include upcoming</option>
+      <option value="only" {% if upcoming_filter == 'only' %}selected{% endif %}>Only upcoming</option>
+      <option value="exclude" {% if upcoming_filter == 'exclude' %}selected{% endif %}>Exclude upcoming</option>
+    </select>
+  </form>
   {% if bucket != 'planning' and years %}
   <span class="flex-1"></span>
-  <select onchange="window.location = '{{ url_for('simul.index', bucket=bucket, upcoming=up_arg) }}&year=' + this.value"
+  <select onchange="window.location = '{{ url_for('simul.index', bucket=bucket, **fargs) }}{{ '&' if fargs.upcoming or fargs.type else '?' }}year=' + this.value"
           class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
     {% for y in years %}
     <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
@@ -55,6 +68,9 @@
     {% for c in categories %}<option value="{{ c }}">{{ cat_labels[c] or 'Uncategorized' }}</option>{% endfor %}
   </select>
   <input type="hidden" name="bucket" value="{{ bucket }}">
+  <label class="text-sm- text-secondary-text flex items-center gap-1 cursor-pointer">
+    <input type="checkbox" name="upcoming" value="1"> Upcoming
+  </label>
   {% if bucket != 'planning' %}
   <label class="text-sm- text-secondary-text flex items-center gap-1">Year
     <input type="number" name="year" value="{{ year }}" min="2000" max="2100" required
@@ -112,7 +128,6 @@
               <span class="flex-shrink-0 text-2xs font-semibold rounded px-1" style="background-color:{{ cat_colors.get(show.category, cat_colors['uncategorized']) }};color:#1A1A2E;">{{ cat_labels.get(show.category, 'Uncategorized') }}</span>
               {% if show.upcoming %}<span class="flex-shrink-0 text-2xs font-semibold rounded px-1" style="background-color:{{ upcoming_color }};color:#1A1A2E;">Upcoming</span>{% endif %}
               {% if show.years_running %}<span class="flex-shrink-0 text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
-              {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="flex-shrink-0 text-2xs">▶</a>{% endif %}
               {% endif %}
             </div>
           </div>

@@ -24,7 +24,6 @@ class SimulShow(db.Model):
     # 'planning' | 'ongoing' | 'paused' | 'completed' | 'dropped'
     bucket = db.Column(db.Text, nullable=False, default='planning')
     year = db.Column(db.Integer)  # NULL for planning
-    youtube_url = db.Column(db.Text)
     url = db.Column(db.Text)
     years_running = db.Column(db.Text)
     notes = db.Column(db.Text)
