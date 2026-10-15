@@ -136,6 +136,8 @@ def convert(xlsx_path):
                 'sort_order': len(shows) + 1,
                 'statuses': [],
             }
+            # Watch tabs colour each separate watch differently; red is the main one.
+            groups = {'main': show['statuses']}
             for cell in row[1:]:
                 name = members.get(cell.column)
                 if not name:
@@ -148,14 +150,28 @@ def convert(xlsx_path):
                     show['youtube_url'] = youtube
                 if key is None:
                     continue
+                group = 'main'
+                fill = fill_of(cell)
+                if not planning and key == 'other' and fill not in NO_STATUS_FILLS:
+                    group, key = fill, 'watched'
                 historical = name in HISTORICAL_MEMBERS
-                show['statuses'].append({
+                groups.setdefault(group, []).append({
                     'user': None if historical else name,
                     'member_name': name if historical else None,
                     'status_key': key,
                     'note': note,
                 })
+            colour_groups = [g for k, g in groups.items() if k != 'main']
+            if colour_groups and not show['statuses']:
+                # No red watch on this row: the first colour becomes its main row.
+                show['statuses'] = colour_groups.pop(0)
             shows.append(show)
+            for statuses in colour_groups:
+                shows.append({
+                    'title': title, 'category': show['category'], 'bucket': bucket, 'year': year,
+                    'youtube_url': None, 'url': show['url'], 'notes': None, 'years_running': None,
+                    'sort_order': len(shows) + 1, 'statuses': statuses,
+                })
     return {'status_types': STATUS_TYPES, 'shows': shows}
 
 

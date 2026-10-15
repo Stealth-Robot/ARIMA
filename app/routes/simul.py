@@ -38,6 +38,15 @@ def _status_map(shows):
     return out
 
 
+def _merge_blocks(shows):
+    """Group same-titled shows on one page into one block (one row per separate watch),
+    placed where the first of them sorts."""
+    blocks = {}
+    for s in shows:
+        blocks.setdefault(s.title.strip().casefold(), []).append(s)
+    return list(blocks.values())
+
+
 @simul_bp.route('/')
 @login_required
 def index():
@@ -54,12 +63,12 @@ def index():
             q = q.filter_by(year=year)
     else:
         year = None
-    shows = q.order_by(SimulShow.sort_order).all()
+    shows = q.order_by(SimulShow.sort_order, SimulShow.id).all()
     users = _participants()
     status_types = SimulStatusType.query.order_by(SimulStatusType.sort_order).all()
     return render_template(
         'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years,
-        shows=shows, users=users, status_map=_status_map(shows),
+        shows=shows, blocks=_merge_blocks(shows), users=users, status_map=_status_map(shows),
         status_types=status_types, categories=CATEGORIES,
         can_edit=current_user.is_editor_or_admin)
 

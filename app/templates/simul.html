@@ -60,16 +60,26 @@
       </tr>
     </thead>
     <tbody>
-      {% for show in shows %}
-      <tr class="{% if loop.index is even %}bg-row-alternate{% endif %}">
-        <td class="sticky left-0 z-10 border border-border px-2 py-1 {% if loop.index is even %}bg-row-alternate{% else %}bg-primary-bg{% endif %}{% if show.notes %} has-note{% endif %}"
+      {% for block in blocks %}
+      {% set block_loop = loop %}
+      {% set multi = block|length > 1 %}
+      {% for show in block %}
+      {# Same-titled shows on a page are separate watches: one title, a sub-row per watch. #}
+      <tr {% if loop.first and not block_loop.first %}style="border-top:2px solid var(--text-secondary);"{% endif %}>
+        <td class="sticky left-0 z-10 border border-border pl-2 pr-8 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
             {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
             {% if show.notes %}data-note="{{ show.notes }}" style="position:sticky;"{% endif %}>
-          <div class="flex items-center gap-2">
+          {% if multi %}
+          <span class="absolute right-2 w-3 border-l border-secondary-text {{ 'top-1/2' if loop.first else 'top-0' }} {{ 'bottom-1/2' if loop.last else 'bottom-0' }}"></span>
+          <span class="absolute right-2 w-3 top-1/2 border-t border-secondary-text"></span>
+          {% endif %}
+          <div class="flex items-center gap-2{% if not loop.first %} pl-4{% endif %}">
+            {% if loop.first %}
             {% if show.url %}<a href="{{ show.url }}" target="_blank" rel="noopener" class="text-link">{{ show.title }}</a>{% else %}<span>{{ show.title }}</span>{% endif %}
             {% if cat_labels[show.category] %}<span class="text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
             {% if show.years_running %}<span class="text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
             {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="text-2xs">▶</a>{% endif %}
+            {% endif %}
             {% if can_edit %}
             <form method="post" action="{{ url_for('simul.delete_show', show_id=show.id) }}" class="m-0 inline" onsubmit="return confirm('Delete this title?');">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -86,6 +96,7 @@
           {% include 'fragments/simul_cell.html' %}
         {% endfor %}
       </tr>
+      {% endfor %}
       {% endfor %}
     </tbody>
   </table>

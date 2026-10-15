@@ -4,8 +4,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Stamped on every reseeded show's created_at so the wipe runs exactly once.
-RESEED_STAMP = '2026-10-15T00:00:00+00:00'
+# Stamped on every reseeded show's created_at so the wipe runs exactly once; bumped to rerun it.
+RESEED_STAMP = '2026-10-15T12:00:00+00:00'
 
 
 def reseed_simuls(database):
