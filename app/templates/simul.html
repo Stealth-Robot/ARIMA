@@ -1,6 +1,10 @@
 {% extends "simul_base.html" %}
 {% set cat_labels = {'tv': 'TV', 'movie': 'Movie', 'upcoming_seasonal': 'Upcoming', 'upcoming_movie': 'Upcoming Movie', 'uncategorized': ''} %}
 
+{% set page_label = bucket|capitalize ~ ((' ' ~ year) if year else '') %}
+{% block og_title %}Lettuce Simuls - {{ page_label }}{% endblock %}
+{% block og_description %}{{ page_label }}: {{ blocks|length }} title{{ '' if blocks|length == 1 else 's' }}{% endblock %}
+
 {% block content %}
 {# Sized to the table so the controls line up with it; the controls stay pinned under the navbar. #}
 <div class="w-max max-w-full mx-auto">

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Lettuce Simuls{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Group simulwatch tracker{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Lettuce Simuls{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/tab_image.jpg', _external=True) }}">
+    <meta property="og:description" content="{% block og_description %}Group simulwatch tracker{% endblock %}">
+    <meta property="og:site_name" content="A.R.I.M.A.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/tab_image.jpg') }}">
     <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
     <script src="{{ url_for('static', filename='vendor/htmx.min.js') }}" defer></script>
