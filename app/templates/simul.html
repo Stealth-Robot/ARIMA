@@ -1,5 +1,9 @@
 {% extends "simul_base.html" %}
-{% set cat_labels = {'tv': 'TV', 'movie': 'Movie', 'upcoming_seasonal': 'Upcoming', 'upcoming_movie': 'Upcoming Movie', 'uncategorized': ''} %}
+{% set cat_labels = {'tv': 'TV', 'movie': 'Movie', 'uncategorized': 'Uncategorized'} %}
+{# Pill colours follow the sheet's own legend (TV lavender, movie peach, upcoming green). #}
+{% set cat_colors = {'tv': '#D9D2E9', 'movie': '#FCE5CD', 'uncategorized': '#D1D5DB'} %}
+{% set upcoming_color = '#B6D7A8' %}
+{% set up_arg = '1' if upcoming_only else None %}
 
 {% set page_label = bucket|capitalize ~ ((' ' ~ year) if year else '') %}
 {% block og_title %}Lettuce Simuls - {{ page_label }}{% endblock %}
@@ -12,14 +16,19 @@
 <div class="flex flex-wrap items-center gap-2">
   <h1 class="text-base- font-bold mr-2">🥬 Lettuce Simuls</h1>
   {% for b in buckets %}
-  <a href="{{ url_for('simul.index', bucket=b, year=(None if b == 'planning' else year)) }}"
+  <a href="{{ url_for('simul.index', bucket=b, year=(None if b == 'planning' else year), upcoming=up_arg) }}"
      class="text-sm- py-1 px-3 rounded no-underline {% if b == bucket %}bg-edit-on text-button-text{% else %}bg-secondary-bg text-primary-text border border-border{% endif %}">
     {{ b|capitalize }}
   </a>
   {% endfor %}
+  <a href="{{ url_for('simul.index', bucket=bucket, year=year, upcoming=(None if upcoming_only else '1')) }}"
+     class="text-sm- py-1 px-3 rounded no-underline ml-2 flex items-center gap-2 {% if upcoming_only %}bg-edit-on text-button-text{% else %}bg-secondary-bg text-primary-text border border-border{% endif %}"
+     aria-pressed="{{ 'true' if upcoming_only else 'false' }}">
+    <span class="inline-block rounded-full" style="width:0.625rem;height:0.625rem;background-color:{{ upcoming_color }};"></span>Upcoming only
+  </a>
   {% if bucket != 'planning' and years %}
   <span class="flex-1"></span>
-  <select onchange="window.location = '{{ url_for('simul.index', bucket=bucket) }}&year=' + this.value"
+  <select onchange="window.location = '{{ url_for('simul.index', bucket=bucket, upcoming=up_arg) }}&year=' + this.value"
           class="text-sm- py-1 px-2 rounded border border-border bg-secondary-bg text-primary-text">
     {% for y in years %}
     <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
@@ -79,11 +88,12 @@
       {% set multi = block|length > 1 %}
       {% for show in block %}
       {# Same-titled shows on a page are separate watches: one title, a sub-row per watch. #}
-      <tr {% if loop.first and not block_loop.first %}style="border-top:4px solid var(--border);"{% endif %}>
+      {% set alt = block_loop.index is even %}
+      <tr class="{{ 'bg-row-alternate' if alt else '' }}" {% if loop.first and not block_loop.first %}style="border-top:4px solid var(--border);"{% endif %}>
         {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
-        <td class="sticky left-0 z-10 border border-border px-2 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
+        <td class="sticky left-0 z-10 border border-border px-2 py-1 align-top {{ 'bg-row-alternate' if alt else 'bg-primary-bg' }}{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
             data-title-show="{{ show.id }}" data-editable="{{ '1' if can_edit else '' }}"
-            data-title="{{ show.title }}" data-url="{{ show.url or '' }}" data-bucket="{{ show.bucket }}" data-year="{{ show.year or '' }}"
+            data-title="{{ show.title }}" data-url="{{ show.url or '' }}" data-category="{{ show.category }}" data-upcoming="{{ '1' if show.upcoming else '' }}" data-bucket="{{ show.bucket }}" data-year="{{ show.year or '' }}"
             {% if show.notes %}data-note="{{ show.notes }}"{% endif %} style="position:sticky;">
           {% if multi %}
           <span class="absolute right-3 w-3 border-l border-secondary-text {{ 'top-1/2' if loop.first else 'top-0' }} {{ 'bottom-1/2' if loop.last else 'bottom-0' }}"></span>
@@ -99,7 +109,8 @@
             <div class="flex items-center gap-2 flex-1 min-w-0{% if not loop.first %} pl-4{% endif %}{% if multi %} pr-6{% endif %}">
               {% if loop.first %}
               {% if show.url %}<a href="{{ show.url }}" target="_blank" rel="noopener" class="simul-title text-link truncate">{{ show.title }}</a>{% else %}<span class="simul-title truncate">{{ show.title }}</span>{% endif %}
-              {% if cat_labels[show.category] %}<span class="flex-shrink-0 text-2xs text-secondary-text border border-border rounded px-1">{{ cat_labels[show.category] }}</span>{% endif %}
+              <span class="flex-shrink-0 text-2xs font-semibold rounded px-1" style="background-color:{{ cat_colors.get(show.category, cat_colors['uncategorized']) }};color:#1A1A2E;">{{ cat_labels.get(show.category, 'Uncategorized') }}</span>
+              {% if show.upcoming %}<span class="flex-shrink-0 text-2xs font-semibold rounded px-1" style="background-color:{{ upcoming_color }};color:#1A1A2E;">Upcoming</span>{% endif %}
               {% if show.years_running %}<span class="flex-shrink-0 text-2xs text-secondary-text">({{ show.years_running }})</span>{% endif %}
               {% if show.youtube_url %}<a href="{{ show.youtube_url }}" target="_blank" rel="noopener" class="flex-shrink-0 text-2xs">▶</a>{% endif %}
               {% endif %}
@@ -142,6 +153,12 @@
                 class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text"></textarea>
     </label>
     <div class="flex gap-3">
+      <label class="flex flex-col gap-1 text-sm- text-secondary-text flex-1">Type
+        <select id="show-editor-category" name="category"
+                class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
+          {% for c in categories %}<option value="{{ c }}">{{ cat_labels[c] or 'Uncategorized' }}</option>{% endfor %}
+        </select>
+      </label>
       <label class="flex flex-col gap-1 text-sm- text-secondary-text flex-1">Status
         <select id="show-editor-bucket" name="bucket"
                 class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
@@ -153,6 +170,10 @@
                class="text-sm- py-1 px-2 rounded border border-border bg-primary-bg text-primary-text">
       </label>
     </div>
+    <label class="flex items-center gap-2 text-sm- text-primary-text cursor-pointer">
+      <input id="show-editor-upcoming" type="checkbox" name="upcoming" value="1">
+      Upcoming
+    </label>
     <div class="flex items-center gap-2">
       <button type="submit" form="show-editor-delete" class="text-sm- py-1 px-3 rounded border-0 cursor-pointer bg-delete text-button-text">Delete</button>
       <span class="flex-1"></span>
@@ -195,6 +216,8 @@
         document.getElementById('show-editor-url').value = td.getAttribute('data-url');
         document.getElementById('show-editor-note').value = td.getAttribute('data-note') || '';
         bucket.value = td.getAttribute('data-bucket');
+        document.getElementById('show-editor-category').value = td.getAttribute('data-category');
+        document.getElementById('show-editor-upcoming').checked = td.getAttribute('data-upcoming') === '1';
         year.value = td.getAttribute('data-year') || '{{ year or (years[0] if years else '') }}';
         syncYear();
         modal.classList.remove('hidden');

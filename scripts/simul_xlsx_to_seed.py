@@ -12,6 +12,7 @@ import sys
 import openpyxl
 
 SEED_PATH = os.path.join(os.path.dirname(__file__), '..', 'app', 'data', 'simul_seed.json')
+TYPES_PATH = os.path.join(os.path.dirname(__file__), '..', 'app', 'data', 'simul_types.json')
 
 STATUS_TYPES = [
     {'key': 'watched', 'label': 'Watched', 'color_hex': '#4a7c59', 'applies_to': 'watch', 'sort_order': 1},
@@ -24,9 +25,10 @@ STATUS_TYPES = [
 CATEGORY_BY_FILL = {
     'FFD9D2E9': 'tv',
     'FFFCE5CD': 'movie',
-    'FFB6D7A8': 'upcoming_seasonal',
-    'theme9': 'upcoming_movie',
+    'FFB6D7A8': 'tv',  # "upcoming seasonal"
+    'theme9': 'movie',  # "upcoming movie"
 }
+UPCOMING_FILLS = {'FFB6D7A8', 'theme9'}
 # Watch sheets reuse only the TV/movie fills; other title highlights there carry no category.
 WATCH_CATEGORY_BY_FILL = {'FFD9D2E9': 'tv', 'FFFCE5CD': 'movie'}
 NO_STATUS_FILLS = {None, 'FFFFFFFF'}
@@ -142,6 +144,7 @@ def convert(xlsx_path):
                 'title': title,
                 'category': (CATEGORY_BY_FILL if planning else WATCH_CATEGORY_BY_FILL).get(
                     title_fill, 'uncategorized'),
+                'upcoming': planning and title_fill in UPCOMING_FILLS,
                 'bucket': 'paused' if bucket == 'ongoing' and title_fill == PAUSED_TITLE_FILL else bucket,
                 'year': year,
                 'youtube_url': None,
@@ -188,10 +191,17 @@ def convert(xlsx_path):
             shows.append(show)
             for statuses in colour_groups:
                 shows.append({
-                    'title': title, 'category': show['category'], 'bucket': show['bucket'], 'year': year,
+                    'title': title, 'category': show['category'], 'upcoming': show['upcoming'], 'bucket': show['bucket'], 'year': year,
                     'youtube_url': None, 'url': show['url'], 'notes': None, 'years_running': None,
                     'sort_order': len(shows) + 1, 'statuses': statuses,
                 })
+    # The sheet only types planning titles; looked-up types (scripts/simul_fill_types.py) fill the rest.
+    if os.path.exists(TYPES_PATH):
+        types = json.load(open(TYPES_PATH, encoding='utf-8'))
+        for s in shows:
+            if s['category'] == 'uncategorized':
+                s['category'] = (types['by_url'].get(s['url']) if s['url'] else types['by_title'].get(s['title'])) \
+                    or 'uncategorized'
     return {'status_types': STATUS_TYPES, 'shows': shows}
 
 

@@ -295,14 +295,26 @@ def run_startup_migrations():
         if existing_ss_cols and 'url' not in existing_ss_cols:
             db.session.execute(db.text('ALTER TABLE simul_show ADD COLUMN url TEXT'))
             logger.info('Added missing simul_show column: url')
+        if existing_ss_cols and 'upcoming' not in existing_ss_cols:
+            db.session.execute(db.text('ALTER TABLE simul_show ADD COLUMN upcoming INTEGER NOT NULL DEFAULT 0'))
+            logger.info('Added missing simul_show column: upcoming')
 
         # 4. Seed simuls (status legend + first-time xlsx import). Idempotent:
         # legend upserts by key; shows import only when simul_show is empty.
         _seed_simuls(db)
 
-        # 4a. One-off: apply the reviewed corrections from the live simuls sheet; removed once run in production.
-        from app.simul_sheet_fixes import apply_simul_sheet_fixes
-        apply_simul_sheet_fixes(db)
+        # 4a. "Upcoming" is a flag now, not a type: fold the upcoming types into TV/Movie with the flag set.
+        # No-op once none remain.
+        for old, new in (('upcoming_seasonal', 'tv'), ('upcoming_movie', 'movie')):
+            n = db.session.execute(db.text(
+                "UPDATE simul_show SET category = :new, upcoming = 1 WHERE category = :old"),
+                {'new': new, 'old': old}).rowcount
+            if n:
+                logger.info('Moved %d %s simul shows to %s + upcoming', n, old, new)
+
+        # 4a'. One-off: fill in TV/movie for titles the sheet left uncategorized; removed once run in production.
+        from app.simul_type_fill import fill_simul_types
+        fill_simul_types(db)
 
         # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
         # Idempotent: no-op once none remain.
@@ -352,7 +364,7 @@ def _seed_simuls(database):
     now = datetime.now(timezone.utc).isoformat()
     imported = 0
     for s in data['shows']:
-        show = SimulShow(title=s['title'], category=s['category'], bucket=s['bucket'],
+        show = SimulShow(title=s['title'], category=s['category'], upcoming=s.get('upcoming', False), bucket=s['bucket'],
                          year=s['year'], youtube_url=s['youtube_url'], url=s.get('url'),
                          notes=s.get('notes'), years_running=s['years_running'], sort_order=s['sort_order'],
                          created_at=now, last_updated=now)

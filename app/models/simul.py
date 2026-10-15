@@ -18,8 +18,9 @@ class SimulShow(db.Model):
     __tablename__ = 'simul_show'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, nullable=False)
-    # 'tv' | 'movie' | 'upcoming_seasonal' | 'upcoming_movie' | 'uncategorized'
+    # 'tv' | 'movie' | 'uncategorized'
     category = db.Column(db.Text, nullable=False, default='uncategorized')
+    upcoming = db.Column(db.Boolean, nullable=False, default=False, server_default='0')
     # 'planning' | 'ongoing' | 'paused' | 'completed' | 'dropped'
     bucket = db.Column(db.Text, nullable=False, default='planning')
     year = db.Column(db.Integer)  # NULL for planning

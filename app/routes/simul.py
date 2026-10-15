@@ -13,7 +13,7 @@ from app.decorators import role_required, USER_OR_ABOVE, EDITOR_OR_ADMIN
 simul_bp = Blueprint('simul', __name__, url_prefix='/simuls')
 
 BUCKETS = ['planning', 'ongoing', 'paused', 'completed', 'dropped']
-CATEGORIES = ['tv', 'movie', 'upcoming_seasonal', 'upcoming_movie', 'uncategorized']
+CATEGORIES = ['tv', 'movie', 'uncategorized']
 
 
 def _participants():
@@ -56,7 +56,10 @@ def index():
         bucket = 'ongoing'
     years = _years()
     year = request.args.get('year', type=int)
+    upcoming_only = request.args.get('upcoming') == '1'
     q = SimulShow.query.filter_by(bucket=bucket)
+    if upcoming_only:
+        q = q.filter_by(upcoming=True)
     if bucket != 'planning':
         if year not in years:
             year = years[0] if years else None
@@ -68,7 +71,7 @@ def index():
     users = _participants()
     status_types = SimulStatusType.query.order_by(SimulStatusType.sort_order).all()
     return render_template(
-        'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years,
+        'simul.html', bucket=bucket, buckets=BUCKETS, year=year, years=years, upcoming_only=upcoming_only,
         shows=shows, blocks=_merge_blocks(shows), users=users, status_map=_status_map(shows),
         status_types=status_types, categories=CATEGORIES,
         can_edit=current_user.is_editor_or_admin, title_width=_title_width())
@@ -202,6 +205,10 @@ def edit_show(show_id):
         url = 'https://' + url
     show.url = url or None
     show.notes = (request.form.get('note') or '').strip() or None
+    category = request.form.get('category')
+    if category in CATEGORIES:
+        show.category = category
+    show.upcoming = request.form.get('upcoming') == '1'
     bucket = request.form.get('bucket')
     if bucket in BUCKETS:
         show.bucket = bucket

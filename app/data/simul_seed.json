@@ -33,6 +33,7 @@
   {
    "title": "The Lovely Bones",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -69,7 +70,8 @@
   },
   {
    "title": "The Scurry",
-   "category": "upcoming_movie",
+   "category": "movie",
+   "upcoming": true,
    "bucket": "planning",
    "year": null,
    "youtube_url": "https://www.youtube.com/watch?v=5WzswZXTMZQ",
@@ -113,6 +115,7 @@
   {
    "title": "Chernobyl",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -162,6 +165,7 @@
   {
    "title": "becky",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -199,6 +203,7 @@
   {
    "title": "It Follows",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -236,6 +241,7 @@
   {
    "title": "Mulholland Drive",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -279,6 +285,7 @@
   {
    "title": "Urban Legend",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -316,6 +323,7 @@
   {
    "title": "I Know What You Did Last Summer (1997)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -365,6 +373,7 @@
   {
    "title": "The Thing (1982)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -408,6 +417,7 @@
   {
    "title": "Happy Death Day (2017)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -445,6 +455,7 @@
   {
    "title": "Malignant (2021)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -482,6 +493,7 @@
   {
    "title": "Freaky (2020)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -519,6 +531,7 @@
   {
    "title": "Gunpowder Milkshake",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -562,6 +575,7 @@
   {
    "title": "The Vampire Lovers (1970)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -599,6 +613,7 @@
   {
    "title": "Eat Drink Man Woman",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -636,6 +651,7 @@
   {
    "title": "Rosemary's Baby",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -673,6 +689,7 @@
   {
    "title": "She-Ra and the Princesses of Power",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -716,6 +733,7 @@
   {
    "title": "Do Revenge (2022)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -753,6 +771,7 @@
   {
    "title": "Love Lies Bleeding",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -790,6 +809,7 @@
   {
    "title": "My Babysitter's a Vampire",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -839,6 +859,7 @@
   {
    "title": "My Babysitter's a Vampire",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -888,6 +909,7 @@
   {
    "title": "The Princess Bride (1987)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -931,6 +953,7 @@
   {
    "title": "Harry Potter",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -974,6 +997,7 @@
   {
    "title": "Studio 666",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1005,6 +1029,7 @@
   {
    "title": "Adventure Time",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1048,6 +1073,7 @@
   {
    "title": "The Fallout",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1079,6 +1105,7 @@
   {
    "title": "Wild Child",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1104,6 +1131,7 @@
   {
    "title": "World End Harem",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1141,6 +1169,7 @@
   {
    "title": "25-Year-Old High School Girl, I Wouldn't Do This with a Kid",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1178,6 +1207,7 @@
   {
    "title": "Backwasher! -Her and I, in the Women's Bath!?-",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1215,6 +1245,7 @@
   {
    "title": "Angels in the Court",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1252,6 +1283,7 @@
   {
    "title": "Body Transfer",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1289,6 +1321,7 @@
   {
    "title": "Chilling Adventures of Sabrina",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1332,6 +1365,7 @@
   {
    "title": "Shameless",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1369,6 +1403,7 @@
   {
    "title": "It's What's Inside",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1406,6 +1441,7 @@
   {
    "title": "Columbiana",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1443,6 +1479,7 @@
   {
    "title": "The Net",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1480,6 +1517,7 @@
   {
    "title": "Saw Series",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1517,6 +1555,7 @@
   {
    "title": "Halloween Series",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1554,6 +1593,7 @@
   {
    "title": "Friday 13 Series",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1591,6 +1631,7 @@
   {
    "title": "Nightmare on Elm Street Series",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1628,6 +1669,7 @@
   {
    "title": "Chucky Series",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1665,6 +1707,7 @@
   {
    "title": "Shonen Maid",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1690,6 +1733,7 @@
   {
    "title": "Mobile Suit Gundam: The Witch from Mercury",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1727,6 +1771,7 @@
   {
    "title": "CITY THE ANIMATION",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1764,6 +1809,7 @@
   {
    "title": "Red Velvet Happiness Diary : My Dear, ReVe1uv in Cinemas",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1807,6 +1853,7 @@
   {
    "title": "Saving Face",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1844,6 +1891,7 @@
   {
    "title": "Bound",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1875,6 +1923,7 @@
   {
    "title": "2 Girls",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1912,6 +1961,7 @@
   {
    "title": "Helter Skelter",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1943,6 +1993,7 @@
   {
    "title": "Antiporno",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -1974,6 +2025,7 @@
   {
    "title": "A Tale of Two Sisters",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2005,6 +2057,7 @@
   {
    "title": "Meijou 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2036,6 +2089,7 @@
   {
    "title": "Egao no Taenai Shokuba desu.",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2067,6 +2121,7 @@
   {
    "title": "May I Ask for One Final Thing?",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2098,6 +2153,7 @@
   {
    "title": "Pass the Monster Meat, Milady!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2129,6 +2185,7 @@
   {
    "title": "Attack on Titan",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2154,6 +2211,7 @@
   {
    "title": "Steins;Gate",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2196,7 +2254,8 @@
   },
   {
    "title": "Gacha Girls Corps",
-   "category": "upcoming_seasonal",
+   "category": "tv",
+   "upcoming": true,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2228,6 +2287,7 @@
   {
    "title": "Fullmetal Alchemist: Brotherhood",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2277,6 +2337,7 @@
   {
    "title": "To LOVE-Ru",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2308,6 +2369,7 @@
   {
    "title": "War of the Worlds (2025)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2339,6 +2401,7 @@
   {
    "title": "Tomodachi Game",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2370,6 +2433,7 @@
   {
    "title": "Made in Abyss",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2407,6 +2471,7 @@
   {
    "title": "The Dangers in My Heart",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2438,6 +2503,7 @@
   {
    "title": "Narnia",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2504,7 +2570,8 @@
   },
   {
    "title": "Cosmic Princess Kaguya!",
-   "category": "upcoming_seasonal",
+   "category": "tv",
+   "upcoming": true,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2547,7 +2614,8 @@
   },
   {
    "title": "You Can't Be In a Rom-Com with Your Childhood Friends!",
-   "category": "upcoming_seasonal",
+   "category": "tv",
+   "upcoming": true,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2579,6 +2647,7 @@
   {
    "title": "X (2022)",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2616,6 +2685,7 @@
   {
    "title": "Creep",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2641,6 +2711,7 @@
   {
    "title": "Smile",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2666,6 +2737,7 @@
   {
    "title": "Everything for Demon King Evelogia",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2685,6 +2757,7 @@
   {
    "title": "Children of the Corn",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2716,6 +2789,7 @@
   {
    "title": "Ansatsu Kyoushitsu",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2753,6 +2827,7 @@
   {
    "title": "PSYCHO-PASS",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2790,6 +2865,7 @@
   {
    "title": "Scott Pilgrim Takes Off",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2827,6 +2903,7 @@
   {
    "title": "Ya Boy Kongming!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2864,6 +2941,7 @@
   {
    "title": "Lapis Re:LiGHTs",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2901,6 +2979,7 @@
   {
    "title": "Cyberpunk: Edgerunners",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2938,6 +3017,7 @@
   {
    "title": "Comic Girls",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -2975,6 +3055,7 @@
   {
    "title": "Backwasher! -Her and I, in the Women's Bath!?-",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3006,6 +3087,7 @@
   {
    "title": "BLUE LOCK Season 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3043,6 +3125,7 @@
   {
    "title": "Canaan",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3080,6 +3163,7 @@
   {
    "title": "Durarara!!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3111,6 +3195,7 @@
   {
    "title": "Dungeon Meshi 2nd Season",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3142,6 +3227,7 @@
   {
    "title": "Gekkan Shoujo Nozaki-kun",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3179,6 +3265,7 @@
   {
    "title": "Houseki no Kuni",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3210,6 +3297,7 @@
   {
    "title": "Keijo!!!!!!!!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3241,6 +3329,7 @@
   {
    "title": "Koe de Oshigoto",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3272,6 +3361,7 @@
   {
    "title": "Mieruko-chan",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3303,6 +3393,7 @@
   {
    "title": "Ramen Daisuki Koizumi-san",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3334,6 +3425,7 @@
   {
    "title": "Sen to Chihiro no Kamikakushi",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3365,6 +3457,7 @@
   {
    "title": "Sora no Otoshimono",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3396,6 +3489,7 @@
   {
    "title": "Sora yori mo Tooi Basho",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3427,6 +3521,7 @@
   {
    "title": "Sword Art Online Alternative: Gun Gale Online",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3458,6 +3553,7 @@
   {
    "title": "Saikyou no Shien-shoku [Wajutsushi] Dearu Ore wa Sekai Saikyou Clan wo Shitagaeru",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3489,6 +3585,7 @@
   {
    "title": "Armor Shop for Ladies & Gentlemen",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3520,6 +3617,7 @@
   {
    "title": "Girls Band Cry",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3551,6 +3649,7 @@
   {
    "title": "Tensei Shitara Slime Datta Ken",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3582,6 +3681,7 @@
   {
    "title": "AZUR LANE",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3613,6 +3713,7 @@
   {
    "title": "Harukana Receive",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3644,6 +3745,7 @@
   {
    "title": "Yuru Camp△ Movie",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3675,6 +3777,7 @@
   {
    "title": "See You Tomorrow at the Food Court",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3706,6 +3809,7 @@
   {
    "title": "Sound! Euphonium 3",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3737,6 +3841,7 @@
   {
    "title": "Train to the End of the World",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3768,6 +3873,7 @@
   {
    "title": "Strike Witches",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3799,6 +3905,7 @@
   {
    "title": "3-gatsu no Lion",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3830,6 +3937,7 @@
   {
    "title": "86 EIGHTY-SIX Part 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3861,6 +3969,7 @@
   {
    "title": "Dorohedoro",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3892,6 +4001,7 @@
   {
    "title": "Enen no Shouboutai: San no Shou",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3923,6 +4033,7 @@
   {
    "title": "Jibaku Shounen Hanako-kun 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3954,6 +4065,7 @@
   {
    "title": "Katanagatari",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -3985,6 +4097,7 @@
   {
    "title": "Kimi no Suizou wo Tabetai",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4016,6 +4129,7 @@
   {
    "title": "Little Witch Academia (TV)",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4047,6 +4161,7 @@
   {
    "title": "Munou na Nana",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4078,6 +4193,7 @@
   {
    "title": "Noragami",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4109,6 +4225,7 @@
   {
    "title": "Ousama Ranking",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4140,6 +4257,7 @@
   {
    "title": "Sakurasou no Pet na Kanojo",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4171,6 +4289,7 @@
   {
    "title": "Mob Psycho 100 III",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4202,6 +4321,7 @@
   {
    "title": "Mobile Suit Gundam: The Witch from Mercury - PROLOGUE",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4233,6 +4353,7 @@
   {
    "title": "Adachi to Shimamura",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4258,6 +4379,7 @@
   {
    "title": "Akiba Meido Sensou",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4283,6 +4405,7 @@
   {
    "title": "Ao no Exorcist: Kyoto Fujouou-hen",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4308,6 +4431,7 @@
   {
    "title": "Arakawa Under the Bridge",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4339,6 +4463,7 @@
   {
    "title": "Assault Lily: BOUQUET",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4364,6 +4489,7 @@
   {
    "title": "Feng Ling Yu Xiu",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4389,6 +4515,7 @@
   {
    "title": "Golden Kamuy",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4414,6 +4541,7 @@
   {
    "title": "Happy Sugar Life",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4439,6 +4567,7 @@
   {
    "title": "High School DxD NEW",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4464,6 +4593,7 @@
   {
    "title": "Howl no Ugoku Shiro",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4489,6 +4619,7 @@
   {
    "title": "ID: INVADED",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4514,6 +4645,7 @@
   {
    "title": "Ikkitousen",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4539,6 +4671,7 @@
   {
    "title": "Isekai Quartet",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4564,6 +4697,7 @@
   {
    "title": "Isekai Suicide Squad",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4589,6 +4723,7 @@
   {
    "title": "Joshikousei no Mudazukai",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4614,6 +4749,7 @@
   {
    "title": "Kimi no Na wa.",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4645,6 +4781,7 @@
   {
    "title": "Kono Subarashii Sekai ni Shukufuku wo! 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4670,6 +4807,7 @@
   {
    "title": "Kuroshitsuji: Book of Circus",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4695,6 +4833,7 @@
   {
    "title": "Nichijou",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4720,6 +4859,7 @@
   {
    "title": "Nisekoi",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4745,6 +4885,7 @@
   {
    "title": "No Game No Life Zero",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4770,6 +4911,7 @@
   {
    "title": "Peter Grill to Kenja no Jikan: Super Extra",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4795,6 +4937,7 @@
   {
    "title": "Re:CREATORS",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4820,6 +4963,7 @@
   {
    "title": "Renai Boukun",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4845,6 +4989,7 @@
   {
    "title": "Sabagebu!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4870,6 +5015,7 @@
   {
    "title": "Shakugan no Shana",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4895,6 +5041,7 @@
   {
    "title": "Shokei Shoujo no Virgin Road",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4926,6 +5073,7 @@
   {
    "title": "Shokugeki no Souma: Ni no Sara",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4951,6 +5099,7 @@
   {
    "title": "Shuumatsu no Harem",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -4976,6 +5125,7 @@
   {
    "title": "Sono Bisque Doll wa Koi wo Suru",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5001,6 +5151,7 @@
   {
    "title": "Sword Art Online: Progressive - Kuraki Yuuyami no Scherzo",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5026,6 +5177,7 @@
   {
    "title": "Tonikaku Kawaii Season 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5051,6 +5203,7 @@
   {
    "title": "Toradora!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5076,6 +5229,7 @@
   {
    "title": "Undead Unluck",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5101,6 +5255,7 @@
   {
    "title": "VINLAND SAGA",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5126,6 +5281,7 @@
   {
    "title": "Violet Evergarden Movie",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5151,6 +5307,7 @@
   {
    "title": "Yofukashi no Uta",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5176,6 +5333,7 @@
   {
    "title": "Yuru Camp△ SEASON 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5201,6 +5359,7 @@
   {
    "title": "Yuri Is My Job!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5226,6 +5385,7 @@
   {
    "title": "AKB0048",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5251,6 +5411,7 @@
   {
    "title": "ARGONAVIS from BanG Dream!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5276,6 +5437,7 @@
   {
    "title": "Asteroid in Love",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5301,6 +5463,7 @@
   {
    "title": "Cooking with Valkyries",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5326,6 +5489,7 @@
   {
    "title": "Cute High Earth Defense Club LOVE!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5351,6 +5515,7 @@
   {
    "title": "Encouragement of Climb",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5376,6 +5541,7 @@
   {
    "title": "Free! -Dive to the Future-",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5401,6 +5567,7 @@
   {
    "title": "Healin' Good Precure",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5426,6 +5593,7 @@
   {
    "title": "High School Fleet OVA",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5451,6 +5619,7 @@
   {
    "title": "HUGtto! Precure",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5476,6 +5645,7 @@
   {
    "title": "Hunter x Hunter: Phantom Rouge",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5501,6 +5671,7 @@
   {
    "title": "Hunter x Hunter: The Last Mission",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5526,6 +5697,7 @@
   {
    "title": "IDOLiSH7",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5551,6 +5723,7 @@
   {
    "title": "IGPX",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5576,6 +5749,7 @@
   {
    "title": "Ikoku Irokoi Romantan",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5601,6 +5775,7 @@
   {
    "title": "Katsugeki TOUKEN RANBU",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5626,6 +5801,7 @@
   {
    "title": "Kimama ni Idol",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5651,6 +5827,7 @@
   {
    "title": "KIRA KIRA☆PRECURE A LA MODE",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5676,6 +5853,7 @@
   {
    "title": "Kiratto Pri☆chan",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5701,6 +5879,7 @@
   {
    "title": "Koi-ken!: Watashitachi Anime ni Nacchatta!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5726,6 +5905,7 @@
   {
    "title": "Lagrange: The Flower of Rin-ne",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5751,6 +5931,7 @@
   {
    "title": "Majestic Prince",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5776,6 +5957,7 @@
   {
    "title": "MASHLE: MAGIC AND MUSCLES",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5801,6 +5983,7 @@
   {
    "title": "Matoi the Sacred Slayer",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5826,6 +6009,7 @@
   {
    "title": "Mekakucity Actors",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5851,6 +6035,7 @@
   {
    "title": "Mob Psycho 100 REIGEN The Miraculous Unknown Psychic",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5876,6 +6061,7 @@
   {
    "title": "Natsuiro Kiseki",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5901,6 +6087,7 @@
   {
    "title": "Princess Jellyfish",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5926,6 +6113,7 @@
   {
    "title": "Sabikui Bisco",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5951,6 +6139,7 @@
   {
    "title": "SHIROBAKO",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -5976,6 +6165,7 @@
   {
    "title": "Skull-face Bookseller Honda-san",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6001,6 +6191,7 @@
   {
    "title": "Sound of the Sky",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6026,6 +6217,7 @@
   {
    "title": "Space Patrol Luluco",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6051,6 +6243,7 @@
   {
    "title": "Strike Witches",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6076,6 +6269,7 @@
   {
    "title": "Sugar Sugar Rune",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6101,6 +6295,7 @@
   {
    "title": "takt op.Destiny",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6126,6 +6321,7 @@
   {
    "title": "Tanaka-kun is Always Listless",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6151,6 +6347,7 @@
   {
    "title": "Tsurune",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6176,6 +6373,7 @@
   {
    "title": "WAVE!! Surfing Yappe!!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6207,6 +6405,7 @@
   {
    "title": "Witchy Precure!",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6232,6 +6431,7 @@
   {
    "title": "Ascendence of a Bookworm",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6257,6 +6457,7 @@
   {
    "title": "As Miss Beelzebub likes it",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6282,6 +6483,7 @@
   {
    "title": "Beyond the Boundary",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6307,6 +6509,7 @@
   {
    "title": "Black Butler Public School",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6332,6 +6535,7 @@
   {
    "title": "Do It Yourself",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6357,6 +6561,7 @@
   {
    "title": "Fluffy Paradise",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6382,6 +6587,7 @@
   {
    "title": "Fruits Basket",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6407,6 +6613,7 @@
   {
    "title": "Gatchaman Crowds",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6432,6 +6639,7 @@
   {
    "title": "Heaven Official's Blessing",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6457,6 +6665,7 @@
   {
    "title": "Hensuki",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6482,6 +6691,7 @@
   {
    "title": "Kimi ni todoke",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6507,6 +6717,7 @@
   {
    "title": "Komi can't communicate",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6532,6 +6743,7 @@
   {
    "title": "Kono Oto Tomare",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6557,6 +6769,7 @@
   {
    "title": "Kuroko no Basket",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6582,6 +6795,7 @@
   {
    "title": "Lovely Complex",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6607,6 +6821,7 @@
   {
    "title": "My Happy Marriage",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6632,6 +6847,7 @@
   {
    "title": "Nadia: Secret of Blue Water",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6657,6 +6873,7 @@
   {
    "title": "No Longer Allowed in Another world",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6682,6 +6899,7 @@
   {
    "title": "Oresuki",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6707,6 +6925,7 @@
   {
    "title": "Penguindrum",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6732,6 +6951,7 @@
   {
    "title": "Princess Tutu",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6757,6 +6977,7 @@
   {
    "title": "Pripara",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6782,6 +7003,7 @@
   {
    "title": "Psuedo Harem",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6807,6 +7029,7 @@
   {
    "title": "Saint Onii-san",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6832,6 +7055,7 @@
   {
    "title": "Samurai Flamenco",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6857,6 +7081,7 @@
   {
    "title": "SK8 the infinity",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6882,6 +7107,7 @@
   {
    "title": "The Eccentric Family",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6907,6 +7133,7 @@
   {
    "title": "Misfit Demon King 2",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6932,6 +7159,7 @@
   {
    "title": "World God Only Knows",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6957,6 +7185,7 @@
   {
    "title": "Your Lie in April",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -6982,6 +7211,7 @@
   {
    "title": "Zakuro",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7007,6 +7237,7 @@
   {
    "title": "A Condition called Love",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7032,6 +7263,7 @@
   {
    "title": "A galaxy next door",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7057,6 +7289,7 @@
   {
    "title": "A Sign of Affection",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7082,6 +7315,7 @@
   {
    "title": "An archdemon's Dilemma",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7107,6 +7341,7 @@
   {
    "title": "Ao no orchestra",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7132,6 +7367,7 @@
   {
    "title": "Appraisal Skills Isekai",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7157,6 +7393,7 @@
   {
    "title": "Bibliophile Princess",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7182,6 +7419,7 @@
   {
    "title": "Blue exorcist illuminati",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7207,6 +7445,7 @@
   {
    "title": "Dahlia in bloom",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7232,6 +7471,7 @@
   {
    "title": "Hirano to Kagiura",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7257,6 +7497,7 @@
   {
    "title": "So I'm Taming the final boss",
    "category": "tv",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7282,6 +7523,7 @@
   {
    "title": "one last thing 2005",
    "category": "movie",
+   "upcoming": false,
    "bucket": "planning",
    "year": null,
    "youtube_url": null,
@@ -7312,7 +7554,8 @@
   },
   {
    "title": "Black Clover",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7337,7 +7580,8 @@
   },
   {
    "title": "Seikon no Qwaser",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7362,7 +7606,8 @@
   },
   {
    "title": "Fate/Apocrypha",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7393,7 +7638,8 @@
   },
   {
    "title": "Toaru Majutsu no Index II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7430,7 +7676,8 @@
   },
   {
    "title": "NARUTO: Shippuuden",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7467,7 +7714,8 @@
   },
   {
    "title": "Sasayaku You ni Koi wo Utau",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7498,7 +7746,8 @@
   },
   {
    "title": "Pokémon Horizons: The Series",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -7523,7 +7772,8 @@
   },
   {
    "title": "Kusuriya no Hitorigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7554,7 +7804,8 @@
   },
   {
    "title": "The Girl Who Sees Smells",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7585,7 +7836,8 @@
   },
   {
    "title": "Scream Queens",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7628,7 +7880,8 @@
   },
   {
    "title": "Umamusume: Pretty Derby",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7665,7 +7918,8 @@
   },
   {
    "title": "Mushoku Tensei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7690,7 +7944,8 @@
   },
   {
    "title": "My Love from the Star",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7716,6 +7971,7 @@
   {
    "title": "Yokohama Kaidashi Kikou",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7740,7 +7996,8 @@
   },
   {
    "title": "Fullmetal Alchemist: Brotherhood",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7771,7 +8028,8 @@
   },
   {
    "title": "ONE PIECE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -7802,7 +8060,8 @@
   },
   {
    "title": "Gintama",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7833,7 +8092,8 @@
   },
   {
    "title": "Kaijuu 8-gou 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7858,7 +8118,8 @@
   },
   {
    "title": "Darling in the Franxx",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7883,7 +8144,8 @@
   },
   {
    "title": "There's No Freaking Way I'll Be Your Lover! Unless…",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7908,7 +8170,8 @@
   },
   {
    "title": "9-1-1",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7933,7 +8196,8 @@
   },
   {
    "title": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7958,7 +8222,8 @@
   },
   {
    "title": "American Horror Story",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -7983,7 +8248,8 @@
   },
   {
    "title": "Monogatari Series: Second Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8008,7 +8274,8 @@
   },
   {
    "title": "Carole & Tuesday",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8033,7 +8300,8 @@
   },
   {
    "title": "Eris no Seihai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8064,7 +8332,8 @@
   },
   {
    "title": "【OSHI NO KO】Season 3",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8089,7 +8358,8 @@
   },
   {
    "title": "Fallout",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8126,7 +8396,8 @@
   },
   {
    "title": "The Pitt",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8163,7 +8434,8 @@
   },
   {
    "title": "Ookii Onnanoko wa Suki desu ka?",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8206,7 +8478,8 @@
   },
   {
    "title": "Re:Zero kara Hajimeru Isekai Seikatsu 4th Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8237,7 +8510,8 @@
   },
   {
    "title": "Dr. STONE: SCIENCE FUTURE Part 3",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8268,7 +8542,8 @@
   },
   {
    "title": "Ingoku Danchi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8305,7 +8580,8 @@
   },
   {
    "title": "Gossip Girl",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8336,7 +8612,8 @@
   },
   {
    "title": "Zoku Natsume Yuujinchou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8367,7 +8644,8 @@
   },
   {
    "title": "Euphoria (2019)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8404,7 +8682,8 @@
   },
   {
    "title": "Hell's Kitchen Season 15",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8435,7 +8714,8 @@
   },
   {
    "title": "BLEACH: Sennen Kessen-hen - Soukoku-tan",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8460,7 +8740,8 @@
   },
   {
    "title": "Youjo Senki II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8497,7 +8778,8 @@
   },
   {
    "title": "To Be Hero X",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8522,7 +8804,8 @@
   },
   {
    "title": "Sword Art Online II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8547,7 +8830,8 @@
   },
   {
    "title": "Ao no Hako Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8572,7 +8856,8 @@
   },
   {
    "title": "Kamigami no Asobi: Ludere deorum",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8597,7 +8882,8 @@
   },
   {
    "title": "UniteUp!: Uni:Birth",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2026,
    "youtube_url": null,
@@ -8622,7 +8908,8 @@
   },
   {
    "title": "A Returner's Magic Should be Special Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8647,7 +8934,8 @@
   },
   {
    "title": "Sekai Saikyou no Majo, Hajimemashita",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8678,7 +8966,8 @@
   },
   {
    "title": "Seitokai ni mo Ana wa Aru!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8709,7 +8998,8 @@
   },
   {
    "title": "Tokyo Revengers: Santen Sensou-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8740,7 +9030,8 @@
   },
   {
    "title": "Douwa Revengers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8771,7 +9062,8 @@
   },
   {
    "title": "Dark Summoner to Dekiteiru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2026,
    "youtube_url": null,
@@ -8796,7 +9088,8 @@
   },
   {
    "title": "There's No Freaking Way I'll Be Your Lover! Unless… ~Next Shine~",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8833,7 +9126,8 @@
   },
   {
    "title": "Chainsaw Man: Reze-hen",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8870,7 +9164,8 @@
   },
   {
    "title": "Chainsaw Man: Reze-hen",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8895,7 +9190,8 @@
   },
   {
    "title": "Fear Street: 1978",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8926,7 +9222,8 @@
   },
   {
    "title": "Fear Street: 1666",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8958,6 +9255,7 @@
   {
    "title": "Dr. STONE Special Episode - RYUSUI",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -8988,7 +9286,8 @@
   },
   {
    "title": "Misery (1990)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9019,7 +9318,8 @@
   },
   {
    "title": "Tondemo Skill de Isekai Hourou Meshi 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9044,7 +9344,8 @@
   },
   {
    "title": "Ruri no Houseki",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9069,7 +9370,8 @@
   },
   {
    "title": "NANA",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9106,7 +9408,8 @@
   },
   {
    "title": "Station 19",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9137,7 +9440,8 @@
   },
   {
    "title": "X (2022)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9168,7 +9472,8 @@
   },
   {
    "title": "Gonjiam: Haunted Asylum",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9205,7 +9510,8 @@
   },
   {
    "title": "Touhai Densetsu Akagi: Yami ni Maiorita Tensai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9230,7 +9536,8 @@
   },
   {
    "title": "Crazy Over His Fingers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9261,7 +9568,8 @@
   },
   {
    "title": "Natsume Yuujinchou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9292,7 +9600,8 @@
   },
   {
    "title": "Kimetsu no Yaiba: Mugenjou-hen Movie 1 - Akaza Sairai",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9329,7 +9638,8 @@
   },
   {
    "title": "Old Enough Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9354,7 +9664,8 @@
   },
   {
    "title": "Scream 7",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9391,7 +9702,8 @@
   },
   {
    "title": "Everything Everywhere All at Once",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9428,7 +9740,8 @@
   },
   {
    "title": "Frieren: Beyond Journey’s End Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9477,7 +9790,8 @@
   },
   {
    "title": "Frieren: Beyond Journey’s End Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9496,7 +9810,8 @@
   },
   {
    "title": "ROLL OVER AND DIE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9533,7 +9848,8 @@
   },
   {
    "title": "Sentenced to Be a Hero",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9570,7 +9886,8 @@
   },
   {
    "title": "One Piece LA Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9601,7 +9918,8 @@
   },
   {
    "title": "Five Nights at Freddy’s 2",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9638,7 +9956,8 @@
   },
   {
    "title": "A Gentle Noble's Vacation Recommendation",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9663,7 +9982,8 @@
   },
   {
    "title": "Youjo Senki",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9694,7 +10014,8 @@
   },
   {
    "title": "Android wa Keiken Ninzuu ni Hairimasu ka??",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9731,7 +10052,8 @@
   },
   {
    "title": "【OSHI NO KO】Season 3",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9756,7 +10078,8 @@
   },
   {
    "title": "The Darwin Incident",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9781,7 +10104,8 @@
   },
   {
    "title": "Na-Nare Hana-Nare",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9812,7 +10136,8 @@
   },
   {
    "title": "Isekai Office Worker: The Other World's Books Depend on the Bean Counter",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9849,7 +10174,8 @@
   },
   {
    "title": "My Hero Academia: Vigilantes Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9874,7 +10200,8 @@
   },
   {
    "title": "My Hero Academia: Vigilantes Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9905,7 +10232,8 @@
   },
   {
    "title": "Gen V",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9930,7 +10258,8 @@
   },
   {
    "title": "Super Cub",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9961,7 +10290,8 @@
   },
   {
    "title": "Princess-Session Orchestra",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -9992,7 +10322,8 @@
   },
   {
    "title": "Enen no Shouboutai: San no Shou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10017,7 +10348,8 @@
   },
   {
    "title": "Heated Rivalry",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10048,7 +10380,8 @@
   },
   {
    "title": "Clevatess: Majuu no Ou to Akago to Kabane no Yuusha",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10073,7 +10406,8 @@
   },
   {
    "title": "Ishuzoku Reviewers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10116,7 +10450,8 @@
   },
   {
    "title": "Hime-sama, \"Goumon\" no Jikan desu 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10147,7 +10482,8 @@
   },
   {
    "title": "Invincible S4",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10184,7 +10520,8 @@
   },
   {
    "title": "Divergent",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10233,7 +10570,8 @@
   },
   {
    "title": "Hell's Kitchen Season 11",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10264,7 +10602,8 @@
   },
   {
    "title": "Hell's Kitchen Season 12",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10301,7 +10640,8 @@
   },
   {
    "title": "Grey's Anatomy",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10332,7 +10672,8 @@
   },
   {
    "title": "Hell's Kitchen Season 13",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10363,7 +10704,8 @@
   },
   {
    "title": "The Boys",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10388,7 +10730,8 @@
   },
   {
    "title": "Hell's Kitchen Season 14",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10419,7 +10762,8 @@
   },
   {
    "title": "The Crash (2026)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10450,7 +10794,8 @@
   },
   {
    "title": "Maid-san wa Taberu dake",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10475,7 +10820,8 @@
   },
   {
    "title": "The Social Network",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10494,7 +10840,8 @@
   },
   {
    "title": "Tongari Boushi no Atelier",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10537,7 +10884,8 @@
   },
   {
    "title": "Gakuen Mokushiroku: HIGHSCHOOL OF THE DEAD",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10568,7 +10916,8 @@
   },
   {
    "title": "Hells Paradise",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10599,7 +10948,8 @@
   },
   {
    "title": "Youjo Senki Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10631,6 +10981,7 @@
   {
    "title": "Boku no Hero Academia No. 170+1: More",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10656,6 +11007,7 @@
   {
    "title": "Boku no Hero Academia No. 170+1: More",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10680,7 +11032,8 @@
   },
   {
    "title": "3-nen Z-gumi Ginpachi-sensei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10711,7 +11064,8 @@
   },
   {
    "title": "Tamon's B-Side",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10742,7 +11096,8 @@
   },
   {
    "title": "Better Call Saul",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10767,7 +11122,8 @@
   },
   {
    "title": "Hells Paradise Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10798,7 +11154,8 @@
   },
   {
    "title": "Ichijouma Mankitsu-gurashi!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10823,7 +11180,8 @@
   },
   {
    "title": "Black Butler",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10848,7 +11206,8 @@
   },
   {
    "title": "Sword Art Online Alternative: Gun Gale Online",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10879,7 +11238,8 @@
   },
   {
    "title": "The Wonder Girls Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10916,7 +11276,8 @@
   },
   {
    "title": "Sword Art Online Alternative: Gun Gale Online II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10947,7 +11308,8 @@
   },
   {
    "title": "Sword Art Online",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10972,7 +11334,8 @@
   },
   {
    "title": "BLACK TORCH",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -10997,7 +11360,8 @@
   },
   {
    "title": "Kimi no Koto ga Dai Dai Dai Dai Daisuki na 100-nin no Kanojo 3rd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11028,7 +11392,8 @@
   },
   {
    "title": "Shuumatsu Train Doko e Iku?",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11059,7 +11424,8 @@
   },
   {
    "title": "Young Ladies Don't Play Fighting Games",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11096,7 +11462,8 @@
   },
   {
    "title": "Paranormal Activity",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11133,7 +11500,8 @@
   },
   {
    "title": "Mairimashita! Iruma-kun 4",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11170,7 +11538,8 @@
   },
   {
    "title": "Nijusseiki Denki Mokuroku: Eureka Evrika",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11195,7 +11564,8 @@
   },
   {
    "title": "Keijo!!!!!!!!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11226,7 +11596,8 @@
   },
   {
    "title": "The Housemaid",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11263,7 +11634,8 @@
   },
   {
    "title": "Companion",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11294,7 +11666,8 @@
   },
   {
    "title": "Bring Her Back",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11337,7 +11710,8 @@
   },
   {
    "title": "Fluffy Paradise",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11368,7 +11742,8 @@
   },
   {
    "title": "Ao no Hako Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11393,7 +11768,8 @@
   },
   {
    "title": "Host (2020)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2026,
    "youtube_url": null,
@@ -11430,7 +11806,8 @@
   },
   {
    "title": "Imawa no Kuni no Alice",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11455,7 +11832,8 @@
   },
   {
    "title": "It: Welcome to Derry",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11492,7 +11870,8 @@
   },
   {
    "title": "Avatar: The Last Airbender",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11517,7 +11896,8 @@
   },
   {
    "title": "Dead Account",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11548,7 +11928,8 @@
   },
   {
    "title": "Pretty Little Liars",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11585,7 +11966,8 @@
   },
   {
    "title": "Reincarnation no Kaben",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11616,7 +11998,8 @@
   },
   {
    "title": "Katsugeki Touken Ranbu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11641,7 +12024,8 @@
   },
   {
    "title": "Yani Neko",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11672,7 +12056,8 @@
   },
   {
    "title": "Isekai Mokushiroku Mynoghra: Hametsu no Bunmei de Hajimeru Sekai Seifuku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2026,
    "youtube_url": null,
@@ -11697,7 +12082,8 @@
   },
   {
    "title": "NANA",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11734,7 +12120,8 @@
   },
   {
    "title": "Black Clover",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11759,7 +12146,8 @@
   },
   {
    "title": "Ishuzoku Reviewers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11796,7 +12184,8 @@
   },
   {
    "title": "Seikon no Qwaser",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11821,7 +12210,8 @@
   },
   {
    "title": "Fate/Apocrypha",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11858,7 +12248,8 @@
   },
   {
    "title": "Toaru Majutsu no Index II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11901,7 +12292,8 @@
   },
   {
    "title": "NARUTO: Shippuuden",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -11938,7 +12330,8 @@
   },
   {
    "title": "Grey's Anatomy",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2025,
    "youtube_url": null,
@@ -11969,7 +12362,8 @@
   },
   {
    "title": "Sasayaku You ni Koi wo Utau",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12000,7 +12394,8 @@
   },
   {
    "title": "Pretty Little Liars",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12031,7 +12426,8 @@
   },
   {
    "title": "Pokémon Horizons: The Series",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2025,
    "youtube_url": null,
@@ -12056,7 +12452,8 @@
   },
   {
    "title": "Kusuriya no Hitorigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12087,7 +12484,8 @@
   },
   {
    "title": "The Girl Who Sees Smells",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12118,7 +12516,8 @@
   },
   {
    "title": "Avatar: The Last Airbender",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12143,7 +12542,8 @@
   },
   {
    "title": "Scream Queens",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12186,7 +12586,8 @@
   },
   {
    "title": "Princess-Session Orchestra",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2025,
    "youtube_url": null,
@@ -12217,7 +12618,8 @@
   },
   {
    "title": "Imawa no Kuni no Alice",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12242,7 +12644,8 @@
   },
   {
    "title": "Umamusume: Pretty Derby",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12285,7 +12688,8 @@
   },
   {
    "title": "Mushoku Tensei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12310,7 +12714,8 @@
   },
   {
    "title": "My Love from the Star",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12336,6 +12741,7 @@
   {
    "title": "Yokohama Kaidashi Kikou",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12360,7 +12766,8 @@
   },
   {
    "title": "Hell's Kitchen Season 11",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12391,7 +12798,8 @@
   },
   {
    "title": "Fullmetal Alchemist: Brotherhood",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12428,7 +12836,8 @@
   },
   {
    "title": "ONE PIECE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2025,
    "youtube_url": null,
@@ -12459,7 +12868,8 @@
   },
   {
    "title": "Gintama",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12490,7 +12900,8 @@
   },
   {
    "title": "Isekai Mokushiroku Mynoghra: Hametsu no Bunmei de Hajimeru Sekai Seifuku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12515,7 +12926,8 @@
   },
   {
    "title": "Kaijuu 8-gou 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12540,7 +12952,8 @@
   },
   {
    "title": "Darling in the Franxx",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12565,7 +12978,8 @@
   },
   {
    "title": "Saikin, Imouto no Yousu ga Chotto Okashiinda ga.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12584,7 +12998,8 @@
   },
   {
    "title": "Saikin, Imouto no Yousu ga Chotto Okashiinda ga.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12603,7 +13018,8 @@
   },
   {
    "title": "There's No Freaking Way I'll Be Your Lover! Unless…",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12628,7 +13044,8 @@
   },
   {
    "title": "Black Butler",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12653,7 +13070,8 @@
   },
   {
    "title": "9-1-1",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12678,7 +13096,8 @@
   },
   {
    "title": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12709,7 +13128,8 @@
   },
   {
    "title": "American Horror Story",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12734,7 +13154,8 @@
   },
   {
    "title": "Youjo Senki",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12765,7 +13186,8 @@
   },
   {
    "title": "It: Welcome to Derry",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12790,7 +13212,8 @@
   },
   {
    "title": "Station 19",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12821,7 +13244,8 @@
   },
   {
    "title": "Natsume Yuujinchou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12852,7 +13276,8 @@
   },
   {
    "title": "Monogatari Series: Second Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12877,7 +13302,8 @@
   },
   {
    "title": "Gakuen Mokushiroku: HIGHSCHOOL OF THE DEAD",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2025,
    "youtube_url": null,
@@ -12908,7 +13334,8 @@
   },
   {
    "title": "Little Shop of Horrors",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -12940,6 +13367,7 @@
   {
    "title": "Sex Demon Queen",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -12970,7 +13398,8 @@
   },
   {
    "title": "Final Destination 2",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13007,7 +13436,8 @@
   },
   {
    "title": "Final Destination 3",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13038,7 +13468,8 @@
   },
   {
    "title": "The Final Destination",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13075,7 +13506,8 @@
   },
   {
    "title": "Bye Bye, Earth",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13100,7 +13532,8 @@
   },
   {
    "title": "Final Destination 5",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13131,7 +13564,8 @@
   },
   {
    "title": "Tadaima, Okaeri",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13168,7 +13602,8 @@
   },
   {
    "title": "Yuuri!!! on ICE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13199,7 +13634,8 @@
   },
   {
    "title": "Killing Eve",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13230,7 +13666,8 @@
   },
   {
    "title": "The Maze Runner",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13267,7 +13704,8 @@
   },
   {
    "title": "Maze Runner: The Scorch Trials",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13304,7 +13742,8 @@
   },
   {
    "title": "Maze Runner: The Death Cure",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13341,7 +13780,8 @@
   },
   {
    "title": "Dark Gathering",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13366,7 +13806,8 @@
   },
   {
    "title": "D.E.B.S (2004)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13397,7 +13838,8 @@
   },
   {
    "title": "Quiet on Set:The Dark Side of Kids TV",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13440,7 +13882,8 @@
   },
   {
    "title": "It Chapter Two",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13483,7 +13926,8 @@
   },
   {
    "title": "Carry-On",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13526,7 +13970,8 @@
   },
   {
    "title": "The Cabin in the Woods",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13569,7 +14014,8 @@
   },
   {
    "title": "The Cabin in the Woods",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13588,7 +14034,8 @@
   },
   {
    "title": "Heart Eyes",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13619,7 +14066,8 @@
   },
   {
    "title": "Companion",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13656,7 +14104,8 @@
   },
   {
    "title": "Sweetpea",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13693,7 +14142,8 @@
   },
   {
    "title": "Sonic the Hedgehog 2",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13718,7 +14168,8 @@
   },
   {
    "title": "The Substance",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13761,7 +14212,8 @@
   },
   {
    "title": "My Best Friend's Exorcism",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13786,7 +14238,8 @@
   },
   {
    "title": "Josie and the Pussycats (2001)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13811,7 +14264,8 @@
   },
   {
    "title": "Blood Fest",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13842,7 +14296,8 @@
   },
   {
    "title": "Akuyaku Reijou Tensei Oji-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13867,7 +14322,8 @@
   },
   {
    "title": "Dr. STONE: SCIENCE FUTURE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13898,7 +14354,8 @@
   },
   {
    "title": "Solo Leveling Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13935,7 +14392,8 @@
   },
   {
    "title": "The 100 Girlfriends Who Really, Really, Really, Really, Really, REALLY Love You Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -13972,7 +14430,8 @@
   },
   {
    "title": "Medalist",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14003,7 +14462,8 @@
   },
   {
    "title": "Yellowjackets",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14052,7 +14512,8 @@
   },
   {
    "title": "Shadows House 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14077,7 +14538,8 @@
   },
   {
    "title": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka V: Houjou no Megami-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14102,7 +14564,8 @@
   },
   {
    "title": "Hit Man",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14127,7 +14590,8 @@
   },
   {
    "title": "Invincible",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14164,7 +14628,8 @@
   },
   {
    "title": "Heretic",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14189,7 +14654,8 @@
   },
   {
    "title": "Sentai Daishikkaku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14214,7 +14680,8 @@
   },
   {
    "title": "Tokyo Ghoul",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14239,7 +14706,8 @@
   },
   {
    "title": "Tokyo Ghoul",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14258,7 +14726,8 @@
   },
   {
    "title": "Alien",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14289,7 +14758,8 @@
   },
   {
    "title": "Child’s Play",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14326,7 +14796,8 @@
   },
   {
    "title": "Lycoris Recoil",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14357,7 +14828,8 @@
   },
   {
    "title": "Ted (2012)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14388,7 +14860,8 @@
   },
   {
    "title": "Re:Zero kara Hajimeru Isekai Seikatsu 3rd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14419,7 +14892,8 @@
   },
   {
    "title": "Goodbye, Don Glees!",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14444,7 +14918,8 @@
   },
   {
    "title": "Lycoris Recoil: Friends are thieves of time.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14481,7 +14956,8 @@
   },
   {
    "title": "Avengers: Age of Ultron",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14524,7 +15000,8 @@
   },
   {
    "title": "Severance (2022)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14555,7 +15032,8 @@
   },
   {
    "title": "Sinners",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14586,7 +15064,8 @@
   },
   {
    "title": "Sonic the Hedgehog 3 (2024)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14611,7 +15090,8 @@
   },
   {
    "title": "2024 Idol Star Athletics Championships Chuseok Special",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14660,7 +15140,8 @@
   },
   {
    "title": "Wednesday (2022)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14691,7 +15172,8 @@
   },
   {
    "title": "Fear Street: Part One - 1994",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14722,7 +15204,8 @@
   },
   {
    "title": "Kairyuu to Yuubinya-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14747,7 +15230,8 @@
   },
   {
    "title": "Kimitachi wa Dou Ikiru ka",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14773,6 +15257,7 @@
   {
    "title": "Makasete Iruka!",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14797,7 +15282,8 @@
   },
   {
    "title": "Kizumonogatari: Koyomi Vamp",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14822,7 +15308,8 @@
   },
   {
    "title": "Ao no Hako",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14847,7 +15334,8 @@
   },
   {
    "title": "FAIRY TAIL: 100 YEARS QUEST",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14884,7 +15372,8 @@
   },
   {
    "title": "Novocaine (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14909,7 +15398,8 @@
   },
   {
    "title": "Buddy Daddies",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14934,7 +15424,8 @@
   },
   {
    "title": "Twilight (2008)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -14983,7 +15474,8 @@
   },
   {
    "title": "The Monkey (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15020,7 +15512,8 @@
   },
   {
    "title": "SAKAMOTO DAYS",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15045,7 +15538,8 @@
   },
   {
    "title": "SAKAMOTO DAYS",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15064,7 +15558,8 @@
   },
   {
    "title": "SAKAMOTO DAYS",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15089,7 +15584,8 @@
   },
   {
    "title": "The Twilight Saga: New Moon (2009)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15138,7 +15634,8 @@
   },
   {
    "title": "Once Upon a Witch's Death",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15175,7 +15672,8 @@
   },
   {
    "title": "Kanpeki Sugite Kawai-ge ga Nai to Konyaku Haki Sareta Seijo wa Ringoku ni Urareru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15200,7 +15698,8 @@
   },
   {
    "title": "Lilo & Stitch (2002)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15225,7 +15724,8 @@
   },
   {
    "title": "Please Put Them On, Takamine-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15256,7 +15756,8 @@
   },
   {
    "title": "KPop Demon Hunters",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15299,7 +15800,8 @@
   },
   {
    "title": "KPop Demon Hunters",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15318,7 +15820,8 @@
   },
   {
    "title": "KPop Demon Hunters",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15337,7 +15840,8 @@
   },
   {
    "title": "KPop Demon Hunters",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15356,7 +15860,8 @@
   },
   {
    "title": "Isshun de Chiryou Shiteita no ni Yakutatazu to Tsuihou Sareta Tensai Chiyushi, Yami Healer Toshite Tanoshiku Ikiru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15387,7 +15892,8 @@
   },
   {
    "title": "Harry Potter and the Sorcerer's Stone (2001)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15424,7 +15930,8 @@
   },
   {
    "title": "Slime Taoshite 300-nen, Shiranai Uchi ni Level MAX ni Nattemashita: Sono ni",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15449,7 +15956,8 @@
   },
   {
    "title": "Chotto dake Ai ga Omoi Dark Elf ga Isekai kara Oikakete Kita",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15474,7 +15982,8 @@
   },
   {
    "title": "Maebashi Witches",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15499,7 +16008,8 @@
   },
   {
    "title": "Harry Potter and the Chamber of Secrets (2002)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15536,7 +16046,8 @@
   },
   {
    "title": "Harry Potter and the Prisoner of Azkaban (2004)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15573,7 +16084,8 @@
   },
   {
    "title": "Chi. Chikyuu no Undou ni Tsuite",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15598,7 +16110,8 @@
   },
   {
    "title": "Zatsu Tabi: That's Journey",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15623,7 +16136,8 @@
   },
   {
    "title": "Rock wa Lady no Tashinami Deshite",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15660,7 +16174,8 @@
   },
   {
    "title": "Ninja to Koroshiya no Futarigurashi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15691,7 +16206,8 @@
   },
   {
    "title": "Harry Potter and the Goblet of Fire (2005)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15728,7 +16244,8 @@
   },
   {
    "title": "A Minecraft Movie (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15753,7 +16270,8 @@
   },
   {
    "title": "Harry Potter and the Order of the Phoenix (2007)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15790,7 +16308,8 @@
   },
   {
    "title": "Final Destination: Bloodlines (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15821,7 +16340,8 @@
   },
   {
    "title": "Gorilla no Kami kara Kago sareta Reijou wa Ouritsu Kishidan de Kawaigarareru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15846,7 +16366,8 @@
   },
   {
    "title": "My Hero Academia: Vigilantes",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15877,7 +16398,8 @@
   },
   {
    "title": "My Hero Academia: Vigilantes",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15902,7 +16424,8 @@
   },
   {
    "title": "Lazarus",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15933,7 +16456,8 @@
   },
   {
    "title": "mono",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15964,7 +16488,8 @@
   },
   {
    "title": "Shangri-La Frontier 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -15989,7 +16514,8 @@
   },
   {
    "title": "Shangri-La Frontier 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16014,7 +16540,8 @@
   },
   {
    "title": "sin: Nanatsu no Taizai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16039,7 +16566,8 @@
   },
   {
    "title": "Pixels",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16076,7 +16604,8 @@
   },
   {
    "title": "X (2022)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16107,7 +16636,8 @@
   },
   {
    "title": "Kimetsu no Yaiba: Hashira Geiko-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16144,7 +16674,8 @@
   },
   {
    "title": "Guild no Uketsukejou desu ga, Zangyou wa Iya nanode Boss wo Solo Tobatsu Shiyou to Omoimasu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16169,7 +16700,8 @@
   },
   {
    "title": "Guild no Uketsukejou desu ga, Zangyou wa Iya nanode Boss wo Solo Tobatsu Shiyou to Omoimasu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16194,7 +16726,8 @@
   },
   {
    "title": "Harry Potter and the Half-Blood Prince (2009)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16231,7 +16764,8 @@
   },
   {
    "title": "Harry Potter and the Deathly Hallows: Part 1 (2010)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16268,7 +16802,8 @@
   },
   {
    "title": "BOCCHI THE ROCK!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16305,7 +16840,8 @@
   },
   {
    "title": "Imagine Me & You",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16330,7 +16866,8 @@
   },
   {
    "title": "Akudama Drive",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16355,7 +16892,8 @@
   },
   {
    "title": "Harry Potter and the Deathly Hallows: Part 2 (2011)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16392,7 +16930,8 @@
   },
   {
    "title": "I Know What You Did Last Summer",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16423,7 +16962,8 @@
   },
   {
    "title": "Made in Abyss: Retsujitsu no Ougonkyou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16448,7 +16988,8 @@
   },
   {
    "title": "Until Dawn (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16491,7 +17032,8 @@
   },
   {
    "title": "Dog Man (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16516,7 +17058,8 @@
   },
   {
    "title": "One Piece (2023)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16553,7 +17096,8 @@
   },
   {
    "title": "War of the Worlds (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16578,7 +17122,8 @@
   },
   {
    "title": "Higurashi no Naku Koro ni Kai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16616,6 +17161,7 @@
   {
    "title": "Higurashi no Naku Koro ni Rei",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16652,7 +17198,8 @@
   },
   {
    "title": "Higurashi no Naku Koro ni Gou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16689,7 +17236,8 @@
   },
   {
    "title": "A-Rank Party wo Ridatsu Shita Ore wa, Moto Oshiegotachi to Meikyuu Shinbu wo Mezasu.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16714,7 +17262,8 @@
   },
   {
    "title": "Higurashi no Naku Koro ni Sotsu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16751,7 +17300,8 @@
   },
   {
    "title": "Mirai Koushi SACLA: Harima Sakura",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16782,7 +17332,8 @@
   },
   {
    "title": "Hell's Kitchen Season 1/2/3/4/5/6/7/8/9/10/18",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16813,7 +17364,8 @@
   },
   {
    "title": "Wednesday Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16844,7 +17396,8 @@
   },
   {
    "title": "New Game",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16881,7 +17434,8 @@
   },
   {
    "title": "Hurry Up Tomorrow (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16906,7 +17460,8 @@
   },
   {
    "title": "Kimetsu no Yaiba: Mugenjou-hen Movie 1 - Akaza Sairai",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16931,7 +17486,8 @@
   },
   {
    "title": "I Know What You Did Last Summer (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16962,7 +17518,8 @@
   },
   {
    "title": "SAKAMOTO DAYS Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -16993,7 +17550,8 @@
   },
   {
    "title": "SAKAMOTO DAYS Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17018,7 +17576,8 @@
   },
   {
    "title": "Rent-a-Girlfriend Season 4",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17043,7 +17602,8 @@
   },
   {
    "title": "Betrothed to My Sister's Ex",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17068,7 +17628,8 @@
   },
   {
    "title": "My Next Life as a Villainess: All Routes Lead to Doom! Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17093,7 +17654,8 @@
   },
   {
    "title": "Bad Girl",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17124,7 +17686,8 @@
   },
   {
    "title": "There's No Freaking Way I'll Be Your Lover! Unless...",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17161,7 +17724,8 @@
   },
   {
    "title": "New PANTY & STOCKING with GARTERBELT",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17192,7 +17756,8 @@
   },
   {
    "title": "Kowloon Generic Romance",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17223,7 +17788,8 @@
   },
   {
    "title": "A Couple of Cuckoos Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17248,7 +17814,8 @@
   },
   {
    "title": "Dr.STONE SCIENCE FUTURE Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17279,7 +17846,8 @@
   },
   {
    "title": "The Summer Hikaru Died",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17316,7 +17884,8 @@
   },
   {
    "title": "The Fragrant Flower Blooms With Dignity",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17341,7 +17910,8 @@
   },
   {
    "title": "Busamen Gachi Fighter",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17366,7 +17936,8 @@
   },
   {
    "title": "Dandadan 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17391,7 +17962,8 @@
   },
   {
    "title": "Silent Witch: Chinmoku no Majo no Kakushigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17434,7 +18006,8 @@
   },
   {
    "title": "Saw",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17465,7 +18038,8 @@
   },
   {
    "title": "Saw II",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17490,7 +18064,8 @@
   },
   {
    "title": "One Punch Man",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17527,7 +18102,8 @@
   },
   {
    "title": "Kijin Gentoushou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17558,7 +18134,8 @@
   },
   {
    "title": "Tsuihousha Shokudou e Youkoso!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17583,7 +18160,8 @@
   },
   {
    "title": "Child's Play 2",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17620,7 +18198,8 @@
   },
   {
    "title": "GREAT PRETENDER: razbliuto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17645,7 +18224,8 @@
   },
   {
    "title": "Witch Watch",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17676,7 +18256,8 @@
   },
   {
    "title": "My Hero Academia Season 7",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17701,7 +18282,8 @@
   },
   {
    "title": "My Hero Academia Season 7",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17720,7 +18302,8 @@
   },
   {
    "title": "Halloween (1978)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17751,7 +18334,8 @@
   },
   {
    "title": "Breaking Bad",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17776,7 +18360,8 @@
   },
   {
    "title": "El Camino",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17801,7 +18386,8 @@
   },
   {
    "title": "Saw III",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17832,7 +18418,8 @@
   },
   {
    "title": "Bakemonogatari",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17857,7 +18444,8 @@
   },
   {
    "title": "Nekomonogatari Kuro",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17882,7 +18470,8 @@
   },
   {
    "title": "Tensei Oujo to Tensai Reijou no Mahou Kakumei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17907,7 +18496,8 @@
   },
   {
    "title": "Weapons (2025)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17944,7 +18534,8 @@
   },
   {
    "title": "Tokidoki Bosotto Russiago de Dereru Tonari no Alya-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -17975,7 +18566,8 @@
   },
   {
    "title": "Private Practice",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18006,7 +18598,8 @@
   },
   {
    "title": "Shitcom",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18043,7 +18636,8 @@
   },
   {
    "title": "Kusuriya no Hitorigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18068,7 +18662,8 @@
   },
   {
    "title": "Natsu e no Tunnel, Sayonara no Deguchi",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18093,7 +18688,8 @@
   },
   {
    "title": "Tengoku Daimakyou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18124,7 +18720,8 @@
   },
   {
    "title": "Mairimashita! Iruma-kun",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18161,7 +18758,8 @@
   },
   {
    "title": "Sentai Daishikkaku 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18186,7 +18784,8 @@
   },
   {
    "title": "Hanamonogatari",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18211,7 +18810,8 @@
   },
   {
    "title": "Towa no Yuugure",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18242,7 +18842,8 @@
   },
   {
    "title": "Yasei no Last Boss ga Arawareta!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18273,7 +18874,8 @@
   },
   {
    "title": "This Monster Wants to Eat Me",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18310,7 +18912,8 @@
   },
   {
    "title": "The Banished Court Magician Aims to Become the Strongest",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18347,7 +18950,8 @@
   },
   {
    "title": "SPY×FAMILY Season 3",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18372,7 +18976,8 @@
   },
   {
    "title": "Gachiakuta",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18409,7 +19014,8 @@
   },
   {
    "title": "Sanda",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18434,7 +19040,8 @@
   },
   {
    "title": "Mairimashita! Iruma-kun 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18471,7 +19078,8 @@
   },
   {
    "title": "My Hero Academia FINAL SEASON",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18502,7 +19110,8 @@
   },
   {
    "title": "Alice in Borderland Season 3",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2025,
    "youtube_url": null,
@@ -18527,7 +19136,8 @@
   },
   {
    "title": "Botsuraku Yotei no Kizoku dakedo, Hima Datta kara Mahou wo Kiwamete mita",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18552,7 +19162,8 @@
   },
   {
    "title": "Izure Saikyou no Renkinjutsushi?",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18577,7 +19188,8 @@
   },
   {
    "title": "NEET Kunoichi to Naze ka Dousei Hajimemashita",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18608,7 +19220,8 @@
   },
   {
    "title": "Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18633,7 +19246,8 @@
   },
   {
    "title": "Fire Force",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18676,7 +19290,8 @@
   },
   {
    "title": "The White Lotus",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18719,7 +19334,8 @@
   },
   {
    "title": "SAKAMOTO DAYS",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18744,7 +19360,8 @@
   },
   {
    "title": "Once Upon a Witch's Death",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18769,7 +19386,8 @@
   },
   {
    "title": "Lazarus",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18794,7 +19412,8 @@
   },
   {
    "title": "The Legend of Korra",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18825,7 +19444,8 @@
   },
   {
    "title": "Witch Watch",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18850,7 +19470,8 @@
   },
   {
    "title": "The Acolyte",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18875,7 +19496,8 @@
   },
   {
    "title": "Okinawa de Suki ni Natta Ko ga Hougen Sugite Tsura Sugiru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18912,7 +19534,8 @@
   },
   {
    "title": "A-Rank Party wo Ridatsu Shita Ore wa, Moto Oshiegotachi to Meikyuu Shinbu wo Mezasu.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18937,7 +19560,8 @@
   },
   {
    "title": "Hunter x Hunter (1999)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18968,7 +19592,8 @@
   },
   {
    "title": "Tower of God Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -18999,7 +19624,8 @@
   },
   {
    "title": "Paradox Live THE ANIMATION",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19042,7 +19668,8 @@
   },
   {
    "title": "Sorairo Utility (TV)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19067,7 +19694,8 @@
   },
   {
    "title": "Nukitashi THE ANIMATION",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19098,7 +19726,8 @@
   },
   {
    "title": "S-Rank Monster no \"Behemoth\" Dakedo, Neko to Machigawarete Elf Musume no Pet to Shite Kurashitemasu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19129,7 +19758,8 @@
   },
   {
    "title": "9-1-1: Nashville",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19166,7 +19796,8 @@
   },
   {
    "title": "The Resident",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19203,7 +19834,8 @@
   },
   {
    "title": "My Gift Lvl 9999 Unlimited Gacha: Backstabbed in a Backwater Dungeon, I'm Out for Revenge!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2025,
    "youtube_url": null,
@@ -19240,7 +19872,8 @@
   },
   {
    "title": "NANA",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19277,7 +19910,8 @@
   },
   {
    "title": "Black Clover",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19302,7 +19936,8 @@
   },
   {
    "title": "Ishuzoku Reviewers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19339,7 +19974,8 @@
   },
   {
    "title": "sin: Nanatsu no Taizai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19370,7 +20006,8 @@
   },
   {
    "title": "Seikon no Qwaser",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19401,7 +20038,8 @@
   },
   {
    "title": "Fate/Apocrypha",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19438,7 +20076,8 @@
   },
   {
    "title": "Toaru Majutsu no Index II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19481,7 +20120,8 @@
   },
   {
    "title": "NARUTO: Shippuuden",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19518,7 +20158,8 @@
   },
   {
    "title": "Grey's Anatomy",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2024,
    "youtube_url": null,
@@ -19555,7 +20196,8 @@
   },
   {
    "title": "Bakemonogatari",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19586,7 +20228,8 @@
   },
   {
    "title": "Paradox Live THE ANIMATION",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19629,7 +20272,8 @@
   },
   {
    "title": "Tadaima, Okaeri",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19666,7 +20310,8 @@
   },
   {
    "title": "Sasayaku You ni Koi wo Utau",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19703,7 +20348,8 @@
   },
   {
    "title": "Quiet on Set:The Dark Side of Kids TV",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19746,7 +20392,8 @@
   },
   {
    "title": "Yuuri!!! on ICE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19777,7 +20424,8 @@
   },
   {
    "title": "Killing Eve",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19808,7 +20456,8 @@
   },
   {
    "title": "Pretty Little Liars",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19845,7 +20494,8 @@
   },
   {
    "title": "The Legend of Korra",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19876,7 +20526,8 @@
   },
   {
    "title": "FAIRY TAIL: 100 YEARS QUEST",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2024,
    "youtube_url": null,
@@ -19913,7 +20564,8 @@
   },
   {
    "title": "Higurashi no Naku Koro ni Kai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -19950,7 +20602,8 @@
   },
   {
    "title": "Pokémon Horizons: The Series",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2024,
    "youtube_url": null,
@@ -19975,7 +20628,8 @@
   },
   {
    "title": "Re:Zero kara Hajimeru Isekai Seikatsu 3rd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2024,
    "youtube_url": null,
@@ -20000,7 +20654,8 @@
   },
   {
    "title": "Ao no Hako",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "paused",
    "year": 2024,
    "youtube_url": null,
@@ -20025,7 +20680,8 @@
   },
   {
    "title": "Hunter x Hunter (1999)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20056,7 +20712,8 @@
   },
   {
    "title": "Kusuriya no Hitorigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20087,7 +20744,8 @@
   },
   {
    "title": "2024 Idol Star Athletics Championships Chuseok Special",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20136,7 +20794,8 @@
   },
   {
    "title": "The Girl Who Sees Smells",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20167,7 +20826,8 @@
   },
   {
    "title": "Breaking Bad",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20192,7 +20852,8 @@
   },
   {
    "title": "Yellowjackets",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20241,7 +20902,8 @@
   },
   {
    "title": "Buddy Daddies",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2024,
    "youtube_url": null,
@@ -20266,7 +20928,8 @@
   },
   {
    "title": "MASHLE: MAGIC AND MUSCLES",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20303,7 +20966,8 @@
   },
   {
    "title": "Hikikomari Kyuuketsuki no Monmon",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20340,7 +21004,8 @@
   },
   {
    "title": "Strawberry Panic",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20371,7 +21036,8 @@
   },
   {
    "title": "Kuma Kuma Kuma Bear Punch!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20396,7 +21062,8 @@
   },
   {
    "title": "Hoshikuzu Telepath",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20427,7 +21094,8 @@
   },
   {
    "title": "Okashi na Tensei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20458,7 +21126,8 @@
   },
   {
    "title": "86: Eighty Six",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20489,7 +21158,8 @@
   },
   {
    "title": "Technoroid OVERMIND",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20514,7 +21184,8 @@
   },
   {
    "title": "Buta no Liver wa Kanetsu Shiro",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20551,7 +21222,8 @@
   },
   {
    "title": "My Daughter Left the Nest and Returned an S-Rank Adventurer",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20576,7 +21248,8 @@
   },
   {
    "title": "Helck",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20601,7 +21274,8 @@
   },
   {
    "title": "Kaguya-sama wa Kokurasetai: First Kiss wa Owaranai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20632,7 +21306,8 @@
   },
   {
    "title": "Avatar: The Last Airbender",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20663,7 +21338,8 @@
   },
   {
    "title": "Demon Slayer: Kimetsu no Yaiba Entertainment District Arc",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20688,7 +21364,8 @@
   },
   {
    "title": "It (2017)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20725,7 +21402,8 @@
   },
   {
    "title": "The Hunger Games: The Ballad of Songbirds & Snakes",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20762,7 +21440,8 @@
   },
   {
    "title": "Higurashi no Naku Koro ni",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20800,6 +21479,7 @@
   {
    "title": "Higurashi no Naku Koro ni: Nekogoroshi-hen",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20836,7 +21516,8 @@
   },
   {
    "title": "Sousou no Frieren",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20879,7 +21560,8 @@
   },
   {
    "title": "Sousou no Frieren",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20904,7 +21586,8 @@
   },
   {
    "title": "Sousou no Frieren",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20929,7 +21612,8 @@
   },
   {
    "title": "Akuyaku Reijou Level 99: Watashi wa Ura Boss desu ga Maou de wa Arimasen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20966,7 +21650,8 @@
   },
   {
    "title": "PLUTO",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -20991,7 +21676,8 @@
   },
   {
    "title": "Oroka na Tenshi wa Akuma to Odoru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21016,7 +21702,8 @@
   },
   {
    "title": "Liz to Aoi Tori",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21041,7 +21728,8 @@
   },
   {
    "title": "Sokushi Cheat ga Saikyou Sugite, Isekai no Yatsura ga Marude Aite ni Naranai n desu ga.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21066,7 +21754,8 @@
   },
   {
    "title": "Hime-sama, \"Goumon\" no Jikan desu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21097,7 +21786,8 @@
   },
   {
    "title": "Chiyu Mahou no Machigatta Tsukaikata",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21128,7 +21818,8 @@
   },
   {
    "title": "Kusuriya no Hitorigoto",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21153,7 +21844,8 @@
   },
   {
    "title": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka IV: Shin Shou Yakusai-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21178,7 +21870,8 @@
   },
   {
    "title": "Metallic Rouge",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21209,7 +21902,8 @@
   },
   {
    "title": "HIGH CARD season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21234,7 +21928,8 @@
   },
   {
    "title": "Tokyo Revengers: Tenjiku-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21265,7 +21960,8 @@
   },
   {
    "title": "Shangri-La Frontier",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21290,7 +21986,8 @@
   },
   {
    "title": "Shangri-La Frontier",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21315,7 +22012,8 @@
   },
   {
    "title": "Totally Killer",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21352,7 +22050,8 @@
   },
   {
    "title": "Mato Seihei no Slave",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21383,7 +22082,8 @@
   },
   {
    "title": "Mahou Shoujo ni Akogarete",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21420,7 +22120,8 @@
   },
   {
    "title": "Gekai Elise",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21451,7 +22152,8 @@
   },
   {
    "title": "Ore dake Level Up na Ken",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21494,7 +22196,8 @@
   },
   {
    "title": "Kaminaki Sekai no Kamisama Katsudou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21525,7 +22228,8 @@
   },
   {
    "title": "FAIRY TAIL",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21568,7 +22272,8 @@
   },
   {
    "title": "Eiyuu-ou, Bu wo Kiwameru Tame Tenseisu: Soshite, Sekai Saikyou no Minarai Kishi♀",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21599,7 +22304,8 @@
   },
   {
    "title": "Romantic Killer",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21624,7 +22330,8 @@
   },
   {
    "title": "Grimm Kumikyoku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21649,7 +22356,8 @@
   },
   {
    "title": "Demon Slayer: Kimetsu no Yaiba Swordsmith Village Arc",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21680,7 +22388,8 @@
   },
   {
    "title": "Sword Art Online Alternative: Gun Gale Online",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21717,7 +22426,8 @@
   },
   {
    "title": "Tetris",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21754,7 +22464,8 @@
   },
   {
    "title": "Bottoms",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21791,7 +22502,8 @@
   },
   {
    "title": "Iron Man",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21822,7 +22534,8 @@
   },
   {
    "title": "Iron Man 2",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21859,7 +22572,8 @@
   },
   {
    "title": "Crazy Rich Asians",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21890,7 +22604,8 @@
   },
   {
    "title": "Legally Blonde",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21933,7 +22648,8 @@
   },
   {
    "title": "The Super Mario Bros. Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -21976,7 +22692,8 @@
   },
   {
    "title": "Final Destination",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22013,7 +22730,8 @@
   },
   {
    "title": "Arcane",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22056,7 +22774,8 @@
   },
   {
    "title": "FAIRY TAIL (2014)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22093,7 +22812,8 @@
   },
   {
    "title": "Iron Man 3",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22124,7 +22844,8 @@
   },
   {
    "title": "Kaiju No.8",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22149,7 +22870,8 @@
   },
   {
    "title": "Demon Slayer: Kimetsu no Yaiba Hashira Training Arc",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22174,7 +22896,8 @@
   },
   {
    "title": "Kami wa Game ni Ueteiru.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22205,7 +22928,8 @@
   },
   {
    "title": "Thor",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22242,7 +22966,8 @@
   },
   {
    "title": "FAIRY TAIL (2018)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22279,7 +23004,8 @@
   },
   {
    "title": "Captain America: The First Avenger",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22316,7 +23042,8 @@
   },
   {
    "title": "WIND BREAKER",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22353,7 +23080,8 @@
   },
   {
    "title": "WIND BREAKER",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22378,7 +23106,8 @@
   },
   {
    "title": "Yoru no Kurage wa Oyogenai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22415,7 +23144,8 @@
   },
   {
    "title": "The Avengers",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22452,7 +23182,8 @@
   },
   {
    "title": "Thor: The Dark World",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22489,7 +23220,8 @@
   },
   {
    "title": "Dungeon Meshi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22514,7 +23246,8 @@
   },
   {
    "title": "Captain America: The Winter Soldier",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22551,7 +23284,8 @@
   },
   {
    "title": "K-ON!!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22576,7 +23310,8 @@
   },
   {
    "title": "Tsuki ga Michibiku Isekai Douchuu 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22601,7 +23336,8 @@
   },
   {
    "title": "Kyuujitsu no Warumono-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22626,7 +23362,8 @@
   },
   {
    "title": "Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22651,7 +23388,8 @@
   },
   {
    "title": "Suki demo Kirai na Amanojaku",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22676,7 +23414,8 @@
   },
   {
    "title": "Guardians of the Galaxy",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22719,7 +23458,8 @@
   },
   {
    "title": "Shikanoko Nokonoko Koshitantan",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22744,7 +23484,8 @@
   },
   {
    "title": "Kono Sekai wa Fukanzen Sugiru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22769,7 +23510,8 @@
   },
   {
    "title": "Dungeon no Naka no Hito",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22794,7 +23536,8 @@
   },
   {
    "title": "Mushoku Tensei II: Isekai Ittara Honki Dasu Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22819,7 +23562,8 @@
   },
   {
    "title": "Mushoku Tensei II: Isekai Ittara Honki Dasu Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22844,7 +23588,8 @@
   },
   {
    "title": "Uglies",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22887,7 +23632,8 @@
   },
   {
    "title": "The Craft",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22918,7 +23664,8 @@
   },
   {
    "title": "Durarara!!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22943,7 +23690,8 @@
   },
   {
    "title": "The Magical Revolution of the Reincarnated Princess and the Genius Young Lady",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22974,7 +23722,8 @@
   },
   {
    "title": "Sasaki to Miyano",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -22999,7 +23748,8 @@
   },
   {
    "title": "The Hole (2009)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23030,7 +23780,8 @@
   },
   {
    "title": "Caressing the Nipples of My Hibernating Bear",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23055,7 +23806,8 @@
   },
   {
    "title": "Ame wo Tsugeru Hyouryuu Danchi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23086,7 +23838,8 @@
   },
   {
    "title": "Scream (2022)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23111,7 +23864,8 @@
   },
   {
    "title": "Scream (2022)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23136,7 +23890,8 @@
   },
   {
    "title": "Scream (2022)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23167,7 +23922,8 @@
   },
   {
    "title": "Sonic the Hedgehog (2020)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23192,7 +23948,8 @@
   },
   {
    "title": "Time Cut (2024)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23211,7 +23968,8 @@
   },
   {
    "title": "Blue Lock",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23242,7 +24000,8 @@
   },
   {
    "title": "John Wick",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23267,7 +24026,8 @@
   },
   {
    "title": "Bon Cop Bad Cop",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23292,7 +24052,8 @@
   },
   {
    "title": "2.43: Seiin Koukou Danshi Volley-bu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23317,7 +24078,8 @@
   },
   {
    "title": "Chu Zumo",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23348,7 +24110,8 @@
   },
   {
    "title": "Scream (1996)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23391,7 +24154,8 @@
   },
   {
    "title": "Scream (1996)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23416,7 +24180,8 @@
   },
   {
    "title": "Scream 2 (1997)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23453,7 +24218,8 @@
   },
   {
    "title": "Scream 2 (1997)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23484,7 +24250,8 @@
   },
   {
    "title": "Scream 3 (2000)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23521,7 +24288,8 @@
   },
   {
    "title": "Scream 3 (2000)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23540,7 +24308,8 @@
   },
   {
    "title": "Scream 3 (2000)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23565,7 +24334,8 @@
   },
   {
    "title": "Scary Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23608,7 +24378,8 @@
   },
   {
    "title": "Dead Dead Demon's Dededededestruction",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23633,7 +24404,8 @@
   },
   {
    "title": "Last Night in Soho",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23658,7 +24430,8 @@
   },
   {
    "title": "Arcane Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23701,7 +24474,8 @@
   },
   {
    "title": "The Babysitter",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23726,7 +24500,8 @@
   },
   {
    "title": "HIGH CARD: THE FLOWERS BLOOM",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23751,7 +24526,8 @@
   },
   {
    "title": "Challengers",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23788,7 +24564,8 @@
   },
   {
    "title": "Scream 4 (2011)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23831,7 +24608,8 @@
   },
   {
    "title": "Scream 4 (2011)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23850,7 +24628,8 @@
   },
   {
    "title": "Scream 4 (2011)",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23869,7 +24648,8 @@
   },
   {
    "title": "Scream VI",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23912,7 +24692,8 @@
   },
   {
    "title": "Madame Web",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23943,7 +24724,8 @@
   },
   {
    "title": "We're the Millers",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23974,7 +24756,8 @@
   },
   {
    "title": "[Oshi no Ko] 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -23999,7 +24782,8 @@
   },
   {
    "title": "[Oshi no Ko] 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24024,7 +24808,8 @@
   },
   {
    "title": "Tensei Shitara Slime Datta Ken 3rd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24050,6 +24835,7 @@
   {
    "title": "28 Days Later",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24075,6 +24861,7 @@
   {
    "title": "Valentine",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24112,6 +24899,7 @@
   {
    "title": "Anora",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24149,6 +24937,7 @@
   {
    "title": "MASHLE: Kami Shinkakusha Kouho Senbatsu Shiken-hen",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24180,6 +24969,7 @@
   {
    "title": "Tsue to Tsurugi no Wistoria",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24205,6 +24995,7 @@
   {
    "title": "Dandadan",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24230,6 +25021,7 @@
   {
    "title": "Dear Evan Hansen",
    "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24278,7 +25070,8 @@
   },
   {
    "title": "Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24303,7 +25096,8 @@
   },
   {
    "title": "Sasayaku You ni Koi wo Utau",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24328,7 +25122,8 @@
   },
   {
    "title": "Mahou Shoujo Madoka☆Magica: Hangyaku no Monogatari",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24365,7 +25160,8 @@
   },
   {
    "title": "Scream VI",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24408,7 +25204,8 @@
   },
   {
    "title": "Cocaine Bear",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2024,
    "youtube_url": null,
@@ -24439,7 +25236,8 @@
   },
   {
    "title": "Yofukashi no Uta",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24464,7 +25262,8 @@
   },
   {
    "title": "Hypnosis Mic -Division Rap Battle- Rhyme Anima+",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24489,7 +25288,8 @@
   },
   {
    "title": "Gimai Seikatsu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24514,7 +25314,8 @@
   },
   {
    "title": "EDENS ZERO",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24545,7 +25346,8 @@
   },
   {
    "title": "FAIRY TAIL: 100 YEARS QUEST",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24570,7 +25372,8 @@
   },
   {
    "title": "Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24595,7 +25398,8 @@
   },
   {
    "title": "Eiyuu Kyoushitsu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24626,7 +25430,8 @@
   },
   {
    "title": "Kekkon Suru tte, Hontou desu ka: 365 Days To The Wedding",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "dropped",
    "year": 2024,
    "youtube_url": null,
@@ -24651,7 +25456,8 @@
   },
   {
    "title": "NANA",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24688,7 +25494,8 @@
   },
   {
    "title": "Black Clover",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24713,7 +25520,8 @@
   },
   {
    "title": "Ishuzoku Reviewers",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24750,7 +25558,8 @@
   },
   {
    "title": "sin: Nanatsu no Taizai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24781,7 +25590,8 @@
   },
   {
    "title": "Seikon no Qwaser",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24812,7 +25622,8 @@
   },
   {
    "title": "Fate/Apocrypha",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24849,7 +25660,8 @@
   },
   {
    "title": "Buta no Liver wa Kanetsu Shiro",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24886,7 +25698,8 @@
   },
   {
    "title": "Toaru Majutsu no Index II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24929,7 +25742,8 @@
   },
   {
    "title": "Strawberry Panic",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24960,7 +25774,8 @@
   },
   {
    "title": "Hoshikuzu Telepath",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -24991,7 +25806,8 @@
   },
   {
    "title": "Okashi na Tensei",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25022,7 +25838,8 @@
   },
   {
    "title": "NARUTO: Shippuuden",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25060,6 +25877,7 @@
   {
    "title": "Kuma Kuma Kuma Bear Punch!",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25084,7 +25902,8 @@
   },
   {
    "title": "Hikikomari Kyuuketsuki no Monmon",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25121,7 +25940,8 @@
   },
   {
    "title": "Romantic Killer",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25146,7 +25966,8 @@
   },
   {
    "title": "Durarara!!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25171,7 +25992,8 @@
   },
   {
    "title": "MASHLE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25208,7 +26030,8 @@
   },
   {
    "title": "FAIRY TAIL",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25251,7 +26074,8 @@
   },
   {
    "title": "Sousou no Frieren",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25294,7 +26118,8 @@
   },
   {
    "title": "Sousou no Frieren",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25319,7 +26144,8 @@
   },
   {
    "title": "BEYBLADE X",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25344,7 +26170,8 @@
   },
   {
    "title": "EDENS ZERO",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25375,7 +26202,8 @@
   },
   {
    "title": "Shangri-La Frontier",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25400,7 +26228,8 @@
   },
   {
    "title": "Yofukashi no Uta",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25425,7 +26254,8 @@
   },
   {
    "title": "Hypnosis Mic -Division Rap Battle- Rhyme Anima+",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "ongoing",
    "year": 2023,
    "youtube_url": null,
@@ -25450,7 +26280,8 @@
   },
   {
    "title": "Sora no Aosa wo Shiru Hito yo",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25475,7 +26306,8 @@
   },
   {
    "title": "Maou Gakuin no Futekigousha: Shijou Saikyou no Maou no Shiso, Tensei shite Shison-tachi no Gakkou e Kayou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25500,7 +26332,8 @@
   },
   {
    "title": "Maou Gakuin no Futekigousha: Shijou Saikyou no Maou no Shiso, Tensei shite Shison-tachi no Gakkou e Kayou II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25525,7 +26358,8 @@
   },
   {
    "title": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka IV: Shin Shou Meikyuu-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25556,7 +26390,8 @@
   },
   {
    "title": "Sword Art Online: Alicization - War of Underworld Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25587,7 +26422,8 @@
   },
   {
    "title": "Noumin Kanren no Skill Bakka Agetetara Naze ka Tsuyoku Natta.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25612,7 +26448,8 @@
   },
   {
    "title": "Aoashi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25643,7 +26480,8 @@
   },
   {
    "title": "Karakai Jouzu no Takagi-san Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25668,7 +26506,8 @@
   },
   {
    "title": "Shuumatsu Nani Shitemasu ka? Isogashii desu ka? Sukutte Moratte Ii desu ka?",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25705,7 +26544,8 @@
   },
   {
    "title": "SHIROBAKO Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25730,7 +26570,8 @@
   },
   {
    "title": "Tensei Shitara Ken Deshita",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25755,7 +26596,8 @@
   },
   {
    "title": "Sword Art Online: Progressive - Hoshinaki Yoru no Aria",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25786,7 +26628,8 @@
   },
   {
    "title": "Machikado Mazoku: 2-Choume",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25811,7 +26654,8 @@
   },
   {
    "title": "Yuuki Yuuna wa Yuusha de Aru: Dai-Mankai no Shou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25836,7 +26680,8 @@
   },
   {
    "title": "Valkyrie no Shokutaku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25867,7 +26712,8 @@
   },
   {
    "title": "Valkyrie no Shokutaku II",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25898,7 +26744,8 @@
   },
   {
    "title": "Hypnosis Mic: Division Rap Battle - Rhyme Anima",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25923,7 +26770,8 @@
   },
   {
    "title": "Vanitas no Carte Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25948,7 +26796,8 @@
   },
   {
    "title": "Tondemo Skill de Isekai Hourou Meshi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -25985,7 +26834,8 @@
   },
   {
    "title": "Bungou Stray Dogs 4th Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26010,7 +26860,8 @@
   },
   {
    "title": "Ijiranaide, Nagatoro-san 2nd Attack",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26035,7 +26886,8 @@
   },
   {
    "title": "Boku no Hero Academia 6",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26060,7 +26912,8 @@
   },
   {
    "title": "Shijou Saikyou no Daimaou, Murabito A ni Tensei suru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26091,7 +26944,8 @@
   },
   {
    "title": "Lycoris Recoil",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26117,6 +26971,7 @@
   {
    "title": "NARUTO: Soyokazeden - Naruto to Mashin to Mitsu no Onegai Dattebayo!!",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26159,7 +27014,8 @@
   },
   {
    "title": "NARUTO: Dai Katsugeki! Yuki Hime Ninpouchou Dattebayo!!",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26202,7 +27058,8 @@
   },
   {
    "title": "Dakara Boku wa, H ga Dekinai.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26234,6 +27091,7 @@
   {
    "title": "Dakara Boku wa, H ga Dekinai.: Mie Sugi! Mizugi Contest",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26265,6 +27123,7 @@
   {
    "title": "NARUTO: THE CROSS ROADS",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26308,6 +27167,7 @@
   {
    "title": "NARUTO: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26357,6 +27217,7 @@
   {
    "title": "NARUTO: Narutimate Hero 3: Tsui ni Gekitotsu! Jounin VS Genin!! Musabetsu Dairansen Taikai Kaisai!!",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26399,7 +27260,8 @@
   },
   {
    "title": "NARUTO: Dai Gekitotsu! Maboroshi no Chitei Iseki Dattebayo",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26437,6 +27299,7 @@
   {
    "title": "NARUTO: Akaki Yotsuba no Clover wo Sagase",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26473,7 +27336,8 @@
   },
   {
    "title": "NARUTO: Dai Koufun! Mikazukijima no Animal Panic Dattebayo!",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26516,7 +27380,8 @@
   },
   {
    "title": "Boku wa Tomodachi ga Sukunai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26541,7 +27406,8 @@
   },
   {
    "title": "Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26572,7 +27438,8 @@
   },
   {
    "title": "Isekai Nonbiri Nouka",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26604,6 +27471,7 @@
   {
    "title": "Boku wa Tomodachi ga Sukunai: Relay Shousetsu wa Ketsumatsu ga Hanpanai L(゜□゜)」",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26628,7 +27496,8 @@
   },
   {
    "title": "Date A Live",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26659,7 +27528,8 @@
   },
   {
    "title": "Boku wa Tomodachi ga Sukunai NEXT",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26684,7 +27554,8 @@
   },
   {
    "title": "Rougo ni Sonaete Isekai de 8-manmai no Kinka wo Tamemasu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26721,7 +27592,8 @@
   },
   {
    "title": "Grisaia no Kajitsu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26752,7 +27624,8 @@
   },
   {
    "title": "Demi-chan wa Kataritai",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26789,7 +27662,8 @@
   },
   {
    "title": "Demi-chan wa Kataritai: Demi-chan no Natsuyasumi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26826,7 +27700,8 @@
   },
   {
    "title": "Itai no wa Iya nano de Bougyoryoku ni Kyokufuri Shitai to Omoimasu. 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26869,7 +27744,8 @@
   },
   {
    "title": "Tokyo Revengers: Seiya Kessen-hen",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26900,7 +27776,8 @@
   },
   {
    "title": "Benriya Saitou-san, Isekai ni Iku",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26925,7 +27802,8 @@
   },
   {
    "title": "Ningen Fushin no Boukensha-tachi ga Sekai wo Sukuu you desu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26950,7 +27828,8 @@
   },
   {
    "title": "Kage no Jitsuryokusha ni Naritakute!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -26981,7 +27860,8 @@
   },
   {
    "title": "Jujutsu Kaisen 0",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27006,7 +27886,8 @@
   },
   {
    "title": "Baccano!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27032,6 +27913,7 @@
   {
    "title": "Grisaia no Kajitsu: Grisaia no Tokuten",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27062,7 +27944,8 @@
   },
   {
    "title": "[Oshi no Ko]",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27099,7 +27982,8 @@
   },
   {
    "title": "Rosario to Vampire",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27136,7 +28020,8 @@
   },
   {
    "title": "Yuragi-sou no Yuuna-san",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27168,6 +28053,7 @@
   {
    "title": "Yuragi-sou no Yuuna-san OVA",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27198,7 +28084,8 @@
   },
   {
    "title": "NARUTO: Shippuuden Movie",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27242,6 +28129,7 @@
   {
    "title": "Date A Live: DATE TO DATE",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27272,7 +28160,8 @@
   },
   {
    "title": "C³",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27304,6 +28193,7 @@
   {
    "title": "C³ Special",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27334,7 +28224,8 @@
   },
   {
    "title": "Bocchi the Rock!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27359,7 +28250,8 @@
   },
   {
    "title": "HUNTER×HUNTER (2011)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27384,7 +28276,8 @@
   },
   {
    "title": "Puraore!: PRIDE OF ORANGE",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27409,7 +28302,8 @@
   },
   {
    "title": "Jujutsu Kaisen 2nd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27434,7 +28328,8 @@
   },
   {
    "title": "Cider no You ni Kotoba ga Wakiagaru",
-   "category": "uncategorized",
+   "category": "movie",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27465,7 +28360,8 @@
   },
   {
    "title": "Toaru Kagaku no Accelerator",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27508,7 +28404,8 @@
   },
   {
    "title": "Watashi no Oshi wa Akuyaku Reijou.",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27557,7 +28454,8 @@
   },
   {
    "title": "SHY",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27582,7 +28480,8 @@
   },
   {
    "title": "Kikansha no Mahou wa Tokubetsu desu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27607,7 +28506,8 @@
   },
   {
    "title": "Kanojo mo Kanojo Season 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27632,7 +28532,8 @@
   },
   {
    "title": "Kage no Jitsuryokusha ni Naritakute! 2nd season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27663,7 +28564,8 @@
   },
   {
    "title": "Kanojo, Okarishimasu 3rd Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27694,7 +28596,8 @@
   },
   {
    "title": "Mushoku Tensei: Isekai Ittara Honki Dasu Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27726,6 +28629,7 @@
   {
    "title": "Mushoku Tensei: Isekai Ittara Honki Dasu Part 2 - Eris no Goblin Toubatsu",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27756,7 +28660,8 @@
   },
   {
    "title": "NieR:Automata Ver1.1a",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27787,7 +28692,8 @@
   },
   {
    "title": "Blue Lock",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27824,7 +28730,8 @@
   },
   {
    "title": "Nanatsu no Maken ga Shihai Suru",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27855,7 +28762,8 @@
   },
   {
    "title": "Bungou Stray Dogs 5th Season",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27880,7 +28788,8 @@
   },
   {
    "title": "Mushoku Tensei II: Isekai Ittara Honki Dasu",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27917,7 +28826,8 @@
   },
   {
    "title": "Dr. STONE: NEW WORLD",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27948,7 +28858,8 @@
   },
   {
    "title": "Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27973,7 +28884,8 @@
   },
   {
    "title": "Shingeki no Kyojin: The Final Season Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -27998,7 +28910,8 @@
   },
   {
    "title": "Kamisama ni Natta Hi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28036,6 +28949,7 @@
   {
    "title": "Umi ga Kikoeru",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28060,7 +28974,8 @@
   },
   {
    "title": "Kimi no Koto ga Dai Dai Dai Dai Daisuki na 100-nin no Kanojo",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28097,7 +29012,8 @@
   },
   {
    "title": "Dr. STONE: NEW WORLD Part 2",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28128,7 +29044,8 @@
   },
   {
    "title": "Kuro no Shoukanshi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28159,7 +29076,8 @@
   },
   {
    "title": "Yubisaki kara Honki no Netsujou: Osananajimi wa Shouboushi",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28196,7 +29114,8 @@
   },
   {
    "title": "Boku no Hero Academia 5 (ONA)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28228,6 +29147,7 @@
   {
    "title": "Shingeki no Kyojin: The Final Season - Kanketsu-hen Zenpen",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28253,6 +29173,7 @@
   {
    "title": "Shingeki no Kyojin: The Final Season - Kanketsu-hen Kouhen",
    "category": "uncategorized",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28277,7 +29198,8 @@
   },
   {
    "title": "UniteUp!",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28302,7 +29224,8 @@
   },
   {
    "title": "Attakai, Fuyu Canada",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28333,7 +29256,8 @@
   },
   {
    "title": "HIGH CARD",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
@@ -28358,7 +29282,8 @@
   },
   {
    "title": "Dance Moms (season 1)",
-   "category": "uncategorized",
+   "category": "tv",
+   "upcoming": false,
    "bucket": "completed",
    "year": 2023,
    "youtube_url": null,
