@@ -55,6 +55,7 @@
 
     <!-- Note tooltip (JS-positioned) — same element/styling as ARIMA rating notes -->
     <div id="note-tooltip"></div>
+    <div id="title-tooltip" class="hidden fixed z-50 px-2 py-1 rounded border border-link bg-header-row text-primary-text text-sm- pointer-events-none shadow-lg" style="max-width:36rem;"></div>
 
     <script>
     // Send the CSRF token on every HTMX request (Flask-WTF accepts X-CSRFToken).
@@ -70,27 +71,22 @@
     _tip.addEventListener('mousedown', function() { _tipSel = true; });
     document.addEventListener('mouseup', function() { _tipSel = false; });
 
-    // Title cells also show the full name here when it is cut off by the column width.
-    var _TIP_CELLS = 'td.has-note, td[data-title-show]';
     document.addEventListener('mouseover', function(e) {
-        var td = e.target.closest(_TIP_CELLS);
+        var td = e.target.closest('td.has-note');
         if (!td) return;
-        var parts = [];
-        var name = td.querySelector('.simul-title');
-        if (name && name.scrollWidth > name.clientWidth) parts.push(td.getAttribute('data-title'));
-        if (td.getAttribute('data-note')) parts.push(td.getAttribute('data-note'));
-        if (!parts.length) return;
-        _tip.textContent = parts.join('\n\n');
+        var note = td.getAttribute('data-note');
+        if (!note) return;
+        _tip.textContent = note;
         var r = td.getBoundingClientRect();
-        if (td.hasAttribute('data-title-show')) { _tip.style.left = r.left + 'px'; _tip.style.transform = ''; }
-        else { _tip.style.left = r.right + 'px'; _tip.style.transform = 'translateX(-100%)'; }
+        _tip.style.left = r.right + 'px';
+        _tip.style.transform = 'translateX(-100%)';
         if (r.top > 40) { _tip.style.top = (r.top - 4) + 'px'; _tip.style.transform += ' translateY(-100%)'; }
         else { _tip.style.top = (r.bottom + 4) + 'px'; }
         _tip.style.opacity = '1';
         _tip.style.display = 'block';
     });
     document.addEventListener('mouseout', function(e) {
-        var td = e.target.closest(_TIP_CELLS);
+        var td = e.target.closest('td.has-note');
         if (!td) return;
         if (!td.contains(e.relatedTarget) && e.relatedTarget !== _tip && !_tip.contains(e.relatedTarget)) {
             if (!_tipSel) { _tip.style.opacity = '0'; _tip.style.display = 'none'; }
@@ -98,6 +94,24 @@
     });
     window.addEventListener('scroll', function() {
         if (_tip.style.display !== 'none') { _tipSel = false; _tip.style.opacity = '0'; _tip.style.display = 'none'; }
+        _nameTip.classList.add('hidden');
+    });
+
+    // A cut-off title expands in place over its cell, styled like the cell so it reads apart from note tooltips.
+    var _nameTip = document.getElementById('title-tooltip');
+    document.addEventListener('mouseover', function(e) {
+        var td = e.target.closest('td[data-title-show]');
+        var name = td && td.querySelector('.simul-title');
+        if (!name || name.scrollWidth <= name.clientWidth) return;
+        var r = name.getBoundingClientRect();
+        _nameTip.textContent = td.getAttribute('data-title');
+        _nameTip.style.left = (r.left - 9) + 'px';
+        _nameTip.style.top = (r.top - 5) + 'px';
+        _nameTip.classList.remove('hidden');
+    });
+    document.addEventListener('mouseout', function(e) {
+        var td = e.target.closest('td[data-title-show]');
+        if (td && !td.contains(e.relatedTarget)) _nameTip.classList.add('hidden');
     });
 
     // Right-click a title to open its editor; right-click a status cell, or 'n' over either, to edit its note.

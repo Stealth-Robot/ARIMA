@@ -49,7 +49,7 @@
 </form>
 {% endif %}
 
-<div class="overflow-x-auto border border-border rounded">
+<div class="overflow-x-auto border border-border rounded w-max max-w-full mx-auto">
   {# Title column width is a per-user setting; cells size to --simul-title-w so dragging only updates the variable. #}
   <table id="simul-grid" class="border-collapse text-sm-" style="width:max-content;--simul-title-w:{{ title_width }}px;">
     <thead>
@@ -69,7 +69,7 @@
       {% set multi = block|length > 1 %}
       {% for show in block %}
       {# Same-titled shows on a page are separate watches: one title, a sub-row per watch. #}
-      <tr {% if loop.first and not block_loop.first %}style="border-top:3px solid var(--border);"{% endif %}>
+      <tr {% if loop.first and not block_loop.first %}style="border-top:4px solid var(--border);"{% endif %}>
         {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
         <td class="sticky left-0 z-10 border border-border px-2 py-1 align-top bg-primary-bg{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
             data-title-show="{{ show.id }}" data-editable="{{ '1' if can_edit else '' }}"
