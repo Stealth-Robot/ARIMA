@@ -300,10 +300,6 @@ def run_startup_migrations():
         # legend upserts by key; shows import only when simul_show is empty.
         _seed_simuls(db)
 
-        # 4a. One-off: wipe simuls and reimport the refreshed xlsx export; removed once run in production.
-        from app.simul_reseed import reseed_simuls
-        reseed_simuls(db)
-
         # 4b. Drop historical member-only statuses (Amy/Syd) — those columns removed.
         # Idempotent: no-op once none remain.
         if {row[1] for row in db.session.execute(db.text("PRAGMA table_info('simul_status')"))}:
