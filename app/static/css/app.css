@@ -772,7 +772,8 @@ body.em-on [data-current-artist-id] h2, body.em-on [data-misc-header] h2 { curso
     /* Discography table: sticky song name column */
     .song-name-cell {
         position: sticky !important; /* override position: relative for song note */
-        left: -1rem;
+        /* Extra 1px covers the collapsed left border, which stays behind and lets panned cells show through */
+        left: calc(-1rem - 1px);
         z-index: 2;
         background-color: var(--bg-primary);
         max-width: 12.5rem;

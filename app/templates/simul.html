@@ -82,19 +82,20 @@
 {% endif %}
 </div>
 
-<div class="overflow-x-auto border border-border rounded">
+{# Scrolls both axes so the header row and title column pin inside it; JS sizes it to the viewport. relative z-0 keeps its sticky z-indexes under the pinned controls. #}
+<div id="simul-grid-wrap" class="relative z-0 overflow-auto border border-border rounded">
   {# Title column width is a per-user setting; cells size to --simul-title-w so dragging only updates the variable. #}
   <table id="simul-grid" class="border-collapse text-sm-" style="width:max-content;--simul-title-w:{{ title_width }}px;">
     <thead>
       <tr class="bg-header-row">
-        <th class="sticky left-0 z-10 bg-header-row border border-border text-left px-2 py-1">
+        <th class="sticky -left-px -top-px z-20 bg-header-row border border-border text-left px-2 py-1">
           <div style="width:var(--simul-title-w);">Title</div>
           <span id="simul-title-resizer" class="absolute top-0 bottom-0 right-0 w-3 flex items-center justify-center text-secondary-text hover:text-primary-text" style="cursor:col-resize;touch-action:none;" title="Drag to resize">
             <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.25"/><circle cx="6" cy="2" r="1.25"/><circle cx="2" cy="7" r="1.25"/><circle cx="6" cy="7" r="1.25"/><circle cx="2" cy="12" r="1.25"/><circle cx="6" cy="12" r="1.25"/></svg>
           </span>
         </th>
         {% for u in users %}
-        <th class="border border-border px-1 py-1 text-center" style="min-width:4.5rem;">{{ u.username }}</th>
+        <th class="sticky -top-px z-10 bg-header-row border border-border px-1 py-1 text-center" style="min-width:4.5rem;">{{ u.username }}</th>
         {% endfor %}
       </tr>
     </thead>
@@ -107,7 +108,7 @@
       {% set alt = block_loop.index is even %}
       <tr class="{{ 'bg-row-alternate' if alt else '' }}" {% if loop.first and not block_loop.first %}style="border-top:4px solid var(--border);"{% endif %}>
         {# inline sticky: td.has-note's position:relative would otherwise unpin the column #}
-        <td class="sticky left-0 z-10 border border-border px-2 py-1 align-top {{ 'bg-row-alternate' if alt else 'bg-primary-bg' }}{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
+        <td class="sticky -left-px z-10 border border-border px-2 py-1 align-top {{ 'bg-row-alternate' if alt else 'bg-primary-bg' }}{% if not loop.first %} border-t-0{% endif %}{% if not loop.last %} border-b-0{% endif %}{% if show.notes %} has-note{% endif %}"
             data-title-show="{{ show.id }}" data-editable="{{ '1' if can_edit else '' }}"
             data-title="{{ show.title }}" data-url="{{ show.url or '' }}" data-category="{{ show.category }}" data-upcoming="{{ '1' if show.upcoming else '' }}" data-bucket="{{ show.bucket }}" data-year="{{ show.year or '' }}"
             {% if show.notes %}data-note="{{ show.notes }}"{% endif %} style="position:sticky;">
@@ -285,6 +286,22 @@
         handle.addEventListener('pointerup', up);
         document.body.style.cursor = 'col-resize';
     });
+})();
+(function() {
+    var wrap = document.getElementById('simul-grid-wrap');
+    var main = document.getElementById('main-content');
+    if (!wrap || !main) return;
+    function fit() {
+        // Mobile scrolls inside a fixed #main-content; desktop scrolls the window.
+        var inMain = getComputedStyle(main).position === 'fixed';
+        var top = inMain ? wrap.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop
+                         : wrap.getBoundingClientRect().top + window.scrollY;
+        var viewport = inMain ? main.clientHeight : window.innerHeight;
+        var pad = parseFloat(getComputedStyle(main).paddingBottom) || 0;
+        wrap.style.maxHeight = Math.max(240, Math.floor(viewport - top - pad)) + 'px';
+    }
+    fit();
+    window.addEventListener('resize', fit);
 })();
 </script>
 {% endblock %}
