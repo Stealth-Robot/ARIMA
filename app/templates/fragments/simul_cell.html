@@ -3,16 +3,18 @@
     right-click to edit (see simul_base.html). -#}
 {%- set cid = 'cell-' ~ show.id ~ '-' ~ (pkey | replace(':', '_')) -%}
 <td id="{{ cid }}"
-    class="border border-border text-center align-middle p-0{% if status and status.note %} has-note{% endif %}"
+    class="relative border border-border text-center align-middle p-0{% if status and status.note %} has-note{% endif %}"
     data-show="{{ show.id }}" data-pkey="{{ pkey }}"
     data-type="{{ status.status_type_id if status else '' }}"
     data-editable="{{ '1' if editable else '' }}"
     {% if status and status.note %}data-note="{{ status.note }}"{% endif %}
     style="min-width:4.5rem;{% if status %}background-color:{{ status.status_type.color_hex }};color:#fff;{% endif %}">
   {%- if editable -%}
+  {#- iOS Safari ignores text-align on <select>, so the label is drawn here and the select sits invisibly on top. -#}
+  <div class="text-2xs px-1 py-1 pointer-events-none"
+       style="{% if not status %}color:var(--text-secondary);{% endif %}">{{ status.status_type.label if status else '—' }}</div>
   <select name="status_type_id"
-          class="w-full bg-transparent border-0 text-2xs cursor-pointer appearance-none text-center py-1"
-          style="{% if status %}color:#fff;{% else %}color:var(--text-secondary);{% endif %}"
+          class="absolute inset-0 w-full h-full opacity-0 border-0 text-2xs cursor-pointer appearance-none"
           hx-post="{{ url_for('simul.set_status') }}"
           hx-vals='{"show_id": {{ show.id }}, "pkey": "{{ pkey }}"}'
           hx-target="#{{ cid }}" hx-swap="outerHTML">
