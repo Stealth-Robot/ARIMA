@@ -312,10 +312,6 @@ def run_startup_migrations():
             if n:
                 logger.info('Moved %d %s simul shows to %s + upcoming', n, old, new)
 
-        # 4a'. One-off: fill in TV/movie for titles the sheet left uncategorized; removed once run in production.
-        from app.simul_type_fill import fill_simul_types
-        fill_simul_types(db)
-
         # 4a''. Video links moved from a ▶ next to the title into the title note. No-op once moved.
         if 'youtube_url' in existing_ss_cols:
             rows = db.session.execute(db.text(
