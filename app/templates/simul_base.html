@@ -59,7 +59,8 @@
     {% endif %}
     {% endwith %}
 
-    <main class="px-4 pt-3 pb-8">{% block content %}{% endblock %}</main>
+    {# app.css turns #main-content into the page's scroll region on mobile (body itself is locked there). #}
+    <main id="main-content" class="px-4 pt-0 pb-8">{% block content %}{% endblock %}</main>
 
     <!-- Note tooltip (JS-positioned) — same element/styling as ARIMA rating notes -->
     <div id="note-tooltip"></div>
@@ -100,10 +101,11 @@
             if (!_tipSel) { _tip.style.opacity = '0'; _tip.style.display = 'none'; }
         }
     });
+    // Capture so scrolling inside the mobile scroll region also hides tooltips.
     window.addEventListener('scroll', function() {
         if (_tip.style.display !== 'none') { _tipSel = false; _tip.style.opacity = '0'; _tip.style.display = 'none'; }
         _nameTip.classList.add('hidden');
-    });
+    }, true);
 
     // A cut-off title expands in place over its cell, styled like the cell so it reads apart from note tooltips.
     var _nameTip = document.getElementById('title-tooltip');

@@ -11,9 +11,9 @@
 {% block og_description %}{{ page_label }}: {{ blocks|length }} title{{ '' if blocks|length == 1 else 's' }}{% endblock %}
 
 {% block content %}
-{# Sized to the table so the controls line up with it; the controls stay pinned under the navbar. #}
+{# Sized to the table so the controls line up with it; the controls stay pinned under the navbar (mobile scrolls inside main, already below it). #}
 <div class="w-max max-w-full mx-auto">
-<div class="sticky top-11 z-20 bg-primary-bg flex flex-col gap-3 pb-3">
+<div class="sticky top-0 md:top-11 z-20 bg-primary-bg flex flex-col gap-3 pt-3 pb-3">
 <div class="flex flex-wrap items-center gap-2">
   <h1 class="text-base- font-bold mr-2">🥬 Lettuce Simuls</h1>
   {% for b in buckets %}
