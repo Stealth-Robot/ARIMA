@@ -3,7 +3,7 @@
     right-click to edit (see simul_base.html). -#}
 {%- set cid = 'cell-' ~ show.id ~ '-' ~ (pkey | replace(':', '_')) -%}
 <td id="{{ cid }}"
-    class="relative border border-border text-center align-middle p-0{% if status and status.note %} has-note{% endif %}"
+    class="relative border border-border text-center align-middle p-0{% if status and status.note %} has-note{% endif %}{% if pkey == 'u:' ~ current_user.id %} my-cell{% endif %}"
     data-show="{{ show.id }}" data-pkey="{{ pkey }}"
     data-type="{{ status.status_type_id if status else '' }}"
     data-editable="{{ '1' if editable else '' }}"

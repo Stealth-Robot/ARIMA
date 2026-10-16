@@ -95,7 +95,7 @@
           </span>
         </th>
         {% for u in users %}
-        <th class="sticky -top-px z-10 bg-header-row border border-border px-1 py-1 text-center" style="min-width:4.5rem;">{{ u.username }}</th>
+        <th class="sticky -top-px z-10 bg-header-row border border-border px-1 py-1 text-center{% if u.id == current_user.id %} my-cell{% endif %}" style="min-width:4.5rem;">{{ u.username }}</th>
         {% endfor %}
       </tr>
     </thead>
